@@ -48,6 +48,7 @@ services:
 
   rathole:
     image: rathole:local
+    command: ["/etc/rathole/rathole.toml"]
     volumes:
       - /opt/edge/rathole/rathole.toml:/etc/rathole/rathole.toml:ro
     networks:
