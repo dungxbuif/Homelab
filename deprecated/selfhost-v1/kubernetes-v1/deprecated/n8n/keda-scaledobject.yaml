@@ -1,0 +1,26 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: n8n-worker-redis-scaler
+  namespace: n8n
+spec:
+  scaleTargetRef:
+    name: n8n-worker # Name of the Deployment to scale
+  pollingInterval: 15  # Check queue length every 15 seconds
+  cooldownPeriod:  300 # Wait 5 minutes after last activity before scaling down
+  minReplicaCount: 1   # Minimum number of workers (set to 0 for scale-to-zero if desired)
+  maxReplicaCount: 5  # Maximum number of workers (adjust as needed)
+  triggers:
+  - type: redis
+    metadata:
+      # Required: Redis server address (host:port)
+      address: redis-service.n8n.svc.cluster.local:6379
+      # Required: Name of the BullMQ waiting list
+      listName: bull:default:wait # Verify this key name in your Redis instance if using custom queue names
+      # Required: Target average queue length per worker replica. Tune this value.
+      # Lower value = more aggressive scaling up.
+      listLength: "5"
+      # Optional: Activation threshold for scaling from 0 (if minReplicaCount=0)
+      # activationListLength: "1"
+    authenticationRef: # Reference the TriggerAuthentication for Redis credentials
+      name: keda-redis-secrets

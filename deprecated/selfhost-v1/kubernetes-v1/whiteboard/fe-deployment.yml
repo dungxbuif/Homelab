@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whiteboard-fe
+  namespace: whiteboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: whiteboard-fe
+  template:
+    metadata:
+      labels:
+        app: whiteboard-fe
+    spec:
+      containers:
+        - name: whiteboard-fe
+          image: registry.dungxbuif.com/whiteboard/whiteboard-fe:8d6fa9e20d912bdc2425ecbd4c89d7e1830b9068
+          ports:
+            - containerPort: 80
+      imagePullSecrets:
+        - name: regcred

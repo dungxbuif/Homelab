@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: goclaw
+  namespace: goclaw
+  labels:
+    app: goclaw
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: goclaw
+  template:
+    metadata:
+      labels:
+        app: goclaw
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: goclaw
+          image: ghcr.io/nextlevelbuilder/goclaw:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 18790
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "2Gi"
+              cpu: "4000m"
+          volumeMounts:
+            - name: goclaw-data
+              mountPath: /app/data
+          env:
+            - name: GOCLAW_HOST
+              value: "0.0.0.0"
+            - name: GOCLAW_PORT
+              value: "18790"
+            - name: GOCLAW_CONFIG
+              value: "/app/data/config.json"
+            - name: GOCLAW_SKILLS_DIR
+              value: "/app/data/skills"
+            - name: GOCLAW_ALLOW_INSECURE_NO_AUTH
+              value: "0"
+            - name: GOCLAW_GATEWAY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: goclaw-secrets
+                  key: gateway-token
+            - name: GOCLAW_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: goclaw-secrets
+                  key: encryption-key
+            - name: GOCLAW_POSTGRES_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: goclaw-secrets
+                  key: database-url
+      volumes:
+        - name: goclaw-data
+          persistentVolumeClaim:
+            claimName: goclaw-data-pvc

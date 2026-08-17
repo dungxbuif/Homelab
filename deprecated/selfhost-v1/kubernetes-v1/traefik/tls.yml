@@ -1,0 +1,15 @@
+apiVersion: traefik.io/v1alpha1
+kind: TLSStore
+metadata:
+  name: default
+  namespace: default
+  annotations:
+    description: "Default TLS store - supports *.dungxbuif.com + external domains"
+
+spec:
+  defaultCertificate:
+    secretName: dungxbuif-tls  # Default cert for *.dungxbuif.com
+  
+  # TLS certificates registry for SNI-based routing
+  # Traefik will automatically use the right cert based on SNI
+  certificates: []  # Will populate when adding external domains

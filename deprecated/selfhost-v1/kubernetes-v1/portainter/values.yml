@@ -1,0 +1,12 @@
+service:
+  type: ClusterIP
+ingress:
+  enabled: true
+  hosts:
+    - host: portainer.dungxbuif.com
+      paths:
+        - path: /
+          port: 9000
+persistence:
+  size: 1Gi
+  storageClass: longhorn

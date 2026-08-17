@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+   name: whiteboard-ingress
+   namespace: whiteboard
+
+spec:
+   ingressClassName: traefik
+   rules:
+      - host: whiteboard.dungxbuif.com
+        http:
+           paths:
+              - path: /
+                pathType: Prefix
+                backend:
+                   service:
+                      name: whiteboard-fe
+                      port:
+                         number: 80
+      - host: wb-dashboard.dungxbuif.com
+        http:
+           paths:
+              - path: /
+                pathType: Prefix
+                backend:
+                   service:
+                      name: whiteboard-dashboard
+                      port:
+                         number: 80
+      - host: api-whiteboard.dungxbuif.com
+        http:
+           paths:
+              - path: /
+                pathType: Prefix
+                backend:
+                   service:
+                      name: whiteboard-be
+                      port:
+                         number: 80
+      - host: ws-whiteboard.dungxbuif.com
+        http:
+           paths:
+              - path: /
+                pathType: Prefix
+                backend:
+                   service:
+                      name: whiteboard-ws
+                      port:
+                         number: 80

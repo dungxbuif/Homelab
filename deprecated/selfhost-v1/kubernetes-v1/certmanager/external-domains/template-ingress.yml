@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-app-ingress  # CHANGE: Your service name
+  namespace: default  # CHANGE: Your namespace
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    
+    # Optional: Add authentication middleware
+    # traefik.ingress.kubernetes.io/router.middlewares: "default-basic-auth@kubernetescrd"
+
+spec:
+  ingressClassName: traefik
+  
+  tls:
+  - hosts:
+    - app.example.com  # CHANGE: Your domain
+    secretName: example-com-tls  # CHANGE: Match certificate secretName
+  
+  rules:
+  - host: app.example.com  # CHANGE: Your domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: example-service  # CHANGE: Your service name
+            port:
+              number: 80  # CHANGE: Your service port

@@ -1,0 +1,20 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: webhookrelay-ingressroute
+  namespace: webhookrelay
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`webhookrelay.dungxbuif.com`)
+      services:
+        - name: webhookrelay-service
+          port: 80
+    - kind: Rule
+      match: Host(`webhookrelay.dungxbuif.com`) && PathPrefix(`/api/v1/grpc`)
+      services:
+        - name: webhookrelay-service
+          port: 9302
+          scheme: h2c

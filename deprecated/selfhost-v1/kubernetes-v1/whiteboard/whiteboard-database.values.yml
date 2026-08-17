@@ -1,0 +1,32 @@
+global:
+  storageClass: "longhorn"
+  postgresql:
+    auth:
+      postgresPassword: "<WHITEBOARD_DB_ROOT_PASSWORD>"
+      username: "whiteboard"
+      password: "<WHITEBOARD_DB_PASSWORD>"
+      database: "whiteboard"
+      existingSecret: ""
+      secretKeys:
+        adminPasswordKey: ""
+        userPasswordKey: ""
+        replicationPasswordKey: ""
+
+
+auth:
+  enablePostgresUser: true
+
+primary:
+  resources:
+    limits: {}
+    requests:
+      memory: 512Mi
+      cpu: 600m
+  
+  persistence:
+    enabled: true
+    storageClass: "longhorn"
+    accessModes:
+      - ReadWriteOnce
+    size: 1Gi
+  

@@ -1,0 +1,4 @@
+interface:
+  display_name: "GoClaw"
+  short_description: "Use GoClaw docs, homelab notes, and vault sync tooling"
+  default_prompt: "Use the local GoClaw docs mirror and homelab deployment notes to answer my question. For Obsidian vault ingestion, use the bundled sync script and trigger GoClaw vault rescan."

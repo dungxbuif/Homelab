@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: n8n-ingress
+  namespace: n8n
+  
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: n8n.dungxbuif.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: n8n-main-service
+            port:
+              number: 5678
+      - path: /webhook-test/
+        pathType: Prefix
+        backend:
+          service:
+            name: n8n-main-service
+            port:
+              number: 5678

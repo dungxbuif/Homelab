@@ -1,0 +1,320 @@
+===== /ssd-data/infra/Caddyfile
+{
+    servers {
+        listener_wrappers {
+            proxy_protocol {
+                allow 10.0.0.0/8 172.16.0.0/12 
+            }
+            tls
+        }
+    }
+}
+
+dungxbuif.com {
+    tls {
+        dns cloudflare {$CF_API_TOKEN}
+        resolvers 1.1.1.1
+    }
+    
+    reverse_proxy my-cv:3000 {
+        trusted_proxies <LAN_SUBNET> 172.16.0.0/12
+        header_up X-Real-IP {http.request.header.CF-Connecting-IP}
+    }
+}
+
+*.dungxbuif.com {
+    tls {
+        dns cloudflare {$CF_API_TOKEN}
+        resolvers 1.1.1.1
+    }
+
+    @minio host minio.dungxbuif.com
+    handle @minio {
+        reverse_proxy rustfs:9001
+    }
+
+    @storage host storage.dungxbuif.com
+    handle @storage {
+        @cors_preflight method OPTIONS
+        handle @cors_preflight {
+            header Access-Control-Allow-Origin "*"
+            header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+            header Access-Control-Allow-Headers "*"
+            
+            header Access-Control-Allow-Private-Network "true"
+            
+            header Access-Control-Max-Age "3600"
+            respond "" 204
+        }
+
+        header Access-Control-Allow-Origin "*"
+        header Access-Control-Allow-Private-Network "true"
+        
+        reverse_proxy rustfs:9000
+    }
+
+    @registry host registry.dungxbuif.com
+    handle @registry {
+        reverse_proxy registry:5000
+    }
+
+    @speedtest host speed.dungxbuif.com
+    handle @speedtest {
+        reverse_proxy librespeed:80
+    }
+
+    @uptime-kuma host kuma.dungxbuif.com
+    handle @uptime-kuma {
+        reverse_proxy uptime-kuma:3001
+    }
+
+    @netdata {
+        host netdata.dungxbuif.com
+        remote_ip <LAN_SUBNET> 172.16.0.0/12
+    }   
+
+    handle @netdata {
+        reverse_proxy netdata:19999
+    }
+    
+    @netdata_external host netdata.dungxbuif.com
+    handle @netdata_external {
+        respond "Access Denied - Internal Only" 403
+    }
+
+    @n8n host n8n.dungxbuif.com
+    handle @n8n {
+        reverse_proxy n8n:5678
+    }
+
+    @pgadmin host pgadmin.dungxbuif.com
+    handle @pgadmin {
+        reverse_proxy pgadmin:80
+    }
+
+    @openclaw host openclaw.dungxbuif.com
+    handle @openclaw {
+        reverse_proxy <WORKER_VM_IP>:18789
+    }
+
+
+    handle {
+        respond "Service Not Found" 404
+    }
+}
+
+===== /ssd-data/infra/docker-compose.yml
+services:
+  rathole:
+    image: rathole:local
+    container_name: rathole
+    restart: always
+    network_mode: host
+    volumes:
+      - ./rathole/rathole.toml:/app/config.toml
+    command: ["--client", "/app/config.toml"]
+
+  caddy:
+    build: ./caddy 
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CF_API_TOKEN=<redacted>
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy/data:/data
+      - ./caddy/config:/config
+    networks:
+      - proxy_net
+
+  # minio:
+  #   image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+  #   container_name: minio
+  #   restart: unless-stopped
+  #   environment:
+  #     MINIO_ROOT_USER: admin
+  #     MINIO_ROOT_PASSWORD: <redacted>
+  #   volumes:
+  #     - ./minio/data:/data
+  #   command: server /data --console-address ":9001"
+  #   networks:
+  #     - proxy_net
+
+  rustfs:
+    image: rustfs/rustfs:1.0.0-beta.3
+    container_name: rustfs
+    restart: unless-stopped
+    environment:
+      - RUSTFS_ACCESS_KEY=admin
+      - RUSTFS_SECRET_KEY=<redacted>
+      - RUSTFS_CONSOLE_ENABLE=true
+    volumes:
+      - ./rustfs:/data
+    command: /data --console-enable
+    networks:
+      - proxy_net
+
+  registry:
+    image: registry:2
+    container_name: docker-registry
+    restart: unless-stopped
+    environment:
+      REGISTRY_STORAGE: s3
+      REGISTRY_STORAGE_S3_ACCESSKEY: "<redacted>"
+      REGISTRY_STORAGE_S3_SECRETKEY: "<redacted>"
+      REGISTRY_STORAGE_S3_REGION: "us-east-1"
+      REGISTRY_STORAGE_S3_REGIONENDPOINT: "http://rustfs:9000"
+      REGISTRY_STORAGE_S3_BUCKET: "registry-data" 
+      REGISTRY_STORAGE_S3_SECURE: "false"
+      REGISTRY_STORAGE_REDIRECT_DISABLE: "true"
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: "Registry Realm"
+      REGISTRY_AUTH_HTPASSWD_PATH: "/auth/htpasswd"
+    volumes:
+      - ./registry/auth:/auth
+    networks:
+      - proxy_net
+
+  speedtest:
+    image: lscr.io/linuxserver/librespeed:latest
+    container_name: librespeed
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Ho_Chi_Minh
+    networks:
+      - proxy_net
+
+  adguardhome:
+    image: adguard/adguardhome
+    container_name: adguardhome
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./adguard/work:/opt/adguardhome/work
+      - ./adguard/conf:/opt/adguardhome/conf
+
+  # uptime-kuma:
+  #   image: louislam/uptime-kuma:1
+  #   container_name: uptime-kuma
+  #   restart: always
+  #   volumes:
+  #     - ./kuma-data:/app/data
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   networks:
+  #     - proxy_net
+
+  # netdata:
+  #   image: netdata/netdata:latest
+  #   container_name: netdata
+  #   networks:
+  #     - proxy_net
+  #   restart: always
+  #   cap_add:
+  #     - SYS_PTRACE
+  #     - SYS_ADMIN
+  #   security_opt:
+  #     - apparmor:unconfined
+  #   volumes:
+  #     - /ssd-data/infra/netdata/config:/etc/netdata
+  #     - /ssd-data/infra/netdata/lib:/var/lib/netdata
+  #     - /ssd-data/infra/netdata/cache:/var/cache/netdata
+  #     - /etc/passwd:<redacted>
+  #     - /etc/group:/host/etc/group:ro
+  #     - /etc/os-release:/host/etc/os-release:ro
+  #     - /proc:/host/proc:ro
+  #     - /sys:/host/sys:ro
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  postgres:
+    image: postgres:16
+    container_name: postgres-n8n
+    restart: always
+    environment:
+      - POSTGRES_USER=n8n
+      - POSTGRES_PASSWORD=<redacted>
+      - POSTGRES_DB=n8n
+    volumes:
+      - ./n8n/db_storage:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U n8n -d n8n"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - proxy_net
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: unless-stopped
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=dungbui.dungbui.00@gmail.com
+      - PGADMIN_DEFAULT_PASSWORD=<redacted>
+    networks:
+      - proxy_net
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n
+    restart: always
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=<redacted>
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=dungbui.dungbui.00@gmail.com
+      - N8N_BASIC_AUTH_PASSWORD=<redacted>
+      - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
+    volumes:
+      - ./n8n/n8n_storage:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - proxy_net
+
+
+networks:
+  proxy_net:
+    external: true 
+===== /ssd-data/infra/my-cv/docker-compose.yml
+services:
+  my-cv:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # ports:
+    #   - "3000:3000"
+    restart: always
+    container_name: my-cv
+    environment:
+      - ENABLE_TRACKING=true
+      - NEXT_PUBLIC_SITE_URL=https://dungxbuif.com
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - proxy_net
+
+networks:
+  proxy_net:
+    external: true
+===== /ssd-data/infra/rathole/rathole.toml
+[client]
+remote_addr = "<VPS_PUBLIC_IP>:7000"
+default_token = <redacted>
+
+[client.services.caddy-http]
+local_addr = "127.0.0.1:80" # Rathole sẽ đẩy vào Caddy đang chạy trên host
+
+[client.services.caddy-https]
+local_addr = "127.0.0.1:443"
+===== /ssd-data/infra/adguard/conf/AdGuardHome.yaml

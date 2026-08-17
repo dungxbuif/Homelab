@@ -1,0 +1,35 @@
+expose:
+  type: ingress
+  tls:
+    enabled: false
+  ingress:
+    hosts:
+      core: registry.dungxbuif.com
+externalURL: https://registry.dungxbuif.com
+
+persistence:
+  enabled: true
+  persistentVolumeClaim:
+    registry:
+      storageClass: "longhorn"
+      accessMode: ReadWriteOnce
+      size: 4Gi
+    trivy:
+      storageClass: "longhorn"
+      accessMode: ReadWriteOnce
+      size: 1Gi
+    redis:
+      storageClass: "longhorn"
+      accessMode: ReadWriteOnce
+      size: 250Mi
+    jobservice:
+      storageClass: "longhorn"
+      accessMode: ReadWriteOnce
+      size: 150Mi
+    database:
+      storageClass: "longhorn"
+      accessMode: ReadWriteOnce
+      size: 512Mi
+
+harborAdminPassword: "<HARBOR_PASSWORD>"
+

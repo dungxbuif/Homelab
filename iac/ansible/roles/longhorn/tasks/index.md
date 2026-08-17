@@ -1,0 +1,60 @@
+---
+type: Reference
+title: "Code Index: tasks"
+description: "Aggregated code index for tasks folder"
+timestamp: 2026-07-03T15:11:00Z
+---
+
+# Code Index: tasks
+
+> This index aggregates code files in the [[tasks/]] directory.
+> Edit the source files directly; this index is auto-generated for Obsidian reading.
+
+---
+
+## [main.yml](./main.yml)
+
+```yaml
+---
+- name: Check if Helm is installed
+  ansible.builtin.command: helm version
+  register: helm_check
+  ignore_errors: true
+  changed_when: false
+
+- name: Install Helm if not present
+  ansible.builtin.shell: |
+    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  when: helm_check.rc != 0
+
+- name: Add Longhorn Helm repository
+  kubernetes.core.helm_repository:
+    name: longhorn
+    repo_url: "https://charts.longhorn.io"
+
+- name: Create Longhorn values file from template
+  template:
+    src: values.yaml.j2
+    dest: /tmp/longhorn-values.yaml
+
+- name: Deploy Longhorn via Helm
+  kubernetes.core.helm:
+    name: longhorn
+    chart_ref: longhorn/longhorn
+    chart_version: 1.7.2
+    release_namespace: longhorn-system
+    create_namespace: true
+    values_files:
+      - /tmp/longhorn-values.yaml
+    wait: true
+    timeout: 600s
+    kubeconfig: /etc/kubernetes/admin.conf
+
+- name: Clean up temporary values file
+  file:
+    path: /tmp/longhorn-values.yaml
+    state: absent
+
+```
+
+---

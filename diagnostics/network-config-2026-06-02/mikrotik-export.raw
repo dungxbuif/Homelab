@@ -1,0 +1,58 @@
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to "store now, decrypt later" attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+
+[9999B
+[9999BZ  [6n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MMM      MMM       KKK                          TTTTTTTTTTT      KKK
+  MMMM    MMMM       KKK                          TTTTTTTTTTT      KKK
+  MMM MMMM MMM  III  KKK  KKK  RRRRRR     OOOOOO      TTT     III  KKK  KKK
+  MMM  MM  MMM  III  KKKKK     RRR  RRR  OOO  OOO     TTT     III  KKKKK
+  MMM      MMM  III  KKK KKK   RRRRRR    OOO  OOO     TTT     III  KKK KKK
+  MMM      MMM  III  KKK  KKK  RRR  RRR   OOOOOO      TTT     III  KKK  KKK
+
+  MikroTik RouterOS 7.18.2 (c) 1999-2025       https://www.mikrotik.com/
+
+
+Press F1 for help
+
+
+Change your password
+
+
+
+
+**************                                                                 
+new password> *****
+new password> *****
+
+
+
+
+
+*********************                                                          
+repeat new password> Connection to <MIKROTIK_IP> closed.

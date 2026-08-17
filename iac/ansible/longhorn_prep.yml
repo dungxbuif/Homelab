@@ -1,0 +1,31 @@
+- name: Prepare nodes for Longhorn
+  hosts: k8s_cluster
+  become: true
+  tasks:
+    - name: Install Longhorn prerequisites
+      apt:
+        name:
+          - open-iscsi
+          - nfs-common
+          - util-linux
+          - bash
+          - curl
+        state: present
+        update_cache: yes
+
+    - name: Ensure open-iscsi service is started and enabled
+      systemd:
+        name: iscsid
+        state: started
+        enabled: yes
+
+    - name: Load iscsi_tcp module
+      modprobe:
+        name: iscsi_tcp
+        state: present
+
+    - name: Ensure iscsi_tcp module is loaded on boot
+      lineinfile:
+        path: /etc/modules
+        line: iscsi_tcp
+        create: yes

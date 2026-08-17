@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webhookrelay-config
+  namespace: webhookrelay
+data:
+  # General configuration
+  LOGS_RETENTION_DAYS: "30"
+  LOGS_RETENTION_JOB_SCHEDULE: "@midnight"

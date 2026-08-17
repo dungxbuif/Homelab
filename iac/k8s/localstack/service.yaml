@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: localstack
+  namespace: localstack
+  labels:
+    app.kubernetes.io/name: localstack
+    app.kubernetes.io/part-of: aws-saa-lab
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: localstack
+  ports:
+    - name: edge
+      port: 4566
+      targetPort: edge
+    - name: ext-4510
+      port: 4510
+      targetPort: ext-4510
+    - name: ext-4511
+      port: 4511
+      targetPort: ext-4511
+    - name: ext-4512
+      port: 4512
+      targetPort: ext-4512
+    - name: ext-4513
+      port: 4513
+      targetPort: ext-4513
+    - name: ext-4514
+      port: 4514
+      targetPort: ext-4514
+    - name: ext-4515
+      port: 4515
+      targetPort: ext-4515
+

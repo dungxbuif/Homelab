@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: omniscan
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: omniscan-bot
+  namespace: omniscan
+  labels:
+    app: omniscan-bot
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: omniscan-bot
+  template:
+    metadata:
+      labels:
+        app: omniscan-bot
+    spec:
+      imagePullSecrets:
+      - name: registry-secret
+      containers:
+      - name: bot
+        image: registry.dungxbuif.com/omniscan:v1.0.0
+        imagePullPolicy: Always
+        envFrom:
+        - secretRef:
+            name: omniscan-secrets
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 10001

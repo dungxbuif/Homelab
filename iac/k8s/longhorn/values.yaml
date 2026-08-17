@@ -1,0 +1,25 @@
+# Optimized values for 3-node HA cluster with limited disk (80GB OS disk)
+global:
+  priorityClass: system-cluster-critical
+
+networkPolicies:
+  enabled: true
+
+defaultSettings:
+  defaultDataPath: /var/lib/longhorn
+  defaultNumberOfReplicas: 2
+  storageOverProvisioningPercentage: 150
+  storageMinimalAvailablePercentage: 15
+  guaranteedEngineManagerCPU: 10
+  guaranteedReplicaManagerCPU: 10
+  allowNodeFailureWithLastReplica: true
+  replicaSoftAntiAffinity: true
+  upgradeChecker: false
+  defaultLonghornStaticStorageClass: longhorn-static
+  backupTarget: 
+  backupTargetCredentialSecret: 
+
+# Ensure Longhorn UI is accessible via NodePort or we will handle Ingress later
+service:
+  ui:
+    type: ClusterIP

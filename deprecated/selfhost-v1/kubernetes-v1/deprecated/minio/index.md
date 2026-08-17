@@ -1,0 +1,138 @@
+---
+type: Reference
+title: "Code Index: minio"
+description: "Aggregated code index for minio folder"
+timestamp: 2026-07-03T15:11:00Z
+---
+
+# Code Index: minio
+
+> This index aggregates code files in the [[minio/]] directory.
+> Edit the source files directly; this index is auto-generated for Obsidian reading.
+
+---
+
+## [minio-deployment.yml](./minio-deployment.yml)
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    name: minio-pv-claim
+    namespace: minio-system
+spec:
+  accessModes:
+     - ReadWriteMany
+  storageClassName: longhorn
+  resources:
+     requests:
+        storage: 12Gi
+---        
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-minio
+  namespace: minio-system
+  labels:
+    name: ingress-web
+spec:
+  rules:
+  - host: minio.dungxbuif.com
+    http:
+      paths:
+      - path: "/"
+        pathType: Prefix
+        backend:
+          service:
+            name: minio-ui-service
+            port:
+              number: 80
+  - host: storage.dungxbuif.com
+    http:
+      paths:
+      - path: "/"
+        pathType: Prefix
+        backend:
+          service:
+            name: minio-service
+            port:
+              number: 80
+     
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-service
+  namespace: minio-system
+spec:
+  selector:
+     app: minio
+  ports:
+   - port: 80
+     targetPort: 9000
+     protocol: "TCP"
+     name: http-minio
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-ui-service
+  namespace: minio-system
+spec:
+  selector:
+    app: minio
+  ports:
+  - port: 80
+    targetPort: 9001
+    protocol: "TCP"
+    name: socket-minio
+---
+apiVersion: apps/v1 
+kind: Deployment
+metadata:
+  name: minio-deployment
+  namespace: minio-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      volumes:
+      - name: storage
+        persistentVolumeClaim:
+          claimName: minio-pv-claim
+      containers:
+      - name: minio
+      # last version have UI for manage users
+        image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+        args:
+        - server
+        - --console-address
+        - ":9001"
+        - /storage
+        env:
+        - name: MINIO_ACCESS_KEY
+          value: "admin"
+        - name: MINIO_SECRET_KEY
+          value: "<MINIO_PASSWORD>"
+        ports:
+        - containerPort: 9000
+          hostPort: 9000
+        - containerPort: 9001
+          hostPort: 9001
+        volumeMounts:
+        - name: storage 
+          mountPath: "/storage"
+        securityContext:
+          runAsUser: 0  
+```
+
+---

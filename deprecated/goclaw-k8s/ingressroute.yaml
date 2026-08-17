@@ -1,0 +1,14 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: goclaw-ingressroute
+  namespace: goclaw
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`goclaw.dungxbuif.com`)
+      kind: Rule
+      services:
+        - name: goclaw
+          port: 18790

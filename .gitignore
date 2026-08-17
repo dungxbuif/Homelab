@@ -1,0 +1,22 @@
+local_vars.json
+credentials/
+
+# Terraform ignores
+**/.terraform/
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/*.tfvars
+**/*.tfvars.json
+
+# Environment files
+**/.env
+
+# Local SSH/Private Keys
+**/*.pem
+**/*.key
+**/*.pub
+**/id_homelab_k8s*
+**/known_hosts*
+
+# macOS
+.DS_Store

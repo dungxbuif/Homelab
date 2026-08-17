@@ -1,0 +1,156 @@
+global:
+  hosts:
+    domain: dungxbuif.com
+    gitlab:
+      name: gitlab.dungxbuif.com
+    registry:
+      name: registry-gitlab.dungxbuif.com
+    ssh: gitlab.dungxbuif.com 
+  ingress:
+    enabled: true
+    provider: traefik
+    class: traefik
+    configureCertmanager: false 
+    tls:
+      enabled: false 
+
+  minio:
+    enabled: false
+
+  appConfig:
+    object_store:
+      enabled: true
+      proxy_download: true
+      storage_options: {}
+      connection:
+        secret: gitlab-object-storage
+        key: connection
+
+    artifacts:
+      enabled: true
+      bucket: gitlab-artifacts
+
+    lfs:
+      enabled: true
+      bucket: gitlab-lfs
+
+    uploads:
+      enabled: true
+      bucket: gitlab-uploads
+
+    packages:
+      enabled: true
+      bucket: gitlab-packages
+
+    externalDiffs:
+      enabled: false
+      bucket: gitlab-diffs
+
+    terraformState:
+      enabled: true
+      bucket: gitlab-terraform-state
+
+    dependencyProxy:
+      enabled: true
+      bucket: gitlab-dependency-proxy
+
+    backups:
+      bucket: gitlab-backups
+      tmpBucket: gitlab-tmp
+      objectStorage:
+        config:
+          secret: gitlab-object-storage
+          key: connection
+
+  shell:
+    port: 22
+    ingress:
+      enabled: false  
+ingress:
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: "websecure" 
+installCertmanager: false
+
+nginx-ingress:
+  enabled: false
+
+registry:
+  enabled: true
+  storage:
+    secret: gitlab-registry-storage
+    key: config
+  ingress:
+    tls:
+      enabled: false 
+gitlab-runner:
+  install: false 
+
+postgresql:
+  install: true
+  primary:
+    persistence:
+      storageClass: longhorn
+      size: 512Mi 
+
+redis:
+  install: true
+  master:
+    persistence:
+      storageClass: longhorn
+      size: 512Mi
+
+gitlab-shell:
+  enabled: true
+  service:
+    type: ClusterIP  # Don't expose SSH externally through ingress
+  ingress:
+    enabled: false  # Disable ingress for SSH service
+
+  toolbox:
+    backups:
+      objectStorage:
+        config:
+          secret: gitlab-object-storage
+          key: connection
+
+gitlab:
+  webservice:
+    minReplicas: 1
+    maxReplicas: 2
+    resources:
+      requests:
+        cpu: 300m
+        memory: 1.5Gi
+      limits:
+        cpu: 1
+        memory: 2Gi
+
+  sidekiq:
+    minReplicas: 1
+    maxReplicas: 2
+    resources:
+      requests:
+        cpu: 100m
+        memory: 625Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+  gitaly:
+    persistence:
+      storageClass: longhorn
+      size: 512Mi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 200Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+# Monitoring (optional)
+prometheus:
+  install: false
+
+grafana:
+  enabled: false

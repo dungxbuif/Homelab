@@ -1,0 +1,46 @@
+authentik:
+    secret_key: "vmtlT+jTyV2v19rx2raeTt1vDHWpOiYqoGuV6Trsy7RdpFucOdGBOIBJFEmtgl6VDMsLs9h9a8fecc5W"
+    error_reporting:
+        enabled: true
+    postgresql:
+        password: "63nUqDh1gu2hkIECaBtIYEPhaet4tcZB465HRhM87FtUKsLPiKBTDwX9NZtisb6ZoCLY0YjqA2E7BUNr"
+    replicaCount: 1
+
+server:
+    service:
+        type: ClusterIP
+        port: 80
+        targetPort: 9000
+        protocol: TCP
+    ingress:
+        # Specify kubernetes ingress controller class name
+        ingressClassName: traefik
+        enabled: true
+        annotations:
+            traefik.ingress.kubernetes.io/router.tls: "true"
+            traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+        # Modified ingress host configuration
+        hosts:
+          - authentik.dungxbuif.com
+    replicaCount: 1
+
+worker:
+    replicaCount: 1
+
+postgresql:
+    enabled: true
+    image:
+        repository: docker.io/bitnami/postgresql
+        tag: "17.5.0-debian-12-r3"
+        pullPolicy: IfNotPresent
+    auth:
+        password: "63nUqDh1gu2hkIECaBtIYEPhaet4tcZB465HRhM87FtUKsLPiKBTDwX9NZtisb6ZoCLY0YjqA2E7BUNr"
+    primary:
+        persistence:
+            size: 1Gi
+
+redis:
+    enabled: true
+    master:
+        persistence:
+            size: 512Mi

@@ -1,0 +1,28 @@
+services:
+   gitlab:
+      image: 'gitlab/gitlab-ce:latest'
+      container_name: 'gitlab'
+      restart: always
+      volumes:
+         - ./config:/etc/gitlab
+         - ./logs:/var/log/gitlab
+         - ./data:/var/opt/gitlab
+      shm_size: '256m'
+      networks:
+         gitlab-network:
+           aliases:
+             - registry-gitlab.dungxbuif.com
+
+   tunnel:
+      image: cloudflare/cloudflared:latest
+      container_name: 'cloudflare-tunnel'
+      restart: always
+      command: tunnel run --token <tokken>
+      depends_on:
+         - gitlab
+      networks:
+         - gitlab-network
+
+networks:
+   gitlab-network:
+      driver: bridge

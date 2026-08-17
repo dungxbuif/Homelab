@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+   name: whiteboard-ws
+   namespace: whiteboard
+spec:
+   replicas: 1
+   selector:
+      matchLabels:
+         app: whiteboard-ws
+   template:
+      metadata:
+         labels:
+            app: whiteboard-ws
+      spec:
+         containers:
+            - name: whiteboard-ws
+              image: registry.dungxbuif.com/whiteboard/whiteboard-ws:latest
+              ports:
+                 - containerPort: 80
+              envFrom:
+                 - configMapRef:
+                      name: whiteboard-ws-config
+         imagePullSecrets:
+            - name: regcred

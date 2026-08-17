@@ -1,0 +1,21 @@
+[k8s_control_plane]
+%{ for name, node in nodes ~}
+${name} ansible_host=${node.ip} ansible_user=${ci_user}
+%{ endfor ~}
+
+[k8s_first_control_plane]
+${keys(nodes)[0]} ansible_host=${nodes[keys(nodes)[0]].ip} ansible_user=${ci_user}
+
+[k8s_join_control_plane]
+%{ for name, node in nodes ~}
+%{ if name != keys(nodes)[0] ~}
+${name} ansible_host=${node.ip} ansible_user=${ci_user}
+%{ endif ~}
+%{ endfor ~}
+
+[k8s_cluster:children]
+k8s_control_plane
+
+[k8s_cluster:vars]
+kube_vip=${vip}
+kube_control_plane_endpoint=${endpoint}

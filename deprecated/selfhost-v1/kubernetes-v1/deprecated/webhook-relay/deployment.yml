@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transponder
+  namespace: webhookrelay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: transponder
+  template:
+    metadata:
+      labels:
+        app: transponder
+    spec:
+      containers:
+        - name: transponder
+          image: webhookrelay/transponder:latest
+          imagePullPolicy: Always
+          command: [
+            "/bin/transponder", 
+            "--status-server",
+            "--api-server"]
+          envFrom:
+            - configMapRef:
+                name: webhookrelay-config
+            - secretRef:
+                name: webhookrelay-secrets
+          ports:
+            - containerPort: 9300 # API/Dashboard HTTPS port
+            - containerPort: 9301 # HTTP port 
+            - containerPort: 9302 # GRPC port
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9301
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+            periodSeconds: 3
+          resources:
+            limits:
+              cpu: 400m
+              memory: 500Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi

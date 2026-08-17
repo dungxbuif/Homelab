@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: localstack-data
+  namespace: localstack
+  labels:
+    app.kubernetes.io/name: localstack
+    app.kubernetes.io/part-of: aws-saa-lab
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 8Gi
+

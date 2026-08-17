@@ -1,0 +1,11 @@
+- name: Show nodes
+  ansible.builtin.command: kubectl --kubeconfig /etc/kubernetes/admin.conf get nodes -o wide
+  changed_when: false
+
+- name: Show system pods
+  ansible.builtin.command: kubectl --kubeconfig /etc/kubernetes/admin.conf get pods -A
+  changed_when: false
+
+- name: Check API readiness
+  ansible.builtin.command: kubectl --kubeconfig /etc/kubernetes/admin.conf get --raw=/readyz
+  changed_when: false

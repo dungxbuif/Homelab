@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: n8n-worker
+  namespace: n8n
+  labels:
+    app: n8n-worker
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: n8n-worker
+  template:
+    metadata:
+      labels:
+        app: n8n-worker
+    spec:
+      containers:
+      - name: n8n-worker
+        image: n8nio/n8n
+        command: ["n8n", "worker"]
+        args: ["--concurrency=10"]
+        env:
+        - name: EXECUTIONS_MODE
+          value: queue
+        - name: QUEUE_BULL_REDIS_HOST
+          value: redis-service.n8n.svc.cluster.local
+        - name: QUEUE_BULL_REDIS_PORT
+          value: "6379"
+        - name: QUEUE_BULL_REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: REDIS_PASSWORD
+        - name: DB_TYPE
+          value: postgresdb
+        - name: DB_POSTGRESDB_HOST
+          value: postgres-service.n8n.svc.cluster.local
+        - name: DB_POSTGRESDB_PORT
+          value: "5432"
+        - name: DB_POSTGRESDB_DATABASE
+          value: n8n
+        - name: DB_POSTGRESDB_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_NON_ROOT_USER
+        - name: DB_POSTGRESDB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_NON_ROOT_PASSWORD
+        - name: N8N_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: n8n-encryption-secret
+              key: N8N_ENCRYPTION_KEY
+        # Explicitly set N8N_PORT to avoid conflict with K8s service variables
+        - name: N8N_PORT
+          value: "5678"
+        # Add recommended env vars based on logs
+        - name: N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS
+          value: "true"
+        - name: N8N_RUNNERS_ENABLED
+          value: "true"
+        - name: OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS
+          value: "true"
+        # Add other necessary env vars if workflows require them (e.g., NODE_OPTIONS)
+        resources: # Define resources for worker pods
+          requests:
+            memory: "512Mi"
+            cpu: "300m"
+          limits:
+            memory: "1.5Gi" # Allow more memory for execution
+            cpu: "1500m" # Allow bursting
+        # No volume mounts needed by default for workers unless workflows interact with filesystem
+      restartPolicy: Always

@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+   name: whiteboard-dashboard
+   namespace: whiteboard
+spec:
+   replicas: 1
+   selector:
+      matchLabels:
+         app: whiteboard-dashboard
+   template:
+      metadata:
+         labels:
+            app: whiteboard-dashboard
+      spec:
+         containers:
+            - name: whiteboard-dashboard
+              image: registry.dungxbuif.com/whiteboard/whiteboard-dashboard:6c2aa38b9f4707eb3483c8a33a79d0ffa647bdd9
+              ports:
+                 - containerPort: 3000
+         imagePullSecrets:
+            - name: regcred

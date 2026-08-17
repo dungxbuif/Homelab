@@ -1,0 +1,210 @@
+# PostgreSQL configuration
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: webhookrelay
+  name: postgres-secret
+type: Opaque
+stringData:
+  POSTGRES_USER: webhookrelay
+  POSTGRES_PASSWORD: <DEPRECATED_WEBHOOK_RELAY_POSTGRES_PASSWORD>
+  POSTGRES_DB: webhookrelay
+  POSTGRES_NON_ROOT_USER: webhookrelay
+  POSTGRES_NON_ROOT_PASSWORD: <DEPRECATED_WEBHOOK_RELAY_POSTGRES_PASSWORD>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: init-data
+  namespace: webhookrelay
+data:
+  init-data.sh: |
+    #!/bin/bash
+    set -e;
+    if [ -n "${POSTGRES_NON_ROOT_USER:-}" ] && [ -n "${POSTGRES_NON_ROOT_PASSWORD:-}" ]; then
+      psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+        CREATE USER "${POSTGRES_NON_ROOT_USER}" WITH PASSWORD '${POSTGRES_NON_ROOT_PASSWORD}';
+        GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DB} TO "${POSTGRES_NON_ROOT_USER}";
+      EOSQL
+    else
+      echo "SETUP INFO: No Environment variables given!"
+    fi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: webhookrelay
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 512Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: webhookrelay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16.1
+          env:
+          - name: PGDATA
+            value: /var/lib/postgresql/data/pgdata
+          - name: POSTGRES_DB
+            valueFrom:
+              secretKeyRef:
+                key: POSTGRES_DB
+                name: postgres-secret
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: POSTGRES_PASSWORD
+                name: postgres-secret
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                key: POSTGRES_USER
+                name: postgres-secret
+          - name: POSTGRES_NON_ROOT_USER
+            valueFrom:
+              secretKeyRef:
+                key: POSTGRES_NON_ROOT_USER
+                name: postgres-secret
+          - name: POSTGRES_NON_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: POSTGRES_NON_ROOT_PASSWORD
+                name: postgres-secret
+          ports:
+            - containerPort: 5432
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgres-data
+            - mountPath: /docker-entrypoint-initdb.d
+              name: init-script
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-data
+        - name: init-script
+          configMap:
+            name: init-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: webhookrelay
+spec:
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+  selector:
+    app: postgres
+
+# Redis configuration
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: webhookrelay
+  name: redis-secret
+type: Opaque
+stringData:
+  REDIS_PASSWORD: "<DEPRECATED_WEBHOOK_RELAY_REDIS_PASSWORD>"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data
+  namespace: webhookrelay
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 512Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: webhookrelay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.2.4
+          args:
+            - --requirepass
+            - $(REDIS_PASSWORD)
+          env:
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: redis-secret
+                key: REDIS_PASSWORD
+          ports:
+            - containerPort: 6379
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          volumeMounts:
+            - mountPath: /data
+              name: redis-data
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: webhookrelay
+spec:
+  ports:
+    - port: 6379
+      targetPort: 6379
+  selector:
+    app: redis

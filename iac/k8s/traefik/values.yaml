@@ -1,0 +1,36 @@
+# Traefik configuration without TLS (handled by Caddy)
+# Exposed via Kube-vip IP (10.10.0.30)
+deployment:
+  kind: DaemonSet
+
+service:
+  type: LoadBalancer
+  annotations: {}
+
+ports:
+  web:
+    port: 8000
+    expose:
+      default: true
+    exposedPort: 80
+    protocol: TCP
+  websecure:
+    port: 8443
+    expose:
+      default: false
+    exposedPort: 443
+    protocol: TCP
+
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+additionalArguments:
+  - "--providers.kubernetesingress=true"
+  - "--entrypoints.web.address=:8000"
+
+ingressRoute:
+  dashboard:
+    enabled: true
+    matchRule: Host(`traefik.dungxbuif.com`)
+    entryPoints: ["web"]

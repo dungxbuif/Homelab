@@ -1,0 +1,40 @@
+pm_api_url          = "https://10.10.0.X:8006/api2/json"
+pm_api_token_id     = "terraform@pve!homelab"
+pm_api_token_secret = "replace-me"
+
+proxmox_host = "pve"
+template_name = "ubuntu-22.04-template"
+nic_name = "vmbr0"
+storage = "local-lvm"
+
+gw_ip = "<MIKROTIK_IP>"
+network_prefix = 24
+dns_servers = ["<PI_IP>", "1.1.1.1"]
+
+kube_vip = "<K8S_VIP>"
+ci_user = "ubuntu"
+ssh_public_key = "ssh-ed25519 replace-me"
+
+k8s_nodes = {
+  k8s-cp-1 = {
+    vmid   = 9101
+    ip     = "<K8S_CP1_IP>"
+    cores  = 2
+    memory = 4096
+    disk   = "30G"
+  }
+  k8s-cp-2 = {
+    vmid   = 9102
+    ip     = "<K8S_CP2_IP>"
+    cores  = 2
+    memory = 4096
+    disk   = "30G"
+  }
+  k8s-cp-3 = {
+    vmid   = 9103
+    ip     = "<K8S_CP3_IP>"
+    cores  = 2
+    memory = 4096
+    disk   = "30G"
+  }
+}

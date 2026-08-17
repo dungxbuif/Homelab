@@ -1,0 +1,28 @@
+- name: Prepare all Kubernetes nodes
+  hosts: k8s_cluster
+  become: true
+  roles:
+    - common
+    - containerd
+    - kubernetes
+
+- name: Bootstrap first control-plane node
+  hosts: k8s_first_control_plane
+  become: true
+  roles:
+    - kube_vip
+    - control_plane_init
+
+- name: Join remaining control-plane nodes
+  hosts: k8s_join_control_plane
+  become: true
+  roles:
+    - kube_vip
+    - control_plane_join
+
+- name: Install CNI and verify cluster
+  hosts: k8s_first_control_plane
+  become: true
+  roles:
+    - cni
+    - verify

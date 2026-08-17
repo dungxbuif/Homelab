@@ -1,0 +1,10 @@
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: keda-redis-secrets
+  namespace: n8n
+spec:
+  secretTargetRef:
+    - parameter: password # Corresponds to the 'password' field needed by the Redis scaler
+      name: redis-secret # Name of the K8s secret containing Redis credentials
+      key: REDIS_PASSWORD # Key within the secret holding the password

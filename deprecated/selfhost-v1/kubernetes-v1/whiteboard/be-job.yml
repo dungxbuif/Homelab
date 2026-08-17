@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: whiteboard-db-migration
+  namespace: whiteboard
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      containers:
+        - name: db-migrations
+          image: registry.dungxbuif.com/whiteboard/whiteboard-migration:592db6a9b3127af2c4c8bad713e62199e62d9269
+          envFrom:
+            - configMapRef:
+                name: whiteboard-be
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: regcred

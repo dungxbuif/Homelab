@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+   name: whiteboard-be
+   namespace: whiteboard
+data:
+   DB_TYPE: 'postgres'
+   DB_HOST: 'whiteboard-db-postgresql.database.svc.cluster.local'
+   DB_PORT: '5432'
+   DB_USERNAME: 'whiteboard'
+   DB_PASSWORD: '<WHITEBOARD_DB_PASSWORD>'
+   DB_DATABASE: 'whiteboard'
+   CLIENT_BASE_URL: 'https://wb-dashboard.dungxbuif.com'
+   GOOGLE_CLIENT_ID: '<GOOGLE_CLIENT_ID>'
+   GOOGLE_CLIENT_SECRET: '<GOOGLE_CLIENT_SECRET>'
+   CORS_ORIGIN: 'https://wb-dashboard.dungxbuif.com,https://whiteboard.dungxbuif.com'
+   MINIO_ENDPOINT: storage.dungxbuif.com
+   MINIO_ACCESS_KEY: OifL44xAwujtz7pmLcn0
+   MINIO_SECRET_KEY: <WHITEBOARD_MINIO_SECRET_KEY>
+   MINIO_BUCKET_NAME: whiteboard-sandbox
+   NODE_ENV: 'production'
+   PORT: '80'
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+   name: whiteboard-ws-config
+   namespace: whiteboard
+data:
+   NODE_ENV: 'production'
+   PORT: '80'
+   CORS_ORIGIN: 'https://whiteboard.dungxbuif.com'

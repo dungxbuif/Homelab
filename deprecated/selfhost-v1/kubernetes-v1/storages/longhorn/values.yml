@@ -1,0 +1,46 @@
+longhornUI:
+  replicas: 1
+#   nodeSelector:
+#     storage: longhorn
+#   tolerations:
+#     - key: "node-role.kubernetes.io/worker"
+#       operator: "Exists"
+#       effect: "NoSchedule"
+
+# longhornManager:
+#   nodeSelector:
+#     storage: longhorn
+#   tolerations:
+#     - key: "node-role.kubernetes.io/worker"
+#       operator: "Exists"
+#       effect: "NoSchedule"
+
+# longhornDriver:
+#   nodeSelector:
+#     storage: longhorn
+#   tolerations:
+#     - key: "node-role.kubernetes.io/worker"
+#       operator: "Exists"
+#       effect: "NoSchedule"
+#   extraArgs:
+#     - --kubelet-root-dir=/var/lib/kubelet  # Replace with the actual root-dir you found
+
+ingress:
+  enabled: true
+  host: 'longhorn.dungxbuif.com'
+  path: '/'
+  annotations: 
+    traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
+    traefik.ingress.kubernetes.io/router.middlewares: "longhorn-system-basic-auth@kubernetescrd"  # Enabled basic auth middleware
+    traefik.ingress.kubernetes.io/router.tls: "true"
+
+defaultSettings:
+  defaultDataPath: '/data/longhorn/'
+  defaultReplicaCount: 2
+  snapshotMaxCount: 10
+  autoCleanupSystemGeneratedSnapshot: true
+  autoCleanupRecurringJobBackupSnapshot: true
+  autoCleanupSnapshotAfterOnDemandBackupCompleted: true
+  orphanResourceAutoDeletion: true
+  orphanResourceAutoDeletionGracePeriod: 60
+  # systemManagedComponentsNodeSelector: "storage:longhorn"

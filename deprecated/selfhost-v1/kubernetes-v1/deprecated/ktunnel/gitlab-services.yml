@@ -1,0 +1,56 @@
+# GitLab Web Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-web
+  namespace: ktunnel
+  labels:
+    app: gitlab-tunnel
+    component: web
+    tunnel-type: gitlab
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+  type: ClusterIP
+# GitLab Web Endpoints will be managed by ktunnel dynamically
+---
+# GitLab Registry Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-registry
+  namespace: ktunnel
+  labels:
+    app: gitlab-tunnel
+    component: registry
+    tunnel-type: gitlab
+spec:
+  ports:
+    - port: 5000
+      targetPort: 5000
+      protocol: TCP
+      name: registry
+  type: ClusterIP
+# GitLab Registry Endpoints will be managed by ktunnel dynamically
+---
+# GitLab SSH Service (Optional)
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-ssh
+  namespace: ktunnel
+  labels:
+    app: gitlab-tunnel
+    component: ssh
+    tunnel-type: gitlab
+spec:
+  ports:
+    - port: 22
+      targetPort: 22
+      protocol: TCP
+      name: ssh
+  type: ClusterIP
+# GitLab SSH Endpoints will be managed by ktunnel dynamically

@@ -1,0 +1,30 @@
+services:
+   traefik:
+      image: docker.io/library/traefik:v3.1.1
+      container_name: traefik
+      command:
+         - '--log.level=DEBUG'
+      ports:
+         - 80:80
+         - 443:443
+         # -- (Optional) Enable Dashboard, don't do in production
+         - 8080:8080
+      volumes:
+         - /run/docker.sock:/run/docker.sock:ro
+         - ./treafik-ssl-cert:/ssl-certs
+         - ./logs:/var/log/traefik
+         - ./config/traefik.yaml:/etc/traefik/traefik.yaml:ro
+         - ./config/conf/:/etc/traefik/conf/
+         - ./config/certs/:/etc/traefik/certs/
+      # -- (Optional) When using Cloudflare as Cert Resolver
+      environment:
+         # https://doc.traefik.io/traefik/https/acme/#dnschallenge
+         - CF_DNS_API_TOKEN=<CLOUDFLARE_DNS_API_TOKEN>
+      # -- (Optional) When using a custom network
+      networks:
+         - traefik
+      restart: unless-stopped
+
+networks:
+   traefik:
+      external: true

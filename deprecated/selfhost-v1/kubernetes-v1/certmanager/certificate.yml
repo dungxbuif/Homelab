@@ -1,0 +1,27 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: dungxbuif-certificate
+  namespace: default
+spec:
+  secretName: dungxbuif-tls
+  duration: 2160h 
+  renewBefore: 720h 
+    organizations:
+      - dungxbuif
+  commonName: dungxbuif.com
+  isCA: false
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+    rotationPolicy: Always  # Auto rotate private key on renewal
+  usages:
+    - server auth
+    - client auth
+  issuerRef:
+    name: cloudflare-cluster-issuer
+    kind: ClusterIssuer
+  dnsNames:
+    - 'dungxbuif.com'
+    - '*.dungxbuif.com'

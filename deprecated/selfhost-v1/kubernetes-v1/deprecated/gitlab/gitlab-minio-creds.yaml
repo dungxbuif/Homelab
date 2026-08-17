@@ -1,0 +1,14 @@
+apiVersion: v1  
+kind: Secret
+metadata:  
+    name: gitlab-minio-creds
+    namespace: gitlab
+stringData:
+  connection: |
+    s3:
+      bucket: gitlab-registry-storage
+      accesskey: gitlab
+      secretkey: rdh-FRN3qjh4pwv_ztp
+      region: us-east-1
+      regionendpoint: "http://minio-service.minio-system.svc:9000"
+      v4auth: true

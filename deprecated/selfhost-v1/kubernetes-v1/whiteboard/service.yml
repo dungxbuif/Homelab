@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+   name: whiteboard-be
+   namespace: whiteboard
+spec:
+   selector:
+      app: whiteboard-be
+   ports:
+      - port: 80
+        targetPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+   name: whiteboard-dashboard
+   namespace: whiteboard
+spec:
+   selector:
+      app: whiteboard-dashboard
+   ports:
+      - port: 80
+        targetPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+   name: whiteboard-fe
+   namespace: whiteboard
+spec:
+   selector:
+      app: whiteboard-fe
+   ports:
+      - port: 80
+        targetPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+   name: whiteboard-ws
+   namespace: whiteboard
+spec:
+   selector:
+      app: whiteboard-ws
+   ports:
+      - port: 80
+        targetPort: 80

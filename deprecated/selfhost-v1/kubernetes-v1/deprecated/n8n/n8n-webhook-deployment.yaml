@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: n8n-webhook
+  namespace: n8n
+  labels:
+    app: n8n-webhook
+spec:
+  replicas: 1 # Start with 1, can be scaled manually or with HPA if needed
+  selector:
+    matchLabels:
+      app: n8n-webhook
+  template:
+    metadata:
+      labels:
+        app: n8n-webhook
+    spec:
+      containers:
+      - name: n8n-webhook
+        image: n8nio/n8n
+        command: ["n8n", "webhook"]
+        env:
+        - name: EXECUTIONS_MODE
+          value: queue
+        - name: QUEUE_BULL_REDIS_HOST
+          value: redis-service.n8n.svc.cluster.local
+        - name: QUEUE_BULL_REDIS_PORT
+          value: "6379"
+        - name: QUEUE_BULL_REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: REDIS_PASSWORD
+        - name: DB_TYPE
+          value: postgresdb
+        - name: DB_POSTGRESDB_HOST
+          value: postgres-service.n8n.svc.cluster.local
+        - name: DB_POSTGRESDB_PORT
+          value: "5432"
+        - name: DB_POSTGRESDB_DATABASE
+          value: n8n
+        - name: DB_POSTGRESDB_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_NON_ROOT_USER
+        - name: DB_POSTGRESDB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_NON_ROOT_PASSWORD
+        - name: N8N_ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: n8n-encryption-secret
+              key: N8N_ENCRYPTION_KEY
+        - name: N8N_PORT # Webhook process also listens on a port
+          value: "5678"
+        resources: # Define resources for webhook pods (typically less than workers)
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 5678
+        readinessProbe: # Add probes for webhook process
+          httpGet:
+            path: /healthz
+            port: 5678
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 5678
+          initialDelaySeconds: 30
+          periodSeconds: 30
+      restartPolicy: Always

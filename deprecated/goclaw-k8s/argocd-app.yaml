@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: goclaw
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/dungxbuif/Homelab.git'
+    targetRevision: HEAD
+    path: iac/k8s/goclaw
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: goclaw
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
