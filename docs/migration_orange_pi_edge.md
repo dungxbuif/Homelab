@@ -128,21 +128,27 @@ Existing `proxy_net` is `external: true` (created manually with
       scp pi:/tmp/adguard.tgz orange-pi:/tmp/
       ssh orange-pi 'mkdir -p /opt/edge/adguard && tar xzf /tmp/adguard.tgz -C /opt/edge/adguard'
       ```
-- [ ] **P0.11b** **Fix AdGuard `bind_hosts`** (port-53 conflict avoidance).
-      Orange-pi runs `systemd-resolved` which binds `127.0.0.53:53` and
-      `127.0.0.54:53` (loopback only, confirmed via `ss -tlnp`). The Pi5
-      `AdGuardHome.yaml` has `bind_hosts: ["0.0.0.0"]` — a wildcard that can
-      race with the loopback-specific binds. Bind the **interface IP** instead:
+- [ ] **P0.11b** **Edit AdGuardHome.yaml — TWO changes** (port-53 conflict +
+      LAN DNS retarget). Orange-pi AdGuard needs to (1) bind to
+      `10.10.0.2` instead of wildcard `0.0.0.0` to avoid racing with the
+      `127.0.0.53:53` systemd-resolved stub, AND (2) update the only rewrite
+      that points to Pi5 — `*.dungxbuif.com → 10.10.0.5` — to
+      `10.10.0.2`, because after cutover Caddy lives on
+      orange-pi (.2) and LAN clients hitting `*.dungxbuif.com` must be sent
+      there, not to Pi5:443 which will be stopped. Use the scripted edits:
       ```bash
-      ssh orange-pi "sed -i 's/- 0.0.0.0/- 10.10.0.2/' /opt/edge/adguard/conf/AdGuardHome.yaml"
-      # verify
-      ssh orange-pi 'grep -A2 "bind_hosts:" /opt/edge/adguard/conf/AdGuardHome.yaml'
+      # after the snapshot is unpacked to /opt/edge/adguard/ on orange-pi:
+      ssh orange-pi 'sudo bash /opt/edge/adguard/edit-for-orange-pi.sh'
+      # or two sed one-liners (operator paste):
+      sudo sed -i 's/^  - 0\.0\.0\.0$/  - 10.10.0.2/' /opt/edge/adguard/conf/AdGuardHome.yaml
+      sudo sed -i "/^[[:space:]]*- domain: '\*\.dungxbuif\.com'/{n;s/answer: 10\.10\.0\.5/answer: 10.10.0.2/}" /opt/edge/adguard/conf/AdGuardHome.yaml
       ```
-      Expected: `bind_hosts: - 10.10.0.2`. AdGuard answers on the LAN IP;
-      `127.0.0.53` stub stays for orange-pi's own resolution.
-      *(Alternative if any conflict remains: disable the resolved stub —*
-      `ssh orange-pi 'sudo sed -i "s/#DNSStubListener=yes/DNSStubListener=no/" /etc/systemd/resolved.conf && sudo systemctl restart systemd-resolved'`*
-      — but binding AdGuard to `10.10.0.2` is the lighter touch.)*
+      Script saved at `migration/edit-adguard-for-orange-pi.sh` (copy it to
+      orange-pi `/opt/edge/adguard/`). The other rewrite
+      `netbird.dungxbuif.com → 103.82.21.202` (Netbird on VPS) is unchanged.
+      *(Audit: upstream_dns list contains only public DNS — Quad9/Google/
+      Cloudflare/1.1.1.1/8.8.8.8 — no 10.10.0.5 to re-route. The only
+      `10.10.0.5` in AdGuard config is the `*.dungxbuif.com` rewrite answer.)*
 - [ ] **P0.12** Prepare Caddy ACME data dir on orange-pi
       (Cloudflare DNS-01 re-issue is fast — start empty):
       ```bash
@@ -216,30 +222,61 @@ Existing `proxy_net` is `external: true` (created manually with
 > container — no restart, no recreate. Swarm DNS exposes the container's
 > name on the overlay.
 
-### 3.1 Enumerate which containers to attach
-- [ ] **B1** Pull the list of `proxy_net` containers Caddy routes to:
-      ```bash
-      ssh pi 'docker network inspect proxy_net --format "{{range .Containers}}{{.Name}} {{end}}"'
-      ```
-      Expected 11 (rustfs, registry, librespeed, uptime-kuma, netdata, n8n,
-      postgres, pgadmin, goclaw, couchdb, gitlab). Plus `caddy` itself
-      (for old Caddy — we'll stop that on Pi5 later, optional attachment).
+### 3.0 Phase B audit (2026-08-17 — done, drives the attach list below)
 
-### 3.2 Attach each container (loop)
-- [ ] **B2** On Pi5:
+Pulled every `reverse_proxy <name>:<port>` line from the live Caddyfile and
+checked the container's real status on Pi5. Result:
+
+| Caddyfile backend | Host → code | Container status | Attach? |
+|---|---|---|---|
+| `rustfs:9000` (storage) | 501↔200 /minio/health/ready | Up 19h | **yes** |
+| `rustfs:9001` (cdn) | 501↔200 /minio/health/live | Up 19h | **yes** (same cn) |
+| `registry:5000` | 200 | Up (container name `docker-registry`, has alias `registry` in proxy_net) | **yes + alias** |
+| `librespeed:80` | 200 | Up 19h | **yes** |
+| `n8n:5678` | 200 | Up 19h | **yes** |
+| `pgadmin:80` | 302 | Up 19h | **yes** |
+| `goclaw:18790` | 200 | Up 2h (healthy) | **yes** |
+| `couchdb:5984` | 401 (auth) | Up 19h | **yes** |
+| `gitlab:80` | 302 | Up 19h (healthy) | **yes** |
+| `uptime-kuma:3001` | **502** | NO_CONTAINER | NO (dead route) |
+| `netdata:19999` | **502** | NO_CONTAINER | NO (dead route) |
+| `postgres:5432` | **502** | Up (healthy) | NO (broken route — HTTP reverse_proxy to a PostgreSQL TCP socket; protocol mismatch, never worked) |
+
+**External-IP backends** (no overlay needed — orange-pi Caddy reaches them by
+LAN IP directly, just like Pi5 Caddy does today):
+
+| Host | Backend IP:port |
+|---|---|
+| `dungxbuif.com` | `10.10.0.10:18081` (Mac homepage) |
+| `ocr.dungxbuif.com` | `10.10.0.10:18080` (Mac macocr-proxy) |
+| `llm.dungxbuif.com` | `10.10.0.10:1234` (Mac LM Studio) |
+| `openclaw.dungxbuif.com` | `10.10.0.12:18789` | (another LAN host) |
+| `transfer.dungxbuif.com` | `103.82.21.202:3000` (VPS) |
+
+> **Operator action (pre-migration or during)**: remove the 3 dead Caddyfile
+> blocks (`@uptime-kuma`, `@netdata`, `@postgres`). You said you'll handle
+> this yourself; the migration does not depend on it but the orange-pi
+> Caddyfile copy should not carry dead routes. See `~/workspace/homelab/credentials/orange-pi-edge/Caddyfile.pi5-snapshot` for reference.
+
+### 3.1 Attach the 8 live containers (scripted)
+- [ ] **B2** Use the audited attach script on Pi5:
       ```bash
-      ssh pi 'for c in rustfs docker-registry librespeed uptime-kuma netdata n8n postgres pgadmin goclaw couchdb gitlab; do
-                docker network connect homelab-net $c 2>&1 | sed "s/^/$c: /" || echo "$c already on";
-              done'
+      ssh pi 'bash -s' < ~/workspace/homelab/migration/attach-pi5-to-overlay.sh
       ```
+      Script at `migration/attach-pi5-to-overlay.sh` attaches **8 containers**
+      (rustfs, docker-registry, librespeed, n8n, pgadmin, goclaw, couchdb,
+      gitlab). **Critical**: `docker-registry` is attached with
+      `--alias registry` so the Caddyfile's `reverse_proxy registry:5000`
+      still resolves on the overlay (same alias it has on `proxy_net`).
 - [ ] **B3** Verify each attached container resolves by name **from inside the overlay**:
       ```bash
       ssh pi 'docker run --rm --network homelab-net alpine sh -c "
-                 for n in rustfs n8n postgres rustfs; do
-                   getent hosts \$n || echo MISSING \$n
+                 for n in rustfs registry docker-registry librespeed n8n pgadmin goclaw couchdb gitlab caddy; do
+                   echo -n \"\$n -> \"; getent hosts \$n || echo MISSING
                  done"'
       ```
-      Should return `172.30.x.x` for each.
+      Should return `172.30.x.x` for each. `caddy` may be MISSING until
+      Phase C deploys the orange-pi Caddy service (expected).
 
 > **Safety check (anti-sập)**:
 > - Attached containers **stay on `proxy_net`** too (multi-homed). No service

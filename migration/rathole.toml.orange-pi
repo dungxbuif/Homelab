@@ -1,0 +1,17 @@
+# Orange-pi Rathole client config (Phase C4 + Phase D1)
+#
+# Differs from Pi5 version:
+#  - local_addr uses overlay DNS name `caddy:80` / `caddy:443` instead of
+#    `127.0.0.1:80` / `127.0.0.1:443` because in Swarm, Rathole and Caddy
+#    are separate containers on the same `homelab-net` overlay network.
+#  - token MUST be identical to VPS server: DungNodeJS_Senior_2026.
+
+[client]
+remote_addr = "103.82.21.202:7000"
+default_token = "DungNodeJS_Senior_2026"
+
+[client.services.caddy-http]
+local_addr = "caddy:80"
+
+[client.services.caddy-https]
+local_addr = "caddy:443"

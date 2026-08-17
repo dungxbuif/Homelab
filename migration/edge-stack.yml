@@ -1,0 +1,90 @@
+# Orange-pi edge — Swarm stack (Caddy + Rathole + AdGuard)
+# Draft reference. Operator must fill <CF_API_TOKEN> before deploy.
+# Phases B/C of ../docs/migration_orange_pi_edge.md
+#
+# Placement: edge=true label set on orange-pi worker.
+# Network:   homelab-net attachable overlay (created in Phase A4).
+#            Pi5 standalone containers attached in Phase B2 with:
+#              docker network connect homelab-net <name>
+#              (for docker-registry add: --net-alias registry)
+#
+# Rathole client no longer needs host network — it only initiates ONE
+# outbound TCP to VPS :7000 and forwards to "caddy:80"/"caddy:443"
+# which resolve on the overlay. Pure bridge mode is enough.
+
+version: "3.8"
+
+services:
+  caddy:
+    image: infra-caddy:latest
+    environment:
+      CF_API_TOKEN: "<CF_API_TOKEN>"
+    ports:
+      - target: 80
+        published: 80
+        mode: host
+      - target: 443
+        published: 443
+        mode: host
+      - target: 443
+        protocol: udp
+        published: 443
+        mode: host
+      - target: 2019
+        published: 2019
+        mode: host
+    volumes:
+      - /opt/edge/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /opt/edge/caddy/data:/data
+      - /opt/edge/caddy/config:/config
+    networks:
+      - homelab-net
+    deploy:
+      placement:
+        constraints: [node.labels.edge == true]
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  rathole:
+    image: rathole:local
+    volumes:
+      - /opt/edge/rathole/rathole.toml:/etc/rathole/rathole.toml:ro
+    networks:
+      - homelab-net
+    deploy:
+      placement:
+        constraints: [node.labels.edge == true]
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  adguardhome:
+    image: adguard/adguardhome:latest
+    ports:
+      - target: 53
+        published: 53
+        protocol: udp
+        mode: host
+      - target: 53
+        published: 53
+        protocol: tcp
+        mode: host
+      - target: 81
+        published: 81
+        mode: host
+    volumes:
+      - /opt/edge/adguard/conf:/opt/adguardhome/conf
+      - /opt/edge/adguard/work:/opt/adguardhome/work
+    networks:
+      - homelab-net
+    deploy:
+      placement:
+        constraints: [node.labels.edge == true]
+      replicas: 1
+      restart_policy:
+        condition: any
+
+networks:
+  homelab-net:
+    external: true
