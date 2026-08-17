@@ -11,7 +11,7 @@ timestamp: 2026-08-17T00:00:00Z
 > managing, debugging, and provisioning the Homelab Infrastructure (v3 —
 > Mac-centric production). Read it before executing commands or changing config.
 >
-> **Architecture version:** v3 (2026-08). User-facing workloads run on the
+> **Architecture version:** v3.1 (2026-08). User-facing workloads run on the
 > **Mac mini** (`10.10.0.10`); the **Orange Pi Zero 3** (`10.10.0.2`) is the
 > TLS edge (Caddy+Rathole+AdGuard via Docker Swarm); the **Pi5** (`10.10.0.5`)
 > is the datastore backend and Swarm manager; the **Cloud VPS** (`103.82.21.202`)
@@ -23,7 +23,7 @@ timestamp: 2026-08-17T00:00:00Z
 
 ## 🗺️ System Topology & Network Architecture
 
-The homelab is a hybrid of a cloud boundary (VPS), a home gateway/edge (Pi5),
+The homelab is a hybrid of a cloud boundary (VPS), a home TLS edge (Orange Pi),
 a production compute node (Mac mini), and a lab hypervisor (Proxmox), linked by
 a Headscale Tailnet mesh (WireGuard overlay).
 
@@ -90,10 +90,11 @@ graph TD
         VPS -->|SNI/HTTP Whitelist| Nginx["Nginx Domain Filter"]
         Nginx -->|Allowed Only| RatholeServer["Rathole Server :7000"]
     end
-    RatholeServer -->|TCP Tunnel| RatholeClient["Rathole Client (Pi5)"]
+    RatholeServer -->|TCP Tunnel| RatholeClient["Rathole Client (Orange Pi)"]
 
-    subgraph Pi5 ["Raspberry Pi 5 - 10.10.0.5 (TLS edge)"]
+    subgraph OrangePi ["Orange Pi Zero 3 - 10.10.0.2 (TLS edge, Swarm worker)"]
         RatholeClient --> Caddy["Caddy wildcard TLS (Cloudflare DNS-01)"]
+        Caddy -->|Swarm overlay homelab-net| Pi5Backends["Pi5 datastore containers"]
         Caddy -->|LAN reverse_proxy| MacPorts["10.10.0.10:18081 (homepage)<br/>10.10.0.10:18080 (ocr)<br/>10.10.0.10:1234 (llm)"]
         Caddy -->|proxy_net| Pi5Apps["n8n, RustFS, Registry,<br/>LibreSpeed, Kuma, Netdata,<br/>Postgres+PgBouncer, pgAdmin,<br/>CouchDB, GoClaw, GitLab(stopped)"]
         Pi5Redis["redis-prod :16379"]
@@ -139,7 +140,8 @@ graph TD
 | :--- | :--- | :--- |
 | Viettel Modem (Huawei) | internal | Bridge Mode (VLAN 35); forwards PPPoE to MikroTik. WiFi disabled. |
 | MikroTik hEX S | `10.10.0.1` | Primary router & gateway: PPPoE, NAT, DHCP, LAN routing, FastTrack. |
-| Raspberry Pi 5 | `10.10.0.5` (LAN)<br>`100.64.0.1` (Tailnet) | **TLS edge + DB + object storage**. Caddy wildcard, Rathole client, AdGuard, Postgres+PgBouncer, Redis-prod, RustFS, n8n, etc. |
+| Orange Pi Zero 3 | `10.10.0.2` (LAN) | **TLS edge** (v3.1): Caddy wildcard TLS, Rathole client, AdGuard Home DNS, Docker Swarm worker. |
+| Raspberry Pi 5 | `10.10.0.5` (LAN)<br>`100.64.0.1` (Tailnet) | **Datastore & persistent services**: Postgres+PgBouncer, Redis-prod, RustFS, Registry, n8n, LibreSpeed, pgAdmin, CouchDB, GitLab, GoClaw, monitoring. Docker Swarm manager. |
 | Mac mini | `10.10.0.10` (LAN) | **Production workloads** (v3). homelab stack: homepage, macocr-proxy, omniscan-bot. Native OCR + LM Studio on host. |
 | Cloud VPS | `103.82.21.202` (public)<br>`100.64.0.2` (Tailnet) | **Public boundary**. Nginx SNI/host whitelist, Rathole server, Headscale + UI, PairDrop, Coturn, bds-app, bds-prod-db, RustDesk. |
 | Proxmox VE | `10.10.0.20` (LAN)<br>`100.64.0.3` (Tailnet) | **AWS practice lab** (repurposed 2026-08). Ephemeral LocalStack/eksctl/k3s VMs. K8s cluster retired. |
@@ -245,18 +247,20 @@ graph TD
 
 ---
 
-## 🛡️ Raspberry Pi 5 Gateway Role & Core Network Flows
+## 🛡️ Pi5 Datastore Role & Core Network Flows
 
-The Pi5 (`10.10.0.5`) is the **TLS edge, datastore, and ingress forwarder** for
-the homelab. Deep technical detail (volumes, compose structure, host security):
-📖 [PI.md](./PI.md).
+The Pi5 (`10.10.0.5`) is the **database & persistent-services node** for the
+homelab (v3.1). Deep technical detail (volumes, compose structure, host
+security): 📖 [PI.md](./PI.md). TLS edge duties now live on the Orange Pi Zero
+3 (`10.10.0.2`) — see [orange-pi section](#-edge-gateway-orange-pi-zero-3-role).
 
 ### 1. Rathole Ingress Flow (NAT Traversal)
-The Rathole client on the Pi5 opens an **outbound** TCP tunnel to the VPS
-(`103.82.21.202:7000`). Any inbound `*.dungxbuif.com` request reaching the VPS
-is tunneled down to Caddy on the Pi5, which terminates TLS (Cloudflare DNS-01
-wildcard) and routes locally — to Pi5 `proxy_net` containers **or** over LAN to
-the Mac mini production stack (`10.10.0.10:18081`, `:18080`, `:1234`).
+The Rathole client on the **Orange Pi** opens an **outbound** TCP tunnel to the
+VPS (`103.82.21.202:7000`). Any inbound `*.dungxbuif.com` request reaching the
+VPS is tunneled down to Caddy on the Orange Pi, which terminates TLS (Cloudflare
+DNS-01 wildcard) and routes — to Pi5 `proxy_net` containers over the Swarm
+overlay (`homelab-net`, 172.30.0.0/16) **or** over LAN to the Mac mini
+production stack (`10.10.0.10:18081`, `:18080`, `:1234`).
 
 ### 2. Admin VPN Routing Flow (WireGuard / NAT Masquerade)
 Admin clients (Mac, iOS) connect through the Headscale Tailnet (previously the
@@ -293,8 +297,9 @@ To expose a new application from either the **Mac mini production stack** or a
   datastores over LAN.
 * **On the Pi5** — add a portless container on `proxy_net` (no `ports:` map).
 
-### Step 2: Pi5 Caddy route
-Add a block in `/ssd-data/infra/Caddyfile` (the live wildcard config):
+### Step 2: Orange Pi Caddy route
+Add a block in `/home/dungxbuif/edge/caddy/Caddyfile` (orange-pi, the live
+wildcard config; symlinked `/opt/edge/caddy/Caddyfile`):
 ```caddyfile
 @app host app.dungxbuif.com
 handle @app {
@@ -332,7 +337,8 @@ unified `10.10.0.x` subnet. Mesh WiFi set to AP/bridge mode to centralize DHCP.
 ### Phase 2 — TCP NAT traversal (FRP → Rathole)
 Vietnamese ISPs aggressively QoS-throttle high-volume UDP (WireGuard),
 paralyzing remote admin. Rerouted public ingress over TCP (Rathole, Rust) to
-mimic HTTPS and evade UDP filters. Rathole's tiny footprint suits the Pi5.
+mimic HTTPS and evade UDP filters. Rathole's tiny footprint suits the
+Orange Pi Zero 3 (1 GB RAM) edge node.
 
 ### Phase 3 — Worker VM offload (Proxmox)
 Moved resource-heavy workloads (Jellyfin transcode, qBittorrent, RustDesk relay)
@@ -425,10 +431,10 @@ for the migration record and [MAC.md](./MAC.md) for the new stack spec.
    Images for the **Mac mini** may be `arm64` (native) or `amd64` (Rosetta
    emulation) — prefer arm64-native where available.
 2. **Pi5 portless principle:** never declare host `ports:` for new Pi5
-   `proxy_net` microservices; route via Caddy. The **Mac mini** is the deliberate
-   exception — it uses explicit LAN-only host ports (`18081`, `18080`, …) chosen
-   to be uncommon, because there is no Caddy on the Mac and Pi5 Caddy proxies to
-   them over LAN.
+   `proxy_net` microservices; route via the orange-pi Caddy over the Swarm
+   overlay. The **Mac mini** is the deliberate exception — it uses explicit
+   LAN-only host ports (`18081`, `18080`, …) chosen to be uncommon, because
+   there is no Caddy on the Mac and orange-pi Caddy proxies to them over LAN.
 3. **No `latest`/`alpine` tags:** pin images to absolute semantic versions.
 4. **Zero interactive sudo:** prefer volume mounts over commands that prompt.
 5. **Runbook continuity:** keep verification scripts in `/ssd-data/scratch/`

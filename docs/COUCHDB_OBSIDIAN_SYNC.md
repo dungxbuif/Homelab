@@ -168,6 +168,6 @@ docker compose restart nginx-gateway
 
 ## Related
 
-- [Raspberry Pi 5 Gateway Spec](./PI.md)
+- [Raspberry Pi 5 Datastore Spec](./PI.md)
 - [Directory Update Log](./LOG.md)
 - [System Context & Playbook](./MAIN.md)

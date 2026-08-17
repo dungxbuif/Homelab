@@ -402,14 +402,14 @@ Failure test:
 
 ## Future Ingress: Caddy To Kubernetes
 
-The current homelab ingress boundary is Caddy on the Raspberry Pi 5. Future Kubernetes workloads should integrate with that existing edge instead of exposing random NodePorts directly.
+The current homelab ingress boundary is Caddy on the Orange Pi Zero 3 (`10.10.0.2`). Future Kubernetes workloads should integrate with that existing edge instead of exposing random NodePorts directly.
 
 Recommended future model:
 
 ```text
 Internet / LAN client
   -> VPS / Rathole tunnel
-  -> Pi 5 Caddy
+  -> Orange Pi Caddy
   -> Kubernetes ingress endpoint
   -> Kubernetes Service
   -> Pods
@@ -418,7 +418,7 @@ Internet / LAN client
 Internal LAN model:
 
 ```text
-client -> AdGuard split-horizon DNS -> Pi 5 Caddy -> K8s ingress/service
+client -> AdGuard split-horizon DNS -> Orange Pi Caddy -> K8s ingress/service
 ```
 
 Recommended K8s ingress options:

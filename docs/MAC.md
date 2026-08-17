@@ -23,12 +23,13 @@ The operator runbook lives alongside the stack at [`~/production/README.md`](../
 Internet --*.dungxbuif.com--> Cloud VPS (103.82.21.202)
    |  Rathole TCP :7000
    v
-Pi5 (10.10.0.5) Caddy wildcard TLS (Cloudflare DNS-01)
-   |  reverse_proxy over LAN
+Orange Pi Zero 3 (10.10.0.2) Caddy wildcard TLS (Cloudflare DNS-01)
+   |  Docker Swarm overlay → Pi5 backends
    +--> 10.10.0.10:18081  (homepage, dungxbuif.com)
    +--> 10.10.0.10:18080  (macocr-proxy, ocr.dungxbuif.com)
    +--> 10.10.0.10:1234   (LM Studio native, llm.dungxbuif.com)
    (omniscan-bot has NO public port — outbound Mezon bot only)
+   (Pi5 datastores: Postgres, Redis, RustFS reached via overlay)
 
 Mac mini 10.10.0.10  (Docker bridge network "homelab")
    ├── homelab-homepage      :18081->80   (registry image, amd64 via Rosetta)
@@ -89,8 +90,8 @@ Dockerfiles, keeping the repo pristine.
    Bridge network + `host.docker.internal` (resolves to the Mac host gateway) works.
 2. **Uncommon host ports** (`18081`, `18080`) avoid clashing with developer
    containers already on this Mac (`postgres:5432`, `redis:6379`, `mongo:27017`).
-   These ports are LAN-only and never exposed to the internet directly — Pi5 Caddy
-   is the sole TLS edge.
+   These ports are LAN-only and never exposed to the internet directly — Orange
+   Pi Caddy is the sole TLS edge.
 3. **DB password URL-encoded** (`/`→`%2F`) in `DATABASE_URL`. The current Go
    `net/url` parser (in freshly built images) is stricter than the parser in the
    legacy K8s image `v1.0.2`, so a raw `/` in the password breaks URI parsing.
@@ -99,10 +100,10 @@ Dockerfiles, keeping the repo pristine.
    return; `*scan` is additionally comment-gated in source. Only raw `*ocr`
    functions. The disabled message is baked into the binary (verified with
    `strings`).
-5. **No Caddy on the Mac.** Pi5 Caddy is the only TLS edge (wildcard
-   `*.dungxbuif.com` via Cloudflare DNS-01). Mac containers serve plain HTTP on
-   LAN; Pi5 Caddy reverse-proxies to `10.10.0.10:<port>`. This is the literal
-   "point Caddy at this machine" model — simplest possible cutover.
+5. **No Caddy on the Mac.** Orange Pi Zero 3 (`10.10.0.2`) is the TLS edge
+   (wildcard `*.dungxbuif.com` via Cloudflare DNS-01). Mac containers serve
+   plain HTTP on LAN; orange-pi Caddy reverse-proxies to `10.10.0.10:<port>`.
+   This is the literal "point Caddy at this machine" model.
 
 ---
 
@@ -116,8 +117,8 @@ Dockerfiles, keeping the repo pristine.
 - **Native OCR** — macOS app `mac-ocr-native` listening on `:8787` (Mac host).
 - **LLM** — LM Studio on Mac `:1234` (referenced by the bot config, but the
   agent path is disabled).
-- **Public DNS/TLS** — Cloudflare → VPS (`103.82.21.202`) Rathole → Pi5 Caddy →
-  Mac/Pi5. See [MAIN.md](./MAIN.md).
+- **Public DNS/TLS** — Cloudflare → VPS (`103.82.21.202`) Rathole → Orange Pi
+   Caddy → Mac/Pi5. See [MAIN.md](./MAIN.md).
 
 ---
 

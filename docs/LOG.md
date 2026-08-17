@@ -7,7 +7,22 @@ timestamp: 2026-07-03T15:14:00Z
 
 # Directory Update Log
 
-## 2026-08-17 — v3: orange-pi edge migration (same day, afternoon)
+> **Versioning scheme** (architecture evolution, newest first):
+> - **v3.1** — Orange Pi Zero 3 edge migration (Pi5 → datastore only)
+> - **v3.0** — Mac mini consolidation (K8s retired, Proxmox → AWS lab)
+> - **v2** — Proxmox 3-node K8s cluster (archived → [`archived/k8s-v2/`](./archived/k8s-v2/))
+> - **v1** — legacy pre-repo history (referenced in old dated entries only)
+>
+> Dated entries below are grouped under their architecture version heading.
+> Every significant change appends to this log; the current version marker also
+> lives in [`index.md`](../index.md) and [`MAIN.md`](./MAIN.md).
+
+---
+
+## v3.1 — 2026-08-17 · Orange Pi Zero 3 edge migration
+
+> **Current version.** Pi5 = **database & persistent services** (datastore only).
+> Orange Pi Zero 3 = TLS edge (Caddy+Rathole+AdGuard) via Docker Swarm.
 
 - **Orange Pi Zero 3** (`10.10.0.2`, Armbian Bookworm, ARM64, 1GB RAM) brought online as the new **TLS edge gateway** via Docker Swarm (Pi5=manager, orange-pi=worker). Migrated **Caddy+Rathole+AdGuard** off the Pi5 onto the orange-pi as Swarm services, leveraging an attachable overlay network `homelab-net` (172.30.0.0/16) so orange-pi Caddy can still resolve Pi5 datastore containers (`rustfs`, `docker-registry`, `librespeed`, `n8n`, `pgadmin`, `goclaw`, `couchdb`, `gitlab`) by Docker DNS name without publishing host ports.
 - **Pi5** now operates as a **datastore-only node** (Postgres, PgBouncer, RustFS, Redis, Registry, LibreSpeed, n8n, pgAdmin, CouchDB, GitLab, GoClaw, monitoring stack). Containers were attached to the overlay via `docker network connect` (zero downtime — no recreate). Pi5 remains the **Swarm manager**.
@@ -18,7 +33,7 @@ timestamp: 2026-07-03T15:14:00Z
 - **CF_API_TOKEN** was stale in `local_vars.json` (old `__GHn...` returned 403 from Cloudflare); updated to the live token from Pi5 caddy env. Docker installed on orange-pi (`29.7.2`). NOPASSWD sudo temp removed.
 - **Docs:** index.md topology updated; PI.md and MAIN.md edge roles updated. Plan + scripts at `docs/migration_orange_pi_edge.md` and `migration/`.
 
-## 2026-08-17 — v3: Mac mini consolidation + Proxmox AWS lab repurpose
+## v3.0 — 2026-08-17 · Mac mini consolidation + Proxmox AWS lab repurpose
 
 - **Architecture version bump to v3.** Migrated all user-facing production workloads off the 3-node Proxmox K8s cluster (`k8s-cp-1/2/3`, VIP `10.10.0.30`) onto the **Mac mini** (`10.10.0.10`, Apple Silicon, Docker Compose). The Pi5 (`10.10.0.5`) remains the sole TLS edge (Caddy, Cloudflare DNS-01 wildcard) and now also hosts **Redis-prod** for the Mac stack. The K8s cluster is retired; Proxmox (`10.10.0.20`) is repurposed as a self-hosted **AWS practice lab** (LocalStack / eksctl / k3s).
 - **Mac mini production stack** (`~/production/`): three containers on a bridge network `homelab` — `homelab-homepage` (`:18081`, registry image, amd64 via Rosetta), `homelab-macocr-proxy` (`:18080`, built locally), `homelab-omniscan-bot` (no host port, Mezon bot). Spec: [MAC.md](./MAC.md). Runbook: `~/production/README.md`.

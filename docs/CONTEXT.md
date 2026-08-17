@@ -22,12 +22,13 @@ Workspace: `/Users/dungxbuif/workspace/Homelab`
 - ISP/ONT: Viettel modem in bridge mode, VLAN 35.
 - Router: MikroTik hEX S, LAN gateway `<MIKROTIK_IP>`, handles PPPoE, NAT, DHCP.
 - LAN subnet: `<LAN_SUBNET>`.
-- Raspberry Pi 5: `<PI_IP>`, home gateway / ingress / Caddy / Rathole / AdGuard / Docker services.
+- Raspberry Pi 5: `<PI_IP>`, **datastore & persistent services** (Postgres+Redis, RustFS, registry, n8n, monitoring; Docker Swarm manager).
+- Orange Pi Zero 3: `<ORANGE_PI_IP>`, TLS edge (Caddy+Rathole+AdGuard) as Docker Swarm worker.
 - Mesh Wi-Fi: AP / bridge mode, DHCP delegated to MikroTik.
 - Proxmox VE Host: `<PROXMOX_IP>`, local LAN host, orchestrates VMs and K8s.
 - Main Worker VM: `<WORKER_VM_IP>`, hosted on Proxmox, runs heavier workloads.
-- Public ingress: Cloud VPS -> TCP Rathole port 7000 -> Pi 5 -> Caddy -> internal services.
-- Internal DNS override: `speed.dungxbuif.com` resolves to `<PI_IP>` via Pi/AdGuard.
+- Public ingress: Cloud VPS -> TCP Rathole port 7000 -> Orange Pi -> Caddy -> internal services (Pi5 via Docker Swarm overlay).
+- Internal DNS override: `speed.dungxbuif.com` resolves to `<ORANGE_PI_IP>` via Orange Pi/AdGuard.
 - Public DNS: `speed.dungxbuif.com` resolves to `<VPS_PUBLIC_IP>` via `1.1.1.1`.
 
 ## Local Mac Network State
@@ -36,7 +37,7 @@ Workspace: `/Users/dungxbuif/workspace/Homelab`
 - Wi-Fi `en1`: `<MAC_WIFI_IP>/24`, active in same subnet.
 - Default route: `<MIKROTIK_IP>` via `en0`.
 - Network service order: Ethernet before Wi-Fi.
-- DHCP DNS from MikroTik: `<PI_IP>`, `1.1.1.1`.
+- DHCP DNS from MikroTik: `<ORANGE_PI_IP>`, `1.1.1.1`.
 
 Observation:
 

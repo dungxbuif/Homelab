@@ -37,7 +37,7 @@ This document outlines the detailed configuration, network architecture, and sec
          +-----------+-----------+
          |                       |
          v                       v
-Raspberry Pi 5 Gateway      Local LAN & Mesh WiFi
+Raspberry Pi 5 (Datastore)  Local LAN & Mesh WiFi
      (<PI_IP>)            (<LAN_SUBNET> subnet)
 ```
 
@@ -54,7 +54,7 @@ PPPoE dialing is managed via the `pppoe-out1` interface on top of `ether1`.
 ### 3. IP Allocation & DHCP Server
 *   **Primary Subnet:** `<LAN_SUBNET>` (Gateway: `<MIKROTIK_IP>`).
 *   **DHCP Server:** Managed by MikroTik. Hands out leases within the `10.10.0.x` range.
-*   **DHCP DNS Server Options:** Advertises `<PI_IP>` (Raspberry Pi 5 AdGuard Home) as primary DNS, and `1.1.1.1` as secondary.
+*   **DHCP DNS Server Options:** Advertises `<ORANGE_PI_IP>` (Orange Pi Zero 3 AdGuard Home) as primary DNS, and `1.1.1.1` as secondary.
 *   **Reserved Ranges:** Node IPs for Kubernetes control planes (`<K8S_VIP>-33`) are reserved and excluded from the dynamic DHCP pool.
 
 ---
