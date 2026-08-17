@@ -7,6 +7,17 @@ timestamp: 2026-07-03T15:14:00Z
 
 # Directory Update Log
 
+## 2026-08-17 — v3: orange-pi edge migration (same day, afternoon)
+
+- **Orange Pi Zero 3** (`10.10.0.2`, Armbian Bookworm, ARM64, 1GB RAM) brought online as the new **TLS edge gateway** via Docker Swarm (Pi5=manager, orange-pi=worker). Migrated **Caddy+Rathole+AdGuard** off the Pi5 onto the orange-pi as Swarm services, leveraging an attachable overlay network `homelab-net` (172.30.0.0/16) so orange-pi Caddy can still resolve Pi5 datastore containers (`rustfs`, `docker-registry`, `librespeed`, `n8n`, `pgadmin`, `goclaw`, `couchdb`, `gitlab`) by Docker DNS name without publishing host ports.
+- **Pi5** now operates as a **datastore-only node** (Postgres, PgBouncer, RustFS, Redis, Registry, LibreSpeed, n8n, pgAdmin, CouchDB, GitLab, GoClaw, monitoring stack). Containers were attached to the overlay via `docker network connect` (zero downtime — no recreate). Pi5 remains the **Swarm manager**.
+- **Rathole tunnel cutover:** stopped Pi5 rathole client (`restart:always`→`no` then stop), orange-pi rathole stabilized as sole client (VPS server drops previous control channel on same token — last-connect-wins). Public ingress verified 200 for all 11 routes.
+- **AdGuard DNS cutover:** Stopped Pi5 AdGuardHome; orange-pi AdGuardHome running on `10.10.0.2:53` with `bind_hosts: [10.10.0.2]` and `*.dungxbuif.com → 10.10.0.2` rewrite (LAN clients sent to local Caddy). **Pending:** MikroTik DHCP DNS change from `10.10.0.5`→`10.10.0.2` (operator Winbox). LAN clients currently using `1.1.1.1` fallback until DHCP updated.
+- **Headscale** nameserver updated on VPS: `10.10.0.5`→`10.10.0.2`.
+- **Pi5 cleanup:** Caddy+Rathole+AdGuard stopped permanently (`restart` disabled). Dead Caddyfile routes remain (uptime-kuma, netdata, postgres) — operator will clean.
+- **CF_API_TOKEN** was stale in `local_vars.json` (old `__GHn...` returned 403 from Cloudflare); updated to the live token from Pi5 caddy env. Docker installed on orange-pi (`29.7.2`). NOPASSWD sudo temp removed.
+- **Docs:** index.md topology updated; PI.md and MAIN.md edge roles updated. Plan + scripts at `docs/migration_orange_pi_edge.md` and `migration/`.
+
 ## 2026-08-17 — v3: Mac mini consolidation + Proxmox AWS lab repurpose
 
 - **Architecture version bump to v3.** Migrated all user-facing production workloads off the 3-node Proxmox K8s cluster (`k8s-cp-1/2/3`, VIP `10.10.0.30`) onto the **Mac mini** (`10.10.0.10`, Apple Silicon, Docker Compose). The Pi5 (`10.10.0.5`) remains the sole TLS edge (Caddy, Cloudflare DNS-01 wildcard) and now also hosts **Redis-prod** for the Mac stack. The K8s cluster is retired; Proxmox (`10.10.0.20`) is repurposed as a self-hosted **AWS practice lab** (LocalStack / eksctl / k3s).

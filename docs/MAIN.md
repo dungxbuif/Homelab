@@ -1,7 +1,7 @@
 ---
 type: Playbook
 title: "System Ingress & Tunnels Configuration"
-description: "End-to-end setup and configurations for VPS Nginx edge gateway, Rathole tunnels, and the production stack topology (Mac mini + Pi5) after the K8s cluster retirement"
+description: "End-to-end setup and configurations for VPS Nginx edge gateway, Rathole tunnels, Docker Swarm edge (orange-pi), and Pi5 datastore topology"
 timestamp: 2026-08-17T00:00:00Z
 ---
 
@@ -12,10 +12,12 @@ timestamp: 2026-08-17T00:00:00Z
 > Mac-centric production). Read it before executing commands or changing config.
 >
 > **Architecture version:** v3 (2026-08). User-facing workloads run on the
-> **Mac mini** (`10.10.0.10`); the **Pi5** (`10.10.0.5`) is the TLS edge, DB, and
-> object storage; the **Cloud VPS** (`103.82.21.202`) is the public boundary;
-> the **Proxmox** host (`10.10.0.20`) is now an AWS practice lab. The 3-node K8s
-> cluster was retired and its docs archived — see [`archived/k8s-v2/`](./archived/k8s-v2/).
+> **Mac mini** (`10.10.0.10`); the **Orange Pi Zero 3** (`10.10.0.2`) is the
+> TLS edge (Caddy+Rathole+AdGuard via Docker Swarm); the **Pi5** (`10.10.0.5`)
+> is the datastore backend and Swarm manager; the **Cloud VPS** (`103.82.21.202`)
+> is the public boundary; the **Proxmox** host (`10.10.0.20`) is now an AWS
+> practice lab. The 3-node K8s cluster was retired and its docs archived —
+> see [`archived/k8s-v2/`](./archived/k8s-v2/).
 
 ---
 
@@ -40,16 +42,23 @@ External users
 | Services: Headscale + UI, PairDrop, Coturn, bds-app,     |
 |           bds-prod-db (postgres), RustDesk hbbs/hbbr, wg0 |
 +----------------------------+-----------------------------+
-                             |  Rathole TCP :7000 (outbound from Pi5)
+                             |  Rathole TCP :7000 (outbound from orange-pi)
                              v
 +----------------------------------------------------------+
-| Raspberry Pi 5 (10.10.0.5)   [TAILNET 100.64.0.1]        |
-| Edge:  Caddy wildcard TLS (Cloudflare DNS-01), Rathole   |
-|        client, AdGuard Home DNS                            |
+| Orange Pi Zero 3 (10.10.0.2)  [Docker Swarm worker]      |
+| Edge:  Caddy wildcard TLS (DNS-01), Rathole client → VPS |
+|        AdGuard Home DNS (10.10.0.2:53)                    |
+| Swarm overlay homelab-net (172.30.0.0/16) → Pi5 backends |
++----------------------------+-----------------------------+
+                             |  Swarm overlay (172.30.0.0/16)
+                             v
++----------------------------------------------------------+
+| Raspberry Pi 5 (10.10.0.5)   [Swarm Manager (Leader)]    |
+| [TAILNET 100.64.0.1 / Subnet Router 10.10.0.0/24]        |
 | Docker proxy_net (portless):  n8n, RustFS(S3), Registry,  |
-|        LibreSpeed, Uptime-Kuma, Netdata, Postgres+PgBouncer,|
-|        pgAdmin, CouchDB, GitLab(stopped), GoClaw, OpenClaw |
-| Redis-prod: 10.10.0.5:16379 (auth, AOF) [NEW for omniscan]|
+|        LibreSpeed, Postgres+PgBouncer, pgAdmin, CouchDB,  |
+|        GitLab, GoClaw, monitoring (8 containers attached) |
+| Redis-prod: 10.10.0.5:16379 (auth, AOF)                  |
 +-------+-----------------------+--------------------------+
         |                       |
         | LAN 10.10.0.0/24      | reverse_proxy over LAN

@@ -14,8 +14,9 @@ the hybrid cloud-edge topology, security principles, agent instructions,
 operational constraints, and the documentation directory.
 
 > **Architecture version: v3 (2026-08).** User-facing production workloads run
-> on the **Mac mini** (`10.10.0.10`). The **Pi5** (`10.10.0.5`) is the TLS edge,
-> datastore and object storage. The **Cloud VPS** (`103.82.21.202`) is the public
+> on the **Mac mini** (`10.10.0.10`). The **Orange Pi Zero 3** (`10.10.0.2`) is the
+> TLS edge (Caddy+Rathole+AdGuard via Docker Swarm). The **Pi5** (`10.10.0.5`) is
+> the datastore and object storage backend (Swarm manager). The **Cloud VPS** (`103.82.21.202`) is the public
 > boundary. The **Proxmox** host (`10.10.0.20`) was repurposed as a self-hosted
 > AWS practice lab — the 3-node K8s cluster was retired (history archived in
 > [`docs/archived/k8s-v2/`](./docs/archived/k8s-v2/)).
@@ -37,15 +38,23 @@ operational constraints, and the documentation directory.
                 TCP Rathole (:7000)|  Headscale Tailnet (100.64.0.0/10)
                                    v
        +-------------------------------------------------------+
-       |              Raspberry Pi 5 (TLS Edge + Datastore)    |
-       |  LAN: 10.10.0.5  /  Tailnet: 100.64.0.1               |
-       |  Subnet Router for 10.10.0.0/24                        |
+       |           Orange Pi Zero 3 (TLS Edge Gateway)         |
+       |  LAN: 10.10.0.2  /  Docker Swarm worker               |
        |  Caddy wildcard TLS (Cloudflare DNS-01), AdGuard DNS  |
-       |  Rathole client                                       |
-       |  proxy_net (portless): n8n, RustFS(S3), Registry,      |
-       |    LibreSpeed, Uptime-Kuma, Netdata, Postgres+PgBouncer,|
-       |    pgAdmin, CouchDB, GitLab(stopped), GoClaw, OpenClaw |
-       |  Redis-prod: 10.10.0.5:16379 (auth, AOF) [NEW]        |
+       |  Rathole client → VPS                                 |
+       |  homelab-net overlay → Pi5 datastores                 |
+       +---------------------------+---------------------------+
+                                   |
+                Docker Swarm overlay (homelab-net, 172.30.0.0/16)
+                                   |
+       +-------------------------------------------------------+
+       |              Raspberry Pi 5 (Datastore & Storage)     |
+       |  LAN: 10.10.0.5  /  Swarm Manager (Leader)            |
+       |  Tailnet: 100.64.0.1  /  Subnet Router 10.10.0.0/24   |
+       |  proxy_net: n8n, RustFS(S3), Registry, LibreSpeed,     |
+       |    Postgres+PgBouncer, pgAdmin, CouchDB, GitLab,       |
+       |    GoClaw, monitoring (8 containers on overlay)       |
+       |  Redis-prod: 10.10.0.5:16379 (auth, AOF)              |
        +--------+-----------------------+----------------------+
                 |                       |  reverse_proxy over LAN
                 v                       v

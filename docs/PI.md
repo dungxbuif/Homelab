@@ -1,7 +1,7 @@
 ---
 type: Reference
-title: "Raspberry Pi 5 Gateway Specification"
-description: "Technical specification of the Home Ingress Pi 5 (v3): Caddy TLS edge, Rathole client, AdGuard DNS, Postgres+Redis datastores, and the portless Docker stack"
+title: "Raspberry Pi 5 Datastore Specification"
+description: "Technical specification of the Home Datastore Pi 5 (v3): Postgres+Redis datastores, object storage, monitoring, and Swarm manager for the orange-pi edge"
 timestamp: 2026-08-17T00:00:00Z
 ---
 
