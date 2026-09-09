@@ -20,3 +20,6 @@ credentials/
 
 # macOS
 .DS_Store
+
+# Local Git worktrees
+.worktrees/
