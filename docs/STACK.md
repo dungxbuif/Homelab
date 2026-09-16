@@ -44,6 +44,12 @@ application readiness.
 
 ## Network and Ingress
 
+Temporary note from 2026-09-16: Orange Pi `orangepizero3` is currently down
+from the Swarm manager's perspective, so public shared-edge HTTP/HTTPS is
+being served by temporary VM100 containers `traefik-temp` and `rathole-temp`.
+This is an emergency fallback, not the intended permanent topology. The
+normal design below remains the target after Orange Pi is restored.
+
 ```mermaid
 flowchart LR
   Users[Public clients] --> VPS[VPS Traefik]
@@ -74,7 +80,11 @@ GitLab trial DNS publicly targets VPS, but lab split DNS targets Orange Pi,
 whose direct GitLab/trial Registry routes are not deployed (previous 404
 observations). No domain cutover or service migration was performed here.
 Broad `homelab-net` remains shared; narrower ingress/data/app networks are
-proposed, not deployed. BDS connector isolation is already deployed.
+partly deployed as canary attachments while `homelab-net` is retained for
+rollback: `edge-http-net`, `data-net`, `mypocket-net`, `netbird-net`, and
+`gitlab-net`. BDS connector isolation is already deployed. Do not remove
+`homelab-net` from production services until Orange Pi edge is restored or
+VM100 fallback is deliberately promoted to the permanent edge.
 
 ## Datastores and Storage
 

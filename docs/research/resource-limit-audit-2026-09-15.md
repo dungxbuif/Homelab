@@ -176,3 +176,76 @@ is private to VPS Docker `gateway-network`. VM100 still had about 10 GiB
 available RAM and 131 GiB free on its 194 GiB root filesystem. The idle
 sample supports keeping these limits, not reducing them or extrapolating
 capacity under sustained Git-over-HTTPS use.
+
+## Segmentation execution baseline (2026-09-16)
+
+The first execution pass for app network segmentation was read-only because
+Pi5 manager SSH access was unavailable. VM100 is reachable but is a Swarm
+worker (`Control=false`), so it cannot inspect or update cluster services.
+
+VM100 baseline:
+
+| Metric | Value |
+|---|---|
+| Containers | 18 running: 16 Swarm tasks plus `bds-app` and `bds-cloudflared` |
+| RAM | 15 GiB total, 5.1 GiB used, 10 GiB available |
+| Swap | none |
+| Root disk | 194 GiB total, 65 GiB used, 130 GiB available, 34% used |
+| CPU sample | five `vmstat 1` samples mostly 91-99% idle; no IO wait pressure |
+
+Selected `docker stats --no-stream` values:
+
+| Container / task | CPU | Memory |
+|---|---:|---:|
+| `gitlab_gitlab` | 0.43% | 3.518 GiB / 10 GiB |
+| `openclaw` | 0.91% | 622.9 MiB / host memory |
+| `n8n` | 0.16% | 435 MiB / host memory |
+| `family-tree` | 0.22% | 106.3 MiB / host memory |
+| `bds-app` | 0.00% | 120.8 MiB / host memory |
+| `bds-cloudflared` | 0.26% | 19.34 MiB / host memory |
+| `macocr-proxy` | 0.11% | 15.05 MiB / host memory |
+| `netbird_netbird-dashboard` | 0.01% | 36.02 MiB / host memory |
+| `netbird_netbird-server` | 0.00% | 27.48 MiB / host memory |
+
+The short public route smoke returned 200 for homepage, Family Tree,
+MezonHook, n8n healthz, OpenClaw, MyPocket, and GitLab sign-in; GitLab
+Registry trial returned the expected 401 challenge. This confirms the
+baseline before segmentation, not peak capacity. No new resource limits
+were applied.
+
+## Post-canary attachment resource sample (2026-09-16)
+
+After adding narrowed overlay networks to the VM100 services while keeping
+`homelab-net`, the public smoke suite returned 200 for homepage, Family
+Tree, MezonHook, n8n healthz, OpenClaw, MyPocket, OCR healthz, RelayHub
+healthz, NetBird dashboard, and GitLab sign-in; GitLab Registry trial
+returned the expected 401 challenge. Orange Pi was still down, so public
+traffic was served through the temporary VM100 `traefik-temp` and
+`rathole-temp` fallback.
+
+VM100 post-canary sample:
+
+| Metric | Value |
+|---|---|
+| RAM | 15 GiB total, 4.4 GiB used, 10 GiB available |
+| Swap | none |
+| Root disk | 194 GiB total, 65 GiB used, 129 GiB available, 34% used |
+
+Selected container sample:
+
+| Container / task | CPU | Memory |
+|---|---:|---:|
+| `gitlab_gitlab` | 0.24% | 2.777 GiB / 10 GiB |
+| `openclaw` | 0.75% | 550.5 MiB / host memory |
+| `n8n` | 0.13% | 355.9 MiB / host memory |
+| `family-tree` | 0.50% | 70.11 MiB / host memory |
+| `bds-app` | 0.04% | 120.7 MiB / host memory |
+| `bds-cloudflared` | 0.24% | 19.87 MiB / host memory |
+| `traefik-temp` | 0.00% | 24.61 MiB / host memory |
+| `rathole-temp` | 0.00% | 2.164 MiB / host memory |
+
+The sample does not justify increasing VM100 resources immediately. GitLab
+remains the dominant VM100 memory consumer but is still far below its 10 GiB
+limit in this idle/light-smoke window. Do not set tighter resource caps or
+remove `homelab-net` until the Orange Pi edge is restored or VM100 is
+approved as the permanent edge.

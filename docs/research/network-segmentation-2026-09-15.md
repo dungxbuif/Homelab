@@ -94,3 +94,159 @@ cause remains unproven.
 - Public docs need no change for this audit: domains, API behavior, and
   user configuration did not change. This internal note records runtime
   membership and a future design option.
+
+## Execution baseline before segmentation (2026-09-16)
+
+The first execution pass for
+[app private network and load audit](../superpowers/plans/2026-09-16-app-private-network-and-load-audit.md)
+was read-only. No Swarm network, service, container, or route was changed.
+
+VM100 was reachable through direct SSH as `ubuntu@10.10.0.31` with the
+homelab key. Docker reported `Swarm=active` and `Control=false`, confirming
+VM100 is a worker and cannot run `docker service ls` or `docker service
+update`. A manager session is required before creating overlay networks or
+migrating services.
+
+Running VM100 container membership:
+
+| Container / service task | Networks |
+|---|---|
+| `bds-app` | `bds-tunnel-net`, `homelab-net` |
+| `bds-cloudflared` | `bds-tunnel-net` |
+| `family-tree` | `homelab-net` |
+| `gitlab_gitlab` | `homelab-net` |
+| `gitlab-https-tunnel_client` | `homelab-net` |
+| `gitlab-registry-trial_client` | `homelab-net` |
+| `gitlab-ssh-tunnel_client` | `homelab-net` |
+| `homepage` | `homelab-net` |
+| `macocr-proxy` | `homelab-net` |
+| `mezonhook` | `homelab-net` |
+| `mypocket-api` | `homelab-net` |
+| `mypocket-web` | `homelab-net` |
+| `mypocket-worker` | `homelab-net` |
+| `n8n` | `homelab-net` |
+| `netbird_netbird-dashboard` | `homelab-net` |
+| `netbird_netbird-server` | `homelab-net` |
+| `openclaw` | `homelab-net` |
+| `relayhub` | `homelab-net` |
+
+BDS connector isolation remains correct: `bds-cloudflared` is only on
+`bds-tunnel-net`. All observed VM100 Swarm service tasks are still on the
+broad `homelab-net`, which is exactly the segmentation work remaining.
+
+SSH access blockers:
+
+| Host | Result |
+|---|---|
+| Pi5 manager alias `pi` | `Permission denied (publickey,password)` |
+| Orange Pi alias `orange-pi` | timeout during SSH banner exchange |
+| VPS alias `gateway` | `Permission denied (publickey,password)` |
+
+Public route smoke from the Mac side succeeded before any changes:
+
+| URL | Result |
+|---|---|
+| `https://dungxbuif.com/` | 200 |
+| `https://family.dungxbuif.com/` | 200 |
+| `https://mezonhook.dungxbuif.com/` | 200 |
+| `https://n8n.dungxbuif.com/healthz` | 200 |
+| `https://openclaw.dungxbuif.com/` | 200 |
+| `https://money.dungxbuif.com/` | 200 |
+| `https://gitlab.dungxbuif.com/users/sign_in` | 200 |
+| `https://registry-gitlab.dungxbuif.com/v2/` | 401 |
+
+Next action: restore or provide working manager access to Pi5 before Task 2
+can create the target overlay networks. Do not promote VM100 to manager just
+to bypass SSH unless that is a deliberate cluster-management decision.
+
+## Emergency edge fallback during first segmentation attempt (2026-09-16)
+
+Attempting to attach `edge-http-net` to `edge_traefik` caused the Orange Pi
+Traefik task to enter `Accepted`/`Pending` instead of `Running`. The service
+spec was rolled back to only `homelab-net`, but the Orange Pi node then
+reported `Down` from the Swarm manager. SSH to `10.10.0.2` returned no route
+or host down, so Orange could not be repaired in place.
+
+To restore public traffic while leaving the Orange node untouched, temporary
+standalone containers were started on VM100:
+
+| Temporary container | Host | Purpose |
+|---|---|---|
+| `traefik-temp` | VM100 | Binds host `80/tcp`, `443/tcp`, and `443/udp`; joins `homelab-net`; uses the same Traefik static/dynamic config copied from this repo and `acme.json` extracted from the Pi5 edge backup archive. |
+| `rathole-temp` | VM100 | Host-network Rathole client using the Orange/Pi5 edge client config snapshot; connects to VPS control `103.82.21.202:7000` and forwards public HTTP/HTTPS to VM100 localhost. |
+
+Public smoke through the VM100 fallback returned 200 for homepage, Family
+Tree, MezonHook, n8n healthz, OpenClaw, MyPocket, and GitLab sign-in; GitLab
+Registry trial returned the expected 401 challenge.
+
+This fallback is intentionally temporary. When Orange Pi is reachable again:
+
+1. Confirm Orange Docker/Swarm is healthy and `edge_traefik` can run `1/1`.
+2. Stop VM100 `rathole-temp` first so the VPS shared tunnel returns to Orange.
+3. Verify public routes through Orange.
+4. Stop VM100 `traefik-temp` and remove `/home/ubuntu/edge-temp*` only after
+   Orange edge has been stable.
+
+Do not continue app network segmentation while the edge is in fallback mode.
+
+## App-by-app canary attachment while edge fallback is active (2026-09-16)
+
+The operator asked to continue app by app while Orange Pi remained down. The
+safe interpretation was to **attach** narrower networks and verify each app,
+but not remove `homelab-net` yet. Removing the shared network is deferred
+until Orange Pi edge is healthy again and Traefik can be verified from the
+normal edge node.
+
+Created/confirmed attachable Swarm overlays:
+
+| Network | Purpose |
+|---|---|
+| `edge-http-net` | Future narrowed Traefik-to-HTTP-backend network |
+| `data-net` | Future narrowed PgBouncer/Redis data access network |
+| `mypocket-net` | MyPocket private app network |
+| `netbird-net` | NetBird private app network |
+| `gitlab-net` | GitLab/tunnel private app network |
+
+Pi5 data containers attached to `data-net` while preserving existing
+memberships:
+
+| Container | Networks after change |
+|---|---|
+| `pgbouncer` | `data-net`, `homelab-net`, `proxy_net` |
+| `redis-prod` | `data-net`, `homelab-net`, `redis-prod_default` |
+
+VM100 Swarm services were migrated one at a time by adding new networks
+only. All still retain `homelab-net` as rollback/compatibility while the
+edge runs through VM100 fallback:
+
+| Service | Added networks | Verification |
+|---|---|---|
+| `homepage` | `edge-http-net` | `https://dungxbuif.com/` 200 |
+| `family-tree` | `edge-http-net` | `https://family.dungxbuif.com/` 200 |
+| `mezonhook` | `edge-http-net` | `https://mezonhook.dungxbuif.com/` 200 |
+| `mypocket-web`, `mypocket-api`, `mypocket-worker` | `mypocket-net`, `data-net` | API/web healthy; `https://money.dungxbuif.com/` 200; API resolves `pgbouncer` and `redis-prod` |
+| `n8n` | `edge-http-net`, `data-net` | container healthy; `https://n8n.dungxbuif.com/healthz` 200 |
+| `openclaw` | `edge-http-net` | container healthy; `https://openclaw.dungxbuif.com/` 200 |
+| `macocr-proxy` | `edge-http-net` | container healthy; `https://ocr.dungxbuif.com/healthz` 200 |
+| `relayhub` | `edge-http-net` | `https://relayhub.dungxbuif.com/healthz` 200 |
+| `netbird_netbird-server`, `netbird_netbird-dashboard` | `netbird-net`, `edge-http-net` | `https://netbird.dungxbuif.com/` 200 |
+| `gitlab_gitlab`, `gitlab-ssh-tunnel_client`, `gitlab-https-tunnel_client`, `gitlab-registry-trial_client` | `gitlab-net` | GitLab warmed up after restart; sign-in 200; Registry trial 401 |
+
+Observed caveats:
+
+- Each service restart caused a short health-starting window; public routes
+  briefly returned 502 until the new task became healthy.
+- GitLab took about a minute to boot Puma/Rails. During that window, tunnel
+  clients could not resolve or connect to `tasks.gitlab_gitlab`; this cleared
+  after GitLab finished network attachment and app boot.
+- `macocr-proxy` is healthy, but logs show the native Mac OCR endpoint
+  `10.10.0.6:8787` returning connection refused. That is an existing native
+  dependency issue, not caused by the overlay attachment.
+- `homelab-net` removal remains deliberately **not done**. The next cut must
+  happen after Orange Pi returns or after a deliberate decision to make VM100
+  the permanent edge.
+
+Full public smoke after the canary attachments returned 200 for homepage,
+Family Tree, MezonHook, n8n, OpenClaw, MyPocket, OCR healthz, RelayHub
+healthz, NetBird dashboard, and GitLab sign-in; GitLab Registry trial
+returned the expected 401 challenge.
