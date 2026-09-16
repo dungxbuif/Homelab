@@ -1,0 +1,22 @@
+# Homelab infrastructure documentation
+
+Canonical checkout: /Users/dungxbuif/workspace/homelab
+Audit date: 2026-09-16
+Scope: infrastructure documentation; do not load secret files for navigation.
+
+- [Agent/operator entry point](./index.md)
+- [Current stack and evidence boundaries](./docs/STACK.md)
+- [Documentation index](./docs/INDEX.md)
+- [System playbook](./docs/MAIN.md)
+- [VM100 compute](./docs/VM100.md)
+- [Pi5 datastores](./docs/PI.md)
+- [Mac native dependencies and proposed roaming](./docs/MAC.md)
+- [Proxmox production hypervisor](./docs/PROXMOX.md)
+- [GitLab runbook and agent-readable YAML](./docs/services/gitlab.md)
+- [NetBird bootstrap and pending connectivity gates](./docs/deployments/netbird-2026-09-13.md)
+- [Documentation audit](./docs/research/docs-stack-audit-2026-09-16.md)
+- [Changelog](./docs/LOG.md)
+- [Archive: historical only](./docs/archived/INDEX.md)
+
+These files are local Markdown surfaces. Public hosting of this entry point
+is not established. RelayHub public API documentation is a separate project.

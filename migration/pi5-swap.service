@@ -1,0 +1,14 @@
+[Unit]
+Description=Homelab Pi5 emergency swapfile
+RequiresMountsFor=/ssd-data/infra/swapfile
+ConditionPathExists=/ssd-data/infra/swapfile
+After=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/swapon /ssd-data/infra/swapfile
+ExecStop=/usr/sbin/swapoff /ssd-data/infra/swapfile
+
+[Install]
+WantedBy=multi-user.target

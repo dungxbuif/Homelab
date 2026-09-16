@@ -1,149 +1,83 @@
 ---
 type: Reference
-title: "Mac Mini Production Stack Specification"
-description: "Specification of the Mac mini (10.10.0.10) Docker stack that runs user-facing workloads migrated off the K8s cluster"
-timestamp: 2026-08-17T00:00:00Z
+title: "Mac Mini Runtime Dependencies"
+description: "Specification of Mac mini services that remain after VM100 production migration"
+timestamp: 2026-09-16T00:00:00+07:00
 ---
 
-# 🍎 Mac Mini Production Stack Specification
+# Mac Mini Runtime Dependencies
 
-> **Host:** Mac mini (Apple Silicon, arm64) — 12 cores / 48 GB RAM — LAN IP `10.10.0.10`.
-> **Role:** Runs the **user-facing production workloads** that were migrated off the 3-node Proxmox K8s cluster.
+> **Host:** Mac mini (Apple Silicon, arm64) — active LAN IP `10.10.0.6`
+> while Ethernet `10.10.0.10` is unplugged.
+> **Role:** Provides native OCR and local LLM dependencies.
+> Most user-facing production web apps moved to VM100 on 2026-09-11.
 > **Stack root:** `~/production/` (`/Users/dungxbuif/production/`).
-> **Companion on Pi5:** Redis (`10.10.0.5:16379`) and PostgreSQL (`10.10.0.5:5432`).
 
-This document is the canonical architecture spec for the Mac mini production stack.
-The operator runbook lives alongside the stack at [`~/production/README.md`](../../../production/README.md).
+## Current Role
 
----
+The Mac is no longer the primary home production compute node for homepage,
+OCR proxy, Family Tree, or MezonHook. Those services now run on VM100
+(`10.10.0.31`), with Orange Pi `edge_traefik` routing to VM100.
 
-## 🗺️ Topology & Routing
+The Mac still provides:
 
-```
-Internet --*.dungxbuif.com--> Cloud VPS (103.82.21.202)
-   |  Rathole TCP :7000
-   v
-Orange Pi Zero 3 (10.10.0.2) Caddy wildcard TLS (Cloudflare DNS-01)
-   |  Docker Swarm overlay → Pi5 backends
-   +--> 10.10.0.10:18081  (homepage, dungxbuif.com)
-   +--> 10.10.0.10:18080  (macocr-proxy, ocr.dungxbuif.com)
-   +--> 10.10.0.10:1234   (LM Studio native, llm.dungxbuif.com)
-   (omniscan-bot has NO public port — outbound Mezon bot only)
-   (Pi5 datastores: Postgres, Redis, RustFS reached via overlay)
+| Runtime | Address | Used by | Status |
+|---|---|---|---|
+| Native OCR engine | `10.10.0.6:8787` | VM100 `macocr-proxy` | active dependency |
+| LM Studio | `10.10.0.6:1234` | `llm.dungxbuif.com` | active dependency |
+| MyPocket development checkout | `/Users/dungxbuif/workspace/MyPocket/` | Local development | Source intentionally unmoved; production web/API/worker are on VM100; local dev container health not audited here |
 
-Mac mini 10.10.0.10  (Docker bridge network "homelab")
-   ├── homelab-homepage      :18081->80   (registry image, amd64 via Rosetta)
-   ├── homelab-macocr-proxy  :18080->8080 (built locally, calls native OCR)
-   └── homelab-omniscan-bot   (no host port; Mezon bot + SSE client)
+GoClaw is intentionally not public-routed in the current topology. Its previous
+`goclaw.dungxbuif.com` Traefik router was removed on 2026-09-11 pending a new
+operator plan.
 
-Native macOS services on the Mac host (NOT in Docker):
-   ├── mac-ocr-native  *:8787  (Swift Vision OCR engine)
-   └── LM Studio       *:1234  (local LLM endpoint; omniscan agent is DISABLED)
-```
+## Current Routing
 
-Containers reach the macOS-host native services via `host.docker.internal`
-(because `network_mode: host` is a no-op on Docker Desktop for macOS — the
-container network lives in a Linux VM and cannot see the macOS host namespace).
-
----
-
-## 📦 Services
-
-| Container | Service | Image | Host port | Public domain | Status |
-|---|---|---|---|---|---|
-| `homelab-homepage` | homepage | `registry.dungxbuif.com/homepage:prod-2026.08.06.2` | `18081`→80 | `dungxbuif.com` | amd64 image, runs via Rosetta on arm64 |
-| `homelab-macocr-proxy` | macocr-proxy | `homelab/macocr-proxy:local` (built) | `18080`→8080 | `ocr.dungxbuif.com` | bridge→native OCR `:8787` |
-| `homelab-omniscan-bot` | omniscan-bot | `homelab/omniscan-bot:local` (built) | — | — (Mezon bot) | **AI agent disabled** in build |
-
-Redis (shared by macocr-proxy + omniscan-bot) runs on the Pi5, not the Mac:
-`/ssd-data/infra/redis-prod/` → `10.10.0.5:16379` (auth, AOF). See [PI.md](./PI.md).
-
----
-
-## 🧱 Stack Layout
-
-```
-~/production/
-├── docker-compose.yml      # 3 services on bridge network "homelab"
-├── .env                    # secrets (mode 600) — from homelab/local_vars.json
-├── build/
-│   ├── Dockerfile.macocr-proxy   # multi-stage: admin-ui (Vite) + docs (Docusaurus) + Go -> alpine
-│   └── Dockerfile.omniscan-bot   # Go build + awk patch disabling the AI agent
-├── caddy/
-│   ├── Caddyfile.pi5.cutover     # applied on Pi5 at /ssd-data/infra/Caddyfile
-│   └── README.md                 # cutover/rollback steps
-└── README.md                     # operator runbook (status/logs/rebuild/cutover)
+```text
+Internet -> VPS gateway-traefik -> Rathole -> Orange Pi edge_traefik
+  -> tasks.homepage:80       homepage (Swarm overlay)
+  -> tasks.macocr-proxy:8080 macocr-proxy (Swarm overlay)
+  -> tasks.mezonhook:8080    MezonHook (Swarm overlay)
+  -> tasks.family-tree:3000  Family Tree (Swarm overlay)
+  -> 10.10.0.6:1234    LM Studio
 ```
 
-The mac-ocr source repo lives at `~/workspace/mac-ocr/` and is referenced as the
-Docker build context. **The source repo is never modified** — all behaviour
-changes (agent disable) are applied at build time via `awk` patches in the
-Dockerfiles, keeping the repo pristine.
+`money.dungxbuif.com` now routes to VM100 `tasks.mypocket-web:80`.
+MyPocket production API/worker use Pi5 PgBouncer and Redis DB1 via Docker DNS.
+Keeping its dev checkout outside `homelab/projects/` does not mean its
+production runtime stayed on the Mac.
 
----
+## Proposed Roaming Backend (not deployed)
 
-## 🔑 Key Design Decisions (verified)
+The operator wants to move the Mac outside the LAN while continuing to serve
+OCR/LLM. The proposed direction is NetBird agents on Mac and the consuming
+homelab host, with stable private backend DNS and narrow ACLs for TCP
+`8787/1234`. At home, keep LAN `10.10.0.6` for management; application
+upstreams would use the private overlay name both at home and remotely.
 
-1. **Bridge network, not `network_mode: host`.** On Docker Desktop for macOS,
-   `--network host` lives in the Linux VM and CANNOT reach macOS-host services
-   (native OCR `:8787`, LM Studio `:1234` → connection refused). Verified by test.
-   Bridge network + `host.docker.internal` (resolves to the Mac host gateway) works.
-2. **Uncommon host ports** (`18081`, `18080`) avoid clashing with developer
-   containers already on this Mac (`postgres:5432`, `redis:6379`, `mongo:27017`).
-   These ports are LAN-only and never exposed to the internet directly — Orange
-   Pi Caddy is the sole TLS edge.
-3. **DB password URL-encoded** (`/`→`%2F`) in `DATABASE_URL`. The current Go
-   `net/url` parser (in freshly built images) is stricter than the parser in the
-   legacy K8s image `v1.0.2`, so a raw `/` in the password breaks URI parsing.
-4. **AI agent disabled** in omniscan-bot via a build-time `awk` patch that stubs
-   `handleThreadQuestion()` to reply with a "disabled on this host" message and
-   return; `*scan` is additionally comment-gated in source. Only raw `*ocr`
-   functions. The disabled message is baked into the binary (verified with
-   `strings`).
-5. **No Caddy on the Mac.** Orange Pi Zero 3 (`10.10.0.2`) is the TLS edge
-   (wildcard `*.dungxbuif.com` via Cloudflare DNS-01). Mac containers serve
-   plain HTTP on LAN; orange-pi Caddy reverse-proxies to `10.10.0.10:<port>`.
-   This is the literal "point Caddy at this machine" model.
+No agent enrollment, backend domain, ACL, DNS switch, or upstream change was
+performed. Current source still depends on the LAN IP. NetBird dashboard
+availability does not prove relay/STUN connectivity or container routing.
+Before moving the Mac, verify peer access, DNS from consuming containers,
+app listen interfaces, API auth, sleep/wake reconnect, and relay fallback.
+Do not public-expose native OCR/LM Studio as a shortcut.
 
----
+## Historical Notes
 
-## 🔗 External Dependencies
+The previous Mac Docker production stack contained:
 
-- **PostgreSQL** — Pi5 `10.10.0.5:5432` (via PgBouncer), databases `macocr` &
-  `omniscan`, user `admin`. See [PI.md](./PI.md).
-- **Redis** — Pi5 `10.10.0.5:16379` (auth, AOF). See [PI.md](./PI.md).
-- **S3 (macocr-proxy object storage)** — `https://storage.dungxbuif.com`
-  (Pi5 RustFS), bucket `mac-ocr`.
-- **Native OCR** — macOS app `mac-ocr-native` listening on `:8787` (Mac host).
-- **LLM** — LM Studio on Mac `:1234` (referenced by the bot config, but the
-  agent path is disabled).
-- **Public DNS/TLS** — Cloudflare → VPS (`103.82.21.202`) Rathole → Orange Pi
-   Caddy → Mac/Pi5. See [MAIN.md](./MAIN.md).
+- `homelab-homepage`
+- `homelab-macocr-proxy`
+These containers were stopped and removed after VM100 cutover so the services do
+not run twice. OmniScan bot and GoClaw runtime data were removed.
 
----
+## Operations
 
-## 🧰 Operations (quick reference)
-
-Full runbook: [`~/production/README.md`](../../../production/README.md).
+Use this file for Mac dependency checks only. VM100 service operations are in
+[VM100.md](./VM100.md).
 
 ```bash
-cd ~/production
-
-# status / logs
-docker compose ps
-docker compose logs -f macocr-proxy     # or omniscan-bot / homepage
-
-# restart after .env change
-docker compose up -d --force-recreate
-
-# rebuild after source change (build context = ~/workspace/mac-ocr)
-docker build -f build/Dockerfile.macocr-proxy -t homelab/macocr-proxy:local ~/workspace/mac-ocr
-docker build -f build/Dockerfile.omniscan-bot -t homelab/omniscan-bot:local ~/workspace/mac-ocr
-docker compose up -d --force-recreate macocr-proxy omniscan-bot
-
-# smoke tests
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:18080/healthz           # 200
-docker exec homelab-macocr-proxy wget -qO- http://host.docker.internal:8787/capacity  # "ready"
-curl -s -o /dev/null -w "%{http_code}\n" https://ocr.dungxbuif.com/healthz       # 200 (public)
-curl -s -o /dev/null -w "%{http_code}\n" https://dungxbuif.com/                  # 200 (public)
+# Native dependency probes from another LAN host
+curl -sS http://10.10.0.6:8787/capacity
+curl -sS http://10.10.0.6:1234/v1/models
 ```

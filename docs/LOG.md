@@ -8,6 +8,7 @@ timestamp: 2026-07-03T15:14:00Z
 # Directory Update Log
 
 > **Versioning scheme** (architecture evolution, newest first):
+> - **v3.2** — VM100 production compute + Orange Pi Traefik edge
 > - **v3.1** — Orange Pi Zero 3 edge migration (Pi5 → datastore only)
 > - **v3.0** — Mac mini consolidation (K8s retired, Proxmox → AWS lab)
 > - **v2** — Proxmox 3-node K8s cluster (archived → [`archived/k8s-v2/`](./archived/k8s-v2/))
@@ -19,10 +20,330 @@ timestamp: 2026-07-03T15:14:00Z
 
 ---
 
+## v3.2 — 2026-09-13 · VPS access and relay cleanup
+
+- **Documentation and stack audit (2026-09-16):** added the current
+  [stack catalog](./STACK.md) and root agent navigation surface; reconciled
+  Proxmox/VM100 roles, MyPocket dev versus production, GitLab isolated
+  tunnels, and proposed versus deployed networking. Preserved superseded
+  index/MAIN/Proxmox documents in the archive and repaired historical links.
+  VM100 inventory and selected public HTTPS probes were checked; Pi5/VPS
+  SSH authentication and Orange Pi SSH timeout limit host coverage. No
+  production configuration or data changed. See
+  [audit evidence and remaining work](./research/docs-stack-audit-2026-09-16.md).
+- **GitLab Container Registry isolated trial (2026-09-16 local):** enabled
+  the bundled Registry with VM100 filesystem storage and legacy metadata,
+  kept Pi5 `docker-registry`/`registry.dungxbuif.com` production unchanged.
+  A separate Noise Rathole client/server uses VPS control `7003` and
+  Docker-private backend `8086`; VPS Traefik labels serve only
+  `registry-gitlab.dungxbuif.com` with valid TLS. GitLab was replaced only
+  after the old task stopped, using a versioned Swarm config. Private
+  `root/registry-trial` accepted ARM64 push/pull and AMD64 push; a one-time
+  GitLab backup archive includes Registry manifest/layers. Existing web,
+  SSH, n8n, and Pi5 registry checks passed. Lab split DNS still points the
+  trial domain to Orange Pi without a live route, so native Swarm pull and
+  production cutover remain pending. See
+  [trial report](./deployments/gitlab-registry-trial-2026-09-16.md).
+- **GitLab temporary public HTTPS and registration guard (2026-09-16
+  local):** added an isolated VPS Rathole HTTP server (`7002` outbound
+  client control, backend `8085` only on VPS `gateway-network`) and a
+  portless VM100 Swarm client to `tasks.gitlab_gitlab:80`. VPS Traefik
+  Docker labels terminate TLS for only `gitlab.dungxbuif.com` with a
+  valid Let's Encrypt certificate. A guarded in-place edit removed only
+  GitLab from VPS TCP passthrough; backup is retained, and production
+  Rathole/Orange Pi tasks were not restarted. Public sign-in and login
+  CSS return 200; six pre-existing routes and Git SSH fingerprint passed
+  after cutover. Disabled GitLab self-registration after operator approval;
+  public sign-up redirects to sign-in. Orange Pi direct GitLab still 404,
+  and clone/push/pull plus off-host backup/restore remain unverified. See
+  [runbook](./services/gitlab.md).
+- **GitLab public SSH (2026-09-15):** added an isolated VPS Rathole server
+  on `7001/tcp` (VM100 control) and `2222/tcp` (Git SSH), plus a portless
+  VM100 Swarm client to `tasks.gitlab_gitlab:22`. A dedicated token and
+  Noise server key were generated outside the repo; public SSH banner and
+  ED25519 host fingerprint matched the GitLab container. The existing VPS
+  `7000`/HTTPS tunnel and Orange Pi tasks were not restarted. HTTPS still
+  returns 404 because the Orange Pi router cannot be applied while admin
+  SSH resets before key exchange. See [runbook](./services/gitlab.md).
+- **GitLab CE internal deployment (2026-09-15):** deployed pinned
+  `gitlab/gitlab-ce:18.11.11-ce.0` as VM100 Swarm `gitlab_gitlab` with
+  no host ports, 10 GiB/4 CPU cap, and 256 MiB `/dev/shm` tmpfs. Created
+  own Pi5 `gitlabhq_production` database/role, required extensions, and
+  Swarm secrets; shared Redis uses DB2 under 1 GiB `noeviction`. Internal
+  login/SSH and second `gitlab:check` passed after restarting Gitaly to
+  restore a socket unlinked during an overlapping task rollout. HTTPS
+  routing still awaits Orange Pi admin access; no off-host
+  backup or SMTP is yet verified. See [runbook](./services/gitlab.md).
+- **Pi5 swap and Redis policy (2026-09-15):** enabled 4 GiB NVMe swapfile
+  with swappiness 10; increased Redis logical memory to 1 GiB and changed
+  eviction to `noeviction` without clearing AOF/data. After GitLab startup,
+  swap held 134 MiB but five `vmstat` samples had no swap-in/out churn.
+- **MyPocket DNS migration (2026-09-15):** API then worker moved from Pi5
+  LAN datastore URLs to `pgbouncer:6432/mypocket` and `redis-prod:6379/1`;
+  both passed authenticated probes, API healthy, worker ready, money 200.
+- **OpenClaw proxy attribution (2026-09-15):** narrowed trusted overlay CIDR
+  to `172.30.0.0/16` after packet capture showed tunnel bridge
+  `172.18.0.1` in public XFF. Public and edge routes returned 200; client-
+  supplied XFF was overwritten. Real Internet client IP propagation is
+  still pending.
+
+- **VM100 disk and unused-cache cleanup (2026-09-15):** grew only VM100
+  Proxmox NVMe `scsi0` from 80 to 200 GiB online; grew Ubuntu root ext4
+  to 194 GiB usable. Removed an unreferenced Ubuntu installer ISO from
+  Proxmox `local` and pruned Docker build cache only (11.53 GB reported;
+  VM100 root 58 GiB used, 137 GiB free). No orphan `local-lvm` volume
+  existed; documented VM9000 clone template and Compose rollback images
+  were retained. After VM restart, `discard=on` became active; guest TRIM
+  lowered Proxmox `local-lvm` physical usage from about 83.3 to 66.0 GiB. See
+  [disk evidence](./research/gitlab-vm100-preflight-2026-09-15.md).
+- **Swarm network audit (2026-09-15):** verified all active Swarm services
+  share `homelab-net`; BDS cloudflared stays only on `bds-tunnel-net`.
+  MyPocket datastore IP literals were subsequently moved to Docker DNS;
+  Mac-native OCR/LLM and OpenClaw trusted-proxy IPs are intentional.
+  Documented a phased ingress/data/app segmentation proposal without
+  changing broad production network memberships. See
+  [network audit](./research/network-segmentation-2026-09-15.md).
+- **OCR Redis overlay endpoint (2026-09-15):** added a secret-free durable
+  Compose override to Pi5 `redis-prod` retaining its private bridge/data/AOF
+  and adding `homelab-net` alias `redis-prod`; changed only OCR proxy
+  `REDIS_URL` host/port to `redis-prod:6379/0`. Authenticated `PONG`,
+  DB read, task health, native capacity, and public routes passed. MyPocket
+  remained untouched as an active-development exception.
+- **OCR proxy datastore endpoint (2026-09-15):** changed only the VM100
+  Swarm service PostgreSQL URL host/port to `pgbouncer:6432`; private
+  `SELECT 1`, task health, native `/capacity`, and public OCR routes passed.
+  Redis and Mac-native LAN dependency were unchanged.
+- **Family Tree datastore endpoint (2026-09-15):** changed only the VM100
+  Swarm service DB URL host/port from Pi5 LAN PgBouncer
+  `10.10.0.5:5432` to `pgbouncer:6432`; its own DB client `SELECT 1`,
+  task health, and public `/login 200` passed after restart.
+- **n8n datastore endpoint (2026-09-15):** replaced its Pi5 LAN PgBouncer
+  address `10.10.0.5:5432` with `pgbouncer:6432` on `homelab-net`, without
+  changing database/user/password. A private `SELECT 1`, healthy task, and
+  public `/healthz 200` passed after the one-service restart.
+- **OCR proxy Swarm cutover (2026-09-15):** moved the unchanged VM100 proxy
+  image/environment to portless service `macocr-proxy`; Orange Pi now routes
+  `ocr.dungxbuif.com` to `tasks.macocr-proxy:8080`. After timed checks and
+  Mac native `/capacity 200`, stopped old Compose and closed `18080`.
+  Authenticated Redis `PING` from the Swarm task namespace returned `PONG`;
+  the earlier `redis-cli -u` URL test failed for both old and new containers
+  despite matching credentials. See
+  [deployment evidence](./deployments/macocr-proxy-2026-09-15.md).
+- **Family Tree Swarm cutover (2026-09-15):** moved the Bun/Next runtime to
+  VM100 service `family-tree` with unchanged source/uploads bind mounts and
+  environment. Orange Pi file route now targets `tasks.family-tree:3000`.
+  Timed public checks and an in-task `SELECT 1` passed before/after stopping
+  its old Compose container and closing `18085`. Another canary-time edge
+  overlay outage had unresolved ARP in the old Traefik task; a controlled
+  task replacement restored public routes. See
+  [deployment evidence](./deployments/family-tree-2026-09-15.md).
+- **MezonHook Swarm cutover (2026-09-15):** moved the static Nginx app to
+  portless VM100 service `mezonhook` and Orange Pi file route
+  `tasks.mezonhook:8080`. After timed public checks, stopped its old Compose
+  container and closed host port `18084`. The canary exposed a second
+  edge-task overlay outage: the old Traefik network namespace had unresolved
+  ARP entries while a fresh container on the same node reached overlay apps;
+  replacing only `edge_traefik` restored access. See
+  [deployment evidence](./deployments/mezonhook-2026-09-15.md).
+- **Homepage Swarm cutover (2026-09-15):** deployed `homepage` on VM100 as a
+  one-replica, health-checked service on `homelab-net` without a host port.
+  Orange Pi file routing now targets `tasks.homepage:80` for both root and
+  `www` domains; the old Compose container was stopped after public checks
+  and retained for rollback. During the canary, the existing Traefik task
+  returned `502` across multiple overlay routes before the homepage route
+  changed. Replacing only `edge_traefik` restored them; the underlying overlay
+  fault is unconfirmed; subsequent cutovers require paired namespace and
+  independent overlay diagnostics before controlled edge-task recovery.
+  See [deployment evidence](./deployments/homepage-2026-09-15.md).
+- **RelayHub bootstrap deployed (2026-09-14):** added Docker packaging for the
+  RelayHub Go bootstrap API, built `homelab/relayhub:bootstrap-20260914`, and
+  deployed Swarm service `relayhub` on VM100 with no host port. Added
+  `relayhub.dungxbuif.com` to the VPS HostSNI allow-list. Public probes
+  returned `/healthz 200`, `/readyz 503`, and `/api/v1/jobs 501`, matching the
+  current bootstrap runtime.
+- **RelayHub routing normalized:** reverted the experimental Traefik Swarm
+  provider and manager-side `edge_docker-socket-proxy` after intermittent
+  overlay reachability caused public `502` responses. RelayHub remains a
+  portless Swarm service; Orange Pi now routes it through the standard file
+  provider target `http://tasks.relayhub:8080`, matching n8n and OpenClaw.
+- **CouchDB homelab database added (2026-09-14):** created the `homelab`
+  database in Pi5 CouchDB. Existing non-admin CouchDB user remains
+  `obsidian_sync`; anonymous access to `homelab` returned `401`. Add explicit
+  database `_security` before assigning this database to a specific app.
+- **VPS retired services removed:** deleted containers and runtime directories
+  for `headscale`, `headscale-ui`, `netbird-server`, `netbird-dashboard`,
+  `coturn`, `hbbs`, `hbbr`, and `node-exporter`; purged Tailscale from the
+  host.
+- **Gateway compose cleaned:** `/root/gateway/docker-compose.yml` now contains
+  only `gateway-traefik` and `rathole-server`; stale Coturn/Headscale entries
+  and config files were removed.
+- **Ports closed:** verified no listeners remain on `3478`, `8080`, `8081`, or
+  `21115-21119`, and then removed `9100/tcp` and `41641/udp`. Active VPS
+  listeners are `22/tcp`, `80/tcp`, `443/tcp`, and `7000/tcp`.
+- **Current VPS role:** public boundary only: Traefik HostSNI allow-list,
+  Rathole server, and retained BDS SQL snapshots.
+- **Log retention and disk cleanup:** Docker `json-file` logs now rotate at
+  `20m x 3` with compression; journald is capped at `200M` with 7-day
+  retention. Removed non-edge dev/tool caches (Yarn, pnpm, Go build, npm/nvm,
+  Playwright/Prisma, Antigravity, Warp, and VS Code server leftovers). VPS disk
+  usage dropped to roughly `3.9G / 38G`.
+- **PairDrop route retired:** removed `transfer.dungxbuif.com` from both the
+  current Orange Pi Traefik dynamic config source and the live Orange Pi
+  `/opt/edge/traefik/dynamic.yml` because PairDrop/Coturn were removed from the
+  VPS. Live rollback backup:
+  `/opt/edge/traefik/dynamic.yml.bak-20260913-075349-retire-transfer`.
+- **NetBird reintroduced on VM100:** deployed NetBird as Swarm services
+  `netbird_netbird-server` and `netbird_netbird-dashboard` on `homelab-net`
+  with no VM100 host ports. Orange Pi Traefik routes via `tasks.*` DNSRR
+  because service VIPs returned `Host is unreachable` from the edge container.
+  VPS `gateway-traefik` HostSNI allow-list now includes
+  `netbird.dungxbuif.com` and the active Orange Pi hostnames that had drifted
+  out of the VPS allow-list. NetBird management, activity, and embedded IdP
+  stores now use Pi5 PostgreSQL databases `netbird`, `netbird_activity`, and
+  `netbird_idp` via PgBouncer. Public OIDC probe returned `200`.
+
+## v3.2 — 2026-09-13 · Batdongsan local container migration
+
+- **VPS BDS cleanup:** `bds-app`, `bds-prod-db`, the old BDS Docker network,
+  local image, `/root/batdongsan`, and stale gateway route configs were removed
+  from the Cloud VPS. SQL snapshots remain under `/root/backup-bds`.
+- **Database restored to Pi5:** restored VPS snapshot
+  `/root/backup-bds/bds_prod_snapshot_20260913_121113.sql` into the Pi5 central
+  PostgreSQL database `bds_prod` with dedicated role `bds_user`. Verified
+  `listings=31` and `users=4`; snapshot SHA256 is
+  `9baa9613153312519e005c72ffc5b8237a2adbdf40e682cb8ba17708fcaf692e`.
+- **Container DNS only:** attached Pi5 `postgres` and `pgbouncer` containers to
+  the attachable `homelab-net` overlay. BDS build-time DB uses `postgres:5432`
+  to avoid PgBouncer build queue timeouts; runtime uses `pgbouncer:6432`.
+  No DB host port or Cloudflare Tunnel exposure is used.
+- **VM100 app deployed:** built BDS on VM100 in a temporary container attached
+  to `homelab-net`, preserving the app's existing static generation behavior.
+  Runtime image `homelab/bds-app:vm100-20260913-static` runs as container
+  `bds-app` on `homelab-net` and `bds-tunnel-net` with no host port. Internal probes returned
+  `GET http://bds-app:3000/api/health 200` and `GET / 200`.
+- **Cloudflare Tunnel connector:** `bds-cloudflared` runs on VM100 on
+  `bds-tunnel-net` only and targets `http://bds-app:3000`. It must not join
+  `homelab-net`; database access remains private through `bds-app`.
+
+## v3.2 — 2026-09-12 · VM100 OpenClaw and n8n redeploy
+
+- **n8n deployed on VM100:** `vm100-n8n` runs
+  `docker.n8n.io/n8nio/n8n:stable` at digest
+  `sha256:a8c95f75c6fdf65f5f2b7a7b354744eaa1c62bb911b5c00af6499c3f38e4cd32`,
+  publishes LAN port `18087`, and uses the Pi5 PostgreSQL database/user `n8n`.
+  Secrets live only in `/opt/apps/n8n/.env` on VM100. Local probes returned
+  `/healthz 200` and public `https://n8n.dungxbuif.com/ 200`.
+- **OpenClaw deployed on VM100:** `vm100-openclaw` runs
+  `homelab/openclaw:vm100-20260912`, built from upstream OpenClaw source commit
+  `41c45d21`, publishes LAN port `18086`, and uses VM100-local state under
+  `/opt/apps/openclaw/`. Qwen/OpenAI-compatible provider credentials and the
+  Telegram bot token live only in `/opt/apps/openclaw/.env`; OpenClaw default
+  model is set to `openai/qwen/qwen3.6-35b-a3b`. Public
+  `https://openclaw.dungxbuif.com/` returned `403`, which confirms the route
+  reaches the authenticated gateway.
+- **Routing published:** Orange Pi `/opt/edge/traefik/dynamic.yml` and repo
+  `migration/traefik/dynamic.yml` now route `openclaw.dungxbuif.com` to
+  `10.10.0.31:18086` and `n8n.dungxbuif.com` to `10.10.0.31:18087`.
+- **GoClaw remains removed:** `goclaw.dungxbuif.com` still returns `404`; this
+  deployment did not restore GoClaw.
+- **Operational notes:** VM100 required the `docker-buildx` package to build
+  OpenClaw with BuildKit. The build completed but was I/O-heavy; VM100 has no
+  swap and should be reviewed for build/runtime headroom.
+
+## v3.2 — 2026-09-12 · Swarm service migration and MyPocket fresh deploy
+
+- **Swarm migration:** `n8n` and `openclaw` were migrated from standalone VM100
+  containers with host ports to Swarm services constrained to `vm100-prod` on
+  `homelab-net`. Orange Pi Traefik still uses the file provider, but routes now
+  target Swarm DNS names (`n8n:5678`, `openclaw:18789`) instead of VM100 host
+  ports.
+- **OpenClaw public access fix:** configured `gateway.trustedProxies` for the
+  Orange Pi/overlay proxy path and added `https://openclaw.dungxbuif.com` to
+  `gateway.controlUi.allowedOrigins`.
+- **MyPocket fresh deploy:** built `homelab/mypocket-api:vm100-20260912-okb335cb4`
+  and `homelab/mypocket-web:vm100-20260912-okb335cb4` from the current
+  MyPocket source, reset the Pi5 PostgreSQL `mypocket` schema, flushed the
+  MyPocket Redis DB index, and deployed Swarm services `mypocket-api`,
+  `mypocket-worker`, and `mypocket-web` on VM100.
+- **Routing:** `money.dungxbuif.com` now routes to `mypocket-web:80` over
+  `homelab-net`; public probes returned `/api/v1/health/live 200`,
+  `/api/v1/health/ready 200`, and `/ 200`.
+
+## v3.2 — 2026-09-11 · VM100 Swarm worker onboarding intent
+
+- **Completed 2026-09-12:** VM100 (`10.10.0.31`, hostname `vm100-prod`) joined
+  the existing Docker Swarm as a worker. The Swarm manager (`rpivn`, Pi5
+  `10.10.0.5`) now reports `vm100-prod` as `Ready` and `Active`.
+- **Intent:** VM100 can later run production app workloads behind the Orange Pi
+  Traefik edge using Swarm service labels.
+- **Topology decision:** Do not create a separate single-node Swarm on VM100 by
+  default. The intended cluster is the existing Pi5 manager + Orange Pi worker
+  Swarm; VM100 should join that cluster as an additional worker.
+- **Scope:** This step installs/enables Swarm membership only. It does not move
+  MyPocket, does not redeploy GoClaw, and does not migrate existing VM100
+  containers into Swarm services yet.
+- **Verification:** VM100 `docker info` reports `Swarm=active`; Pi5
+  `docker node ls` lists `rpivn` as manager/leader plus `orangepizero3` and
+  `vm100-prod` as workers. Existing VM100 containers and Orange Pi file-provider
+  routes were left unchanged.
+
+## v3.2 — 2026-09-11 · Current docs audit and archive cleanup
+
+- **Current docs reconciled:** Root `index.md`, `docs/MAIN.md`,
+  `docs/INDEX.md`, `docs/PI.md`, and `docs/MAC.md` now describe the live
+  topology: VPS `gateway-traefik` -> Rathole -> Orange Pi `edge_traefik`,
+  VM100 production compute, Pi5 datastore/Swarm manager, and Mac dependency
+  host.
+- **New current docs:** Added `docs/VM100.md` for the VM100 production services
+  and `docs/PROJECTS.md` for local project workspace layout.
+- **Caddy-era content archived:** The superseded Orange Pi Caddy migration plan
+  and helper scripts were moved under `docs/archived/edge-caddy-era/`.
+  `migration/` now holds only current Traefik/Rathole/AdGuard deployment source.
+- **Retired services removed from current docs at that point:** GoClaw,
+  OmniScan bot, n8n, GitLab web/git routes, Caddy edge, and VPS Nginx were
+  treated as historical or explicitly retired unless mentioned in dated
+  changelog entries. n8n was later redeployed on VM100 on 2026-09-12; GoClaw
+  remains removed.
+- **Explicit exceptions:** MyPocket remains outside VM100 migration and stays at
+  `/Users/dungxbuif/workspace/MyPocket/`; `money.dungxbuif.com` may remain a
+  known 502 while the app is under development.
+
+## v3.2 — 2026-09-06 · GoClaw LAN SSRF allowlist for homelab OCR
+
+> Historical note. GoClaw public routing and runtime data were later removed on
+> 2026-09-11; retain this entry only as the decision trace for the old GoClaw
+> host.
+
+- **GoClaw native SSRF allowlist:** Added `GOCLAW_SSRF_ALLOWED_CIDRS=10.10.0.0/24` to `/Users/dungxbuif/production/goclaw-host/env.example` and restarted `com.dungxbuif.goclaw-native`. This matches the documented physical LAN segment for Mac/Pi/edge services and lets GoClaw reach LAN-routed services such as OCR when they resolve through the homelab edge path.
+- **Scope decision:** Do not broadly allow all RFC1918 ranges by default. `10.10.0.0/24` is the documented physical LAN; `172.30.0.0/16` is the Swarm overlay and should normally be reached through the documented Caddy/domain routes unless a direct overlay path is explicitly required. `100.64.0.0/10` is the Headscale tailnet and is not in GoClaw's current hard-blocked SSRF CIDR list.
+- **Separate gate:** Shell `curl -X POST` remains controlled by GoClaw shell policy, not SSRF. The SSRF allowlist only relaxes destination-network validation for supported HTTP/tool paths.
+
+## v3.2 — 2026-08-17 · Edge ingress reconciliation discovery
+
+> Historical reconciliation note. This entry captured an intermediate discovery
+> state before the September Traefik cleanup. The current live edge is VPS
+> `gateway-traefik` -> Rathole -> Orange Pi `edge_traefik`; do not use this
+> entry as a current runbook.
+
+- **Documentation drift corrected:** the VPS was migrated from Nginx to
+  `gateway-traefik`. The live security gate is TCP router
+  `rathole-passthrough` and its `HostSNI(...)` rule. Editing `dynamic.yml`
+  auto-reloads through Traefik's file provider; `nginx.conf` and
+  `docker compose restart nginx-gateway` are obsolete playbook instructions.
+- **Superseded service-export scope:** this entry still mentions Pi5 Caddy.
+  Current service export uses Orange Pi Traefik dynamic config and the VPS
+  Traefik HostSNI allow-list.
+- **Security follow-up recorded:** Cloudflare API tokens, PostgreSQL passwords,
+  and the Rathole default token remain plaintext in existing deployment
+  configuration. Rotate and move them to a secret manager or SOPS; new
+  automation must use environment-provided credentials and must not add secrets
+  to repository files.
+
 ## v3.1 — 2026-08-17 · Orange Pi Zero 3 edge migration
 
-> **Current version.** Pi5 = **database & persistent services** (datastore only).
-> Orange Pi Zero 3 = TLS edge (Caddy+Rathole+AdGuard) via Docker Swarm.
+> Historical migration record. The later current edge is Orange Pi
+> Traefik+Rathole+AdGuard; Caddy references in this section are retained only to
+> explain how the edge migrated.
 
 - **Orange Pi Zero 3** (`10.10.0.2`, Armbian Bookworm, ARM64, 1GB RAM) brought online as the new **TLS edge gateway** via Docker Swarm (Pi5=manager, orange-pi=worker). Migrated **Caddy+Rathole+AdGuard** off the Pi5 onto the orange-pi as Swarm services, leveraging an attachable overlay network `homelab-net` (172.30.0.0/16) so orange-pi Caddy can still resolve Pi5 datastore containers (`rustfs`, `docker-registry`, `librespeed`, `n8n`, `pgadmin`, `goclaw`, `couchdb`, `gitlab`) by Docker DNS name without publishing host ports.
 - **Pi5** now operates as a **datastore-only node** (Postgres, PgBouncer, RustFS, Redis, Registry, LibreSpeed, n8n, pgAdmin, CouchDB, GitLab, GoClaw, monitoring stack). Containers were attached to the overlay via `docker network connect` (zero downtime — no recreate). Pi5 remains the **Swarm manager**.
@@ -86,7 +407,7 @@ timestamp: 2026-07-03T15:14:00Z
 ## 2026-06-23
 
 - **DNS**: Disabled `DNSStubListener` of `systemd-resolved` on Raspberry Pi 5 to free port 53 for AdGuard Home.
-- **Restructure**: Restructured the documentation directory to follow the Open Knowledge Format (OKF) standard (v0.1) and translated all contents from Vietnamese to English. Created root and subdirectory indexes: [INDEX.md](./INDEX.md), [k8s/INDEX.md](./k8s/INDEX.md), [monitoring/INDEX.md](./monitoring/INDEX.md). Converted concepts: [2026-05-29_k8s_proxmox_iac_design.md](./2026-05-29_k8s_proxmox_iac_design.md), [CONTEXT.md](./CONTEXT.md), [MAIN.md](./MAIN.md), [MIKROTIK.md](./MIKROTIK.md), [PI.md](./PI.md), [PRE_REQUIRE.md](./PRE_REQUIRE.md), [PROXMOX.md](./PROXMOX.md), [k8s/CICD.md](./k8s/CICD.md), [k8s/DB.md](./k8s/DB.md), [k8s/DB_INVENTORY.md](./k8s/DB_INVENTORY.md), [k8s/LONGHORN_CONFIG_REVIEW.md](./k8s/LONGHORN_CONFIG_REVIEW.md), [k8s/RECOVERY_GUIDE.md](./k8s/RECOVERY_GUIDE.md), [monitoring/README.md](./monitoring/README.md). Added the official specification reference: [OKF_SPEC.md](./OKF_SPEC.md).
+- **Restructure**: Restructured the documentation directory to follow the Open Knowledge Format (OKF) standard (v0.1) and translated all contents from Vietnamese to English. Created root and subdirectory indexes: [INDEX.md](./INDEX.md), [k8s/INDEX.md](./archived/k8s-v2/k8s/INDEX.md), [monitoring/INDEX.md](./archived/k8s-v2/monitoring/INDEX.md). Converted concepts: [2026-05-29_k8s_proxmox_iac_design.md](./archived/k8s-v2/2026-05-29_k8s_proxmox_iac_design.md), [CONTEXT.md](./CONTEXT.md), [MAIN.md](./MAIN.md), [MIKROTIK.md](./MIKROTIK.md), [PI.md](./PI.md), [PRE_REQUIRE.md](./PRE_REQUIRE.md), [PROXMOX.md](./PROXMOX.md), [k8s/CICD.md](./archived/k8s-v2/k8s/CICD.md), [k8s/DB.md](./archived/k8s-v2/k8s/DB.md), [k8s/DB_INVENTORY.md](./archived/k8s-v2/k8s/DB_INVENTORY.md), [k8s/LONGHORN_CONFIG_REVIEW.md](./archived/k8s-v2/k8s/LONGHORN_CONFIG_REVIEW.md), [k8s/RECOVERY_GUIDE.md](./archived/k8s-v2/k8s/RECOVERY_GUIDE.md), [monitoring/README.md](./archived/k8s-v2/monitoring/README.md). Added the official specification reference: [OKF_SPEC.md](./OKF_SPEC.md).
 
 - **Fix**: Resolved the K8s DNS query loops for `kubernetes.nccsoft.office` by:
    - Replacing the `nccsoft.office` search domain with `lan` in Netplan configs on K8s nodes `k8s-cp-1`, `k8s-cp-2`, `k8s-cp-3` and running `netplan apply`.

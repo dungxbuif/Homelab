@@ -23,3 +23,13 @@ credentials/
 
 # Local Git worktrees
 .worktrees/
+
+# Local editor/vault state
+.obsidian/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Local source aggregation. Project repos live here but are not part of this infrastructure repository.
+projects/

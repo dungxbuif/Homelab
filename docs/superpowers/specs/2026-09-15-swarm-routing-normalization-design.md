@@ -57,6 +57,19 @@ Do not replace `172.30.0.10/32` with another task IP or a blanket `172.30.0.0/16
 
 ## Rollback And Verification
 
+**Operational probe amendment (2026-09-15):** During Homepage, MezonHook, and
+Family Tree canaries, newly attached Orange Pi overlay curl helpers were
+followed by the long-lived Traefik task losing ARP resolution for multiple
+overlay destinations; a fresh helper could still connect, and replacing the
+Traefik task restored it. The OCR canary joined on VM100 and was reachable
+from a helper sharing the existing Traefik network namespace without creating
+a new Orange Pi overlay member; cross-route probes remained healthy. For
+remaining production cutovers, probe from the existing edge task's network
+namespace (and inspect VM100 service membership) rather than joining a new
+attachable Orange Pi container to `homelab-net`. This changes the diagnostic
+method, not the file-provider routing architecture. The causal trigger and
+Docker/kernel mechanism remain unconfirmed.
+
 - Every app has a single-router cutover: restore that router's previous VM100 host-port target if its Swarm canary or public probe fails, then keep or restart the existing Compose container. Do not roll back other applications as a group.
 - For a datastore URL regression, restore only that client's prior endpoint from its captured spec; preserve credentials and data.
 - Verify `tasks.<service>` DNS and container-port connectivity from Orange Pi and VM100, Swarm replica placement on VM100, zero app host ports after each finalized cutover, and source/live Traefik config equality.

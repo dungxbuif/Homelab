@@ -1,15 +1,18 @@
 ---
 type: Runbook
 title: "CouchDB Obsidian Sync"
-description: "Deployment, connection details, verification commands, and recovery notes for the CouchDB backend used by Obsidian vault sync"
-timestamp: 2026-07-08T00:00:00Z
+description: "Deployment, connection details, verification commands, and recovery notes for the Pi5 CouchDB backend"
+timestamp: 2026-09-14T00:00:00Z
 ---
 
 # CouchDB Obsidian Sync
 
 ## Purpose
 
-CouchDB runs on the Raspberry Pi 5 gateway as the sync backend for this Obsidian vault. It is deployed as a portless Docker service behind Caddy and the Cloud VPS Nginx gateway.
+CouchDB runs on the Raspberry Pi 5 datastore node as the sync backend for this
+Obsidian vault and as a small general document datastore. It is deployed as a
+portless Docker service behind the VPS Traefik -> Rathole -> Orange Pi Traefik
+edge path.
 
 ## Deployment
 
@@ -36,10 +39,10 @@ Both endpoints are routed:
 
 ```text
 Internet
--> Cloud VPS Nginx whitelist
+-> Cloud VPS gateway-traefik HostSNI allow-list
 -> Rathole tunnel
--> Raspberry Pi Caddy
--> couchdb:5984 inside proxy_net
+-> Orange Pi edge_traefik
+-> couchdb:5984 over homelab-net/proxy_net
 ```
 
 ## Obsidian Client Settings
@@ -67,6 +70,8 @@ Credential files on the Pi:
 - `.env` contains the CouchDB admin bootstrap credentials and CouchDB secrets.
 - `obsidian-sync.env` contains the non-admin Obsidian sync user and database settings.
 - Both files should remain `0600` and must not be committed.
+- Local operational reference: `local_vars.json` -> `COUCHDB_SECRETS`
+  contains the current CouchDB admin, sync user, endpoint, and database names.
 
 ## Database Layout
 
@@ -76,12 +81,21 @@ Credential files on the Pi:
 | `_replicator` | CouchDB replication metadata |
 | `_global_changes` | CouchDB global changes metadata |
 | `obsidian_vault` | Main Obsidian sync database |
+| `homelab` | General homelab CouchDB database, created 2026-09-14; empty at creation (`doc_count=0`); keep app-specific `_security` unset until a consuming service is assigned |
 
 The `obsidian_vault` database is restricted with `_security`:
 
 - Admin: CouchDB admin user.
 - Member: `obsidian_sync` user and `obsidian_sync` role.
 - Anonymous access should return `401`.
+
+Current non-admin user document:
+
+- `org.couchdb.user:obsidian_sync`
+
+The `homelab` database currently relies on CouchDB's global authenticated-only
+setting; anonymous access returned `401` after creation. Add explicit
+`_security` before assigning it to a specific app.
 
 ## Verification
 
@@ -106,6 +120,8 @@ Expected:
 - Authenticated sync user receives `200`.
 - Anonymous request receives `401`.
 - CORS preflight from `app://obsidian.md` receives `204`.
+- `homelab` exists and returns metadata with `doc_count=0` when queried as the
+  CouchDB admin.
 
 ## CORS
 

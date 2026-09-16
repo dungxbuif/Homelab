@@ -8,7 +8,19 @@ timestamp: 2026-07-03T15:14:00Z
 # Homelab Network Trace Context
 
 Date: 2026-06-02
-Workspace: `/Users/dungxbuif/workspace/Homelab`
+Workspace: `/Users/dungxbuif/workspace/homelab`
+
+Current local source project aggregation lives under
+`/Users/dungxbuif/workspace/homelab/projects/`; see
+[PROJECTS.md](./PROJECTS.md). `MyPocket` intentionally remains at
+`/Users/dungxbuif/workspace/MyPocket/` while under active development.
+
+> [!IMPORTANT]
+> This file is a dated diagnostic record. Container inventories, benchmarks,
+> and Caddy/Nginx observations below describe the 2026-06-02 environment and
+> are not current operating instructions. Current ingress is VPS
+> `gateway-traefik` -> Rathole -> Orange Pi `edge_traefik`; Orange Pi
+> `edge_adguardhome` provides split DNS, and Pi5 is manager/datastore only.
 
 ## Scope And Rules
 
@@ -17,21 +29,28 @@ Workspace: `/Users/dungxbuif/workspace/Homelab`
 - Writing this context file is approved by user request.
 - Secrets are intentionally omitted. A MikroTik password was provided during the session but must not be stored here.
 
-## Known Topology From Markdown
+## Current Edge Baseline (2026-09)
 
 - ISP/ONT: Viettel modem in bridge mode, VLAN 35.
 - Router: MikroTik hEX S, LAN gateway `<MIKROTIK_IP>`, handles PPPoE, NAT, DHCP.
 - LAN subnet: `<LAN_SUBNET>`.
-- Raspberry Pi 5: `<PI_IP>`, **datastore & persistent services** (Postgres+Redis, RustFS, registry, n8n, monitoring; Docker Swarm manager).
-- Orange Pi Zero 3: `<ORANGE_PI_IP>`, TLS edge (Caddy+Rathole+AdGuard) as Docker Swarm worker.
+- Raspberry Pi 5: `<PI_IP>`, **manager/datastore** (PostgreSQL+Redis, RustFS, registry, and persistent services; no edge proxy).
+- Orange Pi Zero 3: `10.10.0.2` (`<ORANGE_PI_IP>`), home edge
+  (`edge_traefik`, `edge_rathole`, `edge_adguardhome`) as Docker Swarm worker.
 - Mesh Wi-Fi: AP / bridge mode, DHCP delegated to MikroTik.
-- Proxmox VE Host: `<PROXMOX_IP>`, local LAN host, orchestrates VMs and K8s.
-- Main Worker VM: `<WORKER_VM_IP>`, hosted on Proxmox, runs heavier workloads.
-- Public ingress: Cloud VPS -> TCP Rathole port 7000 -> Orange Pi -> Caddy -> internal services (Pi5 via Docker Swarm overlay).
-- Internal DNS override: `speed.dungxbuif.com` resolves to `<ORANGE_PI_IP>` via Orange Pi/AdGuard.
+- VM100: `10.10.0.31`, production compute for homepage, OCR proxy, Family Tree,
+  and MezonHook.
+- Mac mini: documented LAN `10.10.0.6`, native OCR and LM Studio dependency
+  host. MyPocket dev checkout remains local/unmoved, but production runtime
+  is on VM100. NetBird roaming is proposed, not deployed.
+- Proxmox VE Host: `10.10.0.20`, production hypervisor for VM100; optional
+  practice VMs need an isolated lifecycle. Old Kubernetes topology retired.
+- Public ingress: Cloud VPS `gateway-traefik` -> TCP Rathole port 7000 -> Orange Pi `edge_traefik` -> approved HTTP services.
+- Internal DNS override: active names resolve to `10.10.0.2` through Orange Pi
+  `edge_adguardhome`.
 - Public DNS: `speed.dungxbuif.com` resolves to `<VPS_PUBLIC_IP>` via `1.1.1.1`.
 
-## Local Mac Network State
+## Historical Local Mac Network State (2026-06-02)
 
 - Ethernet `en0`: `<MAC_ETHERNET_IP>/24`, active, 1000baseT full-duplex, MTU 1500.
 - Wi-Fi `en1`: `<MAC_WIFI_IP>/24`, active in same subnet.
@@ -63,7 +82,7 @@ WAN download sample:
 - Cloudflare 25MB endpoint: `36,267,415 B/s`, approximately `290 Mbps`.
 - This is consistent with or slightly above the 250 Mbps fiber package mentioned in existing docs.
 
-Local Pi/LibreSpeed download through HTTPS/Caddy:
+Historical Pi/LibreSpeed download through the then-current HTTPS proxy:
 
 - `https://speed.dungxbuif.com/backend/garbage.php?ckSize=100`
   - `56,729,092 B/s`, approximately `454 Mbps`, total `1.848s`.
@@ -72,7 +91,7 @@ Local Pi/LibreSpeed download through HTTPS/Caddy:
 
 Interpretation:
 
-- Mac -> Pi -> Caddy/LibreSpeed path is fast and not obviously CPU-bound during this sample.
+- The measured Mac -> Pi -> proxy/LibreSpeed path was fast and not obviously CPU-bound during this sample.
 - It does not prove full 1Gbps LAN capacity because no raw `iperf3` server was running.
 - `iperf3` exists on the Mac at `/opt/homebrew/bin/iperf3`.
 - No iperf3 server was listening on `<PI_IP>:5201` or `<WORKER_VM_IP>:5201`.
@@ -154,7 +173,8 @@ MikroTik status/config findings:
 - Router DNS:
   - `allow-remote-requests=true`.
   - Dynamic upstream DNS: Viettel DNS `116.97.90.124,116.97.90.125`.
-  - DHCP hands clients DNS `<PI_IP>,1.1.1.1`.
+  - At trace time, DHCP handed clients the then-current Pi-hosted DNS plus
+    `1.1.1.1`. The current homelab DNS endpoint is Orange Pi `10.10.0.2`.
 - Router management services:
   - Telnet, FTP, WWW, SSH, API, WinBox, API-SSL are enabled with empty `address` restriction.
   - Firewall input drop from non-LAN reduces WAN exposure, but this is still broader than ideal for management-plane hardening.
@@ -195,7 +215,7 @@ Documentation sync note:
 
 This may be an optimization gap, but changing it requires approval.
 
-## Pi Docker Snapshot
+## Historical Pi Docker Snapshot (2026-06-02)
 
 Running containers:
 
@@ -218,10 +238,10 @@ Docker stats sample:
 
 Note:
 
-- Docs say only Caddy/AdGuard/Rathole should expose host ports, but current snapshot also shows `my-cv` exposing `0.0.0.0:3000->3000/tcp`.
+- At the time, docs said only the edge/DNS/tunnel containers should expose host ports, but the snapshot also showed `my-cv` exposing `0.0.0.0:3000->3000/tcp`.
 - This may be intentional or drift from the documented portless invariant. Do not change without approval.
 
-## Current Assessment
+## Assessment At Time Of Trace
 
 No obvious basic LAN/WAN fault was found in this trace:
 
@@ -273,9 +293,9 @@ Potential issues or follow-up targets:
 5. Pi -> Mac reverse iperf showed retransmits/dips despite no obvious interface errors. Re-test with Wi-Fi disabled and no background load before treating as a real problem.
 6. No upload-saturation bufferbloat test has been run yet.
 7. Router management services are broad on LAN: Telnet/FTP/API/WinBox enabled without service-level address restrictions.
-8. `my-cv` exposes host port `3000`, which conflicts with the documented "portless except Caddy/AdGuard/Rathole" invariant unless intentional.
+8. `my-cv` exposed host port `3000`, which conflicted with the then-current portless invariant unless intentional.
 
-## Recommended Next Steps
+## Historical Recommended Next Steps
 
 Read-only next steps:
 
@@ -294,7 +314,7 @@ Possible changes only after explicit approval:
    - Restrict SSH/WWW/API/WinBox to trusted LAN/admin IPs.
    - Create a dedicated read-only operator account.
 5. Remove accidental `console-dump.txt` from MikroTik Files if user approves.
-6. Decide whether `my-cv:3000` host exposure is intentional; if not, move it behind Caddy/proxy-only.
+6. Decide whether `my-cv:3000` host exposure was intentional; any current route change belongs in Orange Pi Traefik.
 
 ## Pending Deep Collection Request
 
@@ -305,7 +325,7 @@ User asked to collect the following for a future deeper audit:
 - Upload speed/bufferbloat test.
 - Proxmox/worker network trace.
 - VPS/Rathole side trace.
-- AdGuard/Caddy actual config snapshot.
+- Historical AdGuard/proxy config snapshot.
 
 Current collection state:
 
@@ -330,16 +350,18 @@ Current collection state:
 - Upload/bufferbloat test not collected.
   - Need either browser-based speed test, a reliable upload endpoint, or a controlled remote iperf3 endpoint.
 
-## Pi Config Best-Practice Review
+## Historical Pi Config Best-Practice Review
 
-Overall Pi gateway config is functional and performant, but not fully clean best-practice yet.
+The Pi gateway configuration observed in 2026-06 was functional and performant,
+but this review predates the Orange Pi Traefik edge. Do not use it as a current
+service inventory.
 
 Positive state:
 
 - Pi `eth0` is wired at 1Gbps and LAN iperf reached near line-rate.
 - `wlan0` is down, avoiding accidental Wi-Fi routing on Pi.
-- Caddy is the central ingress router for domains.
-- Most app containers are only on Docker networks, with Caddy routing internally.
+- The then-current proxy was the central ingress router for domains.
+- Most app containers were only on Docker networks, with the proxy routing internally.
 - AdGuard is acting as LAN DNS and split-horizon resolver.
 - Rathole is host-networked as expected for tunnel connectivity.
 - Container CPU/memory looked low during trace.
@@ -352,28 +374,29 @@ Issues / cleanup targets:
    - `dpage/pgadmin4:latest`
    - `docker.n8n.io/n8nio/n8n` without explicit tag in observed compose snapshot.
 3. Secrets exist in runtime config files on Pi. This is common in homelabs but should be protected with file permissions and never committed.
-4. Caddy storage route has permissive CORS headers. Useful for compatibility, but if S3 exposure grows, restrict origins.
+4. The then-current storage route had permissive CORS headers. The current
+   equivalent is the `storage-cors` middleware in `migration/traefik/dynamic.yml`.
 5. Pi is a concentrated dependency: DNS, ingress, tunnel, automation, storage, registry, and speedtest. Monitoring should not live only on Pi; at least one watcher should run from VPS or Proxmox.
 6. `AdGuardHome.yaml` content was not fully visible in the first scrubbed snapshot output beyond the section header; verify the file capture if AdGuard-specific audit becomes important.
 
-## Monitoring Plan With Telegram Alerts
+## Historical Monitoring Notes (not a current deployment plan)
 
-Recommended staged approach:
+Proposals recorded in the trace:
 
-1. Start fast with Uptime Kuma + Telegram.
+1. The trace proposed Uptime Kuma + Telegram.
    - Best for immediate HTTP/TCP/ping monitoring.
    - Can run on Proxmox or VPS so it can detect Pi outages.
    - Monitor:
      - `<MIKROTIK_IP>` MikroTik ping.
-     - `<PI_IP>` Pi ping.
-     - `<PI_IP>:53` DNS TCP/UDP as possible.
+     - `<PI_IP>` Pi5 datastore ping.
+     - `10.10.0.2:53` Orange Pi `edge_adguardhome` DNS TCP/UDP as possible.
      - `https://dungxbuif.com`.
      - `https://speed.dungxbuif.com`.
-     - `https://n8n.dungxbuif.com`.
      - Rathole/VPS public path availability.
-     - Caddy public HTTPS endpoints.
+     - Orange Pi Traefik public HTTPS endpoints.
 
-2. Add Prometheus + Grafana + Alertmanager for resource metrics.
+2. The trace proposed Prometheus + Alertmanager for resource metrics. Grafana
+   is retired and must not be added by this historical note.
    - Prefer Proxmox/worker or VPS as the monitoring host, not Pi only.
    - Exporters:
      - `node_exporter` on Pi, VPS, Proxmox/worker.
@@ -381,7 +404,7 @@ Recommended staged approach:
      - `blackbox_exporter` for HTTP/TCP/ICMP probes.
      - `snmp_exporter` for MikroTik after enabling/restricting SNMP.
      - AdGuard exporter if DNS/query metrics are required.
-     - Caddy metrics endpoint if request/ingress visibility is required.
+     - Traefik metrics endpoint if request/ingress visibility is required.
 
 3. Telegram alert routing.
    - Alertmanager can send to Telegram using a webhook/receiver integration.
@@ -395,19 +418,20 @@ Suggested alert rules:
   - VPS unreachable.
   - Proxmox/worker unreachable.
 - DNS failure:
-  - `<PI_IP>:53` unavailable.
+  - Orange Pi `10.10.0.2:53` unavailable.
   - AdGuard not resolving external names.
-  - Split-horizon record like `speed.dungxbuif.com -> <PI_IP>` missing internally.
+  - Split-horizon record like `speed.dungxbuif.com -> 10.10.0.2` missing internally.
 - Ingress/tunnel failure:
   - Public HTTPS domain down.
   - Rathole path not reachable.
-  - Caddy not responding on `80/443`.
+  - `edge_traefik` not responding on `80/443`.
 - Resource:
   - CPU sustained high for 10-15 minutes.
   - Memory pressure.
   - Disk > 80% warning, > 90% critical.
   - SSD mount `/ssd-data` missing.
-  - Docker container stopped/restarting for `caddy`, `rathole`, `adguardhome`, `n8n`, `postgres`, `rustfs`.
+  - Swarm service stopped/restarting for `edge_traefik`, `edge_rathole`, or `edge_adguardhome`.
+  - PostgreSQL health regression on Pi5, checked separately from edge routing.
 - Network quality:
   - WAN latency above baseline threshold.
   - Packet loss > 1-2% for several minutes.
@@ -449,7 +473,9 @@ Suggested alert rules:
 - **Discovery:** `kube-vip` static pod during bootstrap requires either `server_address: 127.0.0.1` or the VIP to be pre-existing on the host to avoid DNS lookup failure for 'kubernetes'.
 
 ### Phase 4: VIP Stabilization & Root Cause Fix (2026-06-03)
-- **Root Cause Identified:** `kube-vip` static pod attempts a leader election using the hostname `kubernetes`. Since the cluster isn't up, external DNS (`<PI_IP>`) cannot resolve it, causing kube-vip to fail to bind the VIP.
+- **Root Cause Identified:** `kube-vip` static pod attempted leader election
+  through the then-current Pi-hosted DNS. Because the cluster was not yet up,
+  `kubernetes` did not resolve and kube-vip failed to bind the VIP.
 - **Fix Applied:** Added `127.0.0.1 kubernetes` to `/etc/hosts` on all nodes via Ansible.
 - **Success:** VIP `<K8S_VIP>` is now stable and managed by kube-vip on `k8s-cp-1`.
 - **Validation:** `kubeadm token create` now works perfectly over the HA endpoint.
@@ -461,7 +487,9 @@ Suggested alert rules:
 - **Action:** Enabled Cilium Hubble UI for network observability.
 
 ### Phase 6: Operational Hardening & Docs Sync
-- **Discovery (VPS Whitelist):** Identified that Cloud VPS Nginx has a strict SNI and HTTP host whitelist. New domains **must** be added to `/root/gateway/nginx.conf` on the VPS.
+- **Historical discovery (superseded):** The VPS then used an Nginx SNI/HTTP
+  whitelist. Current public routes use the `gateway-traefik` HostSNI allow-list
+  in `/root/gateway/dynamic.yml`.
 - **Decision:** Created a formal **[Service Export Playbook](./MAIN.md#-service-export-playbook-end-to-end-v3)** to document the multi-layer process.
 - **Action (Security):** Exported all critical credentials (SSH keys, Kubeconfig) to the gitignored `credentials/` directory.
 - **Action (Memory):** Synced all secrets and real IPs to `local_vars.json` and private agent memory.

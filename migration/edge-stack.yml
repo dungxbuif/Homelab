@@ -1,42 +1,35 @@
-# Orange-pi edge — Swarm stack (Caddy + Rathole + AdGuard)
-# Draft reference. Operator must fill <CF_API_TOKEN> before deploy.
-# Phases B/C of ../docs/migration_orange_pi_edge.md
+# Orange Pi edge - canonical Swarm stack (Traefik + Rathole + AdGuard Home)
 #
-# Placement: edge=true label set on orange-pi worker.
-# Network:   homelab-net attachable overlay (created in Phase A4).
-#            Pi5 standalone containers attached in Phase B2 with:
-#              docker network connect homelab-net <name>
-#              (for docker-registry add: --net-alias registry)
-#
-# Rathole client no longer needs host network — it only initiates ONE
-# outbound TCP to VPS :7000 and forwards to "caddy:80"/"caddy:443"
-# which resolve on the overlay. Pure bridge mode is enough.
+# Placement: edge=true label on the Orange Pi worker.
+# Network: homelab-net attachable overlay, created outside this stack.
+# Deployment requires CF_DNS_API_TOKEN in the operator environment.
 
 version: "3.8"
 
 services:
-  caddy:
-    image: infra-caddy:latest
+  traefik:
+    image: traefik:v3.6
+    command:
+      - --configFile=/etc/traefik/traefik.yml
     environment:
-      CF_API_TOKEN: "<CF_API_TOKEN>"
+      - CF_DNS_API_TOKEN
     ports:
       - target: 80
         published: 80
+        protocol: tcp
         mode: host
       - target: 443
         published: 443
+        protocol: tcp
         mode: host
       - target: 443
+        published: 443
         protocol: udp
-        published: 443
-        mode: host
-      - target: 2019
-        published: 2019
         mode: host
     volumes:
-      - /opt/edge/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - /opt/edge/caddy/data:/data
-      - /opt/edge/caddy/config:/config
+      - /opt/edge/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - /opt/edge/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - /opt/edge/traefik/test-letsencrypt:/letsencrypt
     networks:
       - homelab-net
     deploy:
@@ -73,6 +66,7 @@ services:
         mode: host
       - target: 81
         published: 81
+        protocol: tcp
         mode: host
     volumes:
       - /opt/edge/adguard/conf:/opt/adguardhome/conf

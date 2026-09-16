@@ -1,0 +1,12 @@
+[client]
+remote_addr = "103.82.21.202:7001"
+
+[client.transport]
+type = "noise"
+
+[client.transport.noise]
+remote_public_key = "__NOISE_PUBLIC__"
+
+[client.services.gitlab_ssh]
+token = "__TOKEN__"
+local_addr = "tasks.gitlab_gitlab:22"

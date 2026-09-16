@@ -1,13 +1,13 @@
 ---
 type: Reference
 title: "Raspberry Pi 5 Datastore Specification"
-description: "Technical specification of the Home Datastore Pi 5 (v3): Postgres+Redis datastores, object storage, monitoring, and Swarm manager for the orange-pi edge"
-timestamp: 2026-08-17T00:00:00Z
+description: "Technical specification of the Pi5 manager/datastore node: PostgreSQL, Redis, object storage, and persistent services"
+timestamp: 2026-09-10T00:00:00Z
 ---
 
-# System Specification & Architectural Design: Home Gateway Infrastructure
+# System Specification & Architectural Design: Pi5 Datastore Infrastructure
 
-> **Host Device:** Raspberry Pi 5 (ARM64 Architecture - Broadcom BCM2712) **Host Static LAN IP:** `<PI_IP>` (Local LAN Network) **Target Audience:** AI Coding & DevOps Agents **Root Directory:** `/ssd-data` (High-speed External SSD mounted on Raspberry Pi 5) **Core Design Principles:** Zero Host Port Exposure (Portless Design), Unified Reverse Proxy Ingress, Strict Custom S3 IAM Policies, ARM64 Hardware Optimization, Zero Sudo dependency for standard tasks.
+> **Host Device:** Raspberry Pi 5 (ARM64 Architecture - Broadcom BCM2712) **Host Static LAN IP:** `<PI_IP>` (Local LAN Network) **Target Audience:** AI Coding & DevOps Agents **Root Directory:** `/ssd-data` (High-speed External SSD mounted on Raspberry Pi 5) **Role:** Docker Swarm manager and datastore/persistent-services host. Pi5 does not run the edge proxy.
 
 This workspace houses the complete configuration, provisioning scripts, security policies, and orchestration definitions for the **Home Gateway Infrastructure** running as a self-hosted single-board server on a **Raspberry Pi 5**. The entire infrastructure state is stored on a high-speed external SSD mounted at `/ssd-data`.
 
@@ -23,21 +23,15 @@ This workspace houses the complete configuration, provisioning scripts, security
 ├── rathole-build/         # Build context for compiling/testing local Rathole binaries
 └── infra/                 # Operational runtime stack directory
     ├── docker-compose.yml # Main Docker Compose orchestration file defining all gateway microservices
-    ├── Caddyfile          # Ingress routing rules & dynamic wildcard TLS config via Cloudflare DNS-01
     ├── README.md          # Human-oriented vietnamese system catalog and maintenance runbooks
-    ├── adguard/           # persistent work folders and DNS configurations for AdGuard Home
-    ├── caddy/             # Persistent ACME certificates storage and Caddy dynamic configurations
     ├── kuma-data/         # Inactive configs for Uptime Kuma monitoring (decommissioned)
     ├── my-cv/             # Static volume path for custom CV web application
-    ├── n8n/               # persistent workflow configurations
-    │   └── n8n_storage/   # Dynamic n8n assets & custom runtime integrations
     ├── postgres/          # Centralized PostgreSQL database storage
     │   └── data/          # Persistent database files
     ├── netdata/           # System resources monitoring configuration profiles
-    ├── rathole/           # Configuration files for Rathole client NAT traversal tunnels
     ├── registry/          # Dynamic volumes and security credentials for local Docker Registry
     │   └── auth/          # Htpasswd credentials for docker login authentication
-    ├── redis-prod/        # [v3 NEW] Standalone Redis for Mac omniscan-bot/macocr-proxy
+    ├── redis-prod/        # Standalone Redis for macocr-proxy and approved services
     │   └── docker-compose.yml  # bind 0.0.0.0:16379, auth, AOF (see Redis-Prod section)
     └── rustfs/            # High-performance S3 object storage directories (RustFS engine backend)
 ```
@@ -46,59 +40,88 @@ This workspace houses the complete configuration, provisioning scripts, security
 
 ## 📐 System Architecture & Service Connections
 
-The gateway infrastructure operates on an **Ingress-Proxy-Isolated** topology combined with NAT Traversal to expose localized services from inside a home lab to the public internet securely, utilizing a middleman VPS and local routing via Caddy.
-
-The structural pivot of the reverse proxy **Caddy** is its **Hybrid Reverse Proxy Ingress** design: Caddy is configured to seamlessly route traffic directly into Docker-managed virtual subnets (`proxy_net`) using virtual domain mapping and simultaneously proxy traffic outward to **other physical nodes/servers in the local home lab using their static LAN IP addresses** (e.g. proxying `openclaw.dungxbuif.com` to a standalone machine at IP `<MIKROTIK_IP>2:18789`).
+Pi5 supplies datastore and HTTP backend services to the Orange Pi over the
+attachable `homelab-net` Swarm overlay. The only current public path is VPS
+`gateway-traefik` -> Rathole -> Orange Pi `edge_traefik`. Orange Pi
+`edge_adguardhome` resolves active split-horizon names to `10.10.0.2` on the
+LAN. Pi5 neither terminates TLS nor runs an ingress proxy.
 
 ---
 
 ## 🔒 Portless Security & Ingress Invariants
 
-### 1. Zero Host Port Exposure
+### 1. Controlled Host Port Exposure
 
-Except for `caddy` (mapping ports `80` and `443` to host to handle HTTP/HTTPS ingress) and `adguardhome`/`rathole` (running in host network mode for direct low-level LAN DNS resolution and tunnel connectivity), **all other container services have no ports mapped to the host system**.
+Pi5 core services remain portless unless an inventoried exception requires
+LAN access. PostgreSQL remains unchanged: the raw container is internal and
+PgBouncer continues to provide the existing `10.10.0.5:5432` client endpoint.
+The VM100 n8n, Family Tree, OCR proxy, and MyPocket services use the equivalent
+private overlay endpoint `pgbouncer:6432`; GitLab alone uses direct
+`postgres:5432` because the current pooler is session-mode. The LAN mapping remains for clients
+that have not migrated.
+Redis-prod remains the other documented LAN datastore endpoint on `:16379`.
+The 2026-09-15 audit also found RelayHub development API `:8080` and
+monitoring `alertmanager:9093`/`victoriametrics:8428` host binds; confirm
+their consumers before closing or changing them. See the
+[network audit](./research/network-segmentation-2026-09-15.md) and
+[resource inventory](./research/resource-limit-audit-2026-09-15.md).
 
-- **PostgreSQL (`postgres`)** does not declare the `ports` property. Unprivileged network scans of the host will _not_ detect port `5432` open.
+- **PostgreSQL (`postgres`)** does not declare `ports`. A host scan **does**
+  see Pi5 `:5432` open because PgBouncer publishes that port; it does not
+  expose the raw PostgreSQL container.
 - **RustFS S3 (`rustfs`)** does not expose ports `9000` or `9001` directly to the host. External S3 client requests are securely routed via subdomains: S3 API via `storage.dungxbuif.com` and S3 Console via `cdn.dungxbuif.com`.
 
-### 2. TLS & Wildcard Ingress Strategy
+### 2. Edge Routing Boundary
 
-Caddy serves as the secure cryptographic edge boundary. Armed with Cloudflare API tokens, it automatically negotiates wildcard certificates (`*.dungxbuif.com`) via the DNS-01 challenge. This eliminates standard HTTP port exposures and lets local hosts acquire trusted TLS certificates completely offline:
+TLS and route ownership live on Orange Pi Traefik, not Pi5. The canonical
+router and service definitions are in [`../migration/traefik/dynamic.yml`](../migration/traefik/dynamic.yml).
+Pi5-backed routes currently include:
 
 - Dynamic subdomain mapping routes requests as follows:
     - `cdn.dungxbuif.com` →→ proxied internally to `rustfs:9001` (S3 Web Console)
     - `storage.dungxbuif.com` →→ proxied internally to `rustfs:9000` (S3 API)
     - `registry.dungxbuif.com` →→ proxied internally to `registry:5000` (Private Docker Registry)
     - `speed.dungxbuif.com` →→ proxied internally to `librespeed:80`
-    - `n8n.dungxbuif.com` →→ proxied internally to `n8n:5678`
     - `pgadmin.dungxbuif.com` →→ proxied internally to `pgadmin:80`
-    - `dungxbuif.com` →→ proxied **over LAN** to the Mac mini (`10.10.0.10:18081`, homepage) [v3 — was Pi5 my-cv]
-    - `ocr.dungxbuif.com` →→ proxied **over LAN** to the Mac mini (`10.10.0.10:18080`, macocr-proxy) [v3 — was K8s Traefik `10.10.0.30:80`]
-    - `llm.dungxbuif.com` →→ proxied **over LAN** to the Mac mini (`10.10.0.10:1234`, LM Studio native)
-    - `grafana.dungxbuif.com` →→ **retired** (404; was K8s, removed 2026-08)
+    - `couchdb.dungxbuif.com` and `sync-db.dungxbuif.com` -> `couchdb:5984`
+
+n8n is no longer a Pi5-hosted edge route; it now runs on VM100 and uses Pi5
+PostgreSQL database `n8n` through the private `pgbouncer:6432` overlay
+endpoint (changed from the equivalent LAN PgBouncer mapping on 2026-09-15).
+GitLab runs on VM100 and its public HTTPS/SSH routes are live through isolated
+VPS tunnels while the Orange Pi GitLab web route remains staged; Grafana
+remains retired. See [GitLab service runbook](./services/gitlab.md) for the
+temporary route and rollback.
+PostgreSQL is not an edge route and must not be added to the Traefik dynamic
+configuration.
 
 ---
 
 ## 🎛️ Network, Container & Technical Parameters Blueprint
 
-Below is the exhaustive mapping table of services running on the Raspberry Pi 5 host machine (`<PI_IP>`):
+Below is the core datastore/HTTP mapping for Pi5. It is not a complete
+container inventory; telemetry and RelayHub development containers are
+listed in the [resource audit](./research/resource-limit-audit-2026-09-15.md).
 
 ### 1. Container Allocation & Service Matrix
 
 |Service|Container Name|Docker Image & Version|Port Mapping (Host / Container)|Subdomain Routing / Ingress Target|Core Purpose & Technical Parameters|
 |---|---|---|---|---|---|
-|**Caddy Ingress**|`caddy`|`infra-caddy` (Custom build)|Host: `80:80`, `443:443`|Unified Ingress wildcard domain (`*.dungxbuif.com`)|Edge reverse proxy, routing ingress and dynamically managing TLS wildcard certs via CF DNS-01 API.|
-|**Rathole Client**|`rathole`|`rathole:local` (Custom build)|Host Network Mode|Connected to VPS `<VPS_PUBLIC_IP>:7000`|NAT Traversal client forwarding public TCP 80/443 VPS traffic directly to local Caddy container at `127.0.0.1:80/443`.|
-|**RustFS Storage**|`rustfs`|`rustfs/rustfs:1.0.0-beta.3`|**Portless** (Only within `proxy_net`)|`storage.dungxbuif.com` (S3 API)  <br>`cdn.dungxbuif.com` (Console)|High-performance ARM64 S3 Object Storage backend. Provides API (port 9000) and Web Console (port 9001).|
-|**Private Registry**|`docker-registry`|`registry:2`|**Portless** (Only within `proxy_net`)|`registry.dungxbuif.com`|Docker Image Registry utilizing local SSD storage. Auth: Htpasswd (`dungxbuif` account, Bcrypt `$2y$`).|
-|**Librespeed**|`librespeed`|`lscr.io/linuxserver/librespeed`|**Portless** (Only within `proxy_net`)|`speed.dungxbuif.com`|Lightweight localized speedtest engine for checking WAN and LAN transfer rates.|
-|**AdGuard Home**|`adguardhome`|`adguard/adguardhome:latest`|Host Network Mode|N/A (DNS LAN Resolver)|Network-wide ad blocker and internal DNS resolver pointing domains to Caddy host.|
-|**Centralized PostgreSQL**|`postgres`|`postgres:16`|**Portless** (Only within `proxy_net`) — fronted by PgBouncer on `:5432`|`postgres.dungxbuif.com:5432`|Pinned backend DB serving all services centrally: Pi5 `proxy_net` apps **and** the Mac mini stack (`macocr`, `omniscan`).|
-|**pgAdmin 4**|`pgadmin`|`dpage/pgadmin4:latest`|**Portless** (Only within `proxy_net`)|`pgadmin.dungxbuif.com`|Graphic management console to administer postgres schemas and databases.|
-|**n8n Automation**|`n8n`|`docker.n8n.io/n8nio/n8n:latest`|**Portless** (Only within `proxy_net`)|`n8n.dungxbuif.com`|Task scheduler and automation workflow engine connected to centralized PostgreSQL DB.|
-|**CouchDB Obsidian Sync**|`couchdb`|`couchdb:3.3.3`|**Portless** (Only within `proxy_net`)|`couchdb.dungxbuif.com`  <br>`sync-db.dungxbuif.com`|CouchDB backend for Obsidian vault sync. Uses a dedicated `obsidian_vault` database and a non-admin sync user.|
-|**My CV Web**|`my-cv`|Custom Dockerfile build|**Portless** (Only within `proxy_net`)|_(retired 2026-08)_|Static CV app. **Public `dungxbuif.com` now served by the Mac mini homepage** (`10.10.0.10:18081`); see [MAC.md](./MAC.md).|
-|**GitLab Server**|`gitlab`|`gitlab/gitlab-ce:latest`|Host: `2222:22` (SSH)|`gitlab.dungxbuif.com`<br>`git.dungxbuif.com`|Centralized Git source code repository server (ARM64). Storage on `/ssd-data/infra/gitlab`. LAN-only. **⚠️ Stopped 2026-08 (operator decision).**|
+|**RustFS Storage**|`rustfs`|`rustfs/rustfs:1.0.0-beta.3`|**Portless** on `proxy_net` and `homelab-net`|`storage.dungxbuif.com` (S3 API) <br>`cdn.dungxbuif.com` (Console)|ARM64 S3 storage; ports 9000/9001 internal.|
+|**Private Registry**|`docker-registry`|`registry:2`|**Portless** on `proxy_net` and `homelab-net`|`registry.dungxbuif.com`|Docker image registry on Pi5 SSD.|
+|**Librespeed**|`librespeed`|`lscr.io/linuxserver/librespeed`|**Portless** on `proxy_net` and `homelab-net`|`speed.dungxbuif.com`|LAN/WAN speedtest backend.|
+|**Centralized PostgreSQL**|`postgres`|`postgres:16`|**Portless** on `proxy_net` and `homelab-net`; PgBouncer maps LAN `:5432` to pooler `:6432`|Direct container DNS `postgres:5432` only for approved clients such as GitLab; LAN `10.10.0.5:5432` is PgBouncer, not raw PostgreSQL; no edge route|Pinned backend DB serving Pi5 apps and approved VM100 services.|
+|**pgAdmin 4**|`pgadmin`|`dpage/pgadmin4:latest`|**Portless** on `proxy_net` and `homelab-net`|`pgadmin.dungxbuif.com`|PostgreSQL administration UI.|
+|**CouchDB**|`couchdb`|`couchdb:3.3.3`|**Portless** on `proxy_net` and `homelab-net`|`couchdb.dungxbuif.com` <br>`sync-db.dungxbuif.com`|Obsidian sync and document databases.|
+
+The retired `my-cv` container is not part of the running Pi5 inventory.
+The Pi5 `docker-registry` is still the production image registry. GitLab's
+separate VM100 bundled Registry trial at `registry-gitlab.dungxbuif.com`
+does not replace this container or its Pi5 SSD storage; native lab
+Docker/Swarm pulls are not yet verified for the trial domain. See
+[GitLab Registry trial](./deployments/gitlab-registry-trial-2026-09-16.md).
+Public `dungxbuif.com` is served by VM100 Swarm `tasks.homepage:80` through
+Orange Pi Traefik; the old VM100 Compose `:18081` path is stopped rollback.
 
 ---
 
@@ -109,10 +132,8 @@ Below is the exhaustive mapping table of services running on the Raspberry Pi 5 
 - **Active Service User**: **`dungxbuif`**
 - **Password Encryption**: Apache Bcrypt (`$2y$`)
 - **Local Secret Reference**: `local_vars.json` $\rightarrow$ `LEGACY_SYSTEM_SECRETS.REGISTRY_USER` / `REGISTRY_PASSWORD`
-- **Shared CI/CD Integration**:
-  - GitLab CI variable `REGISTRY_USER`: `dungxbuif`
-  - GitLab CI variable `REGISTRY_PASSWORD`: `<HIGH_ENTROPY_PASSWORD>`
-  - Used by Kubernetes Runners for `docker login registry.dungxbuif.com -u "$REGISTRY_USER" --password-stdin` during CI/CD build stages.
+- **Client login:** use the registry credentials from `local_vars.json`; do not
+  duplicate them in repository files.
 
 ---
 
@@ -132,13 +153,22 @@ All bind mounts mapped from the host filesystem into container layers must decla
 1. **Static Files & Configuration Files (Static Config):** Mount single config files directly or group configurations in `./<service-name>/config` or `./<service-name>/auth`.
 2. **Dynamic Volumes & Databases (Dynamic Data):** Group files inside `./<service-name>/data` or `./<service-name>/db_storage`.
     - _Examples:_
-        - Caddy: `./Caddyfile:/etc/caddy/Caddyfile` and `./caddy/data:/data`
         - RustFS: `./rustfs:/data` (S3 object storage files live cleanly inside `./rustfs`)
-        - n8n Workflow Stack: `./n8n/n8n_storage:/home/node/.n8n`
         - PostgreSQL Central: `./postgres/data:/var/lib/postgresql/data`
 
 ### Rule 3: Smart Centralized Backup
-The system implements an automated backup strategy to Google Drive to guarantee data safety:
+**Status (2026-09-13): existing directory-upload job, owner-confirmed.** The
+current mechanism uploads a whole directory to Google Drive. Its database-aware
+coverage, consistency, schedule and restore behavior have not been verified.
+The earlier assessment that no backup solution existed was incorrect: the gap
+is reliable multi-engine database backup, not the absence of Drive uploads.
+Pi5 should remain a dedicated datastore; backup orchestration belongs on VM100.
+
+See [Google Drive database backup proposal](./research/google-drive-db-backup-2026-09-13.md)
+for the proposed replacement. It is not deployed.
+
+#### Historical Backup Description (Unverified)
+The previous documentation claimed the following automated strategy:
 *   **Tools:** `rclone` (Google Drive Integration) + `zip` + `pg_dump`.
 *   **Strategy:**
     *   **PostgreSQL:** Automated daily `.sql` dumps prior to compression to ensure complete database transactional integrity.
@@ -150,20 +180,67 @@ The system implements an automated backup strategy to Google Drive to guarantee 
 
 ## 🪵 Key Troubleshooting Registry & Decisions
 
-1. **AdGuard Home DNS Port 53 Conflict (2026-06-23)**: Disabled the `DNSStubListener` of `systemd-resolved` on Pi 5 OS to free port 53 (UDP/TCP) for the AdGuard Home container. This enables AdGuard to run stably and handle internal DNS queries (Split-horizon) for `*.dungxbuif.com` domains, preventing fallback to public Cloudflare (`1.1.1.1`).
+1. **Historical AdGuard placement (2026-06-23):** Pi5 once hosted AdGuard Home.
+   DNS now runs as `edge_adguardhome` on Orange Pi `10.10.0.2`; the old Pi5
+   port-53 procedure is not a current runbook.
 
 ---
 
 ## 🗄️ Database Management
-All system databases are centrally hosted within the `postgres` container (fronted by PgBouncer on `:5432`) on the Raspberry Pi 5, and shared by both Pi5 `proxy_net` apps and the Mac mini production stack.
-👉 Legacy inventory (K8s-era, but the DB list is still accurate): **[archived/k8s-v2/k8s/DB_INVENTORY.md](./archived/k8s-v2/k8s/DB_INVENTORY.md)**
+All system databases are centrally hosted within the `postgres` container (fronted by PgBouncer on `:5432`) on the Raspberry Pi 5, and shared by approved Pi5, VM100, and Mac dependency workloads.
+Legacy K8s-era database history (not a current inventory):
+[archived/k8s-v2/k8s/DB_INVENTORY.md](./archived/k8s-v2/k8s/DB_INVENTORY.md).
+
+GitLab CE 18.11.11 has its own `gitlabhq_production` database and `gitlab`
+owner role in this same PostgreSQL instance. Extensions `amcheck`,
+`btree_gist`, `pg_trgm`, and `plpgsql` are installed. Its Swarm service on
+VM100 connects privately to `postgres:5432`; DB credentials are a Swarm
+secret, not stored in this document. Pi5 PostgreSQL remains capped at
+2 GiB/1.5 CPU. See [GitLab service runbook](./services/gitlab.md).
+
+### Batdongsan database migration
+
+On 2026-09-13, the Batdongsan production database was restored from the VPS
+snapshot into the Pi5 central PostgreSQL service:
+
+- Database: `bds_prod`
+- Role: `bds_user`
+- Verified data: `listings=31`, `users=4`
+- Backup source retained on VPS: `/root/backup-bds/bds_prod_snapshot_20260913_121113.sql`
+- Snapshot SHA256: `9baa9613153312519e005c72ffc5b8237a2adbdf40e682cb8ba17708fcaf692e`
+
+For container-only access, both `postgres` and `pgbouncer` are attached to the
+attachable Swarm overlay `homelab-net`:
+
+```text
+build-time:  postgres:5432
+runtime:     pgbouncer:6432
+```
+
+Do not expose this database through Cloudflare Tunnel or host ports. BDS app
+uses Docker DNS on `homelab-net` for database access. The Cloudflare Tunnel
+container is isolated on VM100's `bds-tunnel-net` bridge and reaches only
+`bds-app:3000`; it must not join `homelab-net`.
+
+### NetBird databases
+
+On 2026-09-13, the VM100 NetBird bootstrap was moved from its initial SQLite
+volume to Pi5 PostgreSQL:
+
+- Role: `netbird`
+- Databases: `netbird`, `netbird_activity`, `netbird_idp`
+- Access path: `pgbouncer:6432` over `homelab-net`
+- Verified schema counts: `39`, `2`, and `13` public tables respectively
+
+NetBird still runs on VM100 as Swarm services. Pi5 stores the data only and
+must not run the NetBird dashboard or management server.
 
 ---
 
 ## ⚡ Redis-Prod (v3 NEW)
 
-A **standalone** Redis instance was added on the Pi5 to back the Mac mini stack
-(macocr-proxy queue + omniscan-bot dedup/L2). It is intentionally **not** part of
+A **standalone** Redis instance was added on the Pi5 to back approved production
+workloads (macocr-proxy queue and approved service state). It is intentionally **not** part of
 the centralized `docker-compose.yml` because it binds a host port for LAN
 access from the Mac:
 
@@ -174,12 +251,17 @@ Image | `redis:7.2-alpine` (pinned, arm64) |
 Bind | `0.0.0.0:16379` (uncommon port — avoids dev `6379` clashes) |
 Auth | password (`requirepass`) — see `local_vars.json` |
 Persistence | AOF (`appendonly yes`) |
-Memory | `maxmemory 256mb`, `allkeys-lru` |
+Memory | `maxmemory 1gb`, `noeviction` (writes fail at cap instead of evicting keys) |
 
 > [!NOTE]
-> This is a **deliberate exception** to the portless principle: the Mac mini
-> containers reach Redis over LAN at `10.10.0.5:16379`. It is the only Pi5 datastore
-> with a host-port bind besides the sanctioned `caddy`/`adguardhome`/`rathole`.
+> This is a **deliberate exception** to the portless principle: approved LAN
+> clients reach Redis over LAN at `10.10.0.5:16379`; Swarm clients use the
+> `redis-prod:6379` alias on `homelab-net`. It is the only Pi5 datastore
+> with a documented Pi5 host-port bind, alongside PgBouncer's LAN `:5432`.
+
+Pi5 has a 4 GiB NVMe-backed swapfile at `/ssd-data/infra/swapfile`, enabled by
+`homelab-pi5-swap.service` with `vm.swappiness=10`. Swap is an OOM buffer, not
+additional physical RAM. See [resource audit](./research/resource-limit-audit-2026-09-15.md).
 
 
 1. **NEVER expose new host ports** in the `docker-compose.yml` unless explicitly requested. All new services must remain isolated inside the virtual virtual network `proxy_net`.

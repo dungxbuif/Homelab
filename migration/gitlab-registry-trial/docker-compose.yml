@@ -1,0 +1,32 @@
+services:
+  rathole:
+    image: rapiz1/rathole@sha256:a31b9178e985d4a84f46d4c3af6aa200ee0c5e7f821c7075a1f6669fb77392b1
+    container_name: gitlab-registry-trial-rathole-server
+    command: ["--server", "/app/config.toml"]
+    restart: unless-stopped
+    ports:
+      - "7003:7003/tcp"
+    volumes:
+      - ./runtime/server.toml:/app/config.toml:ro
+    networks:
+      - gateway-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=gateway-network
+      - traefik.http.routers.gitlab-registry-trial.rule=Host(`registry-gitlab.dungxbuif.com`)
+      - traefik.http.routers.gitlab-registry-trial.entrypoints=websecure
+      - traefik.http.routers.gitlab-registry-trial.tls=true
+      - traefik.http.routers.gitlab-registry-trial.tls.certresolver=letsencrypt
+      - traefik.http.routers.gitlab-registry-trial.service=gitlab-registry-trial
+      - traefik.http.services.gitlab-registry-trial.loadbalancer.server.port=8086
+    mem_limit: 128m
+    cpus: "0.5"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  gateway-network:
+    external: true
