@@ -1,0 +1,78 @@
+# RelayHub and OCR release
+
+RelayHub source: `/Users/dungxbuif/workspace/RelayHub`, commit `eee9e7c`.
+Build context on VM100: `/opt/apps/relayhub/releases/eee9e7c`.
+Image: `homelab/relayhub:prod-eee9e7c`.
+Rollback image: `homelab/relayhub:prod-20260920-152029`.
+
+Use the existing prod compose and logging override plus `compose.release.yml`.
+Update only API and worker, without recreating NATS/Redis or resetting data.
+Verify container health, root docs, SDK download hashes and readiness afterward.
+Keep release override in subsequent compose invocations to avoid image regression.
+
+Changes: session/CSRF SDK admin auth; queue SDK lease-loss cancellation; refreshed
+human/agent docs and SDK downloads. Backend race, PostgreSQL integration, SDK and
+admin tests passed. Production OCR/native remains unchanged during RelayHub release.
+
+OCR migration is proxy-only. Native Mac application, local listener and tunnel must
+not be rebuilt or restarted. Implementation and acceptance gates are tracked in
+mac-ocr/docs/RELAYHUB_INTEGRATION.md. Production tests use synthetic documents only.
+
+Status: RelayHub deployed on VM100; API and worker healthy. Public readiness,
+root docs and agent docs returned 200. Both SDK download hashes match the release.
+OCR cutover remains pending Swarm manager SSH access and native capacity recovery.
+
+## OCR candidate
+
+Commit `31b3013` in `/Users/dungxbuif/workspace/mac-ocr` contains the reviewed proxy-only
+integration. Image build on VM100: `homelab/macocr-proxy:relay-31b3013`, context
+`/opt/apps/macocr-proxy/releases/31b3013`, exported from the commit, not the dirty
+working tree. Native and unrelated scan/admin changes are not included.
+
+Candidate image build completed successfully on VM100. Image manifest list digest:
+`sha256:342c51e64c4388c3b120e4999c4d3e689a599cad9a1e013cd462749f25442b68`.
+It has not replaced the running OCR service. The earlier `relay-3b45756` candidate
+is superseded and must not be deployed.
+
+Full proxy race tests passed against the exact staged release source, including
+new PostgreSQL outbox and 16-way targeted-claim tests on a disposable local DB.
+Tests cover terminal-only ACK, existing attempts, wrong publishers and native
+offline/busy. Human docs and agent processing contract build successfully.
+
+Review fixes: transactional claim/read, delayed retry for PDFs that cannot fit,
+startup event-filter validation. Independent re-review found no remaining blocker.
+Test-only follow-up `65d0910` checks the actual expired owner, repeated five times
+against PostgreSQL with race detection. Full heartbeat-loss/redelivery/late-callback
+production acceptance is still pending; component tests are not a substitute.
+
+Read-only production checks passed: existing OCR container can reach RelayHub
+readiness; signed consumer authentication succeeds; `ocr-jobs` is enabled, not
+paused or draining, max visibility 300 seconds and max batch size one.
+
+Build dependency warning: Docusaurus npm audit reports 30 findings (5 high,
+24 moderate, 1 low). These are build-stage dependencies, not shipped Node runtime;
+triage remains separate work. No automatic breaking dependency upgrade was applied.
+
+The running Swarm service is `macocr-proxy`, old image
+`homelab/macocr-proxy:vm100-20260910`. VM100 is a worker, not a manager.
+The Pi manager's 1Password SSH signing currently fails. Do not bypass Swarm by
+starting a standalone replacement or changing node membership.
+
+Pending rollout gates:
+
+1. Restore Pi SSH signing; inspect and privately snapshot the service spec.
+2. Back up OCR DB before startup migration (new outbox table/index only).
+3. Create a versioned Docker secret from the protected local credential JSON;
+   mount at `/run/secrets/ocr_relayhub_credentials`, readable by the service user.
+4. Update the existing service image plus `OCR_TRANSPORT=relayhub` and
+   `RELAYHUB_CREDENTIALS_FILE=/run/secrets/ocr_relayhub_credentials`. Keep placement,
+   networks, labels, limits, native URL and all other credentials unchanged.
+5. Verify readiness and transport startup, then submit synthetic image/PDF through
+   the public API. Verify native callback, durable completion and queue ACK.
+6. Remove only recorded smoke data. Rollback to previous image and direct transport
+   if verification fails. Do not remove real apps, users, documents or queue data.
+
+Native is reachable through the existing tunnel but currently reports
+`effectiveLimit=0`, `state=busy`, `resourceReason=memory-safety-reserve`.
+Full OCR acceptance requires capacity recovery. No native process or LLM has been
+restarted, rebuilt or reconfigured as part of this proxy rollout.
