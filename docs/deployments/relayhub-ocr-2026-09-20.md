@@ -67,8 +67,26 @@ Conclusion: current RelayHub transport is durable but its initial conservative
 consumer settings materially regress burst latency. Before treating it as the
 preferred production path, make concurrency configurable and replace/coarsen the
 terminal polling handoff (notification or shorter adaptive polling), then rerun a
-larger warm benchmark. Production was restored to the reviewed RelayHub image after
-the temporary comparison as requested.
+larger warm benchmark.
+
+## Final disposition
+
+OCR production is finalized on direct scheduling with image
+`homelab/macocr-proxy:direct-admin-6a4924a`. This image is built from OCR `master`
+commit `6a4924a`: the pre-RelayHub direct scheduler plus the restored administrator
+“My API Keys” navigation. Public health and Admin assets return 200; the deployed
+bundle contains API-key create/manage controls. `OCR_TRANSPORT`, the RelayHub
+credential-file variable and the Swarm secret attachment are absent.
+
+Experimental RelayHub OCR code remains on branch
+`codex/ocr-relayhub-transport` at `65d0910`; it is not on OCR `master` and is not
+active in production. The additive outbox table is retained for a future controlled
+trial. Benchmark data was removed from PostgreSQL, Redis and object storage.
+
+RelayHub itself remains a production service and is independent from this OCR
+transport decision. Its first production release is documented as `v1.0.0` in
+RelayHub commit `c1c51ca`; deployed API/worker image remains
+`homelab/relayhub:prod-eee9e7c`.
 
 ## OCR candidate
 
