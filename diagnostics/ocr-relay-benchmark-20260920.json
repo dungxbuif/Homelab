@@ -1,0 +1,297 @@
+{
+  "image": "homelab/macocr-proxy:relay-31b3013",
+  "pollIntervalMs": 500,
+  "consumerConcurrency": 1,
+  "groups": {
+    "sequential": {
+      "count": 4,
+      "submitP50": 91,
+      "submitP95": 226,
+      "e2eP50": 2208,
+      "e2eP95": 2889,
+      "e2eMax": 2889,
+      "completed": 4
+    },
+    "burst8": {
+      "count": 8,
+      "submitP50": 244,
+      "submitP95": 279,
+      "e2eP50": 8142,
+      "e2eP95": 16514,
+      "e2eMax": 16514,
+      "completed": 8
+    }
+  },
+  "rows": [
+    {
+      "id": "doc_1a0bfb3d97c3f9002148369",
+      "kind": "image",
+      "mode": "sequential",
+      "index": 0,
+      "bytes": 14644,
+      "startedAt": "2026-09-20T16:43:49.713Z",
+      "submitMs": 226,
+      "endToEndMs": 2889,
+      "polls": 6,
+      "status": "completed",
+      "textChars": 412,
+      "server": {
+        "attempts": 1,
+        "queueAttempts": 1,
+        "queueStatus": "acked",
+        "createdToPublishMs": 1934,
+        "createdToClaimMs": 2003,
+        "dispatchToDurableCompletionMs": 461,
+        "completionToACKMs": 1518
+      }
+    },
+    {
+      "id": "doc_1a0bfb3e418285d42f9fea8",
+      "kind": "pdf",
+      "mode": "sequential",
+      "index": 1,
+      "bytes": 595,
+      "startedAt": "2026-09-20T16:43:52.602Z",
+      "submitMs": 50,
+      "endToEndMs": 1738,
+      "polls": 4,
+      "status": "completed",
+      "textChars": 20,
+      "pdfTextCorrect": true,
+      "server": {
+        "attempts": 1,
+        "queueAttempts": 1,
+        "queueStatus": "acked",
+        "createdToPublishMs": 1225,
+        "createdToClaimMs": 1333,
+        "dispatchToDurableCompletionMs": 231,
+        "completionToACKMs": 1745
+      }
+    },
+    {
+      "id": "doc_1a0bfb3eb31942cade333c2",
+      "kind": "image",
+      "mode": "sequential",
+      "index": 2,
+      "bytes": 14644,
+      "startedAt": "2026-09-20T16:43:54.341Z",
+      "submitMs": 129,
+      "endToEndMs": 2246,
+      "polls": 5,
+      "status": "completed",
+      "textChars": 412,
+      "server": {
+        "attempts": 1,
+        "queueAttempts": 1,
+        "queueStatus": "acked",
+        "createdToPublishMs": 1405,
+        "createdToClaimMs": 1557,
+        "dispatchToDurableCompletionMs": 350,
+        "completionToACKMs": 1629
+      }
+    },
+    {
+      "id": "doc_1a0bfb3f3d0a916e8cb272c",
+      "kind": "pdf",
+      "mode": "sequential",
+      "index": 3,
+      "bytes": 595,
+      "startedAt": "2026-09-20T16:43:56.587Z",
+      "submitMs": 91,
+      "endToEndMs": 2208,
+      "polls": 5,
+      "status": "completed",
+      "textChars": 20,
+      "pdfTextCorrect": true,
+      "server": {
+        "attempts": 1,
+        "queueAttempts": 1,
+        "queueStatus": "acked",
+        "createdToPublishMs": 1198,
+        "createdToClaimMs": 1397,
+        "dispatchToDurableCompletionMs": 283,
+        "completionToACKMs": 1696
+      }
+    },
+    {
+      "id": "doc_1a0bfb3fc8d141023f978f4",
+      "kind": "image",
+      "mode": "burst8",
+      "index": 0,
+      "bytes": 14644,
+      "startedAt": "2026-09-20T16:43:58.795Z",
+      "submitMs": 122,
+      "endToEndMs": 1712,
+      "polls": 4,
+      "status": "completed",
+      "textChars": 412,
+      "server": {
+        "attempts": 1,
+        "queueAttempts": 1,
+        "queueStatus": "acked",
+        "createdToPublishMs": 963,
+        "createdToClaimMs": 1213,
+        "dispatchToDurableCompletionMs": 339,
+        "completionToACKMs": 1640
+      }
+    },
+    {
+      "id": "doc_1a0bfb3fc9a6cfeae44e8c3",
+      "kind": "pdf",
+      "mode": "burst8",
+      "index": 5,
+      "bytes": 595,
+      "startedAt": "2026-09-20T16:43:58.796Z",
+      "submitMs": 129,
+      "endToEndMs": 3811,
+      "polls": 8,
+      "status": "completed",
+      "textChars": 20,
+      "pdfTextCorrect": true,
+      "server": {
+        "attempts": 1,
+        "queueAttempts": 1,
+        "queueStatus": "acked",
+        "createdToPublishMs": 980,
+        "createdToClaimMs": 3275,
+        "dispatchToDurableCompletionMs": 261,
+        "completionToACKMs": 1694
+      }
+    },
+    {
+      "id": "doc_1a0bfb3fcef0aba6fc1f02f",
+      "kind": "pdf",
+      "mode": "burst8",
+      "index": 3,
+      "bytes": 595,
+      "startedAt": "2026-09-20T16:43:58.796Z",
+      "submitMs": 271,
+      "endToEndMs": 6036,
+      "polls": 12,
+      "status": "completed",
+      "textChars": 20,
+      "pdfTextCorrect": true,
+      "server": {
+        "attempts": 1,
+        "queueAttempts": 1,
+        "queueStatus": "acked",
+        "createdToPublishMs": 882,
+        "createdToClaimMs": 5246,
+        "dispatchToDurableCompletionMs": 217,
+        "completionToACKMs": 1690
+      }
+    },
+    {
+      "id": "doc_1a0bfb3fcef2415e1f9f49d",
+      "kind": "image",
+      "mode": "burst8",
+      "index": 2,
+      "bytes": 14644,
+      "startedAt": "2026-09-20T16:43:58.795Z",
+      "submitMs": 255,
+      "endToEndMs": 8142,
+      "polls": 16,
+      "status": "completed",
+      "textChars": 412,
+      "server": {
+        "attempts": 1,
+        "queueAttempts": 1,
+        "queueStatus": "acked",
+        "createdToPublishMs": 954,
+        "createdToClaimMs": 7396,
+        "dispatchToDurableCompletionMs": 330,
+        "completionToACKMs": 1555
+      }
+    },
+    {
+      "id": "doc_1a0bfb3fcef58a8b54069bb",
+      "kind": "image",
+      "mode": "burst8",
+      "index": 4,
+      "bytes": 14644,
+      "startedAt": "2026-09-20T16:43:58.796Z",
+      "submitMs": 279,
+      "endToEndMs": 10240,
+      "polls": 20,
+      "status": "completed",
+      "textChars": 412,
+      "server": {
+        "attempts": 1,
+        "queueAttempts": 1,
+        "queueStatus": "acked",
+        "createdToPublishMs": 951,
+        "createdToClaimMs": 9349,
+        "dispatchToDurableCompletionMs": 382,
+        "completionToACKMs": 1565
+      }
+    },
+    {
+      "id": "doc_1a0bfb3fcef63720d4345ac",
+      "kind": "pdf",
+      "mode": "burst8",
+      "index": 1,
+      "bytes": 595,
+      "startedAt": "2026-09-20T16:43:58.795Z",
+      "submitMs": 264,
+      "endToEndMs": 12325,
+      "polls": 24,
+      "status": "completed",
+      "textChars": 20,
+      "pdfTextCorrect": true,
+      "server": {
+        "attempts": 1,
+        "queueAttempts": 1,
+        "queueStatus": "acked",
+        "createdToPublishMs": 1029,
+        "createdToClaimMs": 11410,
+        "dispatchToDurableCompletionMs": 233,
+        "completionToACKMs": 1749
+      }
+    },
+    {
+      "id": "doc_1a0bfb3fceff1c3acf6a06d",
+      "kind": "pdf",
+      "mode": "burst8",
+      "index": 7,
+      "bytes": 595,
+      "startedAt": "2026-09-20T16:43:58.797Z",
+      "submitMs": 244,
+      "endToEndMs": 14422,
+      "polls": 28,
+      "status": "completed",
+      "textChars": 20,
+      "pdfTextCorrect": true,
+      "server": {
+        "attempts": 1,
+        "queueAttempts": 1,
+        "queueStatus": "acked",
+        "createdToPublishMs": 1076,
+        "createdToClaimMs": 13514,
+        "dispatchToDurableCompletionMs": 255,
+        "completionToACKMs": 1728
+      }
+    },
+    {
+      "id": "doc_1a0bfb3fceff78ce4057635",
+      "kind": "image",
+      "mode": "burst8",
+      "index": 6,
+      "bytes": 14644,
+      "startedAt": "2026-09-20T16:43:58.797Z",
+      "submitMs": 243,
+      "endToEndMs": 16514,
+      "polls": 32,
+      "status": "completed",
+      "textChars": 412,
+      "server": {
+        "attempts": 1,
+        "queueAttempts": 1,
+        "queueStatus": "acked",
+        "createdToPublishMs": 1128,
+        "createdToClaimMs": 15566,
+        "dispatchToDurableCompletionMs": 386,
+        "completionToACKMs": 1593
+      }
+    }
+  ]
+}

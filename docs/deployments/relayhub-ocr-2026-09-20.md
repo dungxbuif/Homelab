@@ -20,7 +20,55 @@ mac-ocr/docs/RELAYHUB_INTEGRATION.md. Production tests use synthetic documents o
 
 Status: RelayHub deployed on VM100; API and worker healthy. Public readiness,
 root docs and agent docs returned 200. Both SDK download hashes match the release.
-OCR cutover remains pending Swarm manager SSH access and native capacity recovery.
+OCR cutover and production smoke verification are complete; benchmark results and
+the remaining burst-latency limitation are recorded below.
+
+Follow-up: Pi SSH restored. Service spec privately snapshotted; PostgreSQL `macocr`
+custom-format backup saved outside git (104643 bytes). Pre-migration inventory:
+975 completed, 14 failed, no queued/processing documents; legacy batches absent.
+Rollout will mount secret `ocr_relayhub_credentials_20260920` with target
+`ocr_relayhub_credentials`, uid 100/gid 101/mode 0400 (verified image user).
+Use the existing stop-first update policy to avoid concurrent direct/queue workers.
+
+Rollout completed: `macocr-proxy` converged on VM100 with image `relay-31b3013`;
+transport startup and public health/docs returned success. After operator memory
+increase, synthetic PDF completed with exact text `OCR RELAY SMOKE 2026`, and image
+completed; both used one native attempt and were ACKed by RelayHub afterward.
+
+User-requested latency benchmark: current production image/config only, no tuning.
+Use bounded smoke-account traffic: four sequential requests (two image, two PDF)
+then eight concurrent submissions (four each). Report submit latency and observed
+end-to-end completion, with server timestamps to separate queue and native time.
+Polling adds observation overhead; small sample p95 is descriptive, not an SLA.
+Temporarily raise only smoke account/key test limits; remove its data afterward.
+
+Comparison plan: temporarily restore the pre-migration image
+`homelab/macocr-proxy:vm100-20260910` and direct scheduler, run the same four
+sequential plus eight concurrent workload with the same fixtures and 500 ms polling,
+then restore `homelab/macocr-proxy:relay-31b3013`. Keep routing, networks, database,
+Redis, native endpoint and resource limits unchanged. Record both samples; this is a
+small operational comparison, not a statistically rigorous capacity benchmark.
+
+Comparison result (same fixtures, 500 ms client polling, 4 sequential + burst 8):
+
+| Transport/image | Sequential p50 / p95 | Burst-8 p50 / p95 / max | Success |
+|---|---:|---:|---:|
+| Direct `vm100-20260910` | 1.173s / 1.741s | 1.895s / 2.940s / 2.940s | 12/12 |
+| RelayHub `relay-31b3013` | 2.208s / 2.889s | 8.142s / 16.514s / 16.514s | 12/12 |
+
+Submit latency is similar (old burst p50/p95 209/302 ms; RelayHub 244/279 ms).
+Native OCR remains fast after dispatch (RelayHub sample 217-461 ms). The RelayHub
+tail is dominated by serialized queue consumption (`Concurrency: 1`) plus the
+consumer's two-second terminal-state polling cadence: burst claims advanced by
+roughly two seconds each. Correctness stayed intact: every sample completed in one
+document attempt and one queue attempt, and PDF text matched exactly.
+
+Conclusion: current RelayHub transport is durable but its initial conservative
+consumer settings materially regress burst latency. Before treating it as the
+preferred production path, make concurrency configurable and replace/coarsen the
+terminal polling handoff (notification or shorter adaptive polling), then rerun a
+larger warm benchmark. Production was restored to the reviewed RelayHub image after
+the temporary comparison as requested.
 
 ## OCR candidate
 
