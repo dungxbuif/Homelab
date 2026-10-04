@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  semaphore:
+    image: semaphoreui/semaphore:v2.19.12
+    environment:
+      SEMAPHORE_DB_DIALECT: sqlite
+      SEMAPHORE_DB: /etc/semaphore/semaphore.sqlite
+      SEMAPHORE_PLAYBOOK_PATH: /tmp/semaphore
+      SEMAPHORE_ADMIN_NAME: admin
+      SEMAPHORE_ADMIN_EMAIL: dungbui.dungbui.00@gmail.com
+      SEMAPHORE_ADMIN: admin
+      SEMAPHORE_ADMIN_PASSWORD_FILE: /run/secrets/semaphore_admin_password
+      SEMAPHORE_ACCESS_KEY_ENCRYPTION_FILE: /run/secrets/semaphore_access_key_encryption
+      SEMAPHORE_LDAP_ACTIVATED: "no"
+      TZ: Asia/Ho_Chi_Minh
+    secrets:
+      - semaphore_admin_password
+      - semaphore_access_key_encryption
+    volumes:
+      - /ssd-data/infra/semaphore/data:/etc/semaphore
+      - /ssd-data/infra/semaphore/playbooks:/tmp/semaphore:ro
+    networks:
+      - homelab-net
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == rpivn
+      restart_policy:
+        condition: on-failure
+
+secrets:
+  semaphore_admin_password:
+    external: true
+  semaphore_access_key_encryption:
+    external: true
+
+networks:
+  homelab-net:
+    external: true

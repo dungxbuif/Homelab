@@ -4,7 +4,7 @@
 
 **Goal:** Build a private UI and automation workflow for database provisioning plus online PostgreSQL/CouchDB, RustFS, and GitLab backups to encrypted Google Drive repositories with verified retention and restore tests.
 
-**Architecture:** Semaphore is the private operator UI and job history surface. Ansible provides idempotent provisioning and backup orchestration, while engine-specific scripts perform native exports. VM100 runs the automation/backup runner; Pi5 remains the datastore and RustFS host. Restic encrypts and versions backup runs, and rclone only transports the three dedicated repositories to Google Drive.
+**Architecture:** Semaphore is the private operator UI and job history surface. Ansible provides idempotent provisioning and backup orchestration, while engine-specific scripts perform native exports. VM100 is the target automation/backup runner; Pi5 remains the datastore and RustFS host. The first Semaphore UI pilot runs portlessly on Pi5 over the existing private proxy network so the operator workflow can be verified immediately. Restic encrypts and versions backup runs, and rclone only transports the three dedicated repositories to Google Drive.
 
 **Tech Stack:** Semaphore UI, Ansible, PostgreSQL native tools, CouchDB HTTP/replication tooling, GitLab Omnibus `gitlab-backup`, RustFS S3-compatible API/`rc`, restic, rclone, Docker Swarm secrets, Google Drive OAuth.
 
@@ -12,7 +12,9 @@
 
 ## Global Constraints
 
-- Keep Pi5 as the datastore host and VM100 as the automation/backup host.
+- Keep Pi5 as the datastore host and VM100 as the target automation/backup host. The
+  current Semaphore pilot may run on Pi5, but it is private-only and not the final
+  runner placement.
 - Do not back up Redis or NATS.
 - Do not stop PostgreSQL, CouchDB, RustFS, GitLab, or other production services during scheduled backups.
 - Do not use live-volume `rsync` as the scheduled RustFS or GitLab mechanism.
@@ -59,22 +61,25 @@
 ### Task 2: Deploy Private Semaphore and Secret Boundary
 
 **Files:**
-- Create: `automation/semaphore/compose.yml`
+- Create: `automation/semaphore/stack.yml`
 - Create: `automation/semaphore/README.md`
-- Create: `automation/semaphore/templates/README.md`
-- Create: `credentials/semaphore.example.env`
-- Modify: `docs/VM100.md`
 - Modify: `docs/INDEX.md`
 
 **Interfaces:**
 - Produces private Semaphore UI reachable only through LAN/NetBird.
-- Produces job templates named `db-provision`, `db-backup`, `gitlab-backup`, `rustfs-backup`, `backup-retention`, and `restore-test`.
+- The final deployment will produce job templates named `db-provision`,
+  `db-backup`, `gitlab-backup`, `rustfs-backup`, `backup-retention`, and
+  `restore-test`; the current pilot intentionally does not enable them.
 
 - [ ] Choose a dedicated PostgreSQL database for Semaphore/control metadata and add it to `backup/inventory.yaml`; do not use Redis.
-- [ ] Deploy Semaphore on VM100 without a public host port, attached only to its private control network and the approved backup network.
+- [x] For the immediate pilot, deploy Semaphore on Pi5 with SQLite, no host port,
+  and only the existing `homelab-net` overlay. Do not add a production database
+  or enable backup jobs in the pilot.
+- [ ] Move the validated UI and runner to VM100 with a dedicated PostgreSQL
+  database before enabling production schedules.
 - [ ] Store Semaphore DB credentials, Drive OAuth/rclone configuration, restic passwords, and engine credentials as private secrets.
 - [ ] Configure a single scheduler owner in Semaphore; do not create duplicate cron/systemd schedules.
-- [ ] Verify the UI is unreachable from the public ingress and reachable from the approved private path.
+- [x] Verify the UI is unreachable from the public ingress and reachable from the approved private path.
 - [ ] Verify a no-op Semaphore template can run and records status without mutating a datastore.
 
 ### Task 3: Implement Declarative Database Provisioning

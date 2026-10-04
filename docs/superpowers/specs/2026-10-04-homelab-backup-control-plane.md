@@ -1,7 +1,7 @@
 # Homelab Backup Control Plane Specification
 
 **Date:** 2026-10-04  
-**Status:** Proposed for implementation review  
+**Status:** Pilot implementation in progress on Pi5; VM100 remains the target automation host
 **Scope:** Database provisioning UI, database backups, RustFS object backup, and GitLab application backup
 
 ## Goal
@@ -10,7 +10,10 @@ Provide one private operator workflow for creating and cataloging databases, run
 
 ## Decisions
 
-- Pi5 remains the datastore host. VM100 owns the automation runner and operator UI.
+- Pi5 remains the datastore host. VM100 is the target automation runner and operator UI.
+  A user-requested pilot of the operator UI runs on Pi5 first so the workflow can be
+  verified without waiting for VM100 SSH access. The pilot is private-only and must
+  not be treated as the final placement.
 - PostgreSQL and CouchDB are included in the generic database backup job.
 - Redis is explicitly excluded from backup. NATS is not a database and is excluded.
 - GitLab uses its native `gitlab-backup create` workflow as a separate application backup. Its required configuration and secrets are handled by that GitLab-specific workflow, not by the generic database job.
@@ -63,6 +66,16 @@ Private operator UI (Semaphore + Ansible templates)
 ```
 
 The operator UI is a private Semaphore installation. It provides parameterized provisioning, backup, restore-test, status, and audit history. Ansible owns the idempotent implementation; the UI does not execute arbitrary SQL or shell commands.
+
+### Pilot placement
+
+The first UI pilot is a portless `semaphoreui/semaphore` Swarm service on Pi5's
+existing `homelab-net`, routed by the Pi5 Traefik file provider through a
+LAN/NetBird-only hostname. It uses a local SQLite metadata file so the pilot does
+not create another production database. No public VPS route or new host port is
+created. The pilot only validates the operator surface and a no-op job; backup
+workers and database provisioning remain disabled until their runner placement and
+secret boundary are implemented.
 
 ## Provisioning Contract
 

@@ -24,6 +24,8 @@ timestamp: 2026-09-16T00:00:00+07:00
 * [GitLab Runbook](./services/gitlab.md) - Omnibus components, Pi5 DB/Redis, public SSH and temporary VPS HTTPS; includes agent-readable facts.
 * [GitLab Registry Trial](./deployments/gitlab-registry-trial-2026-09-16.md) - successful OCI smoke and local backup evidence; Pi5 registry still production.
 * [Backup and Restore Runbook](./runbooks/backup-restore.md) - native CLI/API backup rules, post-check verification, Mezon status reporting, Google Drive retention, and restore boundaries.
+* [Backup Control-Plane Plan](./superpowers/plans/2026-10-04-homelab-backup-control-plane.md) - Semaphore UI pilot and target Ansible/backup architecture.
+* [Semaphore Backup UI Pilot](./deployments/semaphore-backup-ui-2026-10-04.md) - private Pi5 deployment, route, secret boundary, verification, and rollback.
 * [Network Segmentation Proposal](./research/network-segmentation-2026-09-15.md) - broad shared overlay is deployed; narrower networks are not.
 * [Resource Limit Audit](./research/resource-limit-audit-2026-09-15.md) - dated measurements and limits, not blanket approval to resize services.
 
