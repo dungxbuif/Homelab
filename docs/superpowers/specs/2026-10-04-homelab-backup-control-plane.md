@@ -20,6 +20,7 @@ Provide one private operator workflow for creating and cataloging databases, run
 - Backup content is isolated into three dedicated Drive repositories/prefixes: `databases`, `rustfs`, and `gitlab`.
 - Default retention is 14 daily, 8 weekly, and 12 monthly snapshots. Prune runs only after a successful upload and repository check.
 - Access is private through LAN/NetBird. No public route is added for the control UI or backup runner.
+- After each backup class completes its post-check, send exactly one sanitized status message to the configured Mezon channel webhook. The webhook URL is runtime secret material and is never committed or printed.
 
 ## Current Coverage
 
@@ -89,6 +90,7 @@ Each job:
 6. Verifies the repository snapshot before any pruning.
 7. Applies the class retention policy and removes only expired objects from the dedicated backup repository.
 8. Emits a success/failure record visible in Semaphore and the operator log.
+9. Sends one Mezon success message only after the post-check passes; sends a failure message and exits non-zero when any post-check fails.
 
 Any required target failure fails the overall run. A partial run is never reported as a successful full backup.
 
@@ -132,3 +134,4 @@ If an earlier job is still running, later jobs wait on the global lock. A job th
 - Three encrypted repositories are present in the dedicated Google Drive folder.
 - Retention keeps 14 daily, 8 weekly, and 12 monthly snapshots and deletes only expired backup data after verification.
 - A restore rehearsal succeeds for one PostgreSQL database, one CouchDB database, one RustFS bucket/object set, and a GitLab disposable target.
+- Each completed class produces exactly one Mezon status message without secrets, tokens, connection strings, or raw backup contents.

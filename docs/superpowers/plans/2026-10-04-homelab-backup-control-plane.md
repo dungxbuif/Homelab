@@ -194,6 +194,8 @@
 - Create: `backup/scripts/health-report.py`
 - Create: `backup/tests/test_schedule_contract.py`
 - Create: `docs/runbooks/backup-restore.md`
+- Modify: `backup/scripts/post-check-report.sh`
+- Modify: `backup/scripts/notify-mezon.sh`
 - Modify: `docs/STACK.md`
 - Modify: `docs/INDEX.md`
 - Modify: `docs/LOG.md`
@@ -204,6 +206,8 @@
 
 - [ ] Configure one global lock so the four jobs cannot overlap.
 - [ ] Add alerts for any required export failure, Drive authentication failure, quota threshold, staging disk threshold, or last successful snapshot older than 26 hours.
+- [ ] Send one sanitized Mezon webhook status only after each class post-check passes; send a failure status and non-zero exit for a failed check.
+- [ ] Keep the webhook URL in a runtime secret file or secret mount and test that dry-run output never includes the URL.
 - [ ] Add monthly isolated restore tests for one PostgreSQL database, one CouchDB database, one RustFS bucket/object set, and one GitLab disposable target.
 - [ ] Verify no scheduled task stops or scales down production services.
 - [ ] Run two consecutive dry-run windows, then one real pilot window, before enabling the full schedule.
@@ -225,4 +229,3 @@
 - [ ] Run the restore rehearsal and record evidence, limitations, and exact version requirements.
 - [ ] Verify retention removes only expired objects from the three dedicated repositories and leaves unrelated Google Drive data untouched.
 - [ ] Commit only the implementation and documentation files belonging to this plan; leave unrelated worktree changes untouched.
-

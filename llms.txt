@@ -13,6 +13,7 @@ Scope: infrastructure documentation; do not load secret files for navigation.
 - [Mac native dependencies and proposed roaming](./docs/MAC.md)
 - [Proxmox production hypervisor](./docs/PROXMOX.md)
 - [GitLab runbook and agent-readable YAML](./docs/services/gitlab.md)
+- [Backup and restore runbook](./docs/runbooks/backup-restore.md)
 - [NetBird bootstrap and pending connectivity gates](./docs/deployments/netbird-2026-09-13.md)
 - [Documentation audit](./docs/research/docs-stack-audit-2026-09-16.md)
 - [Changelog](./docs/LOG.md)

@@ -20,7 +20,42 @@ timestamp: 2026-07-03T15:14:00Z
 
 ---
 
+## v3.2 — 2026-10-04 · Backup runbook and post-check reporting
+
+- Added the [backup and restore runbook](./runbooks/backup-restore.md) and
+  agent-readable [backup automation README](../backup/README.md). The contract
+  prioritizes native application CLI/API mechanisms, excludes Redis/NATS, keeps
+  scheduled backups online, and separates PostgreSQL/CouchDB, GitLab, and
+  RustFS recovery workflows.
+- Added `backup/scripts/post-check-report.sh` and
+  `backup/scripts/notify-mezon.sh`. Each backup class must verify its manifest,
+  completion marker, checksums, coverage, and remote snapshot before sending a
+  status message to the configured Mezon webhook. The webhook URL is runtime
+  secret material and is not stored in the repository.
+- Scheduled backup deployment remains pending; no production service,
+  database, Google Drive object, or webhook was changed by this documentation
+  update.
+
+---
+
 ## v3.2 — 2026-09-13 · VPS access and relay cleanup
+
+- **MyPocket AI provider config sync (2026-09-24):** aligned production
+  `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`, `OCR_API_URL`, and `OCR_API_KEY`
+  with the local development config; DeepSeek-V4-Flash is configured. Values
+  belong only in gitignored `local_vars.json` → `MYPOCKET_SECRETS` and the
+  ignored MyPocket `backend/.env.local`, never in docs or commits. API task
+  healthy; web and API health returned 200. Provider inference remains pending
+  owner UAT. See [deployment note](./deployments/mypocket-ai-config-2026-09-24.md).
+
+- **NetBird external relay added (2026-09-17):** deployed VPS
+  `netbird-relay` with `netbirdio/relay:latest`, TCP `443` behind the existing
+  VPS Traefik HostSNI router for `netbird-relay.dungxbuif.com`, and public
+  UDP `3478` for STUN. VM100 NetBird server now uses external `stuns/relays`
+  and logs `Relay: false`; Pi5 AdGuard has a specific
+  `netbird-relay.dungxbuif.com -> 103.82.21.202` rewrite before the wildcard
+  LAN rewrite. Verified relay TLS returns expected `404`, NetBird UI returns
+  `200`, and relay logs show a peer connection through the VPS Traefik network.
 
 - **Documentation and stack audit (2026-09-16):** added the current
   [stack catalog](./STACK.md) and root agent navigation surface; reconciled
@@ -260,6 +295,31 @@ timestamp: 2026-07-03T15:14:00Z
 - **OpenClaw public access fix:** configured `gateway.trustedProxies` for the
   Orange Pi/overlay proxy path and added `https://openclaw.dungxbuif.com` to
   `gateway.controlUi.allowedOrigins`.
+- **OpenClaw LM Studio provider repair (2026-09-17):** reset stale model
+  defaults, registered the custom `lmstudio` provider at
+  `https://llm.dungxbuif.com/v1`, set primary model
+  `lmstudio/qwen/qwen3.6-35b-a3b`, and saved the current LM Studio API-key
+  profile for agent `main`. Older malformed setup profiles were removed. The
+  public route and `/healthz` are live; the OpenClaw Model Setup UI may still
+  require selecting the saved `lmstudio` sign-in and refreshing connections
+  because LM Studio does not expose an app-guided starter model.
+- **OpenClaw Telegram DM repair (2026-09-17):** Telegram polling was already
+  receiving updates for `@dungxbuif_openclaw_bot`, but all DMs were dropped
+  because `channels.telegram.dmPolicy=open` lacked `allowFrom=["*"]`. Added the
+  allow-list wildcard and rolled only the `openclaw` Swarm service; the
+  provider starts without the prior DM-drop config warning.
+- **Educates renderer repair (2026-09-17):** the LAN lab returned
+  `Renderer Failed` because the generated workshop config had no active pages
+  and the Docker session had no published content artifact. Added the Hugo
+  pathway/modules config, published content to VM100's local
+  `educates-local-registry`, redeployed from `workshop.published.yaml`, and
+  firewalled the registry so only the workshop subnet can pull from it.
+- **Educates removed (2026-09-17):** removed the generated Educates skeleton
+  after deciding to use the upstream Kubernetes fundamentals course later.
+  Deleted VM100 workshop/runtime containers, the local content registry,
+  workshop volumes/networks, `/opt/apps/educates-lab`, `DOCKER-USER` rules for
+  ports `10081` and `5000`, the Pi5 Traefik `educates` router/service, and the
+  repo migration/doc artifacts.
 - **MyPocket fresh deploy:** built `homelab/mypocket-api:vm100-20260912-okb335cb4`
   and `homelab/mypocket-web:vm100-20260912-okb335cb4` from the current
   MyPocket source, reset the Pi5 PostgreSQL `mypocket` schema, flushed the

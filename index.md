@@ -1,6 +1,6 @@
 # Homelab Infrastructure
 
-Current architecture: **v3.2, VM100 compute + Orange Pi edge + Pi5 datastore**.
+Current architecture: **v3.3, VM100 compute + Pi5 edge/datastore + Mac service tunnel**.
 Canonical repository: `/Users/dungxbuif/workspace/homelab`.
 Documentation audited on 2026-09-16; verification coverage is recorded in
 [the audit report](./docs/research/docs-stack-audit-2026-09-16.md).
@@ -13,12 +13,14 @@ Documentation audited on 2026-09-16; verification coverage is recorded in
 - [System operations](./docs/MAIN.md): edge configuration and export workflow.
 - [Changelog](./docs/LOG.md) and [archive](./docs/archived/INDEX.md): history,
   not current deployment instructions.
+- [Backup and restore runbook](./docs/runbooks/backup-restore.md): native
+  backup commands, mandatory post-checks, Mezon reporting, and Drive retention.
 - [Agent-readable navigation](./llms.txt): plain Markdown entry points.
 
 ## Current Topology
 
 ```text
-Public HTTPS -> VPS Traefik -> Rathole :7000 -> Orange Pi Traefik
+Public HTTPS -> VPS Traefik -> Rathole :7000 -> Pi5 Traefik
              -> homelab-net -> VM100 apps / Pi5 HTTP services
 
 GitLab web/Registry trial -> VPS Traefik -> isolated Rathole pairs
@@ -27,12 +29,15 @@ Git SSH -> VPS :2222 -> isolated Rathole -> VM100 GitLab :22
 
 BDS -> dedicated Cloudflare connector -> bds-app (private bds-tunnel-net)
 VM100 apps -> Pi5 PostgreSQL/PgBouncer and Redis (private Docker DNS)
-OCR proxy / edge LLM route -> Mac native OCR :8787 / LM Studio :1234
+OCR -> VM100 macocr-proxy -> Mac Rathole tunnel -> native OCR :8787
+LLM -> Mac Rathole tunnel -> LM Studio :1234
 ```
 
 VM100 app host ports `18080/18081/18084/18085` are retired, not current
 upstreams. The GitLab Registry is **trial-only**; the Pi5 registry remains
-production. Mac roaming via NetBird is **proposed**, not deployed.
+production. Mac OCR/LLM roaming uses the local Rathole client in
+`/Users/dungxbuif/dev-env/mac-service-tunnel`; NetBird remains proposed for
+private administration and ACL-based access.
 
 ## Operational Constraints
 
@@ -43,8 +48,8 @@ production. Mac roaming via NetBird is **proposed**, not deployed.
    compute on VM100. VM100 `100` is production, not a disposable AWS lab VM.
    VMs `101/102` were removed per the migration record; audit hypervisor state
    before any cleanup or IaC destroy.
-3. Deploy portless Docker services using private service DNS. Orange Pi
-   currently uses **file-provider routes**, not automatic Swarm labels.
+3. Deploy portless Docker services using private service DNS. The active Pi5
+   edge currently uses **file-provider routes**, not automatic Swarm labels.
    VPS GitLab Docker labels are a separate local-provider exception.
 4. Do not add home-router public forwards. New host-port exceptions require
    an explicit purpose and approval; retain approved datastore/native LAN
