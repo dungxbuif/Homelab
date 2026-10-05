@@ -25,8 +25,15 @@ RCLONE_REMOTE
 DRIVE_ROOT
 MEZON_WEBHOOK_URL_FILE
 RUSTFS_CREDENTIALS_FILE  # required for the rustfs class
+BACKUP_STATUS_ROOT       # optional; defaults to <staging-root>/.state
 ```
 
 The runner does not stop, scale, recreate, or remove production services. Exit
 code `75` means another class already owns the global lock and the scheduler
 should retry later without overlapping it.
+
+After a class passes its remote post-check, `run-class.sh` writes a short
+success marker under `BACKUP_STATUS_ROOT`. Starting a new class attempt removes
+that class marker. `run-retention.sh` requires all three markers to be recent
+(26 hours by default) before it invokes any destructive prune, and validates
+all markers before pruning the first repository.

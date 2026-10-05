@@ -11,6 +11,7 @@ rustfs_scripts=${RUSTFS_SCRIPTS_DIR:-$app_root/automation/rustfs-backup}
 gitlab_scripts=${GITLAB_SCRIPTS_DIR:-$app_root/automation/gitlab-backup}
 inventory=${BACKUP_INVENTORY:-$app_root/backup/inventory.yaml}
 staging_root=${BACKUP_STAGING_ROOT:-/ssd-data/infra/backups/homelab}
+status_root=${BACKUP_STATUS_ROOT:-$staging_root/.state}
 lock_file=${BACKUP_LOCK_FILE:-/run/lock/homelab-backup.lock}
 
 case "$class" in
@@ -24,6 +25,11 @@ if ! flock -n 9; then
   echo 'another homelab backup job holds the global lock' >&2
   exit 75
 fi
+
+mkdir -p "$status_root"
+# A failed or interrupted run must invalidate the previous success gate so
+# retention cannot prune based on stale evidence.
+rm -f "$status_root/$class.success"
 
 : "${RESTIC_PASSWORD_FILE:?RESTIC_PASSWORD_FILE is required}"
 : "${RCLONE_CONFIG_FILE:?RCLONE_CONFIG_FILE is required}"
@@ -74,4 +80,12 @@ if [[ "${BACKUP_DRY_RUN:-false}" == 'true' ]]; then
   post_check_args+=(--dry-run)
 fi
 bash "$backup_scripts/post-check-report.sh" "${post_check_args[@]}"
+status_tmp=$(mktemp "$status_root/.${class}.success.XXXXXX")
+{
+  printf 'status=success\n'
+  printf 'completed_at=%s\n' "$(date -u +%s)"
+  printf 'run_id=%s\n' "$run_id"
+  printf 'snapshot_id=%s\n' "$snapshot_id"
+} > "$status_tmp"
+mv -f "$status_tmp" "$status_root/$class.success"
 printf '%s\n' "$snapshot_id"
