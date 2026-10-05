@@ -67,7 +67,7 @@ snapshot = cli_snapshot or manifest.get('remote_snapshot_id')
 if not snapshot:
     raise SystemExit('remote snapshot id is missing')
 coverage = manifest.get('coverage')
-if not isinstance(coverage, list) or not coverage:
+if not isinstance(coverage, (list, dict)) or not coverage:
     raise SystemExit('manifest coverage is empty')
 PY
   then

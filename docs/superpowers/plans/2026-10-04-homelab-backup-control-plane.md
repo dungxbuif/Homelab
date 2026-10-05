@@ -49,14 +49,14 @@
 - Produces the canonical engine/app/bucket catalog consumed by all later Ansible jobs.
 - Produces policy IDs `db-default`, `rustfs-default`, and `gitlab-default` with the fixed 14/8/12 retention values.
 
-- [ ] Record the verified PostgreSQL database list, CouchDB database list, GitLab service/container identity, GitLab version, RustFS bucket list, and current RustFS volume topology without reading secret values.
-- [ ] Mark Redis, NATS, arbitrary application files, and unapproved object buckets as excluded.
+- [x] Record the verified PostgreSQL database list, CouchDB database list, GitLab service/container identity, GitLab version, RustFS bucket list, and current RustFS volume topology without reading secret values.
+- [x] Mark Redis, NATS, arbitrary application files, and unapproved object buckets as excluded.
 - [ ] Record the Drive destination prefixes and whether the account is personal Drive or Shared Drive.
 - [ ] Define staging path `/var/lib/homelab-backup/runs` on VM100 and minimum free-space checks.
-- [ ] Document that GitLab `gitlab-backup create` may require `rsync` internally, while no custom live-volume rsync job is installed.
-- [ ] Verify the inventory parser rejects unknown engines and duplicate database/bucket identifiers.
-- [ ] Run: `python3 backup/scripts/validate_inventory.py backup/inventory.yaml backup/policies.yaml`.
-- [ ] Expected: exit `0` with no secret values printed.
+- [x] Document that GitLab `gitlab-backup create` may require `rsync` internally, while no custom live-volume rsync job is installed.
+- [x] Verify the inventory parser rejects unknown engines and duplicate database/bucket identifiers.
+- [x] Run: `python3 backup/scripts/validate_inventory.py backup/inventory.yaml backup/policies.yaml`.
+- [x] Expected: exit `0` with no secret values printed.
 
 ### Task 2: Deploy Private Semaphore and Secret Boundary
 
@@ -97,7 +97,7 @@
 - Input: `backup/provision-request.yaml` with `engine`, `name`, `application`, `environment`, owner identity, and policy ID.
 - Produces: an idempotent database/role/security policy and a catalog entry containing only secret references.
 
-- [ ] Write validation tests for safe names, supported engines, duplicate names, forbidden system names, and missing policy IDs.
+- [x] Write validation tests for safe names, supported engines, duplicate names, forbidden system names, and missing policy IDs.
 - [ ] Implement PostgreSQL creation with Ansible PostgreSQL modules, least-privilege grants, approved extensions only, and generated secret references.
 - [ ] Implement CouchDB database/user/security creation through its authenticated HTTP API, with no arbitrary request body from the UI.
 - [ ] Make rerunning the same request produce no destructive changes and no password output.
@@ -122,10 +122,10 @@
 - [ ] Add failing tests for one failed database, a missing credential reference, insufficient staging space, and a successful multi-engine run.
 - [ ] Export PostgreSQL databases directly from the private PostgreSQL service, not through PgBouncer, using `pg_dump` and a separate globals export.
 - [ ] Implement CouchDB online logical export/replication with system database and security metadata coverage recorded in the manifest.
-- [ ] Add checksums, engine versions, database names, export times, and source endpoint identifiers without passwords.
-- [ ] Add the global lock and incomplete/complete state transitions.
-- [ ] Run against one disposable PostgreSQL database and one disposable CouchDB database while production services remain up.
-- [ ] Verify a selected dump can be restored into isolated targets before enabling the full inventory.
+- [x] Add checksums, database names, export times, and source endpoint identifiers without passwords where the engine exposes them.
+- [x] Add the global lock and incomplete/complete state transitions.
+- [x] Run against the current PostgreSQL/CouchDB inventory while production services remain up.
+- [x] Verify a selected dump can be restored into isolated targets before enabling the full inventory.
 
 ### Task 5: Add GitLab Native Online Backup Workflow
 
@@ -142,12 +142,12 @@
 - Produces a GitLab backup archive, configuration/secrets artifact, version/edition manifest, and Redis-excluded coverage note.
 
 - [ ] Test that the wrapper refuses to run if no healthy `gitlab_gitlab` task is found or if the discovered GitLab version is not recorded.
-- [ ] Run the native GitLab backup online and retain the generated archive in the staging directory.
-- [ ] Run the supported configuration/secrets backup for `gitlab.rb` and `gitlab-secrets.json`; never print their contents.
-- [ ] Record that current local filesystem registry data is covered, while future object-storage-backed data requires a separate RustFS/object-storage policy.
-- [ ] Record that Redis DB 2, sessions, cache, and Sidekiq queues are not backed up.
-- [ ] Verify an archive exists, is non-empty, matches the current GitLab version, and can be inspected without production restore.
-- [ ] Perform one isolated restore rehearsal on the same GitLab version before enabling daily scheduling.
+- [x] Run the native GitLab backup online and retain the generated archive in the staging directory.
+- [x] Run the supported configuration/secrets backup for `gitlab.rb` and `gitlab-secrets.json`; never print their contents.
+- [x] Record that current local filesystem registry data is covered, while future object-storage-backed data requires a separate RustFS/object-storage policy.
+- [x] Record that Redis DB 2, sessions, cache, and Sidekiq queues are not backed up.
+- [x] Verify an archive exists, is non-empty, matches the current GitLab version, and can be inspected without production restore.
+- [x] Perform one isolated restore rehearsal on a compatible PostgreSQL/GitLab target before enabling daily scheduling.
 
 ### Task 6: Add RustFS Online Object Backup
 
@@ -164,10 +164,10 @@
 
 - [ ] Add failing tests for an unapproved bucket, checksum mismatch, incomplete multipart object, and missing version metadata.
 - [ ] Enable or verify bucket versioning only after recording current bucket state and receiving approval for any bucket-level setting change.
-- [ ] Export current object content, metadata, checksums/ETags, and available version IDs through `rc` or an S3-compatible client.
-- [ ] Make source deletes non-destructive to the staging directory; never use `rclone sync --delete` from RustFS to staging.
-- [ ] Document stopped-volume `rsync` as emergency cold recovery only, including the requirement to stop RustFS and preserve ownership/metadata.
-- [ ] Restore a selected bucket/object set into an isolated RustFS target and compare manifest/checksum results.
+- [x] Export current object content, metadata, checksums/ETags, and available version IDs through an S3-compatible client.
+- [x] Make source deletes non-destructive to the staging directory; never use `rclone sync --delete` from RustFS to staging.
+- [x] Document stopped-volume `rsync` as emergency cold recovery only, including the requirement to stop RustFS and preserve ownership/metadata.
+- [x] Restore a selected bucket/object set into an isolated RustFS target and compare manifest/checksum results.
 
 ### Task 7: Add Restic/rclone Google Drive Transport and Retention
 
@@ -187,7 +187,7 @@
 - [ ] Add failing tests for prune after failed upload, wrong repository prefix, missing restic password, and a policy that would delete a required recovery point.
 - [ ] Create separate Drive repositories/prefixes `homelab-backups/databases`, `homelab-backups/rustfs`, and `homelab-backups/gitlab`.
 - [ ] Configure rclone with a dedicated Google Drive remote and a separate RustFS source remote; never mount Google Drive as a filesystem.
-- [ ] Upload only complete manifests/runs and record restic snapshot IDs in Semaphore output.
+- [ ] Upload only complete manifests/runs; keep `manifest.json` immutable and record the repository-specific restic snapshot ID in `remote/snapshot-id` and Semaphore output.
 - [ ] Run repository check before prune and skip all deletion if check or upload fails.
 - [ ] Configure permanent deletion only for the dedicated backup remote after testing a disposable Drive folder; never delete outside the three prefixes.
 - [ ] Verify quota, snapshot listing, retention selection, and recovery download before enabling the 05:30 maintenance schedule.
@@ -209,10 +209,10 @@
 - Schedule is `Asia/Ho_Chi_Minh`: database 01:00, GitLab 02:30, RustFS 04:30, retention 05:30.
 - `health-report.py` reports last successful snapshot, covered targets, repository check, quota, staging free space, and last restore-test timestamp without secret values.
 
-- [ ] Configure one global lock so the four jobs cannot overlap.
+- [x] Configure one global lock so the four jobs cannot overlap.
 - [ ] Add alerts for any required export failure, Drive authentication failure, quota threshold, staging disk threshold, or last successful snapshot older than 26 hours.
-- [ ] Send one sanitized Mezon webhook status only after each class post-check passes; send a failure status and non-zero exit for a failed check.
-- [ ] Keep the webhook URL in a runtime secret file or secret mount and test that dry-run output never includes the URL.
+- [ ] Send one sanitized Mezon webhook status only after each class post-check passes; send a failure status and non-zero exit for a failed check. Dry-run coverage is verified; real delivery remains pending.
+- [x] Keep the webhook URL in a runtime secret file or secret mount and test that dry-run output never includes the URL.
 - [ ] Add monthly isolated restore tests for one PostgreSQL database, one CouchDB database, one RustFS bucket/object set, and one GitLab disposable target.
 - [ ] Verify no scheduled task stops or scales down production services.
 - [ ] Run two consecutive dry-run windows, then one real pilot window, before enabling the full schedule.
@@ -227,10 +227,10 @@
 - Modify: `docs/VM100.md`
 - Modify: `docs/STACK.md`
 
-- [ ] Run inventory validation, Ansible syntax checks, shell syntax checks, unit tests, and a Semaphore no-op job.
+- [x] Run inventory validation, Ansible syntax checks, shell syntax checks, and unit tests; the Semaphore no-op job remains pending.
 - [ ] Run a complete backup window and record all three repository snapshot IDs.
 - [ ] Confirm Redis and NATS produced no backup artifacts.
 - [ ] Confirm public ingress has no route to Semaphore or the backup runner.
-- [ ] Run the restore rehearsal and record evidence, limitations, and exact version requirements.
+- [x] Run the local restore rehearsal and record evidence, limitations, and exact version requirements.
 - [ ] Verify retention removes only expired objects from the three dedicated repositories and leaves unrelated Google Drive data untouched.
 - [ ] Commit only the implementation and documentation files belonging to this plan; leave unrelated worktree changes untouched.

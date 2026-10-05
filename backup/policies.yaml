@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "policies": {
+    "db-default": {
+      "classes": ["databases"],
+      "daily": 14,
+      "weekly": 8,
+      "monthly": 12,
+      "restore_test_days": 30
+    },
+    "rustfs-default": {
+      "classes": ["rustfs"],
+      "daily": 14,
+      "weekly": 8,
+      "monthly": 12,
+      "restore_test_days": 30
+    },
+    "gitlab-default": {
+      "classes": ["gitlab"],
+      "daily": 14,
+      "weekly": 8,
+      "monthly": 12,
+      "restore_test_days": 30
+    }
+  }
+}

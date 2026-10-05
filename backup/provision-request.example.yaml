@@ -1,0 +1,9 @@
+{
+  "engine": "postgresql",
+  "name": "notes_staging",
+  "application": "notes",
+  "environment": "staging",
+  "owner_role": "notes_app",
+  "policy_id": "db-default",
+  "secret_ref": "swarm:notes-db"
+}

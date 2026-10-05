@@ -1,6 +1,7 @@
 # Homelab Backup and Restore Runbook
 
-**Status:** Design and documentation prepared; scheduled deployment pending  
+**Status:** Online adapters and isolated restore rehearsal verified on 2026-10-05;
+encrypted Drive upload and scheduled deployment remain pending
 **Owner:** Homelab operator  
 **Timezone:** `Asia/Ho_Chi_Minh`
 
@@ -17,6 +18,10 @@ include application files, Git repositories, uploads, artifacts, or object
 storage. GitLab and RustFS have separate native/object-aware workflows because
 their recoverable data is not database-only.
 
+Catalog entries marked `retired` are retained for audit history but are not
+exported. New manifests record those exclusions explicitly; system databases
+needed for recovery remain covered.
+
 ## Operating Principles
 
 - Prefer the native CLI or API supplied by the application.
@@ -27,6 +32,9 @@ their recoverable data is not database-only.
 - Every backup class has an engine-specific post-check.
 - A class is reported successful only after local validation, remote snapshot
   verification, and manifest/checksum validation pass.
+- The engine manifest is immutable after export. The repository-specific
+  snapshot ID is written to `remote/snapshot-id` after the upload and is
+  passed explicitly to the post-check.
 - A failed class never triggers retention deletion.
 
 ## Backup Classes
@@ -47,6 +55,7 @@ Post-check requirements:
 - archive/list validation succeeds;
 - checksums match;
 - the remote restic snapshot exists and is readable;
+- `remote/snapshot-id` identifies that verified snapshot;
 - the manifest lists every covered database.
 
 ### GitLab
@@ -115,6 +124,16 @@ Jobs run serially behind one global lock:
 
 If a prior job is still running, the next job waits or reports a missed window;
 it must not overlap production backup work.
+
+The executable flow is defined in `automation/backup-runner/`:
+
+- `run-class.sh` performs one class in export, upload, check, and Mezon
+  post-check order;
+- `run-retention.sh` owns the separate 05:30 repository maintenance lock;
+- `health-report.py` emits a secret-free status summary for Semaphore and
+  alerting;
+- `schedule.yaml` is the single schedule source. Do not add a second cron or
+  systemd schedule while importing these jobs into Semaphore.
 
 ## Google Drive and Retention
 
@@ -186,10 +205,17 @@ tests are mandatory before claiming operational recovery.
 
 ## Current Limitations
 
-- The scheduler and backup jobs are not yet deployed.
+- The adapters have been exercised against current Pi5/VM100 data and local
+  restore targets, but the three real Drive snapshots and production post-check
+  notifications are still pending. See the [rehearsal evidence](../deployments/backup-restore-rehearsal-2026-10-05.md).
+- The Semaphore service is a private UI pilot on Pi5. The durable runner,
+  provisioning templates, and scheduler still belong on VM100.
 - The Mezon webhook secret is intentionally not stored in this repository.
 - Redis recovery is out of scope.
 - A successful database backup does not restore application files or RustFS
   objects.
-- GitLab backup recovery depends on the exact GitLab version and required
-  configuration/secrets.
+- GitLab recovery requires PostgreSQL globals, the exact GitLab version and
+  edition, the config/secrets artifact, and a compatible PostgreSQL major. The
+  current dump is from PostgreSQL 16.14 using a PostgreSQL 17.10 client; a
+  PostgreSQL 16 target needs the `transaction_timeout` compatibility handling
+  documented in the GitLab backup README.

@@ -30,6 +30,13 @@ secrets/access_key_encryption
 The access-key value must be a 32-byte base64 value. The admin password is
 generated outside Git and is not printed by the deployment procedure.
 
+The schedule/template contract is documented in
+[`templates/schedule.yaml`](./templates/schedule.yaml), and the executable
+serial runner is in [`../backup-runner/`](../backup-runner/). It is
+intentionally not imported into the Pi5 pilot yet: the final runner and durable
+control metadata move to VM100 first, then Semaphore becomes the single
+scheduler owner.
+
 ## Smoke test
 
 After starting the stack, verify:
