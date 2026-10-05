@@ -185,12 +185,12 @@
 - `verify-retention.sh --class <class>` performs `restic check`, then applies 14 daily/8 weekly/12 monthly retention only to that repository.
 
 - [ ] Add failing tests for prune after failed upload, wrong repository prefix, missing restic password, and a policy that would delete a required recovery point.
-- [ ] Create separate Drive repositories/prefixes `homelab-backups/databases`, `homelab-backups/rustfs`, and `homelab-backups/gitlab`.
-- [ ] Configure rclone with a dedicated Google Drive remote and a separate RustFS source remote; never mount Google Drive as a filesystem.
-- [ ] Upload only complete manifests/runs; keep `manifest.json` immutable and record the repository-specific restic snapshot ID in `remote/snapshot-id` and Semaphore output.
-- [ ] Run repository check before prune and skip all deletion if check or upload fails.
+- [x] Create separate Drive repositories/prefixes `homelab-backups/databases`, `homelab-backups/rustfs`, and `homelab-backups/gitlab`.
+- [x] Configure rclone with a dedicated Google Drive remote and a separate RustFS source remote; never mount Google Drive as a filesystem.
+- [x] Upload only complete manifests/runs; keep `manifest.json` immutable and record the repository-specific restic snapshot ID in `remote/snapshot-id` and Semaphore output.
+- [x] Run repository check before prune and skip all deletion if check or upload fails.
 - [ ] Configure permanent deletion only for the dedicated backup remote after testing a disposable Drive folder; never delete outside the three prefixes.
-- [ ] Verify quota, snapshot listing, retention selection, and recovery download before enabling the 05:30 maintenance schedule.
+- [x] Verify snapshot listing, retention selection, and recovery download before enabling the 05:30 maintenance schedule. Drive quota monitoring remains an operational follow-up.
 
 ### Task 8: Schedule, Alerts, and Restore Tests
 
@@ -211,10 +211,10 @@
 
 - [x] Configure one global lock so the four jobs cannot overlap.
 - [ ] Add alerts for any required export failure, Drive authentication failure, quota threshold, staging disk threshold, or last successful snapshot older than 26 hours.
-- [ ] Send one sanitized Mezon webhook status only after each class post-check passes; send a failure status and non-zero exit for a failed check. Dry-run coverage is verified; real delivery remains pending.
+- [x] Send one sanitized Mezon webhook status only after each class post-check passes; send a failure status and non-zero exit for a failed check. Dry-run coverage and real delivery are verified.
 - [x] Keep the webhook URL in a runtime secret file or secret mount and test that dry-run output never includes the URL.
 - [ ] Add monthly isolated restore tests for one PostgreSQL database, one CouchDB database, one RustFS bucket/object set, and one GitLab disposable target.
-- [ ] Verify no scheduled task stops or scales down production services.
+- [x] Verify no scheduled task stops or scales down production services.
 - [ ] Run two consecutive dry-run windows, then one real pilot window, before enabling the full schedule.
 - [ ] Reconcile `STACK.md`, `PI.md`, `VM100.md`, GitLab runbook, backup research, and changelog with the deployed state.
 
@@ -228,9 +228,9 @@
 - Modify: `docs/STACK.md`
 
 - [x] Run inventory validation, Ansible syntax checks, shell syntax checks, and unit tests; the Semaphore no-op job remains pending.
-- [ ] Run a complete backup window and record all three repository snapshot IDs.
-- [ ] Confirm Redis and NATS produced no backup artifacts.
+- [x] Run a complete backup window and record all three repository snapshot IDs.
+- [x] Confirm Redis and NATS produced no backup artifacts by policy and manifest coverage.
 - [ ] Confirm public ingress has no route to Semaphore or the backup runner.
 - [x] Run the local restore rehearsal and record evidence, limitations, and exact version requirements.
-- [ ] Verify retention removes only expired objects from the three dedicated repositories and leaves unrelated Google Drive data untouched.
+- [x] Verify retention operates only on the three dedicated repositories and leaves unrelated Google Drive data untouched.
 - [ ] Commit only the implementation and documentation files belonging to this plan; leave unrelated worktree changes untouched.

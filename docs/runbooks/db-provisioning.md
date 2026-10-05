@@ -14,6 +14,20 @@ The operator chooses the engine, name, application, environment, owner
 identity, policy, and secret reference. The UI/job accepts no arbitrary SQL and
 does not accept an inline password.
 
+## Automatic backup enrollment
+
+The planned production Semaphore provisioning workflow will be the only
+supported creation path. After the native create and connectivity smoke test
+succeed, the job will atomically add the resource to the canonical backup
+catalog. A failed provision will never create an inventory entry. The next
+database or RustFS backup run will read that catalog, so no backup script or
+schedule edit will be needed for a newly created application.
+
+The catalog stores the engine, resource name, application, lifecycle, policy ID,
+and secret reference only. A nightly drift check compares live resources with
+the catalog and reports resources created outside the UI. Retiring a resource
+changes its lifecycle and preserves its historical backup records.
+
 Example request:
 
 ```json

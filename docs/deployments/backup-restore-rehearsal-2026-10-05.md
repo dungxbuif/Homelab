@@ -1,8 +1,9 @@
 # Backup and Restore Rehearsal
 
 **Date:** 2026-10-05
-**Status:** Local artifacts and isolated restore tests verified; encrypted
-Google Drive class uploads and scheduled runner are still pending.
+**Status:** Local exports, encrypted Google Drive uploads, retention checks,
+Mezon post-checks, and remote restore rehearsals verified. The durable
+Semaphore scheduler and UI-driven auto-enrollment remain pending.
 
 ## Evidence
 
@@ -46,8 +47,8 @@ then the test bucket was removed. The rehearsal found and fixed a verifier
 bug that would have copied backup control files into the target bucket;
 regression coverage now isolates all object payloads under `objects/`, so a
 legitimate production object named `manifest.json` or `bucket-metadata.json`
-cannot collide with backup metadata. The current code fix needs one fresh
-RustFS export/restore run before the remote RustFS snapshot is accepted.
+cannot collide with backup metadata. The final RustFS export and remote
+restore below provide the acceptance evidence for that fix.
 
 ### GitLab on VM100
 
@@ -73,12 +74,41 @@ The first real upload attempt exposed that a read-only rclone config cannot
 refresh an OAuth token. `restic-lib.sh` now copies the config into a writable
 per-process working directory while preserving the source config.
 
+### Final Drive window
+
+The corrected runner completed one real snapshot in each dedicated repository:
+
+| Class | Run | Result |
+|---|---|---|
+| Databases | `db-20261005-140503-final` | PostgreSQL 12 databases plus globals and CouchDB 5 databases; snapshot/check passed |
+| RustFS | `rustfs-20261005-140503-final` | 7 active buckets; retired `goclaw` excluded; snapshot/check passed |
+| GitLab | `gitlab-20261005-0100-final` | GitLab CE `18.11.11` native archive/config/registry artifacts; snapshot/check passed |
+
+The three repositories are isolated below `homelab-backups/databases`,
+`homelab-backups/rustfs`, and `homelab-backups/gitlab`. Retention passed
+pre-check and post-prune repository checks for all three classes. The legacy
+Pi cron entry calling `/ssd-data/backup/simple-backup.sh all` was disabled; the
+script and historical artifacts were retained for audit.
+
+Remote restore evidence:
+
+- The database snapshot restored 6.5 GiB to staging, passed all checksums, and
+  restored `bds_prod` into an isolated PostgreSQL database with `SELECT 1`.
+- The RustFS snapshot restored 754 MiB to staging, passed all checksums, and
+  restored the `obsidian` bucket into an isolated bucket with 2,485 objects
+  matching the manifest.
+- The GitLab snapshot restored 5.4 MiB to staging, passed all checksums,
+  `tar -tf`, and `gzip -t` validation.
+
+Each class received a success post-check through the configured Mezon webhook.
+No production database, bucket, or service was stopped. Disposable restore
+databases, buckets, and staging directories were removed after verification.
+
 ## Remaining gates
 
-- Unlock the local 1Password SSH agent, copy the corrected restic runner to
-  Pi5, and complete one verified snapshot in each of the three dedicated Drive
-  repositories.
-- Run the real post-check and sanitized Mezon notification for each class.
-- Verify retention only after repository checks pass.
-- Move the runner and durable Semaphore control metadata to VM100, create the
-  no-op/backup/restore templates, then enable the serial schedule.
+- Deploy the durable runner and Semaphore control metadata on the approved
+  host, with one scheduler owner and no replacement cron.
+- Implement the UI-driven provisioning workflow: create DB/user or bucket,
+  smoke-test it, atomically register the catalog entry, and let the next
+  backup discover it automatically.
+- Add the nightly live-resource/catalog drift audit and Mezon alert.

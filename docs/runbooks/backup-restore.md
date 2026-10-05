@@ -1,7 +1,11 @@
 # Homelab Backup and Restore Runbook
 
-**Status:** Online adapters and isolated restore rehearsal verified on 2026-10-05;
-encrypted Drive upload and scheduled deployment remain pending
+**Status:** Online adapters, encrypted Drive upload, retention, and remote
+restore rehearsal verified on 2026-10-05; scheduled deployment remains
+pending. The legacy
+`/ssd-data/backup/simple-backup.sh` cron entry was disabled on the Pi on
+2026-10-05; its script and historical local artifacts remain for rollback and
+audit until the replacement flow is fully verified.
 **Owner:** Homelab operator  
 **Timezone:** `Asia/Ho_Chi_Minh`
 

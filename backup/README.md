@@ -1,8 +1,8 @@
 # Homelab Backup Automation
 
 This directory contains the backup policy, engine-specific automation, and
-post-check notification contract. The implementation and local restore
-rehearsal are in progress; the current evidence is recorded in
+post-check notification contract. Local and remote restore rehearsals are
+verified; the current evidence is recorded in
 [`docs/deployments/backup-restore-rehearsal-2026-10-05.md`](../docs/deployments/backup-restore-rehearsal-2026-10-05.md).
 The private Semaphore UI is still a pilot and production schedules remain
 disabled. The implementation plan is [here](../docs/superpowers/plans/2026-10-04-homelab-backup-control-plane.md).
@@ -36,6 +36,11 @@ not provisioned or backed up by this control plane.
 Inventory entries marked `retired` remain in the catalog for audit history but
 are excluded from new exports. Each adapter records the excluded names in its
 manifest so a smaller current backup cannot be mistaken for missing coverage.
+
+The planned Semaphore provisioning workflow will register a newly created
+database or bucket in this catalog only after its native create and smoke test
+pass. The next scheduled runner then includes it automatically; backup scripts
+do not need per-application edits.
 
 ## Native mechanism matrix
 
