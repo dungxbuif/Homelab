@@ -5,7 +5,7 @@ services:
     image: semaphoreui/semaphore:v2.19.12
     environment:
       SEMAPHORE_DB_DIALECT: sqlite
-      SEMAPHORE_DB: /etc/semaphore/semaphore.sqlite
+      SEMAPHORE_DB_PATH: /var/lib/semaphore
       SEMAPHORE_PLAYBOOK_PATH: /tmp/semaphore
       SEMAPHORE_ADMIN_NAME: admin
       SEMAPHORE_ADMIN_EMAIL: dungbui.dungbui.00@gmail.com
@@ -17,9 +17,11 @@ services:
     secrets:
       - semaphore_admin_password
       - semaphore_access_key_encryption
+      - homelab_provisioner_token
     volumes:
-      - /ssd-data/infra/semaphore/data:/etc/semaphore
-      - /ssd-data/infra/semaphore/playbooks:/tmp/semaphore:ro
+      - /ssd-data/infra/semaphore/data:/var/lib/semaphore
+      - /ssd-data/infra/semaphore/repository:/tmp/semaphore-repository:ro
+      - /ssd-data/infra/semaphore/playbooks:/tmp/semaphore:rw
     networks:
       - homelab-net
     deploy:
@@ -34,6 +36,8 @@ secrets:
   semaphore_admin_password:
     external: true
   semaphore_access_key_encryption:
+    external: true
+  homelab_provisioner_token:
     external: true
 
 networks:

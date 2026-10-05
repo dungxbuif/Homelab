@@ -1,0 +1,50 @@
+name: db-provision
+description: Create one PostgreSQL or CouchDB database, generate its Swarm secret, smoke-test it, and enroll it in backup coverage.
+playbook: playbooks/db-provision.yml
+repository: Pi5 private playbooks
+branch: main
+inventory: localhost
+environment: Provisioner defaults
+survey_vars:
+  - name: engine
+    title: Engine
+    type: enum
+    required: true
+    values:
+      - name: PostgreSQL
+        value: postgresql
+      - name: CouchDB
+        value: couchdb
+  - name: database_name
+    title: Database name
+    required: true
+  - name: application
+    title: Application
+    required: true
+  - name: target_environment
+    title: Environment
+    type: enum
+    required: true
+    values:
+      - name: Staging
+        value: staging
+      - name: Development
+        value: dev
+      - name: Production
+        value: prod
+  - name: owner_role
+    title: PostgreSQL owner role
+    required: false
+  - name: owner_identity
+    title: CouchDB owner identity
+    required: false
+  - name: policy_id
+    title: Backup policy
+    type: enum
+    required: true
+    values:
+      - name: Default database backup
+        value: db-default
+  - name: secret_ref
+    title: Swarm secret reference
+    required: true

@@ -17,6 +17,19 @@ timestamp: 2026-07-03T15:14:00Z
 > Dated entries below are grouped under their architecture version heading.
 > Every significant change appends to this log; the current version marker also
 > lives in [`index.md`](../index.md) and [`MAIN.md`](./MAIN.md).
+## 2026-10-06
+
+- **Private provisioning control plane:** Deployed Semaphore UI plus the internal
+  `homelab-provisioner` service on Pi5. Semaphore remains LAN/NetBird-only and
+  has no Docker socket; the provisioner is the only Docker API holder, has no
+  published port, and accepts only the Swarm token secret. The `db-provision`
+  workflow now creates PostgreSQL or CouchDB resources, smoke-tests the owner,
+  and enrolls successful resources in the backup catalog without returning
+  generated credentials.
+- **Verification:** PostgreSQL and CouchDB disposable staging canaries passed
+  through the full Semaphore -> Ansible -> provisioner path. Both were removed
+  completely, including users, Swarm secrets, and catalog rows. Production
+  backup schedules remain disabled pending the VM100 runner migration.
 
 ---
 

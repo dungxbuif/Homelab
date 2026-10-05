@@ -16,17 +16,27 @@ does not accept an inline password.
 
 ## Automatic backup enrollment
 
-The planned production Semaphore provisioning workflow will be the only
-supported creation path. After the native create and connectivity smoke test
-succeed, the job will atomically add the resource to the canonical backup
-catalog. A failed provision will never create an inventory entry. The next
-database or RustFS backup run will read that catalog, so no backup script or
-schedule edit will be needed for a newly created application.
+The private Semaphore `db-provision` workflow is the supported creation path.
+Semaphore sends the validated request to the internal `homelab-provisioner`
+service; the UI itself has no Docker socket and no database credentials. After
+the native create and connectivity smoke test succeed, the provisioner
+atomically adds the resource to the canonical backup catalog. A failed
+provision will never create an inventory entry. The next database backup run
+reads that catalog, so no backup script or schedule edit is needed for a newly
+created application.
 
 The catalog stores the engine, resource name, application, lifecycle, policy ID,
 and secret reference only. A nightly drift check compares live resources with
 the catalog and reports resources created outside the UI. Retiring a resource
 changes its lifecycle and preserves its historical backup records.
+
+The current pilot is on Pi5: open `semaphore.dungxbuif.com` from LAN or
+NetBird, choose the `Homelab Control Plane` project and run the `db-provision`
+template. The form fields `database_name` and `target_environment` are mapped
+to API keys `name` and `environment`; this avoids Ansible's reserved variable
+names. When starting a task through the Semaphore API, pass survey values as a
+JSON string in the task `environment` field. The provisioner API itself remains
+internal and is not routed through Traefik or the VPS.
 
 Example request:
 
@@ -81,6 +91,9 @@ It is never printed in job logs, committed to Git, or copied into the catalog.
 Credential rotation is an explicit operation; a normal idempotent rerun does
 not silently rotate a live application's password.
 
-The current Semaphore deployment is still a private UI pilot. The executor
-and production templates are not enabled until the VM100 runner and secret
-boundary are deployed and the staging/idempotency checks pass.
+The first pilot uses `swarm:<secret-name>` references. A new credential is
+generated in memory and written directly to a Swarm secret; the value is never
+returned in the API response or job log. If the secret already exists, the
+workflow will not rotate it implicitly. Production backup schedules remain
+unchanged while this provisioning path is verified with disposable staging
+requests.

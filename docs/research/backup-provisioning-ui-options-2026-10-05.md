@@ -16,6 +16,15 @@ Keep the homelab control plane as a small composed open-source stack:
 - **Restic through rclone** encrypts, versions and transports the completed
   class artifacts to the three Google Drive repositories.
 
+The implementation boundary is intentionally split: Semaphore remains an
+unprivileged private UI, while a small `homelab-provisioner` service on Pi5
+owns the narrow Docker/native-engine operation. Giving the UI the host Docker
+socket would make every template equivalent to root on the host. The
+provisioner accepts only the validated request schema, creates a Swarm secret
+for a new application credential, performs an online native smoke test, and
+updates `backup/inventory.yaml` atomically only after success. It has no public
+route and no host port.
+
 The UI workflow for a new application is:
 
 1. The operator submits an application, engine/resource names, owner identity,
@@ -28,6 +37,11 @@ The UI workflow for a new application is:
    uploads it, runs the post-check, and reports the result to Mezon.
 5. A nightly drift audit compares live resources with the catalog and reports
    anything created outside the UI.
+
+The first pilot supports PostgreSQL and CouchDB database requests. RustFS
+bucket provisioning remains a follow-up because bucket versioning and IAM
+metadata need a separate approval surface; the existing RustFS backup catalog
+and exporter remain unchanged.
 
 This preserves one operational workflow for PostgreSQL, CouchDB and RustFS
 without pretending that GitLab application data is a generic database.

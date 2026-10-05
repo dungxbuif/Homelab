@@ -1,4 +1,4 @@
-# Semaphore UI pilot
+# Semaphore Control Plane Pilot
 
 This directory defines the private operator UI for the homelab backup control
 plane. The current Swarm stack is a Pi5 pilot, not the final production runner.
@@ -9,13 +9,16 @@ The deployment record is [here](../../docs/deployments/semaphore-backup-ui-2026-
 - Stack/service: `semaphore_semaphore`
 - Image: `semaphoreui/semaphore:v2.19.12`
 - Metadata: local SQLite file under `/ssd-data/infra/semaphore/data`
+- Job repository: private local Git repository under `/ssd-data/infra/semaphore/repository`
 - Network: existing external Swarm network `homelab-net`
 - Host ports: none
 - Ingress: Pi5 Traefik file provider, LAN/NetBird-only middleware
 
-The pilot is intentionally limited to UI and no-op job verification. Do not add
-database provisioning, Google Drive credentials, restic passwords, or production
-schedules until the runner and secret boundary are moved to VM100.
+The UI remains private and unprivileged. It has one narrowly scoped
+`homelab_provisioner_token` secret so the `db-provision` template can call the
+internal provisioner API; it still does not mount the Docker socket. Google
+Drive credentials, restic passwords, and production backup schedules remain
+outside the UI pilot.
 
 ## Secret files
 
@@ -37,6 +40,17 @@ intentionally not imported into the Pi5 pilot yet: the final runner and durable
 control metadata move to VM100 first, then Semaphore becomes the single
 scheduler owner.
 
+The `db-provision` playbook is in `playbooks/db-provision.yml`. It accepts only
+the request fields documented in the database provisioning runbook. Generated
+credentials are written by the provisioner to Swarm secrets and are never
+returned in the task output.
+
+The UI template survey definition is kept in
+[`templates/db-provision.yaml`](./templates/db-provision.yaml). The form uses
+`database_name` and `target_environment` because `name` and `environment` are
+reserved Ansible variables; the playbook maps them to the API request keys
+`name` and `environment`.
+
 ## Smoke test
 
 After starting the stack, verify:
@@ -48,5 +62,6 @@ curl -fsS https://semaphore.dungxbuif.com/api/ping
 ```
 
 The hostname is private-only and must not be added to the VPS public route. A
-successful smoke test means the UI loads, login works, and a no-op project/task
-can be created. It does not mean production backups are active.
+successful smoke test means the UI loads, login works, and a disposable staging
+database can be created, smoke-tested, and removed. It does not mean production
+backups are active.

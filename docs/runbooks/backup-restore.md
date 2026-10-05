@@ -213,8 +213,9 @@ tests are mandatory before claiming operational recovery.
 - The adapters have been exercised against current Pi5/VM100 data and local
   restore targets, but the three real Drive snapshots and production post-check
   notifications are still pending. See the [rehearsal evidence](../deployments/backup-restore-rehearsal-2026-10-05.md).
-- The Semaphore service is a private UI pilot on Pi5. The durable runner,
-  provisioning templates, and scheduler still belong on VM100.
+- Semaphore and the internal provisioner are a private provisioning pilot on
+  Pi5. The durable runner, provisioning scheduler, and final control metadata
+  still belong on VM100; production backup schedules remain disabled here.
 - The Mezon webhook secret is intentionally not stored in this repository.
 - Redis recovery is out of scope.
 - A successful database backup does not restore application files or RustFS

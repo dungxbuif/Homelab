@@ -42,7 +42,7 @@ application readiness.
 | Pi5 HTTP backends | RustFS, pgAdmin, CouchDB, LibreSpeed | `storage`, `cdn`, `pgadmin`, `couchdb`, `sync-db`, `speed` under `dungxbuif.com` | Deployment inventory; see Pi5 runbook for exact upstreams |
 | Native LLM | Mac LM Studio through Mac Rathole client | `llm.dungxbuif.com` -> VPS `:18123` -> Mac `host.docker.internal:1234` | Tunnel established; backend must be started on Mac port `1234` |
 | KubeKosh LAN lab | VM100 standalone Docker Compose | LAN-only `kubekosh.dungxbuif.com` -> Pi5 Traefik -> `kubekosh:80` | Kubernetes learning lab; privileged container with embedded K3s; no VM100 host port and no VPS HostSNI route |
-| Semaphore backup UI pilot | Pi5 Swarm `semaphore_semaphore` | LAN-only `semaphore.dungxbuif.com` -> Pi5 Traefik -> `tasks.semaphore_semaphore:3000` | UI-only pilot; SQLite metadata; no host port, production backup schedules disabled |
+| Semaphore control plane pilot | Pi5 Swarm `semaphore_semaphore` + `homelab-provisioner_provisioner` | LAN-only `semaphore.dungxbuif.com` -> Pi5 Traefik -> `tasks.semaphore_semaphore:3000`; provisioner stays internal on `homelab-net:8787` | Private DB provisioning and catalog enrollment; no host ports; production backup schedules disabled |
 
 ## Network and Ingress
 
@@ -151,12 +151,12 @@ without auditing those consumers.
   route, old VPS Headscale/NetBird/RustDesk/Tailscale/exporter services.
   Source/research folders can remain without implying a running service.
 - Proposed: NetBird private backend DNS/ACLs for non-public roaming
-  administration, network segmentation, Semaphore/Ansible service
-  provisioning, and scheduled backup deployment. The backup design and
-  post-check contract are documented in [the backup runbook](./runbooks/backup-restore.md),
-  but the scheduler is not yet operational. Semaphore's private UI pilot is
-  documented in [the backup control-plane plan](./superpowers/plans/2026-10-04-homelab-backup-control-plane.md);
-  it is not yet a production backup runner.
+  administration, network segmentation, and scheduled backup deployment. The
+  backup design and post-check contract are documented in [the backup runbook](./runbooks/backup-restore.md),
+  but the scheduler is not yet operational. Semaphore's private control-plane
+  pilot is documented in [the deployment record](./deployments/semaphore-backup-ui-2026-10-04.md);
+  it provisions databases and enrolls them in the catalog, but is not yet a
+  production backup runner.
 - Lab-only: KubeKosh runs on VM100 for Kubernetes practice and is intentionally
   reachable only through LAN/NetBird split DNS and the Pi5 Traefik `lan-only`
   middleware; do not add it to the VPS HostSNI allow-list unless it is

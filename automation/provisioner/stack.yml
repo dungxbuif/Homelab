@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  provisioner:
+    image: homelab/provisioner:20261005
+    environment:
+      INVENTORY_PATH: /app/backup/inventory.yaml
+      POLICIES_PATH: /app/backup/policies.yaml
+      PROVISIONER_TOKEN_FILE: /run/secrets/homelab_provisioner_token
+      SCRIPTS_PATH: /app/backup/scripts
+      LISTEN_PORT: "8787"
+      TZ: Asia/Ho_Chi_Minh
+    secrets:
+      - homelab_provisioner_token
+    volumes:
+      - /ssd-data/infra/backup-runner/app/backup:/app/backup:rw
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - homelab-net
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == rpivn
+      restart_policy:
+        condition: on-failure
+
+secrets:
+  homelab_provisioner_token:
+    external: true
+
+networks:
+  homelab-net:
+    external: true

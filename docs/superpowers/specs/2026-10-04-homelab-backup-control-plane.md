@@ -1,7 +1,7 @@
 # Homelab Backup Control Plane Specification
 
 **Date:** 2026-10-04  
-**Status:** Pilot implementation in progress on Pi5; VM100 remains the target automation host
+**Status:** Backup/restore control plane verified on Pi5; private provisioning control plane enabled and verified on Pi5
 **Scope:** Database provisioning UI, database backups, RustFS object backup, and GitLab application backup
 
 ## Goal
@@ -52,9 +52,12 @@ Provide one private operator workflow for creating and cataloging databases, run
 ## Architecture
 
 ```text
-Private operator UI (Semaphore + Ansible templates)
+Private operator UI (Semaphore)
         |
-        +--> DB provisioning jobs ------------> Pi5 PostgreSQL / CouchDB
+        +--> validated provisioning request --> private provisioner agent
+                                               |---> Pi5 PostgreSQL / CouchDB
+                                               |---> Swarm secret store
+                                               `---> atomic catalog update
         |
         +--> DB backup runner ----------------> Pi5 PostgreSQL / CouchDB
         |
@@ -65,7 +68,7 @@ Private operator UI (Semaphore + Ansible templates)
         +--> restic encrypted repositories --> rclone --> dedicated Google Drive folders
 ```
 
-The operator UI is a private Semaphore installation. It provides parameterized provisioning, backup, restore-test, status, and audit history. Ansible owns the idempotent implementation; the UI does not execute arbitrary SQL or shell commands.
+The operator UI is a private Semaphore installation. It provides parameterized provisioning, backup, restore-test, status, and audit history. The UI does not receive a Docker socket and does not execute arbitrary SQL or shell commands. A small private provisioner agent is the only component allowed to use the Pi5 Docker API; it accepts a fixed request schema, invokes native engine commands, runs a smoke test, creates the referenced Swarm secret without printing its value, and atomically updates the catalog only after success. Ansible remains the future VM100 execution boundary for jobs that do not require the Pi5 Docker API.
 
 ### Pilot placement
 
@@ -73,9 +76,10 @@ The first UI pilot is a portless `semaphoreui/semaphore` Swarm service on Pi5's
 existing `homelab-net`, routed by the Pi5 Traefik file provider through a
 LAN/NetBird-only hostname. It uses a local SQLite metadata file so the pilot does
 not create another production database. No public VPS route or new host port is
-created. The pilot only validates the operator surface and a no-op job; backup
-workers and database provisioning remain disabled until their runner placement and
-secret boundary are implemented.
+created. The pilot validates the operator surface and the provisioner boundary on
+Pi5; PostgreSQL and CouchDB disposable canaries have passed. Production backup
+schedules remain owned by the verified runner until the VM100 runner migration
+is completed.
 
 ## Provisioning Contract
 
@@ -88,6 +92,12 @@ Every request contains:
 - `owner_role` or CouchDB security identity
 - `backup_policy`: enabled schedule, retention class, and restore-test cadence
 - `secret_ref`: reference to a generated secret, never the secret value
+
+The first provisioner implementation accepts `swarm:<secret-name>` references.
+For a new resource it generates the application credential in memory, creates
+the Swarm secret, and never returns the value. Repeating an already-complete
+request is safe; an existing secret is never silently rotated. A failed native
+create does not add a catalog entry.
 
 PostgreSQL provisioning creates the database, owner role, least-privilege grants, approved extensions, and catalog record. CouchDB provisioning creates the database, user/security policy, and catalog record. Redis provisioning is intentionally out of scope.
 

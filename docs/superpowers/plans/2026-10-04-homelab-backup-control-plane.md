@@ -4,9 +4,9 @@
 
 **Goal:** Build a private UI and automation workflow for database provisioning plus online PostgreSQL/CouchDB, RustFS, and GitLab backups to encrypted Google Drive repositories with verified retention and restore tests.
 
-**Architecture:** Semaphore is the private operator UI and job history surface. Ansible provides idempotent provisioning and backup orchestration, while engine-specific scripts perform native exports. VM100 is the target automation/backup runner; Pi5 remains the datastore and RustFS host. The first Semaphore UI pilot runs portlessly on Pi5 over the existing private proxy network so the operator workflow can be verified immediately. Restic encrypts and versions backup runs, and rclone only transports the three dedicated repositories to Google Drive.
+**Architecture:** Semaphore is the private operator UI and job history surface. A narrow internal provisioner service performs the Pi5-native database/secret operations without exposing the Docker socket to Semaphore; Ansible remains the future VM100 orchestration boundary. Engine-specific scripts perform native exports. VM100 is the target automation/backup runner; Pi5 remains the datastore and RustFS host. The first Semaphore UI pilot runs portlessly on Pi5 over the existing private proxy network. Restic encrypts and versions backup runs, and rclone only transports the three dedicated repositories to Google Drive.
 
-**Tech Stack:** Semaphore UI, Ansible, PostgreSQL native tools, CouchDB HTTP/replication tooling, GitLab Omnibus `gitlab-backup`, RustFS S3-compatible API/`rc`, restic, rclone, Docker Swarm secrets, Google Drive OAuth.
+**Tech Stack:** Semaphore UI, private Python provisioner, Ansible, PostgreSQL native tools, CouchDB HTTP/replication tooling, GitLab Omnibus `gitlab-backup`, RustFS S3-compatible API/`rc`, restic, rclone, Docker Swarm secrets, Google Drive OAuth.
 
 **Spec:** `docs/superpowers/specs/2026-10-04-homelab-backup-control-plane.md`
 

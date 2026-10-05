@@ -4,8 +4,11 @@ This directory contains the backup policy, engine-specific automation, and
 post-check notification contract. Local and remote restore rehearsals are
 verified; the current evidence is recorded in
 [`docs/deployments/backup-restore-rehearsal-2026-10-05.md`](../docs/deployments/backup-restore-rehearsal-2026-10-05.md).
-The private Semaphore UI is still a pilot and production schedules remain
-disabled. The implementation plan is [here](../docs/superpowers/plans/2026-10-04-homelab-backup-control-plane.md).
+The private Semaphore UI and internal provisioner are still a pilot and
+production schedules remain disabled. Semaphore is the operator surface; it
+does not receive Docker credentials or execute arbitrary shell commands. The
+provisioner is the narrow internal boundary that owns Docker API access. The
+implementation plan is [here](../docs/superpowers/plans/2026-10-04-homelab-backup-control-plane.md).
 
 ## Rules
 
@@ -37,10 +40,12 @@ Inventory entries marked `retired` remain in the catalog for audit history but
 are excluded from new exports. Each adapter records the excluded names in its
 manifest so a smaller current backup cannot be mistaken for missing coverage.
 
-The planned Semaphore provisioning workflow will register a newly created
-database or bucket in this catalog only after its native create and smoke test
-pass. The next scheduled runner then includes it automatically; backup scripts
-do not need per-application edits.
+The private Semaphore provisioning workflow registers a newly created database
+in this catalog only after its native create and smoke test pass. Semaphore
+calls the internal `homelab-provisioner` service; the UI has no Docker socket.
+The next scheduled runner then includes the database automatically; backup
+scripts do not need per-application edits. RustFS bucket provisioning is still
+an explicit follow-up and is not silently implied by database provisioning.
 
 ## Native mechanism matrix
 
@@ -91,8 +96,8 @@ For local validation without sending a message, add `--dry-run`.
 ## Current runner state
 
 - Pi5 staging path: `/ssd-data/infra/backups/homelab`.
-- VM100 is the target for the durable runner; the current Semaphore service is
-  only a private UI pilot on Pi5.
+- VM100 is the target for the durable runner and control metadata; the current
+  Semaphore/provisioner pair is a private provisioning pilot on Pi5.
 - Restic repositories are isolated at `homelab-backups/databases`,
   `homelab-backups/rustfs`, and `homelab-backups/gitlab`.
 - `restic-lib.sh` uses a writable per-process copy of `rclone.conf`, so OAuth
