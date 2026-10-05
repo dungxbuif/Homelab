@@ -42,4 +42,5 @@ restic_run snapshots --json --tag "run_id=$run_id" > "$run_dir/remote/snapshots.
 snapshot_id=$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print(data[-1]["id"] if data else "")' "$run_dir/remote/snapshots.json")
 [[ -n "$snapshot_id" ]] || { echo 'restic snapshot id not found' >&2; exit 1; }
 printf '%s\n' "$snapshot_id" > "$run_dir/remote/snapshot-id"
+printf '%s\n' "$run_id" > "$run_dir/remote/run-id"
 printf '%s\n' "$snapshot_id"

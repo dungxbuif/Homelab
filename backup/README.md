@@ -56,7 +56,8 @@ dependency. That does not authorize a separate live-volume rsync job.
 Each engine job writes a run directory with:
 
 - `manifest.json` with `status`, `kind`, and `coverage`; the upload step keeps
-  it immutable and records the repository-specific ID in `remote/snapshot-id`;
+  it immutable and records the repository-specific ID in `remote/snapshot-id`
+  plus the scheduler ID in `remote/run-id`;
 - `checksums.sha256`;
 - `COMPLETE` marker created only after upload and repository verification.
 

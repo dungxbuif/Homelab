@@ -34,10 +34,19 @@ def _snapshot_id(run_dir: Path, manifest: dict[str, Any]) -> str | None:
     return snapshot_id or manifest.get("remote_snapshot_id")
 
 
+def _run_id(run_dir: Path, manifest: dict[str, Any]) -> str:
+    run_id_path = run_dir / "remote" / "run-id"
+    try:
+        run_id = run_id_path.read_text(encoding="utf-8").strip()
+    except OSError:
+        run_id = ""
+    return run_id or manifest.get("run_id", run_dir.name)
+
+
 def _run_summary(run_dir: Path, manifest: dict[str, Any]) -> dict[str, Any]:
     restore_reports = sorted(run_dir.glob("restore-report-*.json"), key=lambda path: path.stat().st_mtime)
     return {
-        "run_id": manifest.get("run_id", run_dir.name),
+        "run_id": _run_id(run_dir, manifest),
         "snapshot_id": _snapshot_id(run_dir, manifest),
         "coverage_count": _coverage_count(manifest.get("coverage")),
         "created_at": manifest.get("created_at") or _iso_timestamp(run_dir),

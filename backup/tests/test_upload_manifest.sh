@@ -69,6 +69,7 @@ test "$output" = snap-test
 test "$(cat "$tmp/run/manifest.json")" = "$before"
 (cd "$tmp/run" && sha256sum --quiet -c checksums.sha256)
 test "$(cat "$tmp/run/remote/snapshot-id")" = snap-test
+test "$(cat "$tmp/run/remote/run-id")" = explicit-run
 grep -qx 'run_id=explicit-run' "$tmp/state/args"
 if grep -q 'remote_snapshot_id' "$tmp/run/manifest.json"; then
   echo 'remote snapshot metadata must not mutate the uploaded manifest' >&2

@@ -34,7 +34,8 @@ needed for recovery remain covered.
   verification, and manifest/checksum validation pass.
 - The engine manifest is immutable after export. The repository-specific
   snapshot ID is written to `remote/snapshot-id` after the upload and is
-  passed explicitly to the post-check.
+  passed explicitly to the post-check; the scheduler ID is written to
+  `remote/run-id` so nested output directories cannot hide job identity.
 - A failed class never triggers retention deletion.
 
 ## Backup Classes
