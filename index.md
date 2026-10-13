@@ -15,6 +15,9 @@ Documentation audited on 2026-09-16; verification coverage is recorded in
   not current deployment instructions.
 - [Backup and restore runbook](./docs/runbooks/backup-restore.md): native
   backup commands, mandatory post-checks, Mezon reporting, and Drive retention.
+- [CouchLoom second-brain runbook](./docs/services/couchloom.md): VM100
+  topology, local embedding/RAG reliability, security, backup, rollback, and
+  the SSH-to-automation roadmap.
 - [Agent-readable navigation](./llms.txt): plain Markdown entry points.
 
 ## Current Topology
