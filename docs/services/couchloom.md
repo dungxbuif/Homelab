@@ -42,7 +42,7 @@ CouchDB on homelab-net  <---------------- source of truth
       |
       | acknowledged changes feed
       v
-CouchLoom metadata index -- MCP --> OpenClaw and other authenticated agents
+CouchLoom metadata index -- MCP --> authenticated agent clients
       |
       | durable pg-boss enqueue
       v
@@ -57,6 +57,10 @@ Only `couchloom` joins both networks. PostgreSQL and the long-running Ollama
 server are isolated on the private `couchloom-internal` bridge. CouchLoom joins
 the existing attachable `homelab-net` to reach CouchDB and to serve MCP clients.
 No service publishes a host port.
+
+The endpoint is suitable for OpenClaw, but this runbook does not claim that the
+current OpenClaw registry entry has been verified. Treat client registration as
+a separate integration check from CouchLoom service health.
 
 The changes-feed checkpoint advances only after work has been durably enqueued
 in PostgreSQL. The worker rereads the current document immediately before
@@ -325,6 +329,7 @@ write_policy: authenticated_create_and_edit_all_vault_paths
 destructive_mcp_tools_exposed: false
 normal_deployment_automation: pending
 direct_ssh_role: current_operator_path_then_break_glass
+openclaw_registration_verified: false
 ```
 
 ## Source references
