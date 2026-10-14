@@ -20,7 +20,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from common import docker_exec, load_document, run_command  # noqa: E402
-from register_resource import register_file  # noqa: E402
+from register_resource import register_file, register_resource  # noqa: E402
 from validate_provision_request import validate_request  # noqa: E402
 
 
@@ -129,6 +129,11 @@ def _validate(request: dict[str, Any], inventory: dict[str, Any], policies: dict
     duplicate_only = all("already exists" in error for error in errors) if errors else False
     if errors and not duplicate_only:
         raise ProvisioningError("; ".join(errors))
+    try:
+        # Detect ownership/policy conflicts before any native mutation.
+        register_resource(inventory, normalized, policies)
+    except ValueError as exc:
+        raise ProvisioningError(str(exc)) from exc
     return normalized
 
 
@@ -178,9 +183,11 @@ def provision_postgresql(
             changed=bool(catalog["changed"]),
             generated_password=generated_password,
         )
-    except Exception:
+    except Exception as exc:
         if created_secret:
-            _remove_secret(secret_name)
+            raise ProvisioningError(
+                "PostgreSQL provisioning incomplete; generated Swarm secret retained for reconciliation"
+            ) from exc
         raise
 
 
@@ -263,9 +270,11 @@ def provision_couchdb(
             changed=bool(catalog["changed"]),
             generated_password=generated_password,
         )
-    except Exception:
+    except Exception as exc:
         if created_secret:
-            _remove_secret(secret_name)
+            raise ProvisioningError(
+                "CouchDB provisioning incomplete; generated Swarm secret retained for reconciliation"
+            ) from exc
         raise
 
 

@@ -2,6 +2,7 @@
 import importlib.util
 import json
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -14,6 +15,41 @@ SPEC.loader.exec_module(MODULE)
 
 
 class ProvisionerContractTests(unittest.TestCase):
+    def test_catalog_conflict_is_rejected_before_native_operations(self):
+        normalized = {'engine': 'postgresql', 'name': 'example', 'owner_role': 'new_owner',
+                      'secret_ref': 'swarm:example-db'}
+        with patch.object(MODULE, 'validate_request', return_value=([], normalized)), \
+             patch.object(MODULE, 'register_resource', create=True, side_effect=ValueError('catalog conflict')), \
+             patch.object(MODULE, '_secret_exists', side_effect=AssertionError('native operation reached')) as native:
+            with self.assertRaises(MODULE.ProvisioningError):
+                MODULE.provision_postgresql({}, {'postgresql': {'container': 'pg', 'admin_user': 'admin'}}, {})
+            native.assert_not_called()
+
+    def test_postgres_partial_failure_preserves_generated_secret(self):
+        request = {'_inventory_path': 'unused', '_policies_path': 'unused'}
+        normalized = {'name': 'example', 'owner_role': 'example_app', 'secret_ref': 'swarm:example-db'}
+        with patch.object(MODULE, '_validate', return_value=normalized), \
+             patch.object(MODULE, '_secret_exists', return_value=False), \
+             patch.object(MODULE, '_psql_scalar', return_value=''), \
+             patch.object(MODULE, '_create_secret'), \
+             patch.object(MODULE, '_remove_secret') as remove, \
+             patch.object(MODULE, '_psql_script', side_effect=MODULE.ProvisioningError('partial SQL failure')):
+            with self.assertRaises(MODULE.ProvisioningError):
+                MODULE.provision_postgresql(request, {'postgresql': {'container': 'pg', 'admin_user': 'admin'}}, {})
+            remove.assert_not_called()
+
+    def test_couch_partial_failure_preserves_generated_secret(self):
+        normalized = {'name': 'example', 'owner_identity': 'example_app',
+                      'secret_ref': 'swarm:example-db', 'application': 'example'}
+        with patch.object(MODULE, '_validate', return_value=normalized), \
+             patch.object(MODULE, '_secret_exists', return_value=False), \
+             patch.object(MODULE, '_create_secret'), \
+             patch.object(MODULE, '_remove_secret') as remove, \
+             patch.object(MODULE, '_couch_status', side_effect=['201', '404', '201', '500']):
+            with self.assertRaises(MODULE.ProvisioningError):
+                MODULE.provision_couchdb({}, {'couchdb': {'container': 'couch'}}, {})
+            remove.assert_not_called()
+
     def test_secret_ref_must_be_a_swarm_secret(self):
         self.assertEqual(MODULE.swarm_secret_name("swarm:notes-db"), "notes-db")
         with self.assertRaises(MODULE.ProvisioningError):
