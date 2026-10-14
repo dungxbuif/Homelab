@@ -18,7 +18,7 @@ SCRIPTS = Path(os.environ.get("SCRIPTS_PATH", str(default_scripts)))
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from provisioner import ProvisioningError, provision_request  # noqa: E402
+from provisioner import ProvisioningBusyError, ProvisioningError, provision_request  # noqa: E402
 
 
 LOGGER = logging.getLogger("homelab-provisioner")
@@ -92,6 +92,8 @@ class ProvisionerHandler(BaseHTTPRequestHandler):
             _json_response(self, status, {"ok": True, "result": result})
         except RequestError as exc:
             _json_response(self, HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+        except ProvisioningBusyError as exc:
+            _json_response(self, HTTPStatus.CONFLICT, {"error": str(exc)})
         except ProvisioningError as exc:
             _json_response(self, HTTPStatus.UNPROCESSABLE_ENTITY, {"error": str(exc)})
         except Exception:

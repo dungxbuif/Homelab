@@ -9,6 +9,10 @@ validated before any native operation is attempted.
 from __future__ import annotations
 
 import secrets
+import fcntl
+import os
+import stat
+from contextlib import contextmanager
 import shlex
 import subprocess
 import sys
@@ -26,6 +30,30 @@ from validate_provision_request import validate_request  # noqa: E402
 
 class ProvisioningError(RuntimeError):
     """A safe, operator-facing provisioning failure without secret material."""
+
+
+class ProvisioningBusyError(ProvisioningError):
+    """Another operation owns the canonical catalog's provisioning lock."""
+
+
+@contextmanager
+def _operation_lock(inventory_path: str | Path):
+    lock_path = str(Path(inventory_path).resolve()) + '.provision.lock'
+    try:
+        descriptor = os.open(lock_path, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK, 0o600)
+    except OSError as exc:
+        raise ProvisioningError('could not open provisioning lock') from exc
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            raise ProvisioningError('provisioning lock is not a regular file')
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise ProvisioningBusyError('another provisioning operation is in progress; retry later') from exc
+        yield
+    finally:
+        # Keep the inode stable; closing releases the lock even after failure.
+        os.close(descriptor)
 
 
 def _identifier(value: str) -> str:
@@ -294,14 +322,15 @@ def provision_couchdb(
 def provision_request(
     request: dict[str, Any], inventory_path: str | Path, policies_path: str | Path
 ) -> dict[str, Any]:
-    inventory = load_document(inventory_path)
-    policies = load_document(policies_path)
-    internal_request = dict(request)
-    internal_request["_inventory_path"] = str(inventory_path)
-    internal_request["_policies_path"] = str(policies_path)
-    engine = internal_request.get("engine")
-    if engine == "postgresql":
-        return provision_postgresql(internal_request, inventory, policies)
-    if engine == "couchdb":
-        return provision_couchdb(internal_request, inventory, policies)
-    raise ProvisioningError("unsupported engine")
+    with _operation_lock(inventory_path):
+        inventory = load_document(inventory_path)
+        policies = load_document(policies_path)
+        internal_request = dict(request)
+        internal_request["_inventory_path"] = str(inventory_path)
+        internal_request["_policies_path"] = str(policies_path)
+        engine = internal_request.get("engine")
+        if engine == "postgresql":
+            return provision_postgresql(internal_request, inventory, policies)
+        if engine == "couchdb":
+            return provision_couchdb(internal_request, inventory, policies)
+        raise ProvisioningError("unsupported engine")

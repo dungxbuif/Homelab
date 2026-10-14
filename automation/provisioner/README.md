@@ -6,8 +6,8 @@ privileged boundary between Semaphore and the Pi5 data services.
 ## Security boundary
 
 - Semaphore does not receive `/var/run/docker.sock`.
-- The provisioner has no published port and is attached only to
-  `homelab-net`.
+- The provisioner has no published port. It currently uses `homelab-control-net`
+  for Semaphore and retains `homelab-net` for legacy connectivity pending audit.
 - The API accepts only the fixed database request schema. Inline passwords,
   arbitrary SQL, arbitrary CouchDB request bodies, and secret values are
   rejected.
@@ -17,6 +17,20 @@ privileged boundary between Semaphore and the Pi5 data services.
   changed/idempotent status.
 - The catalog is updated atomically only after native creation and a smoke
   test succeed.
+
+## Pending concurrency release
+
+Source now serializes complete provisioning operations with a persistent
+`inventory.yaml.provision.lock`, acquired before reading the catalog. Concurrent
+requests receive HTTP 409 and may be retried after the active operation ends.
+The lock is separate from catalog registration's lock and is never deleted.
+Native partial failures still preserve generated secrets for reconciliation;
+this does not provide rollback across Docker, PostgreSQL and CouchDB.
+
+This behavior is tested but not yet deployed. Live image remains
+`homelab/provisioner:20261005`; publish and verify an immutable replacement
+containing the new HTTP handler before updating both handler and mounted module.
+See [release evidence](../../docs/deployments/provisioner-concurrency-2026-10-15.md).
 
 ## Deploy on Pi5
 
