@@ -39,6 +39,13 @@
       changed_when: false
       no_log: true
 
+    - name: Require existing provisioner credential without reading it
+      ansible.builtin.assert:
+        that:
+          - "'homelab_provisioner_token' in secret_status.stdout_lines"
+        fail_msg: Existing provisioner secret is required before deploying the runner.
+      no_log: true
+
     - name: Create immutable runner configuration secret
       ansible.builtin.command:
         argv: [docker, secret, create, '{{ semaphore_runner_secret }}', '-']

@@ -26,6 +26,14 @@ class RunnerStackTest(unittest.TestCase):
         self.assertEqual(runner['secrets'][0]['mode'], 0o400)
         self.assertEqual(runner['secrets'][0]['uid'], '1001')
         self.assertEqual(stack['secrets']['runner-config-test'], {'external': True})
+        provisioner = [item for item in runner['secrets']
+                       if item['source'] == 'homelab_provisioner_token']
+        self.assertEqual(provisioner, [{
+            'source': 'homelab_provisioner_token',
+            'target': 'homelab_provisioner_token',
+            'uid': '1001', 'gid': '1001', 'mode': 0o400,
+        }])
+        self.assertEqual(stack['secrets']['homelab_provisioner_token'], {'external': True})
 
 
 if __name__ == '__main__':

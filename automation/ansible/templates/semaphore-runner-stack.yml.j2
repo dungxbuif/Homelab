@@ -11,6 +11,11 @@ services:
         uid: '1001'
         gid: '1001'
         mode: 0400
+      - source: homelab_provisioner_token
+        target: homelab_provisioner_token
+        uid: '1001'
+        gid: '1001'
+        mode: 0400
     networks:
       - homelab-control-net
     logging:
@@ -38,6 +43,8 @@ services:
         condition: on-failure
         delay: 10s
 secrets:
+  homelab_provisioner_token:
+    external: true
   '{{ semaphore_runner_secret }}':
     external: true
 networks:
