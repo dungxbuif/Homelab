@@ -1,0 +1,177 @@
+---
+- name: Release immutable private provisioner on Pi5
+  hosts: pi5
+  gather_facts: false
+  become: false
+  vars:
+    provisioner_service: homelab-provisioner_provisioner
+    registry_credential: '{{ lookup("file", registry_credential_path) | from_json }}'
+    provisioner_update_attempted: false
+  tasks:
+    - name: Require approved release and confirmed idle provisioning
+      ansible.builtin.assert:
+        that:
+          - provisioner_release_approved | default(false) | bool
+          - semaphore_tasks_idle_verified | default(false) | bool
+          - ansible_user == 'dungxbuif'
+          - >-
+            provisioner_image is match('^registry-gitlab[.]dungxbuif[.]com/dungxbuif/homelab-automation/provisioner@sha256:[a-f0-9]{64}$')
+
+    - name: Read current service spec privately
+      ansible.builtin.command:
+        argv: [docker, service, inspect, '{{ provisioner_service }}', '--format', '{{ "{{json .Spec}}" }}']
+      register: provisioner_previous
+      changed_when: false
+      no_log: true
+
+    - name: Determine whether image or module path needs a change
+      ansible.builtin.set_fact:
+        provisioner_change_needed: >-
+          {{ (provisioner_previous.stdout | from_json).TaskTemplate.ContainerSpec.Image != provisioner_image
+          or 'SCRIPTS_PATH=/app/provisioner/scripts' not in
+          (provisioner_previous.stdout | from_json).TaskTemplate.ContainerSpec.Env }}
+      no_log: true
+
+    - name: Create durable private release history root
+      ansible.builtin.file:
+        path: /ssd-data/infra/provisioner/releases
+        state: directory
+        mode: '0700'
+
+    - name: Create private release receipt directory
+      ansible.builtin.tempfile:
+        state: directory
+        path: /ssd-data/infra/provisioner/releases
+        prefix: provisioner-release-
+      register: release_receipt
+
+    - name: Preserve previous service spec for recovery
+      ansible.builtin.copy:
+        content: '{{ provisioner_previous.stdout }}'
+        dest: '{{ release_receipt.path }}/previous-spec.json'
+        mode: '0600'
+      no_log: true
+
+    - name: Create temporary registry authentication directory
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: provisioner-registry-
+      register: registry_directory
+
+    - name: Pull verify and update the provisioner
+      block:
+        - name: Write temporary read-only registry credential
+          ansible.builtin.copy:
+            dest: '{{ registry_directory.path }}/config.json'
+            mode: '0600'
+            content: >-
+              {{ {'auths': {'registry-gitlab.dungxbuif.com':
+              {'auth': (registry_credential.username ~ ':' ~ registry_credential.token) | b64encode}}} | to_json }}
+          no_log: true
+
+        - name: Pull only the approved immutable image
+          ansible.builtin.command:
+            argv: [docker, '--config', '{{ registry_directory.path }}', pull, '{{ provisioner_image }}']
+          changed_when: false
+
+        - name: Verify baked modules without production access
+          ansible.builtin.command:
+            argv:
+              - docker
+              - run
+              - '--rm'
+              - '--network=none'
+              - '--entrypoint=python3'
+              - '{{ provisioner_image }}'
+              - '-c'
+              - >-
+                import sys; sys.path.insert(0, '/app/provisioner'); import server, provisioner;
+                assert provisioner.__file__ == '/app/provisioner/scripts/provisioner.py';
+                assert server.ProvisioningBusyError
+          changed_when: false
+
+        - name: Mark the intentional service change boundary
+          ansible.builtin.set_fact:
+            provisioner_update_attempted: true
+          when: provisioner_change_needed | bool
+
+        - name: Update image and baked module path atomically
+          ansible.builtin.command:
+            argv:
+              - docker
+              - '--config'
+              - '{{ registry_directory.path }}'
+              - service
+              - update
+              - '--with-registry-auth'
+              - '--detach=false'
+              - '--image'
+              - '{{ provisioner_image }}'
+              - '--env-add'
+              - SCRIPTS_PATH=/app/provisioner/scripts
+              - '{{ provisioner_service }}'
+          changed_when: true
+          when: provisioner_change_needed | bool
+
+        - name: Locate the running provisioner
+          ansible.builtin.command:
+            argv: [docker, ps, '--filter', 'label=com.docker.swarm.service.name={{ provisioner_service }}', '--format', '{{ "{{.ID}}" }}']
+          register: provisioner_container
+          changed_when: false
+          until: provisioner_container.stdout_lines | length == 1
+          retries: 12
+          delay: 5
+
+        - name: Verify active code path and HTTP health
+          ansible.builtin.command:
+            argv:
+              - docker
+              - exec
+              - '{{ provisioner_container.stdout }}'
+              - python3
+              - '-c'
+              - >-
+                import sys, json, urllib.request; sys.path.insert(0, '/app/provisioner');
+                import server, provisioner;
+                assert provisioner.__file__ == '/app/provisioner/scripts/provisioner.py';
+                assert server.ProvisioningBusyError;
+                assert json.load(urllib.request.urlopen('http://127.0.0.1:8787/healthz', timeout=5))['status'] == 'ok'
+          changed_when: false
+
+        - name: Save sanitized release receipt
+          ansible.builtin.copy:
+            dest: '{{ release_receipt.path }}/result.json'
+            mode: '0600'
+            content: >-
+              {{ {'image': provisioner_image, 'service': provisioner_service,
+              'verification': 'baked_imports_and_private_health', 'database_acceptance': 'not_run'} | to_nice_json }}
+      rescue:
+        - name: Inspect current image before deciding rollback ownership
+          ansible.builtin.command:
+            argv: [docker, service, inspect, '{{ provisioner_service }}', '--format', '{{ "{{.Spec.TaskTemplate.ContainerSpec.Image}}" }}']
+          register: provisioner_observed_image
+          changed_when: false
+
+        - name: Restore previous spec only after an attempted release
+          ansible.builtin.command:
+            argv: [docker, service, rollback, '--detach=false', '{{ provisioner_service }}']
+          changed_when: true
+          when:
+            - provisioner_update_attempted | bool
+            - provisioner_observed_image.stdout == provisioner_image
+
+        - name: Report failed release without exposing runtime secrets
+          ansible.builtin.fail:
+            msg: 'Provisioner release failed; inspect protected receipt {{ release_receipt.path }} and service state.'
+      always:
+        - name: Remove temporary registry credentials
+          ansible.builtin.file:
+            path: '{{ registry_directory.path }}'
+            state: absent
+
+    - name: Report release boundary
+      ansible.builtin.debug:
+        msg:
+          image: '{{ provisioner_image }}'
+          receipt: '{{ release_receipt.path }}'
+          database_acceptance: not_run

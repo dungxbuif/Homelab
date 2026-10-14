@@ -48,3 +48,21 @@ disabled and no host Docker socket, Docker client 27.5.1 executes, the server
 imports `/app/provisioner/scripts/provisioner.py`, and all 17 provisioner tests
 pass. This is a local release candidate test, not proof of CI publication or
 production rollout. Live deployment still awaits a published digest.
+
+Rollout through a dedicated Ansible playbook: require explicit approval, idle
+Semaphore provisioning tasks, and a registry digest. Pull with temporary scoped
+registry credentials, verify baked imports without network or host socket, save
+the previous Swarm spec in a mode-0700 receipt directory, then change image and
+SCRIPTS_PATH together. Do not overwrite the legacy mounted module: rollback
+must retain its previous code. After update, verify health and imported module
+location. Roll back only if this invocation actually attempted a spec change;
+image-pull/preflight failures must never roll back an unrelated prior release.
+
+`automation/ansible/playbooks/provisioner-release.yml` now implements that
+boundary. Receipt directories live under `/ssd-data/infra/provisioner/releases`.
+Rollback also requires the currently observed image to match this attempted
+release, avoiding a rollback after a preflight failure or already-reverted spec.
+Two regression contracts pass after first failing against the initial draft;
+Ansible lint passes its production profile. The playbook has not been run live.
+CI pipeline 36/job 74 remains the authoritative image-publication gate; do not
+substitute the locally built test image for its output.
