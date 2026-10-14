@@ -1,6 +1,7 @@
 # Personal Research & Knowledge Hub — Design
 
-Status: proposed; planning only, no deployment or schedules enabled.
+Status: design approved by the user on 2026-10-14; implementation and production
+activation remain separate steps. No deployment or schedules enabled.
 Date: 2026-10-14. Owner: personal Homelab / Second Brain.
 Revision 2: extends daily news with personal capture, submitted resources,
 knowledge organization, and recurring update monitoring. Existing document
