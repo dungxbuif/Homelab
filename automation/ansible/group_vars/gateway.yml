@@ -1,0 +1,4 @@
+---
+automation_host_role: public_gateway
+automation_expected_swarm: false
+automation_swap_path: /swapfile

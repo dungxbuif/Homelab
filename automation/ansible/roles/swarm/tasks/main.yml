@@ -1,0 +1,19 @@
+---
+- name: Inspect Swarm state without changing membership
+  ansible.builtin.command:
+    argv:
+      - docker
+      - info
+      - --format
+      - >-
+        {{ '{{' }}.Swarm.LocalNodeState{{ '}}' }} {{ '{{' }}.Swarm.ControlAvailable{{ '}}' }}
+  register: swarm_state
+  changed_when: false
+  failed_when: false
+
+- name: Report Swarm baseline result
+  ansible.builtin.debug:
+    msg:
+      host: '{{ inventory_hostname }}'
+      swarm_state: '{{ swarm_state.stdout | default("") }}'
+      expected: '{{ automation_expected_swarm | bool }}'

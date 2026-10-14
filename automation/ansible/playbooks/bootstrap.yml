@@ -1,0 +1,41 @@
+---
+- name: Apply the approved host baseline
+  hosts: all
+  gather_facts: true
+  become: true
+  serial: 1
+  vars:
+    automation_apply_baseline: false
+    automation_run_baseline: >-
+      {{ automation_apply_baseline | bool or ansible_check_mode | bool }}
+  pre_tasks:
+    - name: Require an explicit apply switch
+      ansible.builtin.assert:
+        that:
+          - automation_apply_baseline | bool or ansible_check_mode | bool
+        fail_msg: >-
+          Refusing to mutate hosts. Run a reviewed Semaphore apply with
+          automation_apply_baseline=true, or use Ansible check mode.
+  roles:
+    - role: base
+      when: automation_run_baseline | bool
+    - role: docker
+      when:
+        - automation_run_baseline | bool
+        - automation_manage_docker | bool
+    - role: swarm
+      when:
+        - automation_run_baseline | bool
+        - automation_manage_swarm | bool
+    - role: ssh_hardening
+      when:
+        - automation_run_baseline | bool
+        - automation_manage_ssh | bool
+    - role: logging
+      when:
+        - automation_run_baseline | bool
+        - automation_manage_logging | bool
+    - role: swap
+      when:
+        - automation_run_baseline | bool
+        - automation_manage_swap | bool

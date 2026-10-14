@@ -20,7 +20,7 @@ variables:
 approval:
   required: false
   roles: [Viewer, Task Runner, Manager]
-command: ansible-playbook automation/ansible/playbooks/bootstrap.yml --limit ${target} --check --diff
+command: ANSIBLE_CONFIG=automation/ansible/ansible.cfg ansible-playbook automation/ansible/playbooks/bootstrap.yml --limit ${target} --check --diff
 post_check:
   command: test -s artifacts/ansible-check.txt
   artifact: artifacts/ansible-check.txt

@@ -1,0 +1,4 @@
+---
+- name: No-op baseline handler placeholder
+  ansible.builtin.debug:
+    msg: Baseline changes do not restart production services.

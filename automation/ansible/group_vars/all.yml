@@ -1,0 +1,19 @@
+---
+automation_apply_baseline: false
+automation_create_user: true
+automation_user: automation
+automation_user_shell: /bin/bash
+automation_manage_ssh: false
+automation_manage_docker: false
+automation_manage_swarm: false
+automation_manage_logging: false
+automation_manage_swap: false
+automation_private_transport_preferred: true
+automation_expected_swarm: true
+automation_sudo_commands:
+  - /usr/bin/docker
+  - /usr/bin/systemctl
+  - /usr/sbin/swapon
+  - /usr/sbin/swapoff
+  - /usr/bin/journalctl
+  - /usr/bin/ss

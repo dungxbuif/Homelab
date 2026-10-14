@@ -1,0 +1,18 @@
+---
+- name: Inspect effective SSH daemon configuration
+  ansible.builtin.command:
+    argv:
+      - /usr/sbin/sshd
+      - -T
+  register: sshd_config
+  changed_when: false
+  failed_when: false
+
+- name: Report SSH hardening baseline result
+  ansible.builtin.debug:
+    msg:
+      host: '{{ inventory_hostname }}'
+      password_authentication: >-
+        {{ sshd_config.stdout_lines | select('match', '^passwordauthentication ') | list }}
+      permit_root_login: >-
+        {{ sshd_config.stdout_lines | select('match', '^permitrootlogin ') | list }}

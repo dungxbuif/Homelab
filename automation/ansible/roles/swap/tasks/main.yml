@@ -1,0 +1,16 @@
+---
+- name: Read current swap configuration
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/swapon
+      - --show
+  register: swap_devices
+  changed_when: false
+  failed_when: false
+
+- name: Report swap baseline result
+  ansible.builtin.debug:
+    msg:
+      host: '{{ inventory_hostname }}'
+      swap_path: '{{ automation_swap_path }}'
+      active_swap: '{{ swap_devices.stdout | default("") }}'

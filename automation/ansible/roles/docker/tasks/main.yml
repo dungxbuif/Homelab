@@ -1,0 +1,19 @@
+---
+- name: Verify Docker is installed before any service operation
+  ansible.builtin.command:
+    argv:
+      - docker
+      - version
+      - --format
+      - >-
+        {{ '{{' }}.Server.Version{{ '}}' }}
+  register: docker_version
+  changed_when: false
+  failed_when: false
+
+- name: Report Docker baseline result
+  ansible.builtin.debug:
+    msg:
+      host: '{{ inventory_hostname }}'
+      docker_version: '{{ docker_version.stdout | default("") }}'
+      rc: '{{ docker_version.rc | default(1) }}'

@@ -1,0 +1,26 @@
+---
+- name: Ensure the restricted automation group exists
+  ansible.builtin.group:
+    name: '{{ automation_user }}'
+    state: present
+
+- name: Ensure the restricted automation user exists
+  ansible.builtin.user:
+    name: '{{ automation_user }}'
+    group: '{{ automation_user }}'
+    shell: '{{ automation_user_shell }}'
+    create_home: true
+    password_lock: true
+    state: present
+  when: automation_create_user | bool
+
+- name: Install the narrowly scoped automation sudo policy
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/automation
+    content: >-
+      {{ automation_user }} ALL=(ALL) NOPASSWD: {{ automation_sudo_commands | join(', ') }}
+      \n
+    owner: root
+    group: root
+    mode: '0440'
+    validate: /usr/sbin/visudo -cf %s

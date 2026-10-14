@@ -1,0 +1,74 @@
+---
+- name: Read-only homelab host audit
+  hosts: all
+  gather_facts: true
+  become: false
+  serial: 1
+  tasks:
+    - name: Read Docker engine summary
+      ansible.builtin.command:
+        argv:
+          - docker
+          - info
+          - --format
+          - >-
+            {{ '{{' }}.ServerVersion{{ '}}' }} {{ '{{' }}.Swarm.LocalNodeState{{ '}}' }} {{ '{{' }}.Swarm.ControlAvailable{{ '}}' }}
+      register: docker_info
+      changed_when: false
+      failed_when: false
+
+    - name: Read Swarm membership when available
+      ansible.builtin.command:
+        argv:
+          - docker
+          - node
+          - ls
+          - --format
+          - >-
+            {{ '{{' }}.Hostname{{ '}}' }} {{ '{{' }}.Status{{ '}}' }} {{ '{{' }}.Availability{{ '}}' }}
+      register: swarm_nodes
+      changed_when: false
+      failed_when: false
+      when: automation_expected_swarm | bool
+
+    - name: Read active swap devices
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/swapon
+          - --show
+          - --noheadings
+      register: swap_status
+      changed_when: false
+      failed_when: false
+
+    - name: Read root filesystem capacity
+      ansible.builtin.command:
+        argv:
+          - /bin/df
+          - -P
+          - /
+      register: root_disk
+      changed_when: false
+      failed_when: false
+
+    - name: Read listening sockets
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/ss
+          - -lntup
+      register: listening_sockets
+      changed_when: false
+      failed_when: false
+
+    - name: Emit machine-readable audit record
+      ansible.builtin.debug:
+        msg:
+          host: '{{ inventory_hostname }}'
+          role: '{{ automation_host_role | default("unknown") }}'
+          distribution: '{{ ansible_distribution }} {{ ansible_distribution_version }}'
+          kernel: '{{ ansible_kernel }}'
+          docker_info: '{{ docker_info.stdout | default("") }}'
+          swarm_nodes: '{{ swarm_nodes.stdout | default("") }}'
+          swap: '{{ swap_status.stdout | default("") }}'
+          disk: '{{ root_disk.stdout | default("") }}'
+          listening_sockets: '{{ listening_sockets.stdout | default("") }}'

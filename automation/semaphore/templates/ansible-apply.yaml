@@ -23,7 +23,7 @@ variables:
 approval:
   required: true
   roles: [Manager]
-command: ansible-playbook automation/ansible/playbooks/bootstrap.yml --limit ${target}
+command: ANSIBLE_CONFIG=automation/ansible/ansible.cfg ansible-playbook automation/ansible/playbooks/bootstrap.yml --limit ${target} -e automation_apply_baseline=true
 post_check:
-  command: ansible-playbook automation/ansible/playbooks/audit.yml --limit ${target}
+  command: ANSIBLE_CONFIG=automation/ansible/ansible.cfg ansible-playbook automation/ansible/playbooks/audit.yml --limit ${target}
   artifact: artifacts/post-check.json
