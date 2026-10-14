@@ -29,7 +29,7 @@
 
     - name: Install project-scoped runner configuration
       ansible.builtin.template:
-        src: '{{ playbook_dir }}/../templates/ci-runner-config.toml.j2'
+        src: '{{ playbook_dir | dirname }}/templates/ci-runner-config.toml.j2'
         dest: '{{ ci_home }}/runner/config.toml'
         owner: '{{ ci_user }}'
         group: '{{ ci_user }}'
