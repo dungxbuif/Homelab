@@ -1,0 +1,62 @@
+---
+- name: Prepare signed Docker CE repository without changing engine packages
+  hosts: vm100
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Require approved supported target
+      ansible.builtin.assert:
+        that:
+          - docker_upgrade_approved | default(false) | bool
+          - ansible_facts.distribution == 'Ubuntu'
+          - ansible_facts.distribution_release == 'jammy'
+          - ansible_facts.architecture == 'x86_64'
+
+    - name: Ensure apt keyring directory exists
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Fetch official Docker signing key over verified TLS
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
+
+    - name: Read repository signing fingerprint
+      ansible.builtin.command:
+        argv: [gpg, --batch, --show-keys, --with-colons, /etc/apt/keyrings/docker.asc]
+      register: docker_key
+      changed_when: false
+
+    - name: Require expected Docker release signing key
+      ansible.builtin.assert:
+        that:
+          - "'9DC858229FC7DD38854AE2D88D81803C0EBFCD88' in docker_key.stdout"
+
+    - name: Configure official stable repository
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/docker.sources
+        mode: '0644'
+        content: |
+          Types: deb
+          URIs: https://download.docker.com/linux/ubuntu
+          Suites: jammy
+          Components: stable
+          Architectures: amd64
+          Signed-By: /etc/apt/keyrings/docker.asc
+
+    - name: Refresh signed package indexes only
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Read candidate engine and runtime packages
+      ansible.builtin.command:
+        argv: [apt-cache, policy, docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin]
+      register: docker_candidates
+      changed_when: false
+
+    - name: Report candidates without installing
+      ansible.builtin.debug:
+        var: docker_candidates.stdout_lines
