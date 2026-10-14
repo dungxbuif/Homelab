@@ -1,0 +1,26 @@
+---
+name: tofu-plan
+description: Non-mutating OpenTofu plan for the imported Proxmox VM100 state.
+repository: homelab-automation
+revision: main
+execution_image:
+  repository: registry.dungxbuif.com/dungbuif/homelab-automation/automation-ee
+  digest_variable: AUTOMATION_EE_IMAGE_DIGEST
+  immutable: true
+inventory: automation/tofu/proxmox
+workspace: automation/tofu/proxmox
+variables:
+  - name: target
+    type: enum
+    required: true
+    values: [vm100]
+  - name: change_message
+    type: string
+    required: true
+approval:
+  required: false
+  roles: [Viewer, Task Runner, Manager]
+command: tofu -chdir=automation/tofu/proxmox plan -out=artifacts/vm100.tfplan
+post_check:
+  command: test -s artifacts/vm100.tfplan && ! grep -Eq 'destroy|replace' artifacts/vm100.plan.txt
+  artifact: artifacts/vm100.plan.txt

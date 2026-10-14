@@ -20,6 +20,33 @@ internal provisioner API; it still does not mount the Docker socket. Google
 Drive credentials, restic passwords, and production backup schedules remain
 outside the UI pilot.
 
+## Automation control plane
+
+Semaphore is the only operator entry point for host audits, Ansible checks and
+applies, OpenTofu plans and approved applies, route publication, application
+deployment, and rollback. The declarative catalog is in
+[`project-resources.yaml`](./project-resources.yaml) and the template contracts
+are in [`templates/`](./templates/).
+
+The roles are deliberately narrow:
+
+| Role | Allowed work |
+|---|---|
+| `Viewer` | Read-only host audit, Ansible check, and OpenTofu plan |
+| `Task Runner` | Read-only work plus route/app/rollback workflows that still require their declared approval gate |
+| `Manager` | All workflows, including production apply and OpenTofu apply |
+
+Every template fixes the repository revision, inventory/workspace, allow-listed
+variables, execution image reference, approval boundary, and post-check. The
+execution image is resolved from `AUTOMATION_EE_IMAGE_DIGEST`; mutable tags are
+rejected. Apply templates require a reviewed plan artifact and `Manager`
+approval.
+
+The current repository is expected to be the private GitLab project
+`dungbuif/homelab-automation`. Until that project is authenticated and the
+image digest is published, these files are a versioned contract and must not be
+imported as production templates with a guessed image reference.
+
 ## Secret files
 
 Create these files on the target host with mode `0600`, then import them as Docker
@@ -33,12 +60,12 @@ secrets/access_key_encryption
 The access-key value must be a 32-byte base64 value. The admin password is
 generated outside Git and is not printed by the deployment procedure.
 
-The schedule/template contract is documented in
-[`templates/schedule.yaml`](./templates/schedule.yaml), and the executable
-serial runner is in [`../backup-runner/`](../backup-runner/). It is
-intentionally not imported into the Pi5 pilot yet: the final runner and durable
-control metadata move to VM100 first, then Semaphore becomes the single
-scheduler owner.
+Semaphore keeps the existing `db-provision` template for database/user
+provisioning and adds the operator catalog above. Backup scheduling is not
+owned by this UI. The canonical serial runner is in
+[`../backup-runner/`](../backup-runner/) and its schedules are defined by the
+runner/systemd deployment, so there is no second schedule template to import
+or maintain here.
 
 The `db-provision` playbook is in `playbooks/db-provision.yml`. It accepts only
 the request fields documented in the database provisioning runbook. Generated

@@ -1,0 +1,33 @@
+---
+name: app-deploy
+description: Deploy one allow-listed application image through its declared private networks.
+repository: homelab-automation
+revision: main
+execution_image:
+  repository: registry.dungxbuif.com/dungbuif/homelab-automation/automation-ee
+  digest_variable: AUTOMATION_EE_IMAGE_DIGEST
+  immutable: true
+inventory: automation/stacks
+workspace: automation/stacks
+variables:
+  - name: service_id
+    type: enum
+    required: true
+    values: [homepage, relayhub, gitlab, macocr-proxy, mypocket, stirling-pdf, openclaw, n8n]
+  - name: image_digest
+    type: image_digest
+    required: true
+  - name: environment
+    type: enum
+    required: true
+    values: [staging, production]
+  - name: change_message
+    type: string
+    required: true
+approval:
+  required: true
+  roles: [Manager]
+command: automation/scripts/deploy-service --service ${service_id} --image ${image_digest} --environment ${environment}
+post_check:
+  command: automation/scripts/smoke-service --service ${service_id} --environment ${environment}
+  artifact: artifacts/${service_id}-post-check.json

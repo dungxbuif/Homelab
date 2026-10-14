@@ -1,0 +1,26 @@
+---
+name: route-publish
+description: Validate and publish the selected structured route set through the private edge path.
+repository: homelab-automation
+revision: main
+execution_image:
+  repository: registry.dungxbuif.com/dungbuif/homelab-automation/automation-ee
+  digest_variable: AUTOMATION_EE_IMAGE_DIGEST
+  immutable: true
+inventory: automation/routes
+workspace: automation/routes
+variables:
+  - name: route_set
+    type: enum
+    required: true
+    values: [public, lan, netbird]
+  - name: change_message
+    type: string
+    required: true
+approval:
+  required: true
+  roles: [Manager]
+command: ruby automation/scripts/validate-runtime-policy.rb --active automation/policies/active-runtime.yaml --retired automation/policies/retired-runtime.yaml
+post_check:
+  command: test -s artifacts/routes-post-check.json
+  artifact: artifacts/routes-post-check.json

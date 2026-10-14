@@ -29,6 +29,16 @@ services:
       placement:
         constraints:
           - node.hostname == rpivn
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 768M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+      update_config:
+        parallelism: 1
+        order: start-first
       restart_policy:
         condition: on-failure
 

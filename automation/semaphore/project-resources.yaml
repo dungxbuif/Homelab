@@ -1,0 +1,43 @@
+---
+name: homelab-automation
+repository:
+  url: ssh://gitlab.dungxbuif.com:2222/dungbuif/homelab-automation.git
+  revision: main
+  protected_revisions:
+    - main
+execution_image:
+  repository: registry.dungxbuif.com/dungbuif/homelab-automation/automation-ee
+  digest_variable: AUTOMATION_EE_IMAGE_DIGEST
+  immutable: true
+  allow_mutable_tags: false
+roles:
+  - name: Viewer
+    allowed_templates:
+      - host-audit
+      - ansible-check
+      - tofu-plan
+  - name: Task Runner
+    allowed_templates:
+      - host-audit
+      - ansible-check
+      - tofu-plan
+      - route-publish
+      - app-deploy
+      - rollback
+  - name: Manager
+    allowed_templates:
+      - host-audit
+      - ansible-check
+      - ansible-apply
+      - tofu-plan
+      - tofu-apply-approved
+      - route-publish
+      - app-deploy
+      - rollback
+operator_policy:
+  private_ui_only: true
+  provisioner_public_route: false
+  docker_socket_mount: false
+  required_post_check: true
+  require_plan_artifact_for_apply: true
+  backup_schedule_owner: systemd-backup-runner

@@ -1,8 +1,10 @@
 # Current Homelab Stack
 
-Audit date: 2026-09-16. This is the current navigation/catalog surface, not a
+Audit date: 2026-10-13. This is the current navigation/catalog surface, not a
 claim that every application workflow passed. See the
 [audit evidence and limits](./research/docs-stack-audit-2026-09-16.md).
+The point-in-time runtime and image-version source of truth is the
+[2026-10-13 runtime inventory](./deployments/runtime-inventory-2026-10-13.md).
 
 ## Host Roles
 
@@ -10,28 +12,28 @@ claim that every application workflow passed. See the
 |---|---|---|
 | VPS | `103.82.21.202` | Public Traefik, shared edge Rathole, isolated GitLab tunnels, and NetBird relay/STUN; no application DB/image storage |
 | Orange Pi Zero 3 | `10.10.0.2` | Former Traefik/Rathole/AdGuard edge; currently unavailable and scaled out of active edge duty |
-| Pi5 | `10.10.0.5` | Swarm manager; PostgreSQL/PgBouncer, Redis, RustFS and persistent backend services |
+| Pi5 | `10.10.0.5` | Swarm manager, active Traefik/Rathole/AdGuard edge, PostgreSQL/PgBouncer, Redis, RustFS, CouchDB and persistent backend services |
 | VM100 | `10.10.0.31` | Production compute, Swarm worker, BDS Compose runtime, persistent GitLab filesystem |
 | Mac | `10.10.0.6` documented LAN; roaming via VPS Rathole | Native OCR and LM Studio; separate local development checkouts |
 | Proxmox | `10.10.0.20` | Production hypervisor for VM100; optional experiments must use a separate lifecycle |
 
 ## Runtime Catalog
 
-VM100 inventory below was observed through direct SSH on the audit date:
-16 running Swarm task containers plus 2 BDS standalone containers. Edge
-and Pi5 rows reflect deployment records/source and were not host-revalidated
-in this audit. A running container without a healthcheck is not proof of
+VM100, Pi5, and VPS inventories were observed through direct SSH on the audit
+date. Use the linked runtime inventory for complete image IDs and current
+replica states. A running container without a healthcheck is not proof of
 application readiness.
 
 | Workload | Placement / runtime | Domain or endpoint | State / scope |
 |---|---|---|---|
 | Homepage | VM100 `homepage` | `dungxbuif.com`, `www.dungxbuif.com` -> `tasks.homepage:80` | Production; healthy task, selected public probe 200 |
-| OCR proxy | VM100 `macocr-proxy` | `ocr.dungxbuif.com` -> `tasks.macocr-proxy:8080`; native backend via VPS `:18087` -> Mac `host.docker.internal:8787` | Proxy healthy; public docs and health return 200 |
+| Stirling PDF | VM100 `stirling-pdf` | `stirling.dungxbuif.com` -> `tasks.stirling-pdf:8080` | Image `docker.stirlingpdf.com/stirlingtools/stirling-pdf:3.1.0`; portless Swarm service with persistent config/OCR/pipeline mounts, login enabled, edge HTTPS route verified; VPS HostSNI allow-list still pending |
+| OCR proxy | VM100 `macocr-proxy` | `ocr.dungxbuif.com` -> `tasks.macocr-proxy:8080`; Mac apps connect outbound WSS/443 | `homelab/macocr-proxy:scan-api-20261008`; multi-node shared-key routing; admin-only routed Users/Workers UI; runtime OpenAPI advertises scan submit/status paths and schemas; native worker unchanged |
 | Family Tree | VM100 `family-tree` | `family.dungxbuif.com` -> `tasks.family-tree:3000` | Healthy task; Bun runtime |
 | MezonHook | VM100 `mezonhook` | `mezonhook.dungxbuif.com` -> `tasks.mezonhook:8080` | Healthy task |
 | OpenClaw | VM100 `openclaw` | `openclaw.dungxbuif.com` -> `tasks.openclaw:18789` | Healthy task; do not confuse with retired GoClaw |
 | n8n | VM100 `n8n` | `n8n.dungxbuif.com` -> `tasks.n8n:5678` | Healthy task; public health probe 200 |
-| MyPocket | VM100 `mypocket-web`, `mypocket-api`; legacy `mypocket-worker` scaled to `0/0` | `money.dungxbuif.com` -> `tasks.mypocket-web:80` | API `registry.dungxbuif.com/mypocket-api:feedback-api-refresh-20260930-0041`, web `registry.dungxbuif.com/mypocket-web:feedback-ui-wallet-design-20260930-0700` (`sha256:933dd62630e3ee5ae7917c6ddaab36b3d858bc58f2fdb0abb87cc2dd5e36d80e`); AI/OCR env names and values are mirrored from MyPocket local `.env.local` to gitignored `local_vars.json` → `MYPOCKET_SECRETS`; DeepSeek-V4-Flash configured, public web/API health 200. See [AI config sync](./deployments/mypocket-ai-config-2026-09-24.md) and [feedback/API-key rollout](./deployments/mypocket-feedback-api-key-2026-09-29.md) |
+| MyPocket | VM100 `mypocket-api`, `mypocket-worker` 1/1; `mypocket-web` 0/0 | `money.dungxbuif.com` -> `tasks.mypocket-api:8080` | API/worker `registry.dungxbuif.com/mypocket-api:release-73c4c37`; web image retained but service stopped. API health and Swagger UI return 200; root no longer serves web UI. See [API-only deployment](./deployments/mypocket-api-only-2026-10-13.md), [AI config sync](./deployments/mypocket-ai-config-2026-09-24.md), and [feedback/API-key rollout](./deployments/mypocket-feedback-api-key-2026-09-29.md) |
 | NetBird | VM100 `netbird_netbird-server`, `netbird_netbird-dashboard`; VPS `netbird-relay`; VM100 client prepared | `netbird.dungxbuif.com`; relay `netbird-relay.dungxbuif.com` / `3478/udp` | Control plane running, dashboard public 200; external relay/STUN active; Mac CLI currently needs reconnect/refresh; VM100 routing peer client installed but `NeedsLogin` until setup key enrollment |
 | RelayHub | VM100 Compose `relayhub-api`, `relayhub-worker`, `relayhub-nats`, `relayhub-redis`; old Swarm `relayhub` scaled to `0/0`; Pi5 local Compose now keeps only PostgreSQL running | `relayhub.dungxbuif.com` -> `relayhub-api:8080` | Production image live on VM100; public docs, OpenAPI, Admin UI and email/password login verified |
 | GitLab CE | VM100 `gitlab_gitlab` | `gitlab.dungxbuif.com`, Git SSH VPS `:2222` | Healthy Omnibus task; public web 200; Pi5 PostgreSQL/Redis |
@@ -41,12 +43,28 @@ application readiness.
 | Pi5 production Registry | Pi5 `docker-registry` | `registry.dungxbuif.com` -> `registry:5000` | Production retained; selected public challenge 401 |
 | Pi5 HTTP backends | RustFS, pgAdmin, CouchDB, LibreSpeed | `storage`, `cdn`, `pgadmin`, `couchdb`, `sync-db`, `speed` under `dungxbuif.com` | Deployment inventory; see Pi5 runbook for exact upstreams |
 | Native LLM | Mac LM Studio through Mac Rathole client | `llm.dungxbuif.com` -> VPS `:18123` -> Mac `host.docker.internal:1234` | Tunnel established; backend must be started on Mac port `1234` |
-| KubeKosh LAN lab | VM100 standalone Docker Compose | LAN-only `kubekosh.dungxbuif.com` -> Pi5 Traefik -> `kubekosh:80` | Kubernetes learning lab; privileged container with embedded K3s; no VM100 host port and no VPS HostSNI route |
-| Semaphore control plane pilot | Pi5 Swarm `semaphore_semaphore` + `homelab-provisioner_provisioner` | LAN-only `semaphore.dungxbuif.com` -> Pi5 Traefik -> `tasks.semaphore_semaphore:3000`; provisioner stays internal on `homelab-net:8787` | Private DB provisioning and catalog enrollment; no host ports; production backup schedules disabled |
+| KubeKosh LAN training app | VM100 standalone Docker Compose | LAN-only `kubekosh.dungxbuif.com` -> Pi5 Traefik -> `kubekosh:80` | Isolated training application only; not a managed Kubernetes cluster; no VM100 host port and no VPS HostSNI route |
+| Semaphore control plane | Pi5 Swarm `semaphore_semaphore` + `homelab-provisioner_provisioner` | LAN-only `semaphore.dungxbuif.com` -> Pi5 Traefik -> `tasks.semaphore_semaphore:3000`; provisioner stays internal on `homelab-net:8787` | Private DB/user provisioning and backup-catalog enrollment; no host ports; backup scheduling remains owned by VM100 systemd |
+
+### Automation control plane
+
+The active operator boundary is the private Semaphore UI. Its versioned
+resource and template contract is in
+[`automation/semaphore/`](../automation/semaphore/). Host audits, Ansible
+check mode, and OpenTofu plans are non-mutating. Host/app changes, route
+publication, rollback, and OpenTofu apply require a reviewed artifact and
+`Manager` approval. Semaphore has no Docker socket mount and no public route.
+
+The job executor is the pinned image described in
+[`automation/execution-environment/`](../automation/execution-environment/).
+Jobs resolve it by registry digest via `AUTOMATION_EE_IMAGE_DIGEST`; no
+production template may use `latest` or a free-form image tag. The existing
+systemd backup runner remains the owner of backup schedules, so Semaphore does
+not duplicate or reschedule backup jobs.
 
 ## Network and Ingress
 
-Temporary note from 2026-09-16: Orange Pi `orangepizero3` is currently down
+Current note: Orange Pi `orangepizero3` is currently down
 from the Swarm manager's perspective. The shared edge has been restored on
 Pi5 with standalone containers: `edge-traefik-pi5` for HTTP/HTTPS,
 `edge-rathole-pi5` for the shared Rathole tunnel, and
@@ -71,9 +89,9 @@ flowchart LR
   Apps -->|Private Docker DNS| Data[Pi5 PostgreSQL / PgBouncer / Redis]
   GitLab -->|postgres:5432 / redis-prod:6379| Data
   Edge -->|tasks.macocr-proxy:8080| OCRProxy[VM100 macocr-proxy]
-  OCRProxy -->|Native OCR via VPS :18087| Mac[Mac OCR / LM Studio]
+  Mac[Mac OCR / LM Studio] -->|OCR outbound WSS/443| OCRProxy
   Edge -->|Mac LLM via VPS :18123| Mac
-  Edge -->|LAN-only Host kubekosh.dungxbuif.com| KubeKosh[VM100 KubeKosh embedded K3s lab]
+  Edge -->|LAN-only Host kubekosh.dungxbuif.com| KubeKosh[VM100 KubeKosh training app]
   CF[Cloudflare] --> BDSConnector[BDS connector]
   BDSConnector -->|bds-tunnel-net only| BDS[BDS app]
   BDS -->|homelab-net| Data
@@ -98,14 +116,12 @@ whose direct GitLab/trial Registry routes are not deployed (previous 404
 observations). No domain cutover or service migration was performed here.
 Mac LLM no longer depends on the Mac LAN address for its public route. Mac OCR
 keeps the VM100 `macocr-proxy` layer for auth/docs/API behavior; only the
-proxy's native backend target moved from the Mac LAN IP to the VPS Rathole
-listener. A local container in `/Users/dungxbuif/dev-env/mac-service-tunnel`
-dials the VPS Rathole server and forwards OCR backend traffic to Mac port
-`8787` and LLM traffic to Mac port `1234`. The tunnel config uses local
+native transport moved to app-owned outbound WSS on 2026-10-06. No Mac OCR port or tunnel mapping remains. A local container in `/Users/dungxbuif/dev-env/mac-service-tunnel`
+dials the VPS Rathole server and forwards only LLM traffic to Mac port `1234`. The tunnel config uses local
 secrets and is intentionally not committed.
 
-RelayHub went live on VM100 on 2026-09-20 and was updated to image
-`homelab/relayhub:prod-20260920-064217`. Its API is attached to `homelab-net`
+RelayHub went live on VM100 on 2026-09-20 and currently runs image
+`homelab/relayhub:prod-eee9e7c`. Its API is attached to `homelab-net`
 as `relayhub-api`; worker, NATS and Redis stay on private `relayhub-net`, and
 PostgreSQL uses the Pi5 `relayhub` database. Pi5 Traefik routes
 `relayhub.dungxbuif.com` to `http://relayhub-api:8080`; the former Swarm
@@ -151,18 +167,19 @@ without auditing those consumers.
   route, old VPS Headscale/NetBird/RustDesk/Tailscale/exporter services.
   Source/research folders can remain without implying a running service.
 - Proposed: NetBird private backend DNS/ACLs for non-public roaming
-  administration, network segmentation, and scheduled backup deployment. The
-  backup design and post-check contract are documented in [the backup runbook](./runbooks/backup-restore.md),
-  but the scheduler is not yet operational. Semaphore's private control-plane
-  pilot is documented in [the deployment record](./deployments/semaphore-backup-ui-2026-10-04.md);
-  it provisions databases and enrolls them in the catalog, but is not yet a
-  production backup runner.
-- Lab-only: KubeKosh runs on VM100 for Kubernetes practice and is intentionally
+  administration and network segmentation. The backup design and post-check
+  contract are documented in [the backup runbook](./runbooks/backup-restore.md),
+  and the scheduler is now active on VM100 with class-specific success markers
+  and remote snapshots. The health oneshot still has a documented
+  start-time/ordering warning and must be fixed before the health gate is called
+  clean. Semaphore's private control plane is documented in [the deployment record](./deployments/semaphore-backup-ui-2026-10-04.md)
+  and the [runtime inventory](./deployments/runtime-inventory-2026-10-13.md);
+  it provisions databases/users and enrolls them in the catalog, but remains
+  separate from the backup scheduler.
+- Lab-only: KubeKosh, if retained, is a single isolated training application
   reachable only through LAN/NetBird split DNS and the Pi5 Traefik `lan-only`
-  middleware; do not add it to the VPS HostSNI allow-list unless it is
-  deliberately promoted to a public training portal. Educates was removed on
-  2026-09-17 and should be reinstalled from the upstream Kubernetes
-  fundamentals course if needed.
+  middleware. It is not part of the managed Kubernetes inventory. Do not add
+  it to the VPS HostSNI allow-list. Educates was removed on 2026-09-17.
 - Pending GitLab: native lab Docker/Swarm Registry pull, deployed edge routes,
   CI runner, scheduled/off-host backup and restore drill; SMTP and S3 optional.
 - NetBird LAN routing requires VM100 peer enrollment with a setup key, a
@@ -172,19 +189,23 @@ without auditing those consumers.
 ## Resource and Backup Boundary
 
 VM100 documented allocation: 6 CPU / 16 GB / 200 GiB. VM100 has an 8 GiB
-`/swapfile` enabled as of 2026-09-17 for lab workloads. A post-lab sample
-reported 15 GiB RAM total, about 10 GiB available, and root 194 GiB with
-about 126 GiB free.
+`/swapfile` enabled as of 2026-09-17 for lab workloads. The 2026-10-13 sample
+reported 15 GiB RAM total, 8.6 GiB available, root 194 GiB with 55 GiB free,
+and 1.0 GiB swap in use. This is a point-in-time capacity check, not a new
+resource limit recommendation.
 
 GitLab has a 10 GiB/4 CPU limit; each GitLab tunnel client has a 128 MiB/
 0.5 CPU limit. Do not infer other apps have limits simply because the host
 allocation is bounded; see the dated resource audit. One-time GitLab backup
-and separate config snapshots exist per the trial report. Scheduled/off-host
-backup and restore have not been established. The planned boundary is
+and separate config snapshots exist per the trial report. The scheduled/off-host
+backup path is active: VM100 timers orchestrate native database, GitLab, and
+RustFS jobs, while Pi5 remains the datastore/object executor. The planned boundary is
 PostgreSQL/CouchDB database backup, a separate native GitLab backup, and a
 separate RustFS object backup. Redis and NATS are excluded. See [the backup
 runbook](./runbooks/backup-restore.md); a database dump does not replace
-GitLab repository/configuration or RustFS object recovery.
+GitLab repository/configuration or RustFS object recovery. Online adapters and
+local restore rehearsal were verified on 2026-10-05; the latest class markers
+and Drive snapshot IDs are recorded in the [runtime inventory](./deployments/runtime-inventory-2026-10-13.md).
 
 ## Detailed Runbooks
 

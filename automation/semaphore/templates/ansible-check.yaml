@@ -1,0 +1,26 @@
+---
+name: ansible-check
+description: Non-mutating Ansible check mode for the selected host role.
+repository: homelab-automation
+revision: main
+execution_image:
+  repository: registry.dungxbuif.com/dungbuif/homelab-automation/automation-ee
+  digest_variable: AUTOMATION_EE_IMAGE_DIGEST
+  immutable: true
+inventory: automation/ansible/inventories/production/hosts.yml
+workspace: automation
+variables:
+  - name: target
+    type: enum
+    required: true
+    values: [gateway, pi5_manager, vm100_worker]
+  - name: change_message
+    type: string
+    required: true
+approval:
+  required: false
+  roles: [Viewer, Task Runner, Manager]
+command: ansible-playbook automation/ansible/playbooks/bootstrap.yml --limit ${target} --check --diff
+post_check:
+  command: test -s artifacts/ansible-check.txt
+  artifact: artifacts/ansible-check.txt
