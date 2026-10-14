@@ -46,3 +46,12 @@ The expansion applied successfully (`ok=20 changed=2 failed=0`), then runner 1
 was unpaused and failed job 3 retried as job 5, confirmed running by the API.
 This does not yet prove nested builds succeed. The Pi5 registry LAN route now
 returns the expected HTTPS challenge; see `gitlab-registry-lan-2026-10-14.md`.
+
+Further observation: job 5 successfully started the nested rootless daemon,
+cloned commit `7ab8a1f`, and began the actual amd64 execution-image build. Its
+trace reached the Python dependency installation layer after completing apt
+installation. The outer CI user slice and DinD service limits remain the
+resource boundary; nested DinD warns that it has no own systemd cgroup manager.
+Pipeline 2/job 5 is the live handle to resume, not a reason to restart the build.
+Source commit `17c0751` includes the host mapping and registry remediation; it
+has not yet been cherry-picked to the publication branch while pipeline 2 runs.
