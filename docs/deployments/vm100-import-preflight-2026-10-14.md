@@ -29,3 +29,18 @@ the root ignore patterns previously missed `.state/vm100.tfstate`.
 The README explicitly labels this as an unimported, unencrypted scaffold. The
 guard has NOT yet inspected a real provider-generated plan, and does not prove
 the import is complete or the state backend is ready.
+
+Next: enforce AES-GCM state and saved-plan encryption with a PBKDF2 key provider.
+The passphrase has no default and must be injected by the controlled executor;
+never write it into tfvars or Git. Validate encryption with real OpenTofu 1.9.0
+against a disposable built-in terraform_data resource only: correct-key decrypt,
+wrong/missing-key rejection, and no plaintext marker in state or saved plan.
+No Proxmox token, provider, import or production resource is used by that test.
+Production key escrow/recovery and secret-store integration remain required.
+
+Encryption fixture now passes with real OpenTofu 1.9.0: saved plan/state omit
+the plaintext marker, correct-key reads succeed, wrong/empty/missing-key reads
+fail. Provider `bpg/proxmox` 0.116.0 initialization with backend disabled succeeds;
+`tofu validate` and `tofu fmt -check` also pass. No production key was created,
+no real state/plan was written, and no Proxmox import/apply was executed. These
+checks validate implementation mechanics, not the live baseline or key recovery.

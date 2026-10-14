@@ -16,8 +16,14 @@ The table below contains intended/guessed values, not a completed import:
 | Root disk | `local-lvm`, `scsi0`, `200 GiB` |
 | Bridge | `vmbr0` |
 
-The local backend is currently UNENCRYPTED and must not store production state
-until encryption and key recovery are implemented and verified. Move the state to the
+State and saved plans now enforce AES-GCM encryption through PBKDF2. A disposable
+terraform_data fixture verifies encryption and correct/wrong/missing-key behavior
+with OpenTofu 1.9.0, without using Proxmox credentials. Production state still
+must not be created until secret-store injection and key recovery are verified.
+Supply `TF_VAR_state_encryption_passphrase` from the executor secret store; never
+store it in tfvars or Git. Keep the encryption provider/method names stable for
+future decryption. Losing this key means losing access to encrypted state.
+Move the state to the
 private RustFS S3-compatible backend only after bucket versioning, credentials,
 locking, and restore have been verified. The state must remain separate from
 application data and must never be committed.
@@ -28,6 +34,7 @@ Run through the pinned execution image and Semaphore `tofu-plan` template:
 
 ```bash
 export TF_VAR_proxmox_api_token='provided by Semaphore only'
+# The executor must also inject TF_VAR_state_encryption_passphrase.
 tofu init
 tofu fmt -check
 tofu validate
@@ -56,3 +63,7 @@ tofu plan -detailed-exitcode
 
 The second plan must be no-op before CPU, RAM, disk, or swap policy changes are
 managed. `prevent_destroy = true` is a guardrail, not a substitute for review.
+
+Encryption protects files at rest, not the plaintext output of `tofu show -json`
+or access by the running job. Pipe that output only to trusted validators and
+never upload it as a public or unredacted job artifact.
