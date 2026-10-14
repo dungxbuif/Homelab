@@ -23,8 +23,8 @@ it early can strand the current working UI workflow. Preserve project 1, history
 template IDs and a rollback to the local executor. First run read-only smoke
 tasks, then a controlled provisioning verification before removing local mode.
 
-This is a recorded design correction, not a deployed runner. API bootstrap token
-remains temporary. Public app documentation is unaffected.
+The runner is deployed but inactive; migration gates remain outstanding. API
+bootstrap token remains temporary. Public app documentation is unaffected.
 
 ## Runner image implementation
 
@@ -41,7 +41,7 @@ Local ARM64 build verified: binary reports `v2.19.12-012ed06-1788086368`,
 Ansible reports `2.18.6`, UID is 1001, work directories are writable and no
 Docker socket is present. CI will run the same test against AMD64 before pushing
 `semaphore-runner:$CI_COMMIT_SHA`. Runner ID 1 is now enrolled but inactive;
-no runner container has been deployed and remote execution remains disabled.
+the runner container is deployed on VM100 and remote execution remains disabled.
 
 ## Enrollment procedure
 
@@ -89,6 +89,44 @@ targets only the Pi5 manager, creates a content-addressed Swarm config secret,
 deploys `semaphore-executor_runner` on VM100 and removes its temporary registry
 auth directory. A 1/1 replica post-check is only container readiness: additionally
 verify API runner heartbeat and provisioner connectivity before activation.
+
+## GitLab source migration
+
+Create a separate project deploy token with `read_repository` only, stored in
+ignored `credentials/gitlab-semaphore-source.json` mode 0600. Add a Semaphore
+project access key and a new HTTPS repository referencing the automation
+bootstrap branch. Do not alter repository/template 1 in this preparation step.
+Verify remote branches through Semaphore's repository API, which exercises its
+stored credential and network path, before migrating the provisioning template.
+The final approved source must move to the protected release revision after
+the full automation review; the bootstrap branch is not a production approval.
+
+Live bootstrap found two distinct DNS faults: the shared overlay resolves
+`gitlab.dungxbuif.com` to 172.30.1.95 (no HTTPS listener), while the runner resolves
+the private Semaphore domain to the VPS and rejects its default TLS certificate.
+Set the runner DNS resolver to Pi5 AdGuard (10.10.0.5); this is resolver config,
+not an application endpoint override. Keep certificate verification enabled.
+The GitLab overlay hostname collision still requires network separation before
+moving the existing provisioning template. Repository 2 and access key 2 were
+created, but branch discovery currently fails from the Pi5 UI container.
+
+## Live runner checkpoint
+
+Pipeline 4 completed successfully, including the AMD64 container smoke test.
+Registry repository 4 confirms runner image digest
+`sha256:157f469ffcf4fc9445b06e454143d2c555447ad61d40e18ac0f8e52bbe82e428`.
+The first deployment hit a missing-secret error-string assumption before any
+mutation; the playbook now lists secret names and creates only absent names.
+Deployment succeeded, then DNS was corrected and reapplied while reusing the
+immutable secret. API runner 1 reports `online`, `active=false`, with heartbeat
+2026-10-14T16:04:13Z. Server remote execution and provisioning template 1 remain
+unchanged. Temporary deployment directories were removed by the always block.
+The runner-stack contract and Ansible lint pass after the correction.
+
+`bootstrap-source.mjs --apply` created access key/repository 2, but its final
+branch check fails because of the overlay DNS collision above. The deploy token
+was separately verified with a successful authenticated `git ls-remote` from
+Mac. Do not mistake that Mac check for successful clone from the runner/UI.
 
 - https://semaphoreui.com/docs/user-guide/task-templates
 - https://semaphoreui.com/docs/admin-guide/runners

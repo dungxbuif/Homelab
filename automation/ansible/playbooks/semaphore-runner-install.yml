@@ -32,12 +32,11 @@
       register: manager_status
       failed_when: manager_status.stdout != 'true'
 
-    - name: Inspect immutable runner configuration secret
+    - name: List immutable runner configuration secrets
       ansible.builtin.command:
-        argv: [docker, secret, inspect, '{{ semaphore_runner_secret }}']
+        argv: [docker, secret, ls, --format, '{{ "{{.Name}}" }}']
       register: secret_status
       changed_when: false
-      failed_when: secret_status.rc != 0 and 'no such secret' not in secret_status.stderr
       no_log: true
 
     - name: Create immutable runner configuration secret
@@ -45,7 +44,7 @@
         argv: [docker, secret, create, '{{ semaphore_runner_secret }}', '-']
         stdin: '{{ semaphore_runner_config | to_json }}'
       changed_when: true
-      when: secret_status.rc != 0
+      when: semaphore_runner_secret not in secret_status.stdout_lines
       no_log: true
 
     - name: Create private deployment scratch directory

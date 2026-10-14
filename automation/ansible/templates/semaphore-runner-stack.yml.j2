@@ -3,6 +3,8 @@ services:
   runner:
     image: '{{ semaphore_runner_image }}'
     user: '1001:1001'
+    dns:
+      - 10.10.0.5
     secrets:
       - source: '{{ semaphore_runner_secret }}'
         target: semaphore_runner_config

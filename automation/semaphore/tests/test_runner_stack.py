@@ -17,6 +17,7 @@ class RunnerStackTest(unittest.TestCase):
         stack = yaml.safe_load(rendered)
         runner = stack['services']['runner']
         self.assertEqual(runner['user'], '1001:1001')
+        self.assertEqual(runner['dns'], ['10.10.0.5'])
         for field in ['ports', 'volumes', 'privileged', 'network_mode']:
             self.assertNotIn(field, runner)
         self.assertEqual(runner['deploy']['placement']['constraints'], ['node.hostname == vm100-prod'])
