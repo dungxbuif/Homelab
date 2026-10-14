@@ -1,0 +1,76 @@
+---
+- name: Enroll restricted host observer on VM100
+  hosts: vm100
+  gather_facts: false
+  vars:
+    ansible_become: true
+  tasks:
+    - name: Require approved enrollment and one public key
+      ansible.builtin.assert:
+        that:
+          - host_audit_enrollment_approved | default(false) | bool
+          - ansible_host == '10.10.0.31'
+          - >-
+            host_audit_public_key is match('^ssh-ed25519 [A-Za-z0-9+/=]+(?: [^\r\n]*)?$')
+
+    - name: Create observer without supplementary groups
+      ansible.builtin.user:
+        name: homelab-observer
+        system: true
+        create_home: true
+        shell: /bin/sh
+        password_lock: true
+        groups: ''
+
+    - name: Create root-owned helper directory
+      ansible.builtin.file:
+        path: /usr/local/libexec
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Install fixed command guard
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../scripts/host-audit-ssh-guard.sh'
+        dest: /usr/local/libexec/homelab-host-audit-guard
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Install isolated Python observer
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../scripts/host-observer.py'
+        dest: /usr/local/libexec/homelab-host-observer
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Allow exact observer without arguments as Docker owner
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/homelab-host-observer
+        content: 'homelab-observer ALL=(ubuntu) NOPASSWD: /usr/local/libexec/homelab-host-observer ""'
+        owner: root
+        group: root
+        mode: '0440'
+        validate: /usr/sbin/visudo -cf %s
+
+    - name: Root-manage identity home and SSH directory
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - /home/homelab-observer
+        - /home/homelab-observer/.ssh
+
+    - name: Install forced-command public key
+      ansible.builtin.copy:
+        dest: /home/homelab-observer/.ssh/authorized_keys
+        owner: root
+        group: root
+        mode: '0644'
+        content: >-
+          restrict,command="/usr/local/libexec/homelab-host-audit-guard" {{ host_audit_public_key }}

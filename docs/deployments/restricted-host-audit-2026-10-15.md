@@ -47,3 +47,35 @@ Next gates: review helper security, install a root-owned copy with a dedicated
 forced-command identity, register the read-only UI task, and verify forbidden
 commands fail while normal observations succeed. Do not reuse or widen the
 backup-health identity.
+
+## VM100 enrollment decision
+
+Use a separate `homelab-observer` account and key. A root-owned forced-command
+guard accepts exactly `host-audit` and invokes only the root-owned Python
+collector without arguments as `ubuntu` through sudo. The collector uses Python
+isolated mode and no local imports. The account has no Docker group membership;
+its home and authorized_keys are root managed. No root shell is granted.
+Enrollment requires an explicit approval variable and an Ed25519 public key.
+Verify forbidden SSH commands return 2, the allowed command produces valid JSON,
+and a second Ansible application is unchanged. Register the Semaphore task only
+after these access checks. This does not yet cover Pi, VPS or Mac.
+
+### Live enrollment acceptance
+
+The account and root-owned helpers were installed through
+`automation/ansible/playbooks/host-audit-enroll.yml`. Initial application:
+8 tasks, 6 changed, no failures. Second application: 8 tasks, 0 changed,
+no failures. Ansible-lint passed its production profile. The two guard tests
+failed before implementation and passed afterwards; the five collector tests
+also pass.
+
+Using the dedicated key with strict pinned host trust and no SSH agent:
+`id` and `host-audit extra` both returned 2; `host-audit` returned 0 with
+`collection_complete=true` and all eight probes. Private key is ignored at
+`credentials/semaphore-host-audit`, never committed. No application restart,
+port, network, or backup-health permission changed.
+
+The Semaphore-side playbook is prepared at
+`automation/semaphore/playbooks/host-audit.yml`, but UI key/inventory/template
+registration and execution are still pending publication. Passing collection
+does not mean the observed workloads are healthy or fully inventoried.

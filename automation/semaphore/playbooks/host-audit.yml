@@ -1,0 +1,31 @@
+---
+- name: Collect VM100 observations through a restricted identity
+  hosts: host_observers
+  gather_facts: false
+  become: false
+  vars:
+    ansible_ssh_use_tty: false
+  tasks:
+    - name: Execute fixed read-only host collector
+      ansible.builtin.raw: host-audit
+      register: host_observation
+      changed_when: false
+      failed_when: host_observation.rc not in [0, 1]
+
+    - name: Parse structured host observations
+      ansible.builtin.set_fact:
+        host_report: '{{ host_observation.stdout | from_json }}'
+
+    - name: Show host observations without claiming application health
+      ansible.builtin.debug:
+        var: host_report
+
+    - name: Require complete collection of the declared scope
+      ansible.builtin.assert:
+        that:
+          - host_observation.rc == 0
+          - host_report.schema_version == 1
+          - host_report.scope == 'host_runtime_only'
+          - host_report.collection_complete | bool
+          - not (host_report.inventory_complete | bool)
+        fail_msg: Host observations are incomplete; this task does not certify application or backup health.
