@@ -39,7 +39,7 @@ if (!apply) {
   if (key.type !== 'ssh') throw Error('Existing key type mismatch');
   const inventoryText = JSON.stringify({backup_scheduler: {hosts: {vm100_health: {
     ansible_host: '10.10.0.31', ansible_user: 'homelab-audit', ansible_become: false,
-    ansible_ssh_common_args: '-o StrictHostKeyChecking=yes -o IdentitiesOnly=yes -o IdentityAgent=none -o ConnectTimeout=10 -o UserKnownHostsFile={{ playbook_dir }}/../known_hosts',
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=yes -o IdentitiesOnly=yes -o IdentityFile={{ playbook_dir }}/../backup-health.pub -o ConnectTimeout=10 -o UserKnownHostsFile={{ playbook_dir }}/../known_hosts',
   }}}});
   if (!inventory) inventory = await api('/inventory', {
     name: inventoryName, project_id: 1, type: 'static', inventory: inventoryText,
