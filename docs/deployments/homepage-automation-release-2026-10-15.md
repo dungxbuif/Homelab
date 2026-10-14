@@ -36,3 +36,60 @@ the redundant Node copy-only stage was removed. No JavaScript compilation or
 application build mechanism was introduced. Production still runs its previous
 image; release through Semaphore and recovery acceptance remain unfinished.
 The app README describes the new delivery boundary; no public UI behavior changed.
+
+## Restricted release design
+
+Implement a root-owned, fixed-service helper on the Swarm manager. It accepts
+only a SHA256 digest matching a root-managed approval record for project 5,
+plus the expected current image, separate previous/new content hashes, commit and successful CI
+job. A separate forced-command key may invoke only this helper; never widen the
+read-only observer identity. The approval file is a bootstrap approval boundary,
+not yet a general Git-to-approval automation mechanism.
+
+Use the Docker Engine's versioned service-update API with compare-and-swap
+version indexes. Copy the entire current service Spec and change only Image.
+Require one replica, VM100 placement, no published ports and the observed edge
+network. Hold a persistent exclusive local operation lock. Save the previous
+spec in a private durable receipt before mutation. Poll bounded task convergence
+and check HTTPS content against the approved source hash. On failure, roll back
+only if the current Spec still equals this helper's submitted Spec; use another
+versioned update, never an unconditional rollback over someone else's edit.
+Report failed, rolled-back and rollback-conflict states separately, always
+nonzero for a failed release. A no-op still requires health/content checks.
+
+Before enrollment: unit-test rejection before mutation, successful/no-op release,
+private receipts, failed-health rollback and concurrent-edit preservation. Keep
+production unchanged until the helper and forced-command boundary pass review.
+Registry credentials stay local to the manager, scoped read_registry for project
+5; no credential or full service spec is printed to Semaphore logs.
+
+### Verification gate
+
+Run `python3 automation/tests/test_homepage_release.py` in the automation EE
+validation job as well as locally. Baseline checks use the previous content
+hash; forward checks use the candidate hash; rollback checks return to the
+previous hash. This permits actual content upgrades, not only image rebuilds.
+The helper is still uninstalled and requires a fresh review before enrollment.
+These are internal operational changes; no public Homepage behavior or public
+API documentation changes are required.
+
+### Review corrections before authority grant
+
+Fresh review found three deployment blockers: a rejected update could claim
+another writer's identical spec, readiness ignored draining old tasks/paused
+updates, and file fsync alone did not persist receipt directory entries.
+Require explicit update acknowledgement before automatic rollback. A definitive
+API rejection returns `update_rejected` without rollback; an ambiguous update
+transport failure returns `recovery_required` without further mutations.
+Check all service tasks and completed rollout state, and fsync the receipt
+directory and its parent before updating Docker. Add regression tests for each
+failure before installation. No live deployment is authorized by test success
+alone; forced-command enrollment and end-to-end acceptance remain gates.
+
+Verification on 2026-10-15: all 17 release tests pass in
+`homelab-automation-ee:local`; CI YAML parses and diff whitespace checks pass.
+The fresh reviewer rechecked the fixes and found no remaining helper-code
+blockers. The policy suite (4 tests), host observer suite (5 tests), and runtime
+policy validator also pass. This is not production release acceptance: helper
+installation, restricted identity, UI template, live release/no-op/rollback,
+and deployment notification are still pending. Production image is unchanged.
