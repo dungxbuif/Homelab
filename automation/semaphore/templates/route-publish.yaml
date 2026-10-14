@@ -4,7 +4,7 @@ description: Validate and publish the selected structured route set through the 
 repository: homelab-automation
 revision: main
 execution_image:
-  repository: registry.dungxbuif.com/dungxbuif/homelab-automation/automation-ee
+  repository: registry-gitlab.dungxbuif.com/dungxbuif/homelab-automation/automation-ee
   digest_variable: AUTOMATION_EE_IMAGE_DIGEST
   immutable: true
 inventory: automation/routes

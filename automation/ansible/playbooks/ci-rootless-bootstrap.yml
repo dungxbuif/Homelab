@@ -88,11 +88,30 @@
               CPUQuota=200%
               TasksMax=4096
 
+        - name: Create CI user manager override directory
+          ansible.builtin.file:
+            path: '/etc/systemd/system/user@{{ getent_passwd[ci_user][1] }}.service.d'
+            state: directory
+            mode: '0755'
+
+        - name: Delegate resource controllers to CI only
+          ansible.builtin.copy:
+            dest: '/etc/systemd/system/user@{{ getent_passwd[ci_user][1] }}.service.d/delegate.conf'
+            mode: '0644'
+            content: |
+              [Service]
+              Delegate=cpu cpuset io memory pids
+          register: ci_delegate
+
         - name: Start user systemd manager
           ansible.builtin.systemd_service:
             name: 'user@{{ getent_passwd[ci_user][1] }}.service'
-            state: started
+            state: '{{ "restarted" if ci_delegate.changed else "started" }}'
             daemon_reload: true
+          register: ci_manager
+          retries: 3
+          delay: 3
+          until: ci_manager is succeeded
 
         - name: Install rootless daemon alongside production Docker
           become: true

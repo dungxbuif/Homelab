@@ -58,3 +58,9 @@ Rerun completed with `ok=15 changed=0 failed=0`.
 GitLab Runner itself is NOT yet installed or registered. CI pipeline execution,
 registry publication, disk cleanup policy and Semaphore integration are pending.
 No public documentation changes are required for this internal bootstrap.
+
+Runner enrollment exposed a cgroup delegation gap: user@1001.service delegates
+only memory/pids by default, so containers with CPU limits fail to start.
+Delegate cpu/cpuset/io/memory/pids to this CI user manager only, restarting only
+that user manager when the override changes. The outer 4 GiB/2 CPU slice cap
+remains enforced by the host. Production Docker is not restarted.

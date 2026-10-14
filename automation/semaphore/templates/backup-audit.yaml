@@ -4,7 +4,7 @@ description: Read-only audit of backup timers, markers, and staging capacity.
 repository: homelab-automation
 revision: main
 execution_image:
-  repository: registry.dungxbuif.com/dungxbuif/homelab-automation/automation-ee
+  repository: registry-gitlab.dungxbuif.com/dungxbuif/homelab-automation/automation-ee
   digest_variable: AUTOMATION_EE_IMAGE_DIGEST
   immutable: true
 inventory: automation/ansible/inventories/production/hosts.yml

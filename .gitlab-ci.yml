@@ -17,7 +17,7 @@ variables:
 .docker-job:
   image: docker:27.5.1-cli
   services:
-    - name: docker:27.5.1-dind
+    - name: docker:27.5.1-dind-rootless
       alias: docker
   before_script:
     - docker info
@@ -32,6 +32,7 @@ validate:automation-ee:
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'find /workspace/automation /workspace/backup -name "*.sh" -type f -print0 | xargs -0 -r shellcheck --severity=error'
     - docker run --rm --env ANSIBLE_CONFIG=/workspace/automation/ansible/ansible.cfg --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'ansible-lint /workspace/automation/ansible /workspace/automation/semaphore/playbooks'
     - docker run --rm --env ANSIBLE_CONFIG=/workspace/automation/ansible/ansible.cfg --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_inventory_resolution.py
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_runner_boundary.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'python /workspace/automation/tests/test_policy_contract.py && python /workspace/automation/tests/test_route_contract.py'
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'bash /workspace/automation/scripts/verify-routes.sh'
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'ruby /workspace/automation/ansible/tests/test-inventory-contract.rb && ruby /workspace/automation/semaphore/tests/test-template-contract.rb'
