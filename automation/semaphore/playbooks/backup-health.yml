@@ -1,0 +1,21 @@
+---
+- name: Check combined backup health through a forced-command identity
+  hosts: backup_scheduler
+  gather_facts: false
+  become: false
+  tasks:
+    - name: Run the only allowed remote command
+      ansible.builtin.raw: backup-health
+      register: backup_health
+      changed_when: false
+      failed_when: false
+
+    - name: Show backup health evidence
+      ansible.builtin.debug:
+        msg: '{{ backup_health.stdout_lines | default([]) }}'
+
+    - name: Require healthy backup state
+      ansible.builtin.assert:
+        that:
+          - backup_health.rc == 0
+        fail_msg: Backup health is not clean; inspect the evidence above.
