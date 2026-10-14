@@ -38,3 +38,21 @@ Ansible's default PTY request, incompatible with the deliberately restricted key
 Set `ansible_ssh_use_tty: false`; a local Ansible raw test then returned complete
 health evidence and the real retention failure, not the transport exit 141.
 Do not enable PTY or loosen forced-command matching to accommodate the client.
+
+## Live acceptance
+
+Task 18 used runner 1 and commit `3c1175213db62adf11846c912e5e6f4855dfddb8`.
+The forced-command operation returned exit 1 with empty stderr and full combined
+VM100/Pi health output: only retention was failed, both backup locks were free,
+all three marker ages were present, and Pi's local health check passed.
+Ansible reported changed=0 and unreachable=0; the explicit health assertion
+correctly failed. This proves restricted transport and negative health reporting,
+not clean retention or full backup recovery. Tasks 15-17 remain diagnostic history.
+Bootstrap registration was rerun and reused key 3, inventory 2 and template 3.
+
+Operator: open project 1, template **Check backup health (read only)**, then Run.
+No survey or password is required. A red result requires reading the reported
+unit/marker failure; this template does not repair, prune or initiate backups.
+
+Schema reference for the encrypted Semaphore SSH key payload:
+https://github.com/semaphoreui/semaphore/blob/v2.19.12/db/AccessKey.go
