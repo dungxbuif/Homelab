@@ -31,3 +31,9 @@ successful backups and failed retention; remote verification remains `not_run`.
 Pi staging filesystem had 300072372 KiB available; VM100 had 68018992 KiB.
 This used the documented temporary bootstrap transport, not the final restricted
 Semaphore runner. Do not claim UI rollout or controller-only operation complete.
+
+CI pipeline 30 caught an error-handling regression: marker reads had unconditional
+`failed_when: false`. Fail collection on any nonzero marker read instead; a
+missing or unreadable local marker is evidence of an incomplete audit and must
+not pass. Preserve journal's explicit empty-result handling separately. Verify
+the full inventory contract suite as well as the narrower artifact tests.

@@ -80,7 +80,7 @@
       loop: '{{ ["databases", "rustfs"] if inventory_hostname == "pi5" else ["gitlab"] }}'
       register: local_markers
       changed_when: false
-      failed_when: false
+      failed_when: local_markers.rc != 0
       check_mode: false
 
     - name: Check staging filesystem capacity
