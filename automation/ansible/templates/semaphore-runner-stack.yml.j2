@@ -12,7 +12,7 @@ services:
         gid: '1001'
         mode: 0400
     networks:
-      - homelab-net
+      - homelab-control-net
     logging:
       driver: json-file
       options:
@@ -41,5 +41,5 @@ secrets:
   '{{ semaphore_runner_secret }}':
     external: true
 networks:
-  homelab-net:
+  homelab-control-net:
     external: true

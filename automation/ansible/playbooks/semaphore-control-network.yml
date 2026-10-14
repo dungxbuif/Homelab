@@ -1,0 +1,79 @@
+---
+- name: Prepare the private encrypted automation network
+  hosts: all
+  gather_facts: false
+  become: false
+  vars:
+    control_network: homelab-control-net
+  tasks:
+    - name: Require explicit Pi5 network migration approval
+      ansible.builtin.assert:
+        that:
+          - control_network_bootstrap_approved | default(false) | bool
+          - ansible_host | default(inventory_hostname) == '10.10.0.5'
+
+    - name: List networks without reading credentials
+      ansible.builtin.command:
+        argv: [docker, network, ls, --format, '{{ "{{.Name}}" }}']
+      changed_when: false
+      register: network_names
+
+    - name: Create attachable encrypted overlay
+      ansible.builtin.command:
+        argv: [docker, network, create, --driver, overlay, --attachable, --opt, encrypted, '{{ control_network }}']
+      when: control_network not in network_names.stdout_lines
+      changed_when: true
+
+    - name: Inspect network properties
+      ansible.builtin.command:
+        argv: [docker, network, inspect, '{{ control_network }}']
+      changed_when: false
+      register: network_details
+
+    - name: Reject a conflicting network definition
+      ansible.builtin.assert:
+        that:
+          - (network_details.stdout | from_json)[0].Driver == 'overlay'
+          - (network_details.stdout | from_json)[0].Attachable
+          - "'encrypted' in (network_details.stdout | from_json)[0].Options"
+
+    - name: Inspect Traefik network memberships
+      ansible.builtin.command:
+        argv: [docker, inspect, edge-traefik-pi5, --format, '{{ "{{json .NetworkSettings.Networks}}" }}']
+      changed_when: false
+      register: traefik_networks
+
+    - name: Attach Traefik without restarting ingress
+      ansible.builtin.command:
+        argv: [docker, network, connect, '{{ control_network }}', edge-traefik-pi5]
+      when: control_network not in (traefik_networks.stdout | from_json)
+      changed_when: true
+
+    - name: Inspect provisioner network memberships
+      ansible.builtin.command:
+        argv:
+          - docker
+          - service
+          - inspect
+          - homelab-provisioner_provisioner
+          - --format
+          - '{{ "{{json .Spec.TaskTemplate.Networks}}" }}'
+      changed_when: false
+      register: provisioner_networks
+
+    - name: Add provisioner control network while retaining existing callers
+      ansible.builtin.command:
+        argv:
+          - docker
+          - service
+          - update
+          - --detach=false
+          - --update-order
+          - stop-first
+          - --network-add
+          - '{{ control_network }}'
+          - homelab-provisioner_provisioner
+      when: >-
+        (network_details.stdout | from_json)[0].Id not in
+        (provisioner_networks.stdout | from_json | map(attribute='Target') | list)
+      changed_when: true
