@@ -10,6 +10,7 @@ workflow:
 variables:
   EE_IMAGE: '$CI_REGISTRY_IMAGE/automation-ee'
   EE_TAG: '$CI_COMMIT_SHA'
+  SEMAPHORE_RUNNER_IMAGE: '$CI_REGISTRY_IMAGE/semaphore-runner'
   DOCKER_TLS_CERTDIR: '/certs'
   DOCKER_HOST: 'tcp://docker:2376'
   DOCKER_DRIVER: overlay2
@@ -54,3 +55,7 @@ build:automation-ee:
     - docker build --file automation/execution-environment/Containerfile --tag "$EE_IMAGE:$EE_TAG" automation/execution-environment
     - docker push "$EE_IMAGE:$EE_TAG"
     - docker image inspect "$EE_IMAGE:$EE_TAG" --format 'published={{index .RepoDigests 0}}'
+    - docker build --build-arg AUTOMATION_EE_IMAGE="$EE_IMAGE:$EE_TAG" --file automation/semaphore/runner/Containerfile --tag "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG" automation/semaphore/runner
+    - sh automation/semaphore/tests/test-runner-image.sh "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG"
+    - docker push "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG"
+    - docker image inspect "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG" --format 'published={{index .RepoDigests 0}}'

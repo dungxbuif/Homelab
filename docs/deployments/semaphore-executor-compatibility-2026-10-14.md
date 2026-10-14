@@ -26,7 +26,23 @@ tasks, then a controlled provisioning verification before removing local mode.
 This is a recorded design correction, not a deployed runner. API bootstrap token
 remains temporary. Public app documentation is unaffected.
 
-## Evidence
+## Runner image implementation
+
+Build a separate image from the tested execution image, copying only the static
+Semaphore binary from upstream v2.19.12 index digest
+`sha256:3996804607ebb63690528185bb9adc3507ee896851098e4453975f2ce7f8b435`.
+Run UID/GID 1001, retain the pinned toolchain, and read runner configuration from
+`/run/secrets/semaphore_runner_config`. Do not embed tokens or copy upstream SSH
+configuration (which disables strict host key checking). Verify version, runner
+CLI, Ansible and non-root identity before publishing. Runtime enrollment and
+network/provisioning tests remain separate deployment gates.
+
+Local ARM64 build verified: binary reports `v2.19.12-012ed06-1788086368`,
+Ansible reports `2.18.6`, UID is 1001, work directories are writable and no
+Docker socket is present. CI will run the same test against AMD64 before pushing
+`semaphore-runner:$CI_COMMIT_SHA`. No remote runner is enrolled or enabled yet.
+
+## Sources
 
 - https://semaphoreui.com/docs/user-guide/task-templates
 - https://semaphoreui.com/docs/admin-guide/runners

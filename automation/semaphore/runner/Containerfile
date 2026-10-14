@@ -1,0 +1,15 @@
+ARG AUTOMATION_EE_IMAGE
+FROM semaphoreui/semaphore@sha256:3996804607ebb63690528185bb9adc3507ee896851098e4453975f2ce7f8b435 AS semaphore
+FROM ${AUTOMATION_EE_IMAGE}
+
+COPY --from=semaphore /usr/local/bin/semaphore /usr/local/bin/semaphore
+RUN groupadd --gid 1001 semaphore \
+    && useradd --uid 1001 --gid 1001 --create-home semaphore \
+    && mkdir -p /tmp/semaphore /opt/semaphore \
+    && chown 1001:1001 /tmp/semaphore /opt/semaphore
+
+ENV HOME=/home/semaphore
+USER 1001:1001
+WORKDIR /home/semaphore
+ENTRYPOINT ["/usr/local/bin/semaphore"]
+CMD ["runner", "start", "--config", "/run/secrets/semaphore_runner_config"]
