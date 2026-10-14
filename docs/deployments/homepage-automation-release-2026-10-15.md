@@ -164,3 +164,10 @@ a schedule or use this template for another app. To authorize a different
 release, first verify its CI evidence and update the root approval/exact sudo
 rule through the enrollment workflow. A failed/rolled-back task is not success;
 inspect the manager's private receipt before retrying an ambiguous result.
+
+Negative runner acceptance: task 25, template 6, runner 1 checked out
+`dfc0aaf5f858c92398bdc975723b0b21496a21e5`. An intentionally invalid digest failed
+the first assertion with changed=0, before the raw SSH command. Task status is
+`error` as expected for this negative test, not a failed production rollout.
+No positive release task has run. CI pipeline 43 validates this integration
+commit; inspect its current status before the first real release.
