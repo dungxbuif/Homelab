@@ -1,0 +1,20 @@
+---
+name: backup-audit
+description: Read-only audit of backup timers, markers, and staging capacity.
+repository: homelab-automation
+revision: main
+execution_image:
+  repository: registry.dungxbuif.com/dungbuif/homelab-automation/automation-ee
+  digest_variable: AUTOMATION_EE_IMAGE_DIGEST
+  immutable: true
+inventory: automation/ansible/inventories/production/hosts.yml
+workspace: automation
+approval:
+  required: false
+  roles: [Viewer, Task Runner, Manager]
+command: >-
+  ANSIBLE_CONFIG=automation/ansible/ansible.cfg ansible-playbook
+  automation/ansible/playbooks/backup-audit.yml --limit pi5,vm100
+post_check:
+  command: test -s artifacts/backup-audit.txt
+  artifact: artifacts/backup-audit.txt
