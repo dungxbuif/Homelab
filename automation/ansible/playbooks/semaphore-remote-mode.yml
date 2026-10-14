@@ -1,0 +1,56 @@
+---
+- name: Set idle Semaphore remote execution mode
+  hosts: pi5
+  gather_facts: false
+  become: false
+  tasks:
+    - name: Require explicit readiness and idle verification
+      ansible.builtin.assert:
+        that:
+          - semaphore_remote_mode_approved | default(false) | bool
+          - semaphore_tasks_idle_verified | default(false) | bool
+          - semaphore_remote_enabled is defined
+
+    - name: Update mode with rollback on failed ingress
+      block:
+        - name: Set only remote mode and safe rollout order
+          ansible.builtin.command:
+            argv:
+              - docker
+              - service
+              - update
+              - '--env-add'
+              - 'SEMAPHORE_USE_REMOTE_RUNNER={{ semaphore_remote_enabled | bool | ternary("true", "false") }}'
+              - '--update-order'
+              - stop-first
+              - '--detach=false'
+              - semaphore_semaphore
+          changed_when: true
+
+        - name: Verify TLS UI endpoint after rollout
+          ansible.builtin.command:
+            argv:
+              - curl
+              - '--fail'
+              - '--silent'
+              - '--show-error'
+              - '--max-time'
+              - '10'
+              - '--resolve'
+              - 'semaphore.dungxbuif.com:443:10.10.0.5'
+              - '--output'
+              - /dev/null
+              - https://semaphore.dungxbuif.com/auth/login
+          register: ui_probe
+          changed_when: false
+          retries: 10
+          delay: 3
+          until: ui_probe.rc == 0
+      rescue:
+        - name: Restore previous UI service spec
+          ansible.builtin.command:
+            argv: [docker, service, rollback, '--detach=false', semaphore_semaphore]
+          changed_when: true
+        - name: Stop after rollback
+          ansible.builtin.fail:
+            msg: Remote execution rollout failed; previous UI service spec restored.

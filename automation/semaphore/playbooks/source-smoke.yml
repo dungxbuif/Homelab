@@ -5,6 +5,24 @@
   gather_facts: false
   become: false
   tasks:
+    - name: Require the pinned runner toolchain when requested
+      ansible.builtin.assert:
+        that:
+          - ansible_version.full == '2.18.6'
+      when: verify_remote_runner | default(false) | bool
+
+    - name: Read executor identity
+      ansible.builtin.command:
+        argv: [id, '-u']
+      register: executor_uid
+      changed_when: false
+
+    - name: Require the nonprivileged remote runner identity when requested
+      ansible.builtin.assert:
+        that:
+          - executor_uid.stdout == '1001'
+      when: verify_remote_runner | default(false) | bool
+
     - name: Read checked-out commit
       ansible.builtin.command:
         argv: [git, -C, '{{ playbook_dir }}', rev-parse, HEAD]
@@ -49,3 +67,5 @@
           scope: authenticated_source_and_control_connectivity
           database_mutations: false
           host_audit: not_run
+          ansible_core: '{{ ansible_version.full }}'
+          executor_uid: '{{ executor_uid.stdout }}'

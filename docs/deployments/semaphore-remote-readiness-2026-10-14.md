@@ -40,3 +40,29 @@ Public documentation is unchanged because this is internal controller setup.
 Still pending: template source migration, actual remote job toolchain assertion,
 global remote scheduling activation, and controlled provisioning end-to-end.
 The repository branch dropdown failure is independent and remains unresolved.
+
+## Template source migration plan
+
+Migrate only template 1's repository ID and playbook path. Keep its ID, survey,
+inventory, environment and task history. Require all tasks terminal, the exact
+GitLab repository URL/branch and survey contract, and persist a private rollback
+copy before PUT. Re-read and compare the preserved fields after PUT. Unknown
+states or unexpected source paths fail closed. Run twice to verify idempotence.
+This does not submit a provisioning task or change global runner activation.
+
+Template 1 now uses repository 2. All editable settings were compared against
+the private pre-migration copy and task history IDs 1-7 remain present. The
+first post-check rejected the server-derived `last_task` projection; exclude
+that projection from PUT/config comparison and verify task history separately.
+Seven migration tests pass, including terminal-state and derived-field cases.
+
+## Remote activation gate
+
+With template 1 migrated and no jobs running, activate global runner 1 and set
+`SEMAPHORE_USE_REMOTE_RUNNER=true` on the UI using stop-first rollout. Only
+trusted-admin project 1 currently exists. Require `/api/info` remote mode,
+runner heartbeat and a new task 2 execution reporting Ansible core 2.18.6 and
+UID 1001. Do not submit a database mutation during this first execution test.
+On rollout failure restore the previous UI service specification. On failed
+job verification disable remote mode and deactivate runner 1 before returning
+the controller to normal use.
