@@ -30,8 +30,7 @@ variable "vm_id" {
 
 variable "vm_name" {
   type        = string
-  description = "Existing production VM name."
-  default     = "vm100-prod"
+  description = "Observed Proxmox VM name, supplied explicitly to prevent an import-time rename."
 }
 
 variable "cpu_cores" {

@@ -1,0 +1,28 @@
+from pathlib import Path
+import re
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class ObservedBaselineTests(unittest.TestCase):
+    def test_name_must_be_supplied_instead_of_renamed_during_import(self):
+        source = (ROOT / 'variables.tf').read_text()
+        block = re.search(r'variable "vm_name" \{([^}]+)\}', source).group(1)
+        self.assertNotIn('default', block)
+
+    def test_observed_hardware_flags_are_preserved(self):
+        source = (ROOT / 'main.tf').read_text()
+        for field, value in [('protection', 'false'), ('scsi_hardware', '"virtio-scsi-pci"'),
+                             ('iothread', 'false'), ('replicate', 'false'),
+                             ('floating', '0'), ('mac_address', '"8E:8D:DC:BD:7F:72"')]:
+            self.assertRegex(source, rf'\b{field}\s*=\s*{re.escape(value)}')
+        self.assertRegex(source, r'operating_system\s*\{\s*type\s*=\s*"other"')
+        self.assertRegex(source, r'initialization\s*\{[^}]*interface\s*=\s*"ide2"')
+        self.assertNotIn('Managed import-only baseline', source)
+        self.assertNotIn('ignore_changes', source)
+        self.assertRegex(source, r'prevent_destroy\s*=\s*true')
+
+
+if __name__ == '__main__':
+    unittest.main()

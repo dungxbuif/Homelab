@@ -1,11 +1,11 @@
 resource "proxmox_virtual_environment_vm" "vm100" {
-  node_name   = var.proxmox_node
-  vm_id       = var.vm_id
-  name        = var.vm_name
-  description = "Managed import-only baseline for production VM100"
-  started     = true
-  on_boot     = true
-  protection  = true
+  node_name     = var.proxmox_node
+  vm_id         = var.vm_id
+  name          = var.vm_name
+  started       = true
+  on_boot       = true
+  protection    = false
+  scsi_hardware = "virtio-scsi-pci"
 
   cpu {
     cores = var.cpu_cores
@@ -14,6 +14,7 @@ resource "proxmox_virtual_environment_vm" "vm100" {
 
   memory {
     dedicated = var.memory_mb
+    floating  = 0
   }
 
   agent {
@@ -21,7 +22,7 @@ resource "proxmox_virtual_environment_vm" "vm100" {
   }
 
   operating_system {
-    type = "l26"
+    type = "other"
   }
 
   disk {
@@ -29,12 +30,19 @@ resource "proxmox_virtual_environment_vm" "vm100" {
     interface    = "scsi0"
     size         = var.disk_gib
     discard      = "on"
-    iothread     = true
+    iothread     = false
+    replicate    = false
+  }
+
+  initialization {
+    datastore_id = "local-lvm"
+    interface    = "ide2"
   }
 
   network_device {
-    bridge = var.network_bridge
-    model  = "virtio"
+    bridge      = var.network_bridge
+    model       = "virtio"
+    mac_address = "8E:8D:DC:BD:7F:72"
   }
 
   lifecycle {

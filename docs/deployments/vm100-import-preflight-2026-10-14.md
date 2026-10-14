@@ -44,3 +44,25 @@ fail. Provider `bpg/proxmox` 0.116.0 initialization with backend disabled succee
 `tofu validate` and `tofu fmt -check` also pass. No production key was created,
 no real state/plan was written, and no Proxmox import/apply was executed. These
 checks validate implementation mechanics, not the live baseline or key recovery.
+
+## Baseline reconciliation on 2026-10-15
+
+A fresh read-only config request confirms the same hardware and legacy name.
+Remove the guessed VM name default (require the observed name as input), remove
+the invented description, and match observed protection=false, OS=other,
+scsi controller, disk replication/iothread flags, MAC and attached cloud-init
+interface. Keep prevent_destroy. Do not rename the VM or enable protection during
+import; those are separate reviewed changes after an import-only/no-op plan.
+Provider schema validation is not proof of a no-op live plan; cloud-init content,
+legacy boot mapping, trusted TLS, scoped API credential and state key escrow
+still need completion before import/apply. No ignore_changes escape hatch.
+Use the pinned provider's documented field names:
+https://github.com/bpg/terraform-provider-proxmox/blob/v0.116.0/docs/resources/virtual_environment_vm.md
+
+The reconciled module passes `tofu fmt`, `tofu validate` with the initialized
+pinned provider, the VM100 contract test, two observed-baseline regression tests,
+and all eight strict import-plan tests. The regression tests failed against the
+old guessed name/protection fields before implementation. No API mutation,
+provider import, production state, saved live plan or apply was performed.
+The operator was asked where the independent state encryption recovery key
+should be escrowed; bootstrap can continue elsewhere while that is decided.

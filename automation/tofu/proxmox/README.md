@@ -1,16 +1,16 @@
 # VM100 OpenTofu import boundary
 
 This module is an unimported scaffold for VM100, not an approved live baseline.
-Do not apply it: the Proxmox API exposed mismatches in name, protection, OS type,
-disk flags and attached cloud-init media. See the
+Do not apply it: known hardware fields are now reconciled with read-only API
+observations, but a live provider-generated no-op plan has not been verified. See the
 [verified preflight](../../../docs/deployments/vm100-import-preflight-2026-10-14.md).
-The table below contains intended/guessed values, not a completed import:
+The table below contains observed values, not a completed import:
 
 | Field | Value |
 |---|---|
 | Proxmox node | `pve` |
 | VM ID | `100` |
-| Name | `vm100-prod` |
+| Proxmox name | `k8s-cp-1` (legacy label only; supply explicitly) |
 | LAN | `10.10.0.31` |
 | vCPU / RAM | `6` / `16384 MiB` |
 | Root disk | `local-lvm`, `scsi0`, `200 GiB` |
@@ -34,6 +34,7 @@ Run through the pinned execution image and Semaphore `tofu-plan` template:
 
 ```bash
 export TF_VAR_proxmox_api_token='provided by Semaphore only'
+export TF_VAR_vm_name='k8s-cp-1'
 # The executor must also inject TF_VAR_state_encryption_passphrase.
 tofu init
 tofu fmt -check
@@ -41,7 +42,7 @@ tofu validate
 tofu plan -out=vm100.tfplan
 ```
 
-The first plan must be import-only or a reviewed zero-destroy delta. Any disk
+The first plan must be strictly import-only, with no infrastructure delta. Any disk
 replacement, network replacement, destroy, or unexpected VM recreation blocks
 the workflow. After a Manager-approved import:
 
