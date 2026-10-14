@@ -1,0 +1,115 @@
+---
+- name: Enroll the restricted Homepage release identity on Pi5
+  hosts: pi5
+  gather_facts: false
+  vars:
+    ansible_become: true
+    ansible_become_exe: /usr/bin/sudo.ws
+    release_account: homelab-homepage-release
+    release_root: /ssd-data/infra/homepage-release
+  tasks:
+    - name: Require explicit approval and verified release evidence
+      ansible.builtin.assert:
+        that:
+          - homepage_release_enrollment_approved | default(false) | bool
+          - inventory_hostname == 'pi5'
+          - ansible_host == '10.10.0.5'
+          - homepage_release_approval.approved | default(false) | bool
+          - homepage_release_approval.digest is match('^sha256:[a-f0-9]{64}$')
+          - homepage_release_approval.commit is match('^[a-f0-9]{40}$')
+          - homepage_release_approval.content_sha256 is match('^[a-f0-9]{64}$')
+          - homepage_release_approval.previous_content_sha256 is match('^[a-f0-9]{64}$')
+          - homepage_release_approval.ci_job | int > 0
+          - homepage_release_approval.expected_image | length > 0
+          - >-
+            homepage_release_public_key is match('^ssh-ed25519 [A-Za-z0-9+/=]+(?: [^\r\n]*)?$')
+
+    - name: Require private registry access material
+      ansible.builtin.assert:
+        that:
+          - homepage_release_registry.username | length > 0
+          - homepage_release_registry.token | length > 0
+      no_log: true
+
+    - name: Create release account without supplementary groups
+      ansible.builtin.user:
+        name: '{{ release_account }}'
+        system: true
+        create_home: true
+        shell: /bin/sh
+        password_lock: true
+        groups: ''
+
+    - name: Root-manage executable and approval directories
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - /usr/local/libexec
+        - /etc/homelab-automation
+        - '/home/{{ release_account }}'
+        - '/home/{{ release_account }}/.ssh'
+
+    - name: Install root-owned helper and forced command
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../scripts/{{ item.source }}'
+        dest: '/usr/local/libexec/{{ item.target }}'
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - source: homepage-release.py
+          target: homelab-homepage-release
+        - source: homepage-release-ssh-guard.py
+          target: homelab-homepage-release-guard
+
+    - name: Create private release state directories
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        owner: dungxbuif
+        group: dungxbuif
+        mode: '0700'
+      loop:
+        - '{{ release_root }}'
+        - '{{ release_root }}/receipts'
+
+    - name: Install project-scoped read-only registry credentials
+      ansible.builtin.copy:
+        content: '{{ homepage_release_registry | to_nice_json }}'
+        dest: '{{ release_root }}/registry.json'
+        owner: dungxbuif
+        group: dungxbuif
+        mode: '0600'
+      no_log: true
+      diff: false
+
+    - name: Install root-managed release approval
+      ansible.builtin.copy:
+        content: '{{ homepage_release_approval | to_nice_json }}'
+        dest: /etc/homelab-automation/homepage-release.json
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Permit only the exact approved digest as the Docker owner
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/homelab-homepage-release
+        content: |
+          {{ release_account }} ALL=(dungxbuif) NOPASSWD: /usr/local/libexec/homelab-homepage-release sha256\:{{ homepage_release_approval.digest[7:] }}
+        owner: root
+        group: root
+        mode: '0440'
+        validate: /usr/sbin/visudo -cf %s
+
+    - name: Install restricted public key only after helper and approval exist
+      ansible.builtin.copy:
+        dest: '/home/{{ release_account }}/.ssh/authorized_keys'
+        owner: root
+        group: root
+        mode: '0644'
+        content: >-
+          restrict,command="/usr/local/libexec/homelab-homepage-release-guard" {{ homepage_release_public_key }}

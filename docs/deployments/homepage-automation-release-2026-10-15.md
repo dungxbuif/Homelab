@@ -93,3 +93,42 @@ blockers. The policy suite (4 tests), host observer suite (5 tests), and runtime
 policy validator also pass. This is not production release acceptance: helper
 installation, restricted identity, UI template, live release/no-op/rollback,
 and deployment notification are still pending. Production image is unchanged.
+
+### Restricted enrollment contract
+
+Use a new `homelab-homepage-release` system account on Pi5, with locked password,
+no supplemental groups, and root-managed home/authorized_keys. A root-owned
+isolated Python forced-command guard accepts only `homepage-release sha256:`
+followed by 64 lowercase hex characters, with no additional arguments or shell.
+It invokes `/usr/bin/sudo.ws` with a clean environment as Docker owner dungxbuif.
+Sudoers permits exactly the helper path and the currently approved digest, not
+a wildcard, shell, Docker CLI or arbitrary Python interpreter. Authorization of
+a later digest requires refreshing the root approval and exact sudo rule.
+
+The enrollment playbook is Pi5-only and requires an explicit approval flag,
+validated public key, approved record, and a project-5 read_registry credential.
+Credential/state directories are private to dungxbuif; executable code and the
+approval record remain root-owned outside them. Install the authorized key last.
+Tests must reject command injection/extra arguments and verify clean exec argv,
+fixed identity, exact sudo rule and no secret values in task output.
+
+### Enrollment acceptance, 2026-10-15
+
+- Installed on Pi5 through `homepage-release-enroll.yml`: 10 tasks, 8 changed,
+  zero failures. Repeated enrollment: 10 tasks, zero changed, zero failures.
+- Fresh boundary review found the sudoers digest colon must be escaped. Fixed
+  to `sha256\:` in sudoers only; target `/usr/sbin/visudo` validation passed.
+- Three guard tests and four enrollment contract tests pass; ansible-lint passes.
+- Actual restricted SSH: `id` and shell-suffixed commands return exit 2. A
+  syntactically valid but unapproved digest is rejected by sudo (exit 1).
+  These tests performed no Docker mutation.
+- Project 5 deploy token ID 3 has only `read_registry`, expires 2027-01-13.
+  It is stored in ignored 0600 local credentials and private manager state;
+  never in Git, the Semaphore runner, or task logs. Rotation must precede expiry.
+- Approval commit/job were checked against GitLab job 83 and its digest artifact.
+  Live HTTPS output matches that exact commit's `index.html` byte-for-byte.
+
+This supersedes the earlier uninstalled status. The helper and restricted key
+are now installed, but **no Homepage release has run**. The production image
+remains `homelab/homepage:vm100-20261007-stirling`. Semaphore template creation,
+live release/no-op/recovery acceptance, and notifications are still pending.
