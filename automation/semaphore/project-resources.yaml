@@ -16,11 +16,13 @@ roles:
       - host-audit
       - ansible-check
       - tofu-plan
+      - backup-audit
   - name: Task Runner
     allowed_templates:
       - host-audit
       - ansible-check
       - tofu-plan
+      - backup-audit
       - route-publish
       - app-deploy
       - rollback
@@ -31,6 +33,7 @@ roles:
       - ansible-apply
       - tofu-plan
       - tofu-apply-approved
+      - backup-audit
       - route-publish
       - app-deploy
       - rollback

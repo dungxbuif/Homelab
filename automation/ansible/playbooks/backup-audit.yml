@@ -1,0 +1,48 @@
+---
+- name: Read-only backup control-plane audit
+  hosts: all
+  gather_facts: false
+  become: false
+  serial: 1
+  tasks:
+    - name: Check backup timer state on the scheduler host
+      ansible.builtin.command:
+        argv:
+          - systemctl
+          - list-timers
+          - --all
+          - homelab-backup-*.timer
+          - --no-legend
+      register: backup_timers
+      changed_when: false
+      failed_when: false
+      when: inventory_hostname == 'vm100'
+
+    - name: Check backup service markers on the executor host
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail;
+          journalctl --no-pager --since "48 hours ago" -u 'homelab-backup@*'
+          -o cat | grep -E 'HOMELAB BACKUP|Snapshot:|Run:' | tail -n 30
+      register: backup_markers
+      changed_when: false
+      failed_when: false
+      when: inventory_hostname in ['pi5', 'vm100']
+
+    - name: Check staging filesystem capacity
+      ansible.builtin.command:
+        argv:
+          - df
+          - -P
+          - /tmp
+      register: staging_disk
+      changed_when: false
+      failed_when: false
+
+    - name: Report sanitized backup audit record
+      ansible.builtin.debug:
+        msg:
+          host: '{{ inventory_hostname }}'
+          timers: '{{ backup_timers.stdout | default("") }}'
+          markers: '{{ backup_markers.stdout | default("") }}'
+          staging_disk: '{{ staging_disk.stdout | default("") }}'

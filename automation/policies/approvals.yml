@@ -1,0 +1,29 @@
+---
+schema_version: 1
+approval_policy: homelab-production
+defaults:
+  production_apply: manager_only
+  requires_plan_artifact: true
+  requires_post_check: true
+  requires_rollback_reference: true
+  notify_on: [success, failure, blocked]
+operations:
+  host_audit:
+    mutating: false
+    roles: [Viewer, Task Runner, Manager]
+  route_publish:
+    mutating: true
+    roles: [Task Runner, Manager]
+    requires_lan_and_public_smoke: true
+  app_deploy:
+    mutating: true
+    roles: [Manager]
+    requires_immutable_image: true
+  tofu_apply:
+    mutating: true
+    roles: [Manager]
+    requires_no_destroy_plan: true
+  db_provision:
+    mutating: true
+    roles: [Manager]
+    requires_idempotency_key: true
