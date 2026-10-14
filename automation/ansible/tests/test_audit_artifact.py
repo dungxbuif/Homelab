@@ -7,6 +7,22 @@ PLAY = Path(__file__).resolve().parents[1] / "playbooks/audit.yml"
 
 
 class AuditArtifactTest(unittest.TestCase):
+    def test_backup_capacity_uses_real_staging_and_exports_private_evidence(self):
+        play = yaml.safe_load((PLAY.parent / "backup-audit.yml").read_text())[0]
+        roots = play.get("vars", {}).get("backup_audit_staging_roots", {})
+        self.assertEqual(roots.get("pi5"), "/ssd-data/infra/backups/homelab")
+        self.assertEqual(roots.get("vm100"), "/opt/apps/homelab-backup/runs")
+        tasks = play["tasks"]
+        commands = [t["ansible.builtin.command"]["argv"] for t in tasks
+                    if "ansible.builtin.command" in t]
+        disk = next(argv for argv in commands if argv[0] == "df")
+        self.assertIn("backup_audit_staging_roots[inventory_hostname]", disk[-1])
+        copies = [t for t in tasks if "ansible.builtin.copy" in t]
+        self.assertEqual(len(copies), 1)
+        self.assertEqual(copies[0]["delegate_to"], "localhost")
+        self.assertEqual(copies[0]["ansible.builtin.copy"]["mode"], "0600")
+        self.assertIn("inventory_hostname", copies[0]["ansible.builtin.copy"]["dest"])
+
     def test_backup_journal_is_bounded_and_uses_exact_units(self):
         tasks = yaml.safe_load((PLAY.parent / "backup-audit.yml").read_text())[0]["tasks"]
         commands = [task["ansible.builtin.command"]["argv"]
@@ -14,6 +30,9 @@ class AuditArtifactTest(unittest.TestCase):
         journal = next(argv for argv in commands if "journalctl" in argv)
         self.assertEqual(journal[:3], ["timeout", "20s", "journalctl"])
         self.assertNotIn("homelab-backup@*", journal)
+        journal_task = next(t for t in tasks if "journalctl" in
+                            t.get("ansible.builtin.command", {}).get("argv", []))
+        self.assertEqual(journal_task["when"], "inventory_hostname == 'vm100'")
 
     def test_artifact_is_local_private_and_partial(self):
         tasks = yaml.safe_load(PLAY.read_text())[0]["tasks"]

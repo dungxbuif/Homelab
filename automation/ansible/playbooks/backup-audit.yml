@@ -4,7 +4,16 @@
   gather_facts: false
   become: false
   serial: 1
+  vars:
+    backup_audit_staging_roots:
+      pi5: /ssd-data/infra/backups/homelab
+      vm100: /opt/apps/homelab-backup/runs
   tasks:
+    - name: Require a declared backup host
+      ansible.builtin.assert:
+        that:
+          - inventory_hostname in backup_audit_staging_roots
+
     - name: Check backup timer state on the scheduler host
       ansible.builtin.command:
         argv:
@@ -59,27 +68,65 @@
           - --lines=30
       register: backup_markers
       changed_when: false
+      failed_when: backup_markers.rc not in [0, 1] or backup_markers.stderr | length > 0
       check_mode: false
-      when: inventory_hostname in ['pi5', 'vm100']
+      when: inventory_hostname == 'vm100'
+
+    - name: Read exact local success markers
+      ansible.builtin.command:
+        argv:
+          - cat
+          - '{{ backup_audit_staging_roots[inventory_hostname] }}/.state/{{ item }}.success'
+      loop: '{{ ["databases", "rustfs"] if inventory_hostname == "pi5" else ["gitlab"] }}'
+      register: local_markers
+      changed_when: false
+      failed_when: false
+      check_mode: false
 
     - name: Check staging filesystem capacity
       ansible.builtin.command:
         argv:
           - df
           - -P
-          - /tmp
+          - '{{ backup_audit_staging_roots[inventory_hostname] }}'
       register: staging_disk
       changed_when: false
       check_mode: false
 
-    - name: Report sanitized backup audit record
-      ansible.builtin.debug:
-        msg:
+    - name: Assemble sanitized backup audit record
+      ansible.builtin.set_fact:
+        backup_audit_record:
           host: '{{ inventory_hostname }}'
           remote_snapshot_verification: not_run
           retention_verification: not_run
           observations_only: true
+          staging_path: '{{ backup_audit_staging_roots[inventory_hostname] }}'
           timers: '{{ backup_timers.stdout | default("") }}'
           unit_outcomes: '{{ backup_outcomes.stdout | default("") }}'
           markers: '{{ backup_markers.stdout | default("") }}'
+          journal_result: '{{ backup_markers.rc | default("not_applicable") }}'
+          local_marker_results: '{{ local_markers.results | map(attribute="rc") | list }}'
+          local_markers: '{{ local_markers.results | map(attribute="stdout") | list }}'
           staging_disk: '{{ staging_disk.stdout | default("") }}'
+
+    - name: Report sanitized backup audit record
+      ansible.builtin.debug:
+        var: backup_audit_record
+
+    - name: Create private controller artifact directory
+      ansible.builtin.file:
+        path: '{{ audit_artifact_dir }}'
+        state: directory
+        mode: '0700'
+      delegate_to: localhost
+      become: false
+      when: audit_artifact_dir is defined
+
+    - name: Save private backup evidence on controller
+      ansible.builtin.copy:
+        content: '{{ backup_audit_record | to_nice_json }}'
+        dest: '{{ audit_artifact_dir }}/backup-{{ inventory_hostname }}.json'
+        mode: '0600'
+      delegate_to: localhost
+      become: false
+      when: audit_artifact_dir is defined

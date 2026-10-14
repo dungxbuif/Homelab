@@ -15,6 +15,7 @@ approval:
 command: >-
   ANSIBLE_CONFIG=automation/ansible/ansible.cfg ansible-playbook
   automation/ansible/playbooks/backup-audit.yml --limit pi5,vm100
+  -e "audit_artifact_dir=$PWD/artifacts"
 post_check:
-  command: test -s artifacts/backup-audit.txt
-  artifact: artifacts/backup-audit.txt
+  command: test -s artifacts/backup-pi5.json && test -s artifacts/backup-vm100.json
+  artifacts: [artifacts/backup-pi5.json, artifacts/backup-vm100.json]
