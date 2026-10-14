@@ -1,5 +1,39 @@
 # Semaphore control network migration
 
+## Current state after approved Docker upgrade
+
+VM100 is now Docker CE 29.8.2. The real VM100 runner can reach the private Pi
+provisioner health endpoint over homelab-control-net (200, status ok). GitLab
+and registry HTTPS recovered and CI runner is online/unpaused. The historical
+maintenance gate and failed probes below are retained as incident evidence,
+not current blockers. See `vm100-docker-upgrade-2026-10-14.md`.
+
+Proceed with stage 4: stop-first UI rollout to control network and LAN DNS,
+preserving SQLite, task history, old provisioning template, credentials and
+volumes. Use service update for only network/DNS/order changes, not wholesale
+stack redeployment; service rollback on failed HTTPS probe. Recheck repository
+branch discovery and task history. Remote execution stays disabled for now.
+
+### Stage 4 execution result
+
+UI migration succeeded with stop-first and explicit DNS 10.10.0.5, retaining
+all mounts/secrets. Admin login, tasks 1-6 and template 1 remain intact.
+Its actual container now resolves GitLab to 10.10.0.5 and validates HTTPS with
+HTTP 200. The first attempt rolled back because the Pi host's own resolver sent
+the probe to a different TLS endpoint. The corrected probe uses curl --resolve
+to select LAN ingress while retaining hostname/SNI/certificate verification;
+the second rollout passed (`ok=5 changed=1 failed=0`).
+
+Repository 2 branch discovery still returns HTTP 400. Server log identifies
+git exit status 128. This is no longer attributable to overlay/DNS: direct
+unauthenticated git reaches GitLab and correctly requests credentials. Inspection
+of upstream v2.19.12 CmdGitClient/GetGitURL and key installation suggests branch
+discovery may construct its HTTPS URL before decrypting the login/password key.
+This is a working hypothesis, not a verified fix. Next verify an authenticated
+read-only task checkout before choosing a supported upstream remedy. Never put
+the token into a plaintext repository URL or disable TLS to bypass this issue.
+Provisioner remains dual-attached and remote jobs remain disabled/inactive.
+
 ## Reason and boundaries
 
 Docker DNS on homelab-net resolves GitLab's public hostname to the GitLab

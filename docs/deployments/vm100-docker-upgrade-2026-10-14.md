@@ -58,7 +58,8 @@ Public app docs are unchanged; this is internal maintenance.
 - Homepage, RelayHub, n8n, k8s-syntax, Semaphore and OpenClaw returned HTTPS 200.
   GitLab became Docker-healthy after Rails startup, then HTTPS sign-in returned
   200 and the registry /v2/ endpoint returned its expected 401 challenge.
-  Runner 1 is unpaused again; a post-upgrade job is still to be verified.
+  Runner 1 is unpaused again. Post-upgrade build job 17 succeeded in 272 seconds,
+  exercising the rootless Docker executor, image build/push and runner smoke test.
 
 Do not roll back the VM snapshot automatically: it predates new application
 writes. Keep it as an emergency checkpoint until post-checks and retention review.
