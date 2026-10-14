@@ -61,6 +61,35 @@ provisioning template is still ID 1, repository 1, `playbooks/db-provision.yml`.
 
 ## Sources
 
+## Deployment preparation
+
+Use a project-scoped GitLab deploy token with `read_registry` only for Swarm
+image pulls. Keep it in ignored `credentials/gitlab-automation-registry.json`,
+mode 0600; never use the administrator API token as a registry pull credential.
+The manager deployment must consume a digest verified through the registry API,
+create an immutable runner-config Swarm secret, and place one runner on VM100.
+No published ports, host mounts, Docker socket, or host network. Start with
+1 CPU / 1 GiB, concurrency one, JSON logs limited to 10 MiB x 3 files. Use the
+existing homelab overlay for the provisioning dependency during transition.
+Do not enable server remote execution or activate the API runner in this step.
+
+Bootstrap registry credential creation and manager deployment remain explicit
+one-time transport exceptions. Subsequent workflow execution belongs to the
+controller; this does not authorize broad shell access from job containers.
+
+Preparation verified: deploy token ID 1 has only `read_registry` and expires
+2027-01-14. The runner-stack security contract, Ansible syntax check, and
+Ansible lint pass locally. `homelab-net` is attachable but has no encryption
+option; retain HTTPS to the Semaphore API. Dedicated control/provisioner network
+segmentation is still pending and must not be reported as complete.
+
+Deploy using `automation/ansible/playbooks/semaphore-runner-install.yml` with
+the approved digest, credential paths and explicit bootstrap flag. The playbook
+targets only the Pi5 manager, creates a content-addressed Swarm config secret,
+deploys `semaphore-executor_runner` on VM100 and removes its temporary registry
+auth directory. A 1/1 replica post-check is only container readiness: additionally
+verify API runner heartbeat and provisioner connectivity before activation.
+
 - https://semaphoreui.com/docs/user-guide/task-templates
 - https://semaphoreui.com/docs/admin-guide/runners
 - https://github.com/semaphoreui/semaphore/blob/v2.19.12/api/runners.go
