@@ -1,0 +1,45 @@
+---
+- name: Release the approved Homepage digest through the restricted identity
+  hosts: homepage_releasers
+  gather_facts: false
+  become: false
+  vars:
+    ansible_ssh_use_tty: false
+    homepage_release_digest: sha256:c128afca4e026cfc4f33d4cf1c77adc8cb08f01215a3f2bde76a1ecca12b79fd
+  tasks:
+    - name: Validate the fixed command argument before SSH
+      ansible.builtin.assert:
+        that:
+          - homepage_release_digest is match('^sha256:[a-f0-9]{64}\Z')
+          - ansible_user == 'homelab-homepage-release'
+          - ansible_host == '10.10.0.5'
+
+    - name: Request the root-approved Homepage release
+      ansible.builtin.raw: 'homepage-release {{ homepage_release_digest }}'
+      register: homepage_release_result
+      changed_when: false
+      failed_when: false
+
+    - name: Require a successful helper exit
+      ansible.builtin.assert:
+        that:
+          - homepage_release_result.rc == 0
+        fail_msg: >-
+          Homepage release failed; helper output:
+          {{ homepage_release_result.stdout | default("") }} {{ homepage_release_result.stderr | default("") }}
+
+    - name: Parse release receipt summary
+      ansible.builtin.set_fact:
+        homepage_release_report: '{{ homepage_release_result.stdout | from_json }}'
+
+    - name: Verify the reported image and accepted status
+      ansible.builtin.assert:
+        that:
+          - homepage_release_report.status in ['success', 'unchanged']
+          - homepage_release_report.image == 'registry-gitlab.dungxbuif.com/dungxbuif/homepage@' + homepage_release_digest
+          - homepage_release_report.receipt is match('^homepage-release-[A-Za-z0-9_-]+\Z')
+      changed_when: homepage_release_report.status == 'success'
+
+    - name: Show release summary without credentials or service spec
+      ansible.builtin.debug:
+        var: homepage_release_report

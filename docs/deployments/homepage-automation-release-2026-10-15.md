@@ -132,3 +132,35 @@ This supersedes the earlier uninstalled status. The helper and restricted key
 are now installed, but **no Homepage release has run**. The production image
 remains `homelab/homepage:vm100-20261007-stirling`. Semaphore template creation,
 live release/no-op/recovery acceptance, and notifications are still pending.
+
+### Semaphore release entry point
+
+Add one manual template, `Release approved Homepage`, using a dedicated key and
+inventory for `homelab-homepage-release@10.10.0.5`. No become key, registry token,
+Docker socket or general SSH identity enters the runner. Pin SSH host identity
+with the existing known_hosts and select the release public key explicitly.
+The playbook accepts a digest, validates it before constructing the fixed raw
+command, and treats only `success`/`unchanged` with matching image evidence as
+success. Any rollback or ambiguous result fails the task visibly.
+
+Bootstrap defaults to dry-run, rejects duplicates/drift, and refuses enrollment
+if project users extend beyond owners. Current project 1 membership was checked:
+only admin (owner). This is not a completed multi-role policy: adding Task Runner
+users requires a separate release-project/template authorization design first.
+No schedule or automatic deployment is created. Unit-test bootstrap dry-run,
+idempotence, drift, duplicate resources and non-owner rejection before applying.
+
+Created and independently read back on 2026-10-15: template 6, inventory 5,
+key 6. Bootstrap rerun reuses these exact resources. Seven bootstrap tests pass,
+including environment-reference drift and unexpected schedule rejection added
+after review. Playbook ansible-lint passes. No release task has run yet.
+
+Operator entry point:
+`https://semaphore.dungxbuif.com/project/1/templates/6`.
+As admin, open **Release approved Homepage**, select **Run**, and inspect its
+task output for the receipt summary. The playbook default is the already
+approved candidate digest; no registry credential entry is needed. Do not add
+a schedule or use this template for another app. To authorize a different
+release, first verify its CI evidence and update the root approval/exact sudo
+rule through the enrollment workflow. A failed/rolled-back task is not success;
+inspect the manager's private receipt before retrying an ambiguous result.
