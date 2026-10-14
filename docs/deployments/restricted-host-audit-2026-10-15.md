@@ -79,3 +79,9 @@ The Semaphore-side playbook is prepared at
 `automation/semaphore/playbooks/host-audit.yml`, but UI key/inventory/template
 registration and execution are still pending publication. Passing collection
 does not mean the observed workloads are healthy or fully inventoried.
+
+`bootstrap-host-audit.mjs` prepares the UI resources with dry-run by default,
+duplicate-name rejection and existing-configuration checks. Its live dry-run
+found no pre-existing observer resources. Only the public SSH key is tracked.
+CI must run both observer tests and the forced-command guard tests before the
+new UI source is accepted.
