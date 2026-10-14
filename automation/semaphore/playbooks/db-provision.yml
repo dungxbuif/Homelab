@@ -48,6 +48,7 @@
         status_code: [200, 201]
         return_content: true
       register: provision_response
+      changed_when: provision_response.status == 201
       no_log: true
 
     - name: Show secret-safe result

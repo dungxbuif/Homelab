@@ -62,4 +62,12 @@ class SemaphoreTemplateContractTest < Minitest::Test
     assert_equal true, data.fetch('execution_image').fetch('immutable')
     refute_match(/latest/, data.to_yaml)
   end
+
+  def test_provisioning_change_summary_matches_http_creation
+    play = YAML.load_file(File.join(ROOT, 'playbooks/db-provision.yml')).first
+    task = play.fetch('tasks').find { |entry| entry['register'] == 'provision_response' }
+    assert_equal 'provision_response.status == 201', task['changed_when']
+    assert_equal true, task['no_log']
+    assert_equal [200, 201], task.fetch('ansible.builtin.uri').fetch('status_code')
+  end
 end

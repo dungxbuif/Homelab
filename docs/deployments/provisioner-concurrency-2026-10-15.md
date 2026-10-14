@@ -99,3 +99,37 @@ The native acceptance probe ran in the new container `741fe1c3ae43` and exited
 native_database_mutations=false. This proves the deployed HTTP locking behavior,
 not transactional rollback or fresh PostgreSQL/CouchDB creation acceptance.
 Those broader gates remain separate from this release result.
+
+## Post-release database acceptance plan
+
+Reserve PostgreSQL fixture `hbverify_pg_20261015_b002` and a new private receipt
+directory `/tmp/homelab-pg-acceptance-20261015-b002`. The reviewed fixture script
+must first prove database, role, secret and catalog entry absent. Provision
+through Semaphore template 1 twice, expecting changed=true then changed=false.
+Verify least-privilege owner flags, backup catalog selection and native dump/list.
+Finally remove only the receipt-bound fixture and confirm absence. Never use an
+existing application database or delete a resource without the absence receipt.
+
+Repeat the same create/replay/verify/cleanup sequence for CouchDB fixture
+`hbverify_couch_20261015_b002`, isolated receipt directory
+`/tmp/homelab-couch-acceptance-20261015-b002`. Its verification also checks
+anonymous access denial, the exact member policy, catalog ownership preservation
+and native document/attachment export. Production application data is excluded.
+
+### Post-release native results
+
+- PostgreSQL Semaphore task 20 created the fixture (`changed=True`); task 21
+  replay returned `changed=False`. Native verification passed owner flags,
+  automatic backup selection and PostgreSQL dump/list. Cleanup confirmed the
+  fixture database, role, secret and catalog entry removed.
+- CouchDB tasks 22/23 likewise returned true/false. Verification passed exact
+  user/member security, anonymous denial, catalog file owner/mode, document and
+  attachment export. Cleanup confirmed database, user, secret and entry removed.
+- All four tasks used commit `99301f9a42dd6b61130e4a215177e7838266ef62` and the
+  newly released provisioner image. No production application data was changed.
+
+The native runs exposed a reporting defect: the URI task left Ansible's default
+changed=false even when HTTP 201 represented creation. Set changed_when to the
+existing HTTP contract (201=true, 200=false), retain no_log for credentials and
+leave the sanitized result message intact. Verify the playbook contract and
+lint; this changes task reporting, not provisioning or backup behavior.
