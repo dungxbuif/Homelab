@@ -37,13 +37,21 @@ See [release evidence](../../docs/deployments/provisioner-concurrency-2026-10-15
 Run from the repository root on a machine with the Pi5 Docker context:
 
 ```bash
-docker build -t homelab/provisioner:20261005 automation/provisioner
+docker build -f automation/provisioner/Dockerfile -t homelab/provisioner:development .
 docker secret create homelab_provisioner_token - < /path/to/private/token
 docker stack deploy -c automation/provisioner/stack.yml homelab-provisioner
 ```
 
 The secret must be created only once. Never put its value in Git, Semaphore
 survey variables, or a job argument. The stack must remain portless.
+
+The local command above is for isolated development only. Production release
+uses GitLab `build:provisioner`, which tests AMD64 and publishes ARM64 under
+`registry-gitlab.dungxbuif.com/dungxbuif/homelab-automation/provisioner` by commit
+tag and digest. Build context is the repository root, restricted by the
+Dockerfile-specific allowlist. The image includes the HTTP server and all four
+Python dependency modules; production SCRIPTS_PATH must select
+`/app/provisioner/scripts`. Keep the old image and environment for rollback.
 
 ## API smoke test
 

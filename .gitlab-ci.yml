@@ -79,3 +79,18 @@ build:automation-ee:
     - sh automation/semaphore/tests/test-runner-image.sh "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG"
     - docker push "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG"
     - docker image inspect "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG" --format 'published={{index .RepoDigests 0}}'
+
+build:provisioner:
+  extends: .docker-job
+  stage: build
+  needs:
+    - validate:automation-ee
+    - validate:semaphore-bootstrap
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" --username "$CI_REGISTRY_USER" --password-stdin
+    - docker build --platform linux/amd64 --file automation/provisioner/Dockerfile --tag "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-amd64" .
+    - docker run --rm --entrypoint docker "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-amd64" --version
+    - docker run --rm --entrypoint python "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-amd64" -c 'import sys; sys.path.insert(0, "/app/provisioner"); import server; assert server.ProvisioningBusyError; assert server.ProvisionerHandler.provision'
+    - docker build --platform linux/arm64 --file automation/provisioner/Dockerfile --tag "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-arm64" .
+    - docker push "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-arm64"
+    - docker image inspect "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-arm64" --format 'published={{index .RepoDigests 0}}'

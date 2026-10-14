@@ -30,3 +30,21 @@ only the mounted module would leave the old HTTP status mapping. Publish a new
 immutable provisioner image, then coordinate the image/module update with idle
 provisioning tasks, preserve rollback artifacts, and repeat real acceptance.
 No production DB, user, secret, catalog or service was changed by these tests.
+
+## Immutable image release
+
+Build the HTTP handler and its four Python dependency modules into one image,
+using pinned Python and Docker CLI image digests. Copy the static Docker client
+from the official CLI image instead of running a package installer: the image
+then supports cross-platform ARM64 assembly on the AMD64 rootless CI worker
+without privileged QEMU registration. Keep catalog data mounted separately;
+SCRIPTS_PATH selects baked modules, never the mutable backup scripts mount.
+CI validates native AMD64 imports/client first, then publishes ARM64 for Pi by
+commit tag and digest. Only the tested published digest may be rolled out.
+No host Docker socket is mounted into build/test containers.
+
+Local ARM64 build completed with a 33.41 kB allowlisted context. With network
+disabled and no host Docker socket, Docker client 27.5.1 executes, the server
+imports `/app/provisioner/scripts/provisioner.py`, and all 17 provisioner tests
+pass. This is a local release candidate test, not proof of CI publication or
+production rollout. Live deployment still awaits a published digest.

@@ -1,0 +1,10 @@
+**
+!automation/
+!automation/provisioner/
+!automation/provisioner/server.py
+!backup/
+!backup/scripts/
+!backup/scripts/common.py
+!backup/scripts/provisioner.py
+!backup/scripts/register_resource.py
+!backup/scripts/validate_provision_request.py
