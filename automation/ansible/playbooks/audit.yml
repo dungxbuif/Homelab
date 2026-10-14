@@ -15,7 +15,7 @@
             {{ '{{' }}.ServerVersion{{ '}}' }} {{ '{{' }}.Swarm.LocalNodeState{{ '}}' }} {{ '{{' }}.Swarm.ControlAvailable{{ '}}' }}
       register: docker_info
       changed_when: false
-      failed_when: false
+      check_mode: false
 
     - name: Read Swarm membership when available
       ansible.builtin.command:
@@ -28,8 +28,8 @@
             {{ '{{' }}.Hostname{{ '}}' }} {{ '{{' }}.Status{{ '}}' }} {{ '{{' }}.Availability{{ '}}' }}
       register: swarm_nodes
       changed_when: false
-      failed_when: false
-      when: automation_expected_swarm | bool
+      check_mode: false
+      when: inventory_hostname in groups['pi5_manager']
 
     - name: Read active swap devices
       ansible.builtin.command:
@@ -39,7 +39,7 @@
           - --noheadings
       register: swap_status
       changed_when: false
-      failed_when: false
+      check_mode: false
 
     - name: Read root filesystem capacity
       ansible.builtin.command:
@@ -49,7 +49,7 @@
           - /
       register: root_disk
       changed_when: false
-      failed_when: false
+      check_mode: false
 
     - name: Read listening sockets
       ansible.builtin.command:
@@ -58,7 +58,7 @@
           - -lntup
       register: listening_sockets
       changed_when: false
-      failed_when: false
+      check_mode: false
 
     - name: Emit machine-readable audit record
       ansible.builtin.debug:

@@ -15,20 +15,26 @@ VM100 production worker. Kubernetes is not an active lab target.
   passwords, API tokens, and SSH keys come from Semaphore credentials or the
   approved secret broker.
 - The forced-command backup key remains separate from the `automation` user.
+- Inventory variables live beside `hosts.yml` in `group_vars/`, with filenames
+  matching actual inventory groups. Default privilege escalation is disabled.
+- The base role creates an unprivileged user only. It grants no sudo or Docker
+  socket access. Privileged enrollment and execution credentials are not yet
+  implemented; this is not a production-ready rollout mechanism.
 
 ## Local validation
 
 Run through the pinned execution environment:
 
 ```bash
-ansible-inventory \
-  --config automation/ansible/ansible.cfg \
+ANSIBLE_CONFIG=automation/ansible/ansible.cfg ansible-inventory \
   -i automation/ansible/inventories/production/hosts.yml --graph
 docker run --rm --entrypoint ansible-playbook \
+  -e ANSIBLE_CONFIG=/workspace/automation/ansible/ansible.cfg \
   -v "$PWD:/workspace" -w /workspace homelab-automation-ee:local \
   -i automation/ansible/inventories/production/hosts.yml \
   automation/ansible/playbooks/audit.yml --syntax-check
 docker run --rm --entrypoint ansible-playbook \
+  -e ANSIBLE_CONFIG=/workspace/automation/ansible/ansible.cfg \
   -v "$PWD:/workspace" -w /workspace homelab-automation-ee:local \
   -i automation/ansible/inventories/production/hosts.yml \
   automation/ansible/playbooks/bootstrap.yml --syntax-check

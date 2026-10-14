@@ -7,7 +7,7 @@ require 'yaml'
 class AnsibleInventoryContractTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   INVENTORY = File.join(ROOT, 'inventories/production/hosts.yml')
-  GROUP_VARS = File.join(ROOT, 'group_vars')
+  GROUP_VARS = File.join(ROOT, 'inventories/production/group_vars')
 
   def test_production_inventory_has_only_active_host_roles
     data = YAML.load_file(INVENTORY)
@@ -39,6 +39,18 @@ class AnsibleInventoryContractTest < Minitest::Test
       path = File.join(ROOT, "roles/#{role}/tasks/main.yml")
       assert File.file?(path), "missing role #{role}"
       assert_match(/---/, File.read(path), "#{role} should be YAML")
+    end
+  end
+
+  def test_audit_commands_run_in_check_mode_and_do_not_hide_errors
+    %w[audit backup-audit].each do |name|
+      tasks = YAML.load_file(File.join(ROOT, "playbooks/#{name}.yml")).first.fetch('tasks')
+      tasks.select { |task| task.key?('ansible.builtin.command') }.each do |task|
+        assert_equal false, task['check_mode'], task['name']
+        refute_equal false, task['failed_when'], task['name']
+        assert task.fetch('ansible.builtin.command').fetch('argv').all? { |arg| arg.is_a?(String) }, task['name']
+      end
+      refute tasks.any? { |task| task.key?('ansible.builtin.shell') }
     end
   end
 end

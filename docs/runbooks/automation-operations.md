@@ -7,6 +7,17 @@ timestamp: 2026-10-14T00:00:00+07:00
 
 # Homelab automation operations
 
+## Implementation status, 2026-10-14
+
+The flow below is the target, not an installed end-to-end control plane.
+Semaphore templates are declarative contracts; privileged enrollment, image
+validation/publication, API resource import, live audit artifacts, and VM100
+OpenTofu import are still pending. Do not run production apply from these files.
+Inventory loading and read-only command execution have local regression tests.
+The baseline no longer grants broad Docker/systemctl sudo access. Audit command
+errors now fail the task instead of being silently reported as empty output.
+Backup audit only collects observations; it does not verify Drive snapshots.
+
 The normal change path is GitLab change -> Semaphore check/plan -> approved
 apply -> post-check -> sanitized Mezon notice. An agent does not open a host
 shell, receive a general host key, mount the Docker socket, or receive a

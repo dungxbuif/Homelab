@@ -15,18 +15,26 @@
           - --no-legend
       register: backup_timers
       changed_when: false
-      failed_when: false
+      check_mode: false
       when: inventory_hostname == 'vm100'
 
     - name: Check backup service markers on the executor host
-      ansible.builtin.shell:
-        cmd: >-
-          set -o pipefail;
-          journalctl --no-pager --since "48 hours ago" -u 'homelab-backup@*'
-          -o cat | grep -E 'HOMELAB BACKUP|Snapshot:|Run:' | tail -n 30
+      ansible.builtin.command:
+        argv:
+          - journalctl
+          - --quiet
+          - --no-pager
+          - --since
+          - 48 hours ago
+          - -u
+          - homelab-backup@*
+          - -o
+          - cat
+          - '--grep=HOMELAB BACKUP|Snapshot:|Run:'
+          - --lines=30
       register: backup_markers
       changed_when: false
-      failed_when: false
+      check_mode: false
       when: inventory_hostname in ['pi5', 'vm100']
 
     - name: Check staging filesystem capacity
@@ -37,12 +45,15 @@
           - /tmp
       register: staging_disk
       changed_when: false
-      failed_when: false
+      check_mode: false
 
     - name: Report sanitized backup audit record
       ansible.builtin.debug:
         msg:
           host: '{{ inventory_hostname }}'
+          remote_snapshot_verification: not_run
+          retention_verification: not_run
+          observations_only: true
           timers: '{{ backup_timers.stdout | default("") }}'
           markers: '{{ backup_markers.stdout | default("") }}'
           staging_disk: '{{ staging_disk.stdout | default("") }}'
