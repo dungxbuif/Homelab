@@ -93,7 +93,7 @@ def register_file(
         policies = load_document(policies_path)
         updated, changed = register_resource(inventory, request, policies)
         if changed:
-            write_json(path, updated)
+            write_json(path, updated, preserve_metadata=True)
         fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
     return {"changed": changed, "engine": request.get("engine"), "name": request.get("name")}
 

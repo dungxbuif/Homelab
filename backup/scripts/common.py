@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import subprocess
 import tempfile
 from datetime import datetime, timezone
@@ -79,14 +80,20 @@ def run_command(args: list[str], *, input_bytes: bytes | None = None, check: boo
     )
 
 
-def write_json(path: Path, value: Any) -> None:
+def write_json(path: Path, value: Any, *, preserve_metadata: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    previous = path.stat() if preserve_metadata and path.exists() else None
     fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             json.dump(value, handle, indent=2, sort_keys=True)
             handle.write("\n")
             handle.flush()
+            if previous is not None:
+                current = os.fstat(handle.fileno())
+                if (current.st_uid, current.st_gid) != (previous.st_uid, previous.st_gid):
+                    os.fchown(handle.fileno(), previous.st_uid, previous.st_gid)
+                os.fchmod(handle.fileno(), stat.S_IMODE(previous.st_mode))
             os.fsync(handle.fileno())
         os.replace(tmp_name, path)
     finally:

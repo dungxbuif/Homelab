@@ -1,0 +1,107 @@
+---
+- name: Restore backup catalog access without broadening file permissions
+  hosts: pi5
+  gather_facts: false
+  become: false
+  tasks:
+    - name: Require approved catalog repair
+      ansible.builtin.assert:
+        that:
+          - catalog_owner_repair_approved | default(false) | bool
+          - ansible_user == 'dungxbuif'
+
+    - name: Verify backup account identity
+      ansible.builtin.command: id -u
+      register: backup_uid
+      changed_when: false
+      failed_when: backup_uid.stdout != '1004'
+
+    - name: Install metadata-preserving catalog writers with rollback copies
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../../backup/scripts/{{ item }}'
+        dest: '/ssd-data/infra/backup-runner/app/backup/scripts/{{ item }}'
+        mode: '0644'
+        backup: true
+      loop: [common.py, register_resource.py]
+      notify: Reload catalog writer
+
+    - name: Apply writer update before validation
+      ansible.builtin.meta: flush_handlers
+
+    - name: Locate current provisioner
+      ansible.builtin.command:
+        argv: [docker, ps, '--filter', label=com.docker.swarm.service.name=homelab-provisioner_provisioner, '--format', '{{ "{{.ID}}" }}']
+      register: catalog_provisioner
+      changed_when: false
+      failed_when: catalog_provisioner.stdout_lines | length != 1
+
+    - name: Verify root writer preserves backup-user ownership
+      block:
+        - name: Create disposable user-owned catalog fixture
+          ansible.builtin.tempfile:
+            state: file
+            path: /ssd-data/infra/backup-runner/app/backup
+            prefix: .catalog-owner-check-
+          register: catalog_owner_fixture
+
+        - name: Replace fixture atomically from the root provisioner
+          ansible.builtin.command:
+            argv:
+              - docker
+              - exec
+              - '{{ catalog_provisioner.stdout }}'
+              - python3
+              - '-c'
+              - >-
+                import sys; from pathlib import Path;
+                sys.path.insert(0, '/app/backup/scripts'); from common import write_json;
+                p=Path('/app/backup/{{ catalog_owner_fixture.path | basename }}');
+                write_json(p, {'fixture': True}, preserve_metadata=True);
+                assert p.stat().st_uid == 1004 and p.stat().st_gid == 1004
+          changed_when: true
+
+        - name: Verify fixture is readable by backup account
+          ansible.builtin.command:
+            argv: [python3, '-c', "import json; assert json.load(open('{{ catalog_owner_fixture.path }}'))['fixture'] is True"]
+          changed_when: false
+      always:
+        - name: Remove only the disposable ownership fixture
+          ansible.builtin.file:
+            path: '{{ catalog_owner_fixture.path }}'
+            state: absent
+          when: catalog_owner_fixture.path is defined
+
+    - name: Restore only canonical catalog ownership under its registration lock
+      ansible.builtin.command:
+        argv:
+          - sudo
+          - '-S'
+          - '-p'
+          - ''
+          - flock
+          - '-n'
+          - /ssd-data/infra/backup-runner/app/backup/.inventory.yaml.lock
+          - chown
+          - '--no-dereference'
+          - '1004:1004'
+          - /ssd-data/infra/backup-runner/app/backup/inventory.yaml
+        stdin: '{{ ansible_password }}'
+      no_log: true
+      changed_when: true
+
+    - name: Verify unprivileged catalog read
+      ansible.builtin.command:
+        argv:
+          - python3
+          - '-c'
+          - >-
+            import json;
+            d=json.load(open('/ssd-data/infra/backup-runner/app/backup/inventory.yaml'));
+            assert 'postgresql' in d and 'couchdb' in d
+      changed_when: false
+
+  handlers:
+    - name: Reload catalog writer
+      ansible.builtin.command:
+        argv: [docker, service, update, '--force', '--detach=false', homelab-provisioner_provisioner]
+      changed_when: true

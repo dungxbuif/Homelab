@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 const survey = ['engine', 'database_name', 'application', 'target_environment',
   'owner_role', 'owner_identity', 'policy_id', 'secret_ref'];
 const playbook = 'automation/semaphore/playbooks/db-provision.yml';
+const branch = 'codex/automation-bootstrap';
 const configuration = value => Object.fromEntries(Object.entries(value)
   .filter(([key]) => !['last_task', 'tasks', 'permissions'].includes(key)));
 
@@ -22,13 +23,15 @@ export async function migrate(api, saveRollback, apply = false) {
       !isDeepStrictEqual(before.survey_vars?.map(item => item.name).sort(), [...survey].sort())) {
     throw new Error('Unexpected provisioning template contract');
   }
-  if (before.repository_id === 2 && before.playbook === playbook) return { action: 'already-migrated' };
+  if (before.repository_id === 2 && before.playbook === playbook && before.git_branch === branch) {
+    return { action: 'already-migrated' };
+  }
   if (before.repository_id !== 1 || before.playbook !== 'playbooks/db-provision.yml') {
     throw new Error('Unexpected existing source; manual reconciliation required');
   }
   if (!apply) return { action: 'would-migrate', template_id: 1, repository_id: 2 };
   await saveRollback(before);
-  const desired = { ...configuration(before), repository_id: 2, playbook };
+  const desired = { ...configuration(before), repository_id: 2, playbook, git_branch: branch };
   await api('/templates/1', { method: 'PUT', body: desired });
   const after = await api('/templates/1');
   for (const key of Object.keys(desired)) {

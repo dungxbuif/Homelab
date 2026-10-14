@@ -35,7 +35,7 @@ test('migration preserves survey and settings, verifies and is idempotent', asyn
   assert.equal((await migrate(f.api, f.save, true)).action, 'migrated');
   const changed = await f.api('/templates/1');
   assert.deepEqual(changed, { ...f.saved, repository_id: 2,
-    playbook: 'automation/semaphore/playbooks/db-provision.yml' });
+    playbook: 'automation/semaphore/playbooks/db-provision.yml', git_branch: 'codex/automation-bootstrap' });
   assert.equal((await migrate(f.api, f.save, true)).action, 'already-migrated');
   assert.equal(f.calls.filter(([, options]) => options).length, 1);
 });
@@ -58,4 +58,14 @@ test('server-derived task summary is not written as configuration', async () => 
   const body = f.calls.find(([, options]) => options)[1].body;
   assert.equal('last_task' in body, false);
   assert.equal('tasks' in body, false);
+});
+
+test('stale template branch is not reported as already migrated', async () => {
+  const f = fixture();
+  await migrate(f.api, f.save, true);
+  const api = async (route, options) => {
+    const value = await f.api(route, options);
+    return route === '/templates/1' ? { ...value, git_branch: 'main' } : value;
+  };
+  await assert.rejects(migrate(api, f.save, true), /Unexpected existing source/);
 });

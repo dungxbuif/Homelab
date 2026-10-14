@@ -60,11 +60,15 @@ class CatalogRegistrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "inventory.yaml"
             path.write_text(json.dumps(self.inventory), encoding="utf-8")
+            path.chmod(0o640)
+            original = path.stat()
             result = CATALOG.register_file(path, self.request, ROOT / "backup/policies.yaml")
             self.assertTrue(result["changed"])
             payload = json.loads(path.read_text())
             self.assertNotIn('"password":', json.dumps(payload))
             self.assertTrue((path.parent / ".inventory.yaml.lock").exists())
+            self.assertEqual(path.stat().st_mode & 0o777, 0o640)
+            self.assertEqual((path.stat().st_uid, path.stat().st_gid), (original.st_uid, original.st_gid))
 
 
 if __name__ == "__main__":
