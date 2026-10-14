@@ -55,3 +55,18 @@ resource boundary; nested DinD warns that it has no own systemd cgroup manager.
 Pipeline 2/job 5 is the live handle to resume, not a reason to restart the build.
 Source commit `17c0751` includes the host mapping and registry remediation; it
 has not yet been cherry-picked to the publication branch while pipeline 2 runs.
+
+## Verified publication checkpoint
+
+Pipeline 2's scan was found to fail open on Git ownership errors; its build job
+4 was canceled before publishing. The corrected scanner passed in pipeline 3,
+which completed successfully (validate job 6, build job 7). Registry API confirms
+the tag `f805a492867d93f58f3b5ada95fd2959524e8d23` in repository ID 3 with digest
+`sha256:3c256fb1d4a4f3ce8d6f738776fd765b668c182987a36072e179b6300cb8a604`.
+The compressed image is 162512100 bytes. This verifies CI publication, not live
+Semaphore integration or the other automation workflows.
+
+Pipeline 4 at `6e3c4e85baa46a6bd75d4ff732185b02c7e8e0ef` adds the non-root
+Semaphore runner image and its real container smoke test. Job 8 was confirmed
+running; job 9 is pending validation. Resume these handles rather than rebuilding
+from assumptions. The rootless runner is still concurrency one.
