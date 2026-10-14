@@ -1,0 +1,40 @@
+schema_version: 1
+generated_at: '2026-10-14'
+policy_name: homelab-historical-runtime
+lifecycle: historical
+hosts:
+  - id: orange-pi
+    lifecycle: historical
+    reason: retired_edge_node
+  - id: k8s-cp-1
+    lifecycle: historical
+    reason: kubernetes_cluster_removed_from_lab
+  - id: k8s-cp-2
+    lifecycle: historical
+    reason: kubernetes_cluster_removed_from_lab
+  - id: k8s-cp-3
+    lifecycle: historical
+    reason: kubernetes_cluster_removed_from_lab
+services:
+  - id: old-kubernetes-cluster
+    lifecycle: historical
+    reason: kubernetes_cluster_removed_from_lab
+  - id: kube-vip
+    lifecycle: historical
+    reason: kubernetes_cluster_removed_from_lab
+  - id: old-caddy
+    lifecycle: historical
+    reason: replaced_by_pi5_traefik
+  - id: headscale
+    lifecycle: historical
+    reason: retired
+  - id: coturn
+    lifecycle: historical
+    reason: retired
+routes:
+  - id: transfer
+    lifecycle: historical
+    reason: pairdrop_and_coturn_removed
+  - id: goclaw
+    lifecycle: historical
+    reason: application_removed
