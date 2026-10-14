@@ -26,6 +26,8 @@ def payload_prefix(bucket: str) -> str:
 def aws_command(endpoint: str, credentials_file: Path, args: list[str], *, output: bytes | None = None, mount_root: Path | None = None) -> bytes:
     command = ["docker", "run", "--rm", "--network", "homelab-net"]
     if mount_root:
+        # Staging must remain writable by the host retention account.
+        command.extend(["--user", f"{os.getuid()}:{os.getgid()}", "--env", "HOME=/tmp"])
         command.extend(["--volume", f"{mount_root.resolve()}:/export"])
     command.extend(["--env-file", str(credentials_file), AWS_IMAGE, "--endpoint-url", endpoint, *args])
     result = subprocess.run(command, input=output, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
@@ -103,7 +105,9 @@ def main() -> int:
     buckets, excluded_retired = select_backup_entries(inventory["rustfs"]["buckets"])
     manifests = [export_bucket(endpoint, args.credentials_file, bucket, args.output) for bucket in buckets]
     write_json(args.output / "rustfs-adapter.json", {"buckets": manifests, "excluded_retired": excluded_retired})
-    print(f"rustfs backup verified: {len(manifests)} buckets")
+    # stdout is reserved for machine-readable wrapper output. The VM100
+    # runner captures the completed run path from stdout for Restic.
+    print(f"rustfs backup verified: {len(manifests)} buckets", file=sys.stderr)
     return 0
 
 

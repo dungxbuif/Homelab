@@ -18,16 +18,41 @@
       check_mode: false
       when: inventory_hostname == 'vm100'
 
+    - name: Read exact backup unit outcomes without scanning logs
+      ansible.builtin.command:
+        argv:
+          - systemctl
+          - show
+          - homelab-backup@databases.service
+          - homelab-backup@rustfs.service
+          - homelab-backup@gitlab.service
+          - homelab-backup@retention.service
+          - '-p'
+          - Id,ActiveState,Result,ExecMainStatus,ExecMainExitTimestamp
+          - '--no-pager'
+      register: backup_outcomes
+      changed_when: false
+      check_mode: false
+      when: inventory_hostname == 'vm100'
+
     - name: Check backup service markers on the executor host
       ansible.builtin.command:
         argv:
+          - timeout
+          - 20s
           - journalctl
           - --quiet
           - --no-pager
           - --since
           - 48 hours ago
           - -u
-          - homelab-backup@*
+          - homelab-backup@databases.service
+          - -u
+          - homelab-backup@rustfs.service
+          - -u
+          - homelab-backup@gitlab.service
+          - -u
+          - homelab-backup@retention.service
           - -o
           - cat
           - '--grep=HOMELAB BACKUP|Snapshot:|Run:'
@@ -55,5 +80,6 @@
           retention_verification: not_run
           observations_only: true
           timers: '{{ backup_timers.stdout | default("") }}'
+          unit_outcomes: '{{ backup_outcomes.stdout | default("") }}'
           markers: '{{ backup_markers.stdout | default("") }}'
           staging_disk: '{{ staging_disk.stdout | default("") }}'

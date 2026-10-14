@@ -1,0 +1,144 @@
+---
+- name: Repair RustFS backup staging writer ownership
+  hosts: pi5
+  gather_facts: false
+  become: false
+  vars:
+    rustfs_staging_root: /ssd-data/infra/backups/homelab
+    rustfs_exporter_target: /ssd-data/infra/backup-runner/app/automation/rustfs-backup/export-buckets.py
+  tasks:
+    - name: Require explicit bootstrap repair approval
+      ansible.builtin.assert:
+        that:
+          - rustfs_writer_repair_approved | default(false) | bool
+          - ansible_user == 'dungxbuif'
+          - rustfs_staging_root == '/ssd-data/infra/backups/homelab'
+
+    - name: Read writer UID
+      ansible.builtin.command: id -u
+      register: writer_uid
+      changed_when: false
+
+    - name: Read writer GID
+      ansible.builtin.command: id -g
+      register: writer_gid
+      changed_when: false
+
+    - name: Install writer with rollback copy
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../rustfs-backup/export-buckets.py'
+        dest: '{{ rustfs_exporter_target }}'
+        mode: '0755'
+        backup: true
+
+    - name: Verify AWS container can write as the retention account
+      block:
+        - name: Create isolated ownership probe
+          ansible.builtin.tempfile:
+            state: directory
+            prefix: rustfs-writer-probe-
+          register: writer_probe
+
+        - name: Write fixture using the real AWS image and numeric identity
+          ansible.builtin.command:
+            argv:
+              - docker
+              - run
+              - '--rm'
+              - '--user'
+              - '{{ writer_uid.stdout }}:{{ writer_gid.stdout }}'
+              - '--env'
+              - HOME=/tmp
+              - '--volume'
+              - '{{ writer_probe.path }}:/export'
+              - '--entrypoint'
+              - /bin/sh
+              - amazon/aws-cli:2.17.60
+              - '-c'
+              - 'mkdir /export/objects && touch /export/objects/probe'
+          changed_when: true
+
+        - name: Inspect fixture ownership
+          ansible.builtin.stat:
+            path: '{{ writer_probe.path }}/objects/probe'
+          register: writer_probe_stat
+
+        - name: Require host-owned fixture
+          ansible.builtin.assert:
+            that:
+              - writer_probe_stat.stat.uid == writer_uid.stdout | int
+              - writer_probe_stat.stat.gid == writer_gid.stdout | int
+      always:
+        - name: Remove isolated fixture as the unprivileged account
+          ansible.builtin.file:
+            path: '{{ writer_probe.path }}'
+            state: absent
+          when: writer_probe.path is defined
+
+    - name: Find only RustFS staging run directories
+      ansible.builtin.find:
+        paths: '{{ rustfs_staging_root }}'
+        patterns: 'rustfs-*'
+        file_type: directory
+        recurse: false
+        follow: false
+      register: rustfs_staging_runs
+
+    - name: Repair root-owned regular files and directories without following links
+      ansible.builtin.command:
+        argv:
+          - flock
+          - '-n'
+          - /run/lock/homelab-backup.lock
+          - sudo
+          - '-S'
+          - '-p'
+          - ''
+          - find
+          - '{{ item.path }}'
+          - '-xdev'
+          - '('
+          - '-type'
+          - d
+          - '-o'
+          - '-type'
+          - f
+          - ')'
+          - '-user'
+          - root
+          - '-exec'
+          - chown
+          - '--no-dereference'
+          - '{{ writer_uid.stdout }}:{{ writer_gid.stdout }}'
+          - '{}'
+          - '+'
+        stdin: '{{ ansible_password }}'
+      loop: '{{ rustfs_staging_runs.files }}'
+      loop_control:
+        label: '{{ item.path | basename }}'
+      no_log: true
+      changed_when: true
+
+    - name: Verify no root-owned regular payloads remain in selected staging runs
+      ansible.builtin.command:
+        argv:
+          - find
+          - '{{ item.path }}'
+          - '-xdev'
+          - '('
+          - '-type'
+          - d
+          - '-o'
+          - '-type'
+          - f
+          - ')'
+          - '-user'
+          - root
+          - '-print'
+          - '-quit'
+      loop: '{{ rustfs_staging_runs.files }}'
+      loop_control:
+        label: '{{ item.path | basename }}'
+      register: remaining_root_payload
+      changed_when: false
+      failed_when: remaining_root_payload.rc != 0 or remaining_root_payload.stdout | length > 0

@@ -7,6 +7,14 @@ PLAY = Path(__file__).resolve().parents[1] / "playbooks/audit.yml"
 
 
 class AuditArtifactTest(unittest.TestCase):
+    def test_backup_journal_is_bounded_and_uses_exact_units(self):
+        tasks = yaml.safe_load((PLAY.parent / "backup-audit.yml").read_text())[0]["tasks"]
+        commands = [task["ansible.builtin.command"]["argv"]
+                    for task in tasks if "ansible.builtin.command" in task]
+        journal = next(argv for argv in commands if "journalctl" in argv)
+        self.assertEqual(journal[:3], ["timeout", "20s", "journalctl"])
+        self.assertNotIn("homelab-backup@*", journal)
+
     def test_artifact_is_local_private_and_partial(self):
         tasks = yaml.safe_load(PLAY.read_text())[0]["tasks"]
         exports = [task for task in tasks if "ansible.builtin.copy" in task]
