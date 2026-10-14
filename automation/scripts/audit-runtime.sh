@@ -45,7 +45,7 @@ try:
 except (OSError, subprocess.CalledProcessError):
     commit = None
 report = {
-    "status": "ok",
+    "status": "not_verified",
     "mode": "declarative",
     "commit": commit,
     "hosts": active_ids["hosts"],

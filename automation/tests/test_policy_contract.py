@@ -37,7 +37,7 @@ class PolicyContractTest(unittest.TestCase):
         command = ["bash", str(ROOT / "automation/scripts/audit-runtime.sh"), "--json"]
         output = subprocess.check_output(command, text=True)
         report = json.loads(output)
-        self.assertEqual(report["status"], "ok")
+        self.assertEqual(report["status"], "not_verified")
         self.assertNotRegex(output.lower(), r"password|token|private_key|client_secret")
 
 

@@ -34,10 +34,16 @@ ansible-playbook automation/ansible/playbooks/audit.yml --syntax-check
 ansible-playbook automation/ansible/playbooks/backup-audit.yml --syntax-check
 ```
 
-The declarative audit reports the active policy and marks live transport,
+The declarative audit returns `status: not_verified`, reports the active policy and marks live transport,
 resources, and backup observations as `not_run` until Semaphore executes the
 host audit with its restricted credential. This prevents a local Git checkout
 from being mistaken for proof of live health.
+
+`report-drift.py` rejects declarative, incomplete or older-than-15-minute
+observations (exit 2). A successful comparison only proves inventory IDs
+match; it does not certify service health, resource capacity or backups.
+The observed inventory collector remains pending. See
+`docs/deployments/runtime-audit-evidence-2026-10-14.md` for its input contract.
 
 ## Change gates
 
