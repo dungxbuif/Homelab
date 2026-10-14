@@ -66,3 +66,31 @@ UID 1001. Do not submit a database mutation during this first execution test.
 On rollout failure restore the previous UI service specification. On failed
 job verification disable remote mode and deactivate runner 1 before returning
 the controller to normal use.
+
+First remote task 8 was assigned to runner 1 and cloned commit `cd156f62`, but
+failed before playbook execution: `access key type not supported for ansible
+become user`. Inventory 1 assigns key 1 (None) to both SSH and become despite
+being localhost-only. Remote mode was disabled and runner 1 deactivated.
+Correct the inventory to null SSH/become references after verifying key 1 is
+None; preserve inventory content and all other fields with a private rollback
+copy. No host login or privilege escalation is needed by either template.
+
+## Remote execution verified
+
+Task 9 succeeded on runner 1 after the inventory correction: 10 OK, 0 changed,
+0 failed. The job itself asserted Ansible core 2.18.6 and executor UID 1001,
+checked out `cd156f62bf84994a74aee30d910268ee26f61b68`, verified private
+provisioner health and GitLab TLS. `/api/info` reports remote runner mode true.
+Runner 1 remains active and online; the UI manifest now preserves this mode.
+
+Inventory 1 must retain static content `localhost ansible_connection=local`
+with `ssh_key_id: null` and `become_key_id: null`. Its previous configuration is
+in private `credentials/semaphore-inventory-1-before-remote.json`; template
+rollback is `credentials/semaphore-template-1-before-gitlab.json`. Never commit
+these snapshots. Retain failed task 8 as diagnostic history rather than delete it.
+
+CI now runs the bootstrap Node tests and runner secret-boundary render test.
+Next gate: controlled database provisioning through template 1 on the remote
+runner, credential handling, backup enrollment and cleanup. Remote source smoke
+does not prove database mutations or backup recovery. Host automation identities,
+OpenTofu import and the remaining broad control-plane plan are still pending.
