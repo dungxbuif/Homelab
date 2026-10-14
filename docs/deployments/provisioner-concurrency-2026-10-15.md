@@ -66,3 +66,17 @@ Two regression contracts pass after first failing against the initial draft;
 Ansible lint passes its production profile. The playbook has not been run live.
 CI pipeline 36/job 74 remains the authoritative image-publication gate; do not
 substitute the locally built test image for its output.
+
+Post-release acceptance must not create application data: inside the provisioner
+container, acquire the same canonical operation lock and POST an unsupported
+engine with the existing token. Expect 409 while locked and 422 after release.
+An unauthenticated request must remain 401. The deliberately unsupported engine
+cannot reach either native adapter even if the lock regresses. This probe proves
+live HTTP/lock behavior only; existing DB creation/idempotence acceptance remains
+a separate gate. Never print the token or arbitrary HTTP error bodies.
+
+The opt-in probe is `backup/tests/native-provisioner-lock.py`. An isolated
+image fixture starts the baked server with temporary JSON catalog/policy files
+and a dummy token, using `--network none` and no Docker socket. The real HTTP
+responses were 401, 409, 422, and the fixture exited 0. This verifies the probe
+and image behavior locally; production acceptance has not yet run.
