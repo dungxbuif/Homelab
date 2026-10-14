@@ -3,6 +3,8 @@
   hosts: backup_scheduler
   gather_facts: false
   become: false
+  vars:
+    ansible_ssh_use_tty: false
   tasks:
     - name: Run the only allowed remote command
       ansible.builtin.raw: backup-health
