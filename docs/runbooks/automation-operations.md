@@ -45,6 +45,14 @@ match; it does not certify service health, resource capacity or backups.
 The observed inventory collector remains pending. See
 `docs/deployments/runtime-audit-evidence-2026-10-14.md` for its input contract.
 
+The host audit can now save partial host evidence using
+`-e audit_artifact_dir=/path/to/private/artifacts`. It writes per-host JSON
+on the controller (0700 directory, 0600 files), not on the production host.
+These `host_runtime_only` records contain safe container/network summaries and
+a resource sample; they must not be fed directly into the full drift gate.
+Pi5 and VM100 were tested with temporary bootstrap credentials; controller
+credential enrollment and complete route/backup collection are still pending.
+
 ## Change gates
 
 1. Edit the catalog or playbook in Git and run CI lint/policy tests.
