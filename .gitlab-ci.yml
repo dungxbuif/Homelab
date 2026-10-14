@@ -30,7 +30,8 @@ validate:automation-ee:
     - docker run --rm "$EE_IMAGE:$EE_TAG"
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'python -c "import pathlib, yaml; root=pathlib.Path(\"/workspace\"); files=[root/\".gitlab-ci.yml\"]+list((root/\"automation\").rglob(\"*.yml\"))+list((root/\"automation\").rglob(\"*.yaml\")); [list(yaml.safe_load_all(p.read_text())) for p in files]"'
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'find /workspace/automation /workspace/backup -name "*.sh" -type f -print0 | xargs -0 -r shellcheck --severity=error'
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'ansible-lint /workspace/automation/ansible /workspace/automation/semaphore'
+    - docker run --rm --env ANSIBLE_CONFIG=/workspace/automation/ansible/ansible.cfg --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'ansible-lint /workspace/automation/ansible /workspace/automation/semaphore/playbooks'
+    - docker run --rm --env ANSIBLE_CONFIG=/workspace/automation/ansible/ansible.cfg --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_inventory_resolution.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'python /workspace/automation/tests/test_policy_contract.py && python /workspace/automation/tests/test_route_contract.py'
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'bash /workspace/automation/scripts/verify-routes.sh'
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'ruby /workspace/automation/ansible/tests/test-inventory-contract.rb && ruby /workspace/automation/semaphore/tests/test-template-contract.rb'

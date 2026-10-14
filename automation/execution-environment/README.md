@@ -21,6 +21,15 @@ docker build \
 docker run --rm homelab-automation-ee:local
 ```
 
+The default container command runs `test-toolchain --run`, checking the installed
+tools without needing a repository mount. Run the script without `--run` from
+the source tree only when validating source-file contracts. CI explicitly loads
+the repository Ansible config and tests inventory resolution inside the image.
+
+On 2026-10-14 the local arm64 image passed its runtime check and Ansible lint;
+registry publication, amd64 validation and live Semaphore execution remain
+separate pending gates. Do not use the local image ID as a registry digest.
+
 `ansible-builder.yml` is kept as the reproducible Ansible Builder definition
 for operators who use `ansible-builder`. It references the same pinned Python
 and Galaxy dependency files. The GitLab pipeline builds the checked-in

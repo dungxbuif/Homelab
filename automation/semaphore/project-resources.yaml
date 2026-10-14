@@ -1,12 +1,12 @@
 ---
 name: homelab-automation
 repository:
-  url: ssh://gitlab.dungxbuif.com:2222/dungbuif/homelab-automation.git
+  url: ssh://git@gitlab.dungxbuif.com:2222/dungxbuif/homelab-automation.git
   revision: main
   protected_revisions:
     - main
 execution_image:
-  repository: registry.dungxbuif.com/dungbuif/homelab-automation/automation-ee
+  repository: registry.dungxbuif.com/dungxbuif/homelab-automation/automation-ee
   digest_variable: AUTOMATION_EE_IMAGE_DIGEST
   immutable: true
   allow_mutable_tags: false

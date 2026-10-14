@@ -43,7 +43,7 @@ rejected. Apply templates require a reviewed plan artifact and `Manager`
 approval.
 
 The current repository is expected to be the private GitLab project
-`dungbuif/homelab-automation`. Until that project is authenticated and the
+`dungxbuif/homelab-automation`. Until that project is authenticated and the
 image digest is published, these files are a versioned contract and must not be
 imported as production templates with a guessed image reference.
 

@@ -69,3 +69,4 @@ RUN chmod 0755 /usr/local/bin/test-toolchain
 
 WORKDIR /workspace
 ENTRYPOINT ["/usr/local/bin/test-toolchain"]
+CMD ["--run"]

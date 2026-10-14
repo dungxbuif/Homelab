@@ -28,6 +28,35 @@ These are local validations, not a successful live Semaphore execution.
 
 ## Rollout status
 
+## Execution image gate
+
+The existing local image successfully runs `--run`, but its default command
+fails because it tries to inspect source files absent from the image. Set its
+default command to the actual runtime toolchain check and run inventory tests
+inside that same image. CI must explicitly load the Ansible config. Build and
+test the image before any registry publication; a registry manifest digest,
+not a Docker local image ID, will be the executor reference.
+
+Semaphore `/api/ping` returned `pong` on 2026-10-14. This confirms reachability
+only, not authentication or installation of new automation jobs.
+
+Subsequent authenticated API inspection confirmed project 1, one existing
+database-provisioning template, one local-file repository, localhost inventory,
+and a `none` key. No host audit credential or new automation template is installed.
+Credentials were loaded from the existing local protected file without printing
+them. The existing provisioning job was not modified.
+
+The rebuilt arm64 local image now passes its default runtime check. Inside the
+image, four inventory-resolution tests, three policy tests, three route tests,
+and the source toolchain contract passed. Ansible lint passed on 23 files with
+zero reported failures/warnings (dependency deprecation messages remain).
+The image has NOT been published, verified on amd64, or run as a Semaphore job.
+The GitLab CI pipeline itself has NOT run; local checks do not substitute for it.
+
+Semaphore catalog references now use the verified account namespace `dungxbuif`
+and an explicit SSH `git` user. Three template contract tests passed with 143
+assertions. These are internal contracts, not proof of Semaphore API compatibility.
+
 Inventory resolution tests reproduced missing host roles and unsafe defaults
 before the fix. Variables now live beside the inventory and match group names.
 The base role no longer installs a root-equivalent sudo allowlist.
