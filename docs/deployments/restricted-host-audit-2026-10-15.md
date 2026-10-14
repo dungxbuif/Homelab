@@ -124,4 +124,11 @@ Enrollment then completed; the subsequent run reported 8 tasks, 0 changes,
 with exit 2, while `host-audit` returned complete JSON and exit 0.
 All three guard tests and Ansible production lint passed. The registration script
 now accepts an explicit `--pi5` selector; default VM100 dry-run still resolves
-existing resources 4/3/4 unchanged. Pi registration is the next step.
+existing resources 4/3/4 unchanged.
+
+Pi registration created key 5, inventory 4, template 5 (`Inspect Pi5 runtime
+(read only)`), and a second bootstrap apply reused the same IDs. Semaphore
+task 24 ran commit `968298b1dfdf488fc19302b74bc1804e116d3df5` on runner 1 and
+passed all four tasks, changed=0, unreachable=0, failed=0. Both Pi5 and VM100
+now have working restricted UI audit paths. VPS/Mac coverage, routing/firewall
+verification and peak-load sizing remain separate unfinished requirements.
