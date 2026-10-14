@@ -22,13 +22,13 @@ outside the UI pilot.
 
 ## Automation control plane
 
-Semaphore is the only operator entry point for host audits, Ansible checks and
+Semaphore is intended to become the operator entry point for host audits, Ansible checks and
 applies, OpenTofu plans and approved applies, route publication, application
 deployment, and rollback. The declarative catalog is in
 [`project-resources.yaml`](./project-resources.yaml) and the template contracts
 are in [`templates/`](./templates/).
 
-The roles are deliberately narrow:
+The proposed roles are deliberately narrow (not yet enforced by these files):
 
 | Role | Allowed work |
 |---|---|
@@ -36,16 +36,19 @@ The roles are deliberately narrow:
 | `Task Runner` | Read-only work plus route/app/rollback workflows that still require their declared approval gate |
 | `Manager` | All workflows, including production apply and OpenTofu apply |
 
-Every template fixes the repository revision, inventory/workspace, allow-listed
+Each design contract declares the repository revision, inventory/workspace, allow-listed
 variables, execution image reference, approval boundary, and post-check. The
 execution image is resolved from `AUTOMATION_EE_IMAGE_DIGEST`; mutable tags are
-rejected. Apply templates require a reviewed plan artifact and `Manager`
-approval.
+rejected by the contract tests. The intended apply workflow requires a reviewed
+plan artifact and `Manager` approval; those tests do not enforce live UI access.
 
-The current repository is expected to be the private GitLab project
-`dungxbuif/homelab-automation`. Until that project is authenticated and the
-image digest is published, these files are a versioned contract and must not be
-imported as production templates with a guessed image reference.
+The private GitLab project `dungxbuif/homelab-automation` now exists and CI runs
+on VM100. Image publication and runner integration are still in progress.
+These files are versioned contracts, not native Semaphore API import payloads.
+The installed Community version has no per-template Docker executor: an
+`execution_image` field here does not select a runtime image in the live UI.
+See the [compatibility decision](../../docs/deployments/semaphore-executor-compatibility-2026-10-14.md)
+for the pinned whole-runner-container approach and migration gates.
 
 ## Secret files
 
@@ -60,8 +63,8 @@ secrets/access_key_encryption
 The access-key value must be a 32-byte base64 value. The admin password is
 generated outside Git and is not printed by the deployment procedure.
 
-Semaphore keeps the existing `db-provision` template for database/user
-provisioning and adds the operator catalog above. Backup scheduling is not
+Semaphore currently keeps only the existing `db-provision` template for database/user
+provisioning; the operator catalog above has not been deployed. Backup scheduling is not
 owned by this UI. The canonical serial runner is in
 [`../backup-runner/`](../backup-runner/) and its schedules are defined by the
 runner/systemd deployment, so there is no second schedule template to import
