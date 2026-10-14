@@ -75,9 +75,9 @@ Using the dedicated key with strict pinned host trust and no SSH agent:
 `credentials/semaphore-host-audit`, never committed. No application restart,
 port, network, or backup-health permission changed.
 
-The Semaphore-side playbook is prepared at
-`automation/semaphore/playbooks/host-audit.yml`, but UI key/inventory/template
-registration and execution are still pending publication. Passing collection
+The Semaphore-side playbook is published at
+`automation/semaphore/playbooks/host-audit.yml`. UI enrollment and acceptance
+are recorded below. Passing collection
 does not mean the observed workloads are healthy or fully inventoried.
 
 `bootstrap-host-audit.mjs` prepares the UI resources with dry-run by default,
@@ -85,3 +85,14 @@ duplicate-name rejection and existing-configuration checks. Its live dry-run
 found no pre-existing observer resources. Only the public SSH key is tracked.
 CI must run both observer tests and the forced-command guard tests before the
 new UI source is accepted.
+
+### Semaphore acceptance
+
+Source published as GitLab commit `99301f9a42dd6b61130e4a215177e7838266ef62`.
+Bootstrap created key 4, inventory 3 and template 4, named
+`Inspect VM100 runtime (read only)`. Running bootstrap again verified and reused
+the same resources. Task 19 ran on runner 1 against that exact commit and
+succeeded: 4 tasks, changed=0, unreachable=0, failed=0. The report contains
+`collection_complete=true`, `inventory_complete=false`, scope `host_runtime_only`.
+This is a working UI audit path for VM100 only, with no general admin SSH key
+in the runner. Pi/VPS/Mac enrollment and full inventory reconciliation remain.

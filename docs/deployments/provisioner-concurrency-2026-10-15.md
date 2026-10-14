@@ -1,6 +1,6 @@
 # Provisioning operation serialization
 
-The threaded HTTP service currently locks only the final catalog registration.
+Before this release, the threaded HTTP service locked only the final catalog registration.
 Two requests can therefore race through role/user/secret creation before either
 registers the resource. Serialize the entire provision_request operation using
 a separate nonblocking advisory file lock next to the canonical catalog.
@@ -24,7 +24,7 @@ Internal API/operator docs change; public apps do not consume this private API.
 All three lock regressions failed against the original implementation, then
 passed with real file locks. The HTTP fixture verifies sanitized 409 behavior.
 46 backup Python tests pass locally and 17 provisioner tests pass inside the
-Linux execution image. The server remains unchanged in production: it is baked
+Linux execution image. At this pre-release checkpoint, the server was still baked
 into `homelab/provisioner:20261005`, whereas the module is bind-mounted. Updating
 only the mounted module would leave the old HTTP status mapping. Publish a new
 immutable provisioner image, then coordinate the image/module update with idle
@@ -47,7 +47,7 @@ Local ARM64 build completed with a 33.41 kB allowlisted context. With network
 disabled and no host Docker socket, Docker client 27.5.1 executes, the server
 imports `/app/provisioner/scripts/provisioner.py`, and all 17 provisioner tests
 pass. This is a local release candidate test, not proof of CI publication or
-production rollout. Live deployment still awaits a published digest.
+production rollout. The published release and live result are recorded below.
 
 Rollout through a dedicated Ansible playbook: require explicit approval, idle
 Semaphore provisioning tasks, and a registry digest. Pull with temporary scoped
@@ -63,8 +63,8 @@ boundary. Receipt directories live under `/ssd-data/infra/provisioner/releases`.
 Rollback also requires the currently observed image to match this attempted
 release, avoiding a rollback after a preflight failure or already-reverted spec.
 Two regression contracts pass after first failing against the initial draft;
-Ansible lint passes its production profile. The playbook has not been run live.
-CI pipeline 36/job 74 remains the authoritative image-publication gate; do not
+Ansible lint passes its production profile. The playbook was then run as recorded below.
+CI pipeline 36/job 74 is the authoritative image-publication gate; do not
 substitute the locally built test image for its output.
 
 Post-release acceptance must not create application data: inside the provisioner
@@ -79,4 +79,23 @@ The opt-in probe is `backup/tests/native-provisioner-lock.py`. An isolated
 image fixture starts the baked server with temporary JSON catalog/policy files
 and a dummy token, using `--network none` and no Docker socket. The real HTTP
 responses were 401, 409, 422, and the fixture exited 0. This verifies the probe
-and image behavior locally; production acceptance has not yet run.
+and image behavior locally; live acceptance is recorded below.
+
+## Live release and acceptance
+
+GitLab pipeline 36 completed its validators and both image build jobs. Job 74
+published the Pi ARM64 image at:
+`registry-gitlab.dungxbuif.com/dungxbuif/homelab-automation/provisioner@sha256:7bcd8edddd8f40e22cf7c3c076d213afac934ee82168eb770e6f35dd557d9200`.
+Semaphore project 1 had no active tasks at the release preflight.
+
+The Ansible release completed on Pi5 with 17 tasks, 8 changed, 0 failed.
+Protected rollback spec and sanitized receipt are under
+`/ssd-data/infra/provisioner/releases/provisioner-release-lrts4tqx`.
+Temporary registry credentials were removed. Active baked-module import and
+private HTTP health checks passed; no backup job was restarted.
+
+The native acceptance probe ran in the new container `741fe1c3ae43` and exited
+0: unauthenticated=401, locked=409, unlocked_invalid_engine=422,
+native_database_mutations=false. This proves the deployed HTTP locking behavior,
+not transactional rollback or fresh PostgreSQL/CouchDB creation acceptance.
+Those broader gates remain separate from this release result.
