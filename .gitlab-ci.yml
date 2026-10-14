@@ -1,0 +1,50 @@
+stages:
+  - validate
+  - build
+
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+    - if: '$CI_COMMIT_TAG'
+
+variables:
+  EE_IMAGE: '$CI_REGISTRY_IMAGE/automation-ee'
+  EE_TAG: '$CI_COMMIT_SHA'
+  DOCKER_TLS_CERTDIR: '/certs'
+  DOCKER_HOST: 'tcp://docker:2376'
+  DOCKER_DRIVER: overlay2
+
+.docker-job:
+  image: docker:27.5.1-cli
+  services:
+    - name: docker:27.5.1-dind
+      alias: docker
+  before_script:
+    - docker info
+
+validate:automation-ee:
+  extends: .docker-job
+  stage: validate
+  script:
+    - docker build --file automation/execution-environment/Containerfile --tag "$EE_IMAGE:$EE_TAG" automation/execution-environment
+    - docker run --rm "$EE_IMAGE:$EE_TAG"
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'python -c "import pathlib, yaml; root=pathlib.Path(\"/workspace\"); files=[root/\".gitlab-ci.yml\"]+list((root/\"automation\").rglob(\"*.yml\"))+list((root/\"automation\").rglob(\"*.yaml\")); [list(yaml.safe_load_all(p.read_text())) for p in files]"'
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'find /workspace/automation /workspace/backup -name "*.sh" -type f -print0 | xargs -0 -r shellcheck --severity=error'
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'ansible-lint /workspace/automation/semaphore/playbooks'
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'if find /workspace/automation/tofu -name "*.tf" -type f -print -quit 2>/dev/null | grep -q .; then tofu -chdir=/workspace/automation/tofu fmt -check -recursive; fi'
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'ruby /workspace/automation/scripts/validate-runtime-policy.rb --active /workspace/automation/policies/active-runtime.yaml --retired /workspace/automation/policies/retired-runtime.yaml'
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c '! git -C /workspace grep -nI -E "(glpat-[A-Za-z0-9_-]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9]{20,}|BEGIN [A-Z ]+ PRIVATE KEY)" -- . ":!*.md"'
+
+build:automation-ee:
+  extends: .docker-job
+  stage: build
+  needs:
+    - validate:automation-ee
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+    - if: '$CI_COMMIT_TAG'
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" --username "$CI_REGISTRY_USER" --password-stdin
+    - docker build --file automation/execution-environment/Containerfile --tag "$EE_IMAGE:$EE_TAG" automation/execution-environment
+    - docker push "$EE_IMAGE:$EE_TAG"
+    - docker image inspect "$EE_IMAGE:$EE_TAG" --format 'published={{index .RepoDigests 0}}'

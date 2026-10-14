@@ -52,4 +52,7 @@
 
     - name: Show secret-safe result
       ansible.builtin.debug:
-        msg: "Provisioned {{ provision_response.json.result.engine }} resource {{ provision_response.json.result.name }} (changed={{ provision_response.json.result.changed }})"
+        msg: >-
+          Provisioned {{ provision_response.json.result.engine }} resource
+          {{ provision_response.json.result.name }}
+          (changed={{ provision_response.json.result.changed }})
