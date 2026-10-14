@@ -1,7 +1,11 @@
 import fs from 'node:fs/promises';
 
 const apply = process.argv.includes('--apply');
-if (process.argv.slice(2).some(x => x !== '--apply')) throw Error('Usage: node bootstrap-host-audit.mjs [--apply]');
+const options = process.argv.slice(2);
+if (options.some(x => !['--apply', '--pi5'].includes(x))) throw Error('Usage: node bootstrap-host-audit.mjs [--pi5] [--apply]');
+const target = options.includes('--pi5') ? 'pi5' : 'vm100';
+const label = target === 'pi5' ? 'Pi5' : 'VM100';
+const address = target === 'pi5' ? '10.10.0.5' : '10.10.0.31';
 const base = 'https://semaphore.dungxbuif.com';
 const password = (await fs.readFile('credentials/semaphore-admin-password', 'utf8')).trim();
 const login = await fetch(base + '/api/auth/login', {
@@ -23,21 +27,21 @@ function existing(items, name) {
   if (matches.length > 1) throw Error(`Duplicate resource: ${name}`);
   return matches[0];
 }
-const keyName = 'VM100 host audit only';
-const inventoryName = 'Restricted VM100 host observer';
-const templateName = 'Inspect VM100 runtime (read only)';
+const keyName = `${label} host audit only`;
+const inventoryName = `Restricted ${label} host observer`;
+const templateName = `Inspect ${label} runtime (read only)`;
 let key = existing(await api('/keys'), keyName);
 let inventory = existing(await api('/inventory'), inventoryName);
 let template = existing(await api('/templates'), templateName);
-const inventoryText = JSON.stringify({host_observers: {hosts: {vm100_observer: {
-  ansible_host: '10.10.0.31', ansible_user: 'homelab-observer', ansible_become: false,
+const inventoryText = JSON.stringify({host_observers: {hosts: {[`${target}_observer`]: {
+  ansible_host: address, ansible_user: 'homelab-observer', ansible_become: false,
   ansible_ssh_common_args: '-o StrictHostKeyChecking=yes -o IdentitiesOnly=yes -o IdentityFile={{ playbook_dir }}/../host-audit.pub -o ConnectTimeout=10 -o UserKnownHostsFile={{ playbook_dir }}/../known_hosts',
 }}}});
 const desired = {
   name: templateName, project_id: 1, repository_id: 2,
   environment_id: 2, environment_ids: [2], app: 'ansible', arguments: '[]',
   git_branch: 'codex/automation-bootstrap', playbook: 'automation/semaphore/playbooks/host-audit.yml',
-  description: 'Read-only VM100 resources, containers, networks and listeners. Successful collection does not certify application or backup health.',
+  description: `Read-only ${label} resources, containers, networks and listeners. Successful collection does not certify application or backup health.`,
 };
 function verify() {
   if (key && key.type !== 'ssh') throw Error('Existing key type mismatch');

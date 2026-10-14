@@ -1,15 +1,26 @@
 ---
-- name: Enroll restricted host observer on VM100
-  hosts: vm100
+- name: Enroll restricted host observer on approved Linux hosts
+  hosts: pi5:vm100
   gather_facts: false
   vars:
     ansible_become: true
+    ansible_become_exe: '{{ "/usr/bin/sudo.ws" if inventory_hostname == "pi5" else "/usr/bin/sudo" }}'
+    observer_profiles:
+      vm100:
+        address: 10.10.0.31
+        owner: ubuntu
+        guard: host-audit-ssh-guard.sh
+      pi5:
+        address: 10.10.0.5
+        owner: dungxbuif
+        guard: host-audit-pi-ssh-guard.sh
   tasks:
     - name: Require approved enrollment and one public key
       ansible.builtin.assert:
         that:
           - host_audit_enrollment_approved | default(false) | bool
-          - ansible_host == '10.10.0.31'
+          - inventory_hostname in observer_profiles
+          - ansible_host == observer_profiles[inventory_hostname].address
           - >-
             host_audit_public_key is match('^ssh-ed25519 [A-Za-z0-9+/=]+(?: [^\r\n]*)?$')
 
@@ -32,7 +43,7 @@
 
     - name: Install fixed command guard
       ansible.builtin.copy:
-        src: '{{ playbook_dir }}/../../scripts/host-audit-ssh-guard.sh'
+        src: '{{ playbook_dir }}/../../scripts/{{ observer_profiles[inventory_hostname].guard }}'
         dest: /usr/local/libexec/homelab-host-audit-guard
         owner: root
         group: root
@@ -49,7 +60,8 @@
     - name: Allow exact observer without arguments as Docker owner
       ansible.builtin.copy:
         dest: /etc/sudoers.d/homelab-host-observer
-        content: 'homelab-observer ALL=(ubuntu) NOPASSWD: /usr/local/libexec/homelab-host-observer ""'
+        content: |
+          homelab-observer ALL=({{ observer_profiles[inventory_hostname].owner }}) NOPASSWD: /usr/local/libexec/homelab-host-observer ""
         owner: root
         group: root
         mode: '0440'

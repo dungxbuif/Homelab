@@ -8,6 +8,17 @@ GUARD = ROOT / 'scripts/host-audit-ssh-guard.sh'
 
 
 class HostAuditGuardTests(unittest.TestCase):
+    def test_pi_guard_has_only_the_pi_owner(self):
+        guard = ROOT / 'scripts/host-audit-pi-ssh-guard.sh'
+        self.assertTrue(guard.is_file())
+        source = guard.read_text()
+        self.assertIn('exec /usr/bin/sudo -n -u dungxbuif /usr/local/libexec/homelab-host-observer', source)
+        self.assertNotIn('-u root', source)
+        for command in ['', 'id', 'host-audit extra', 'host-audit; id', 'host-audit\nid']:
+            result = subprocess.run(['bash', str(guard)], capture_output=True,
+                                    env={**os.environ, 'SSH_ORIGINAL_COMMAND': command})
+            self.assertEqual(result.returncode, 2)
+
     def test_rejects_nonliteral_commands(self):
         self.assertTrue(GUARD.is_file())
         for command in ['', 'id', 'host-audit extra', 'host-audit; id',

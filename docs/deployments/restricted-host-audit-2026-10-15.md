@@ -96,3 +96,32 @@ succeeded: 4 tasks, changed=0, unreachable=0, failed=0. The report contains
 `collection_complete=true`, `inventory_complete=false`, scope `host_runtime_only`.
 This is a working UI audit path for VM100 only, with no general admin SSH key
 in the runner. Pi/VPS/Mac enrollment and full inventory reconciliation remain.
+
+## Pi5 extension plan
+
+The unmodified collector ran read-only on Pi5 and all eight probes succeeded.
+Extend enrollment only to the fixed Pi5/VM100 transport targets. Pi's guard must
+run the same root-owned collector as `dungxbuif`, not `ubuntu` and never root.
+Use the existing observer role key for these two hosts only; backup-health trust
+remains separate. Keep explicit target-to-user/guard mappings and test both guards.
+Verify denial of arbitrary commands, complete JSON output and idempotent Ansible
+enrollment before adding Pi to Semaphore. This cannot enroll VPS or Mac.
+
+Pi enrollment preflight exposed an Ansible privilege-escalation incompatibility:
+`sudo` resolves to sudo-rs 0.2.13, and both normal and no-PTY Ansible become
+attempts timed out waiting for a prompt. The same `id -u` request with identical
+credentials and `ansible_become_exe=/usr/bin/sudo.ws` returned 0 immediately.
+The existing setuid `/usr/bin/sudo.ws` is used only for this playbook on Pi;
+system sudo alternatives and interactive SSH configuration are unchanged.
+The Pi Ed25519 host public key was read over the existing trusted connection
+and pinned alongside VM100, rather than accepting an unverified keyscan result.
+
+Pi visudo additionally rejected a sudoers fragment without a final newline;
+the copy content now uses a YAML literal block with its line terminator.
+Validation failed before installation, so no invalid sudoers file was applied.
+Enrollment then completed; the subsequent run reported 8 tasks, 0 changes,
+0 failures. SSH using the observer role key rejected `id` and `host-audit extra`
+with exit 2, while `host-audit` returned complete JSON and exit 0.
+All three guard tests and Ansible production lint passed. The registration script
+now accepts an explicit `--pi5` selector; default VM100 dry-run still resolves
+existing resources 4/3/4 unchanged. Pi registration is the next step.

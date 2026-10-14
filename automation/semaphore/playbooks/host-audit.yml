@@ -1,5 +1,5 @@
 ---
-- name: Collect VM100 observations through a restricted identity
+- name: Collect approved Linux host observations through a restricted identity
   hosts: host_observers
   gather_facts: false
   become: false
