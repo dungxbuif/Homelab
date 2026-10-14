@@ -12,7 +12,10 @@
 
     - name: Show backup health evidence
       ansible.builtin.debug:
-        msg: '{{ backup_health.stdout_lines | default([]) }}'
+        msg:
+          exit_code: '{{ backup_health.rc }}'
+          stdout: '{{ backup_health.stdout | default("") }}'
+          stderr: '{{ backup_health.stderr | default("") }}'
 
     - name: Require healthy backup state
       ansible.builtin.assert:
