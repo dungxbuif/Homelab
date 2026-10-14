@@ -11,6 +11,23 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class PolicyContractTest(unittest.TestCase):
+    def test_verified_control_and_app_network_boundaries(self):
+        active = yaml.safe_load((ROOT / "automation/policies/active-runtime.yaml").read_text())
+        services = {item['id']: item for item in active['services']}
+        expected = {
+            'semaphore': {'homelab-control-net'},
+            'semaphore-executor': {'homelab-control-net'},
+            'provisioner': {'homelab-net', 'homelab-control-net'},
+            'homepage': {'edge-http-net'},
+            'couchloom': {'couchloom-internal', 'homelab-net'},
+            'bds-app': {'bds-tunnel-net', 'homelab-net'},
+            'bds-cloudflared': {'bds-tunnel-net'},
+            'kubekosh': {'homelab-net'},
+        }
+        for name, networks in expected.items():
+            self.assertEqual(set(services[name]['networks']), networks, name)
+        self.assertFalse(active['inventory_complete'])
+
     def test_active_policy_excludes_kubernetes_and_retired_targets(self):
         active = yaml.safe_load((ROOT / "automation/policies/active-runtime.yaml").read_text())
         retired = yaml.safe_load((ROOT / "automation/policies/retired-runtime.yaml").read_text())

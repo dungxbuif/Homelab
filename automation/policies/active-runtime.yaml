@@ -1,21 +1,25 @@
 schema_version: 1
-generated_at: '2026-10-14'
+generated_at: '2026-10-15'
 policy_name: homelab-active-runtime
+inventory_complete: false
+verification_scope: partial_pi5_vm100_runtime_observations
 hosts:
   - id: vps-gateway
     address: 103.82.21.202
     role: public_gateway
-    transport: restricted_runner
+    transport: bootstrap_pending
     lifecycle: active
   - id: pi5
     address: 10.10.0.5
     role: edge_datastore_swarm_manager
     transport: restricted_runner
+    verified_capabilities: [host_audit]
     lifecycle: active
   - id: vm100
     address: 10.10.0.31
     role: production_worker
     transport: restricted_runner
+    verified_capabilities: [host_audit, backup_health]
     lifecycle: active
   - id: mac-native
     address: 10.10.0.6
@@ -25,7 +29,7 @@ hosts:
   - id: proxmox
     address: 10.10.0.20
     role: hypervisor
-    transport: opentofu_provider
+    transport: opentofu_provider_pending
     lifecycle: active
 
 services:
@@ -51,66 +55,71 @@ services:
     host: pi5
     class: edge
     lifecycle: active
-    networks: [homelab-net]
+    networks: [homelab-net, edge-http-net, homelab-control-net]
     public_ports: [80, 443]
   - id: edge-rathole
     host: pi5
     class: edge_tunnel_client
     lifecycle: active
-    networks: [homelab-net]
+    networks: [host]
   - id: adguardhome
     host: pi5
     class: dns
     lifecycle: active
-    networks: [homelab-net]
+    networks: [bridge]
     public_ports: [53]
   - id: postgres
     host: pi5
     class: database
     lifecycle: active
-    networks: [homelab-net]
+    networks: [homelab-net, proxy_net]
   - id: pgbouncer
     host: pi5
     class: database_gateway
     lifecycle: active
-    networks: [homelab-net]
+    networks: [homelab-net, data-net, proxy_net]
     lan_ports: [5432]
   - id: redis-prod
     host: pi5
     class: cache
     lifecycle: active
-    networks: [homelab-net]
+    networks: [homelab-net, mypocket-redis-net, redis-prod_default, data-net]
     lan_ports: [16379]
   - id: rustfs
     host: pi5
     class: object_storage
     lifecycle: active
-    networks: [homelab-net]
+    networks: [homelab-net, edge-http-net, proxy_net]
   - id: couchdb
     host: pi5
     class: document_database
     lifecycle: active
-    networks: [homelab-net]
+    networks: [homelab-net, edge-http-net, proxy_net]
   - id: docker-registry
     host: pi5
     class: registry
     lifecycle: active
-    networks: [homelab-net]
+    networks: [homelab-net, edge-http-net, proxy_net]
   - id: semaphore
     host: pi5
     class: control_plane
     lifecycle: active
-    networks: [homelab-net]
+    networks: [homelab-control-net]
+  - id: semaphore-executor
+    host: vm100
+    class: control_plane
+    lifecycle: active
+    networks: [homelab-control-net]
   - id: provisioner
     host: pi5
     class: control_plane
     lifecycle: active
-    networks: [homelab-net]
+    networks: [homelab-net, homelab-control-net]
   - id: homepage
     host: vm100
     class: application
     lifecycle: active
-    networks: [homelab-net]
+    networks: [edge-http-net]
   - id: relayhub
     host: vm100
     class: application
@@ -125,10 +134,15 @@ services:
     host: vm100
     class: application
     lifecycle: active
-    networks: [couchloom-data-net]
+    networks: [couchloom-internal, homelab-net]
   - id: bds-app
     host: vm100
     class: application
+    lifecycle: active
+    networks: [bds-tunnel-net, homelab-net]
+  - id: bds-cloudflared
+    host: vm100
+    class: tunnel_client
     lifecycle: active
     networks: [bds-tunnel-net]
   - id: mac-ocr
@@ -145,7 +159,7 @@ services:
     host: vm100
     class: learning_app
     lifecycle: active
-    networks: [lan-only]
+    networks: [homelab-net]
 
 routes:
   - id: homepage
