@@ -130,6 +130,12 @@ http:
       - websecure
       service: gitlab
       tls: *id001
+    gitlab-registry:
+      rule: Host(`registry-gitlab.dungxbuif.com`)
+      entryPoints:
+      - websecure
+      service: gitlab-registry
+      tls: *id001
     relayhub:
       rule: Host(`relayhub.dungxbuif.com`)
       entryPoints:
@@ -233,6 +239,10 @@ http:
         servers:
         - url: http://tasks.gitlab_gitlab:80
         passHostHeader: true
+    gitlab-registry:
+      loadBalancer:
+        servers:
+        - url: http://tasks.gitlab_gitlab:5005
     relayhub:
       loadBalancer:
         servers:

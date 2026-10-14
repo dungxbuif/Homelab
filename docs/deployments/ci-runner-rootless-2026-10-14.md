@@ -55,8 +55,9 @@ Rerun completed with `ok=15 changed=0 failed=0`.
   creation on a new host; it is not proof of install success. The live apply and
   idempotent rerun above provide that proof.
 
-GitLab Runner itself is NOT yet installed or registered. CI pipeline execution,
-registry publication, disk cleanup policy and Semaphore integration are pending.
+GitLab Runner is now installed and registered as project runner ID 1; see
+`gitlab-runner-enrollment-2026-10-14.md`. Successful CI completion, registry
+publication, disk cleanup policy and Semaphore integration remain pending.
 No public documentation changes are required for this internal bootstrap.
 
 Runner enrollment exposed a cgroup delegation gap: user@1001.service delegates

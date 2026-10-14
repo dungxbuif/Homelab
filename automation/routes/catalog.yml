@@ -165,6 +165,15 @@ routes:
       url: http://tasks.gitlab_gitlab:80
     health_path: /users/sign_in
     rollback_version: current
+  - id: gitlab-registry
+    hostnames: [registry-gitlab.dungxbuif.com]
+    exposure: public
+    owner: platform
+    backend:
+      kind: service_dns
+      url: http://tasks.gitlab_gitlab:5005
+    health_path: /v2/
+    rollback_version: current
   - id: relayhub
     hostnames: [relayhub.dungxbuif.com]
     exposure: public

@@ -33,3 +33,16 @@ is stale, and agent-based SSH was waiting rather than completing.
 The first token-capture attempt was revoked before replacement. The replacement
 one-day API token remains required during bootstrap and must be revoked after
 CI/registry/Semaphore integration. Do not expose its value in docs or job output.
+
+Pipeline 2 reached the runner but failed starting nested rootless DinD: its
+inner UID mapping needs IDs beyond the outer daemon's default 65536 range.
+VM100 currently has only ubuntu:100000:65536 and homelab-ci:165536:65536 in
+both subordinate maps. Extend only the CI range to 1048576 IDs after verifying
+there are no other allocations; preserve its start so existing mapped files
+retain ownership. Restart only the CI rootless daemon while the runner is
+paused. Keep job privilege restrictions and production daemon untouched.
+
+The expansion applied successfully (`ok=20 changed=2 failed=0`), then runner 1
+was unpaused and failed job 3 retried as job 5, confirmed running by the API.
+This does not yet prove nested builds succeed. The Pi5 registry LAN route now
+returns the expected HTTPS challenge; see `gitlab-registry-lan-2026-10-14.md`.

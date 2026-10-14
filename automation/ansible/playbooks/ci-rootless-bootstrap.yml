@@ -39,6 +39,28 @@
         key: '{{ ci_user }}'
       when: not ansible_check_mode
 
+    - name: Read current subordinate identity allocations
+      ansible.builtin.slurp:
+        src: '{{ item }}'
+      loop: [/etc/subuid, /etc/subgid]
+      register: ci_subid_files
+
+    - name: Reject unknown allocations before expanding the CI identity range
+      ansible.builtin.assert:
+        that:
+          - (item.content | b64decode).splitlines() | reject('match', '^(ubuntu:100000:65536|homelab-ci:165536:(65536|1048576))$') | list | length == 0
+      loop: '{{ ci_subid_files.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
+    - name: Allocate enough CI identities for nested rootless containers
+      ansible.builtin.lineinfile:
+        path: '{{ item }}'
+        regexp: '^homelab-ci:'
+        line: 'homelab-ci:165536:1048576'
+      loop: [/etc/subuid, /etc/subgid]
+      register: ci_subids
+
     - name: Create rootless script directory
       ansible.builtin.file:
         path: '{{ ci_bin }}'
@@ -132,7 +154,7 @@
             name: docker.service
             scope: user
             enabled: true
-            state: started
+            state: '{{ "restarted" if ci_subids.changed else "started" }}'
           environment:
             XDG_RUNTIME_DIR: '/run/user/{{ getent_passwd[ci_user][1] }}'
             DBUS_SESSION_BUS_ADDRESS: 'unix:path=/run/user/{{ getent_passwd[ci_user][1] }}/bus'
