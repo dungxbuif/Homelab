@@ -24,10 +24,10 @@ variables:
     - docker info
 
 validate:semaphore-bootstrap:
-  image: node:24.0.2-alpine
+  extends: .docker-job
   stage: validate
   script:
-    - node --test automation/semaphore/tests/*.test.mjs
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --workdir /workspace node:24.0.2-alpine sh -c 'node --test automation/semaphore/tests/*.test.mjs'
 
 validate:automation-ee:
   extends: .docker-job

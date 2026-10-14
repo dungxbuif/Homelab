@@ -1,0 +1,52 @@
+---
+- name: Verify password gate using isolated PostgreSQL fixtures
+  hosts: pi5
+  gather_facts: false
+  become: false
+  tasks:
+    - name: Require explicit fixture approval
+      ansible.builtin.assert:
+        that:
+          - provisioner_auth_fixture_approved | default(false) | bool
+          - ansible_user == 'dungxbuif'
+
+    - name: Create private acceptance directory
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: provisioner-auth-
+      register: auth_fixture
+
+    - name: Run native gate and remove temporary source
+      block:
+        - name: Copy reviewed provisioning dependencies
+          ansible.builtin.copy:
+            src: '{{ playbook_dir }}/../../../backup/scripts/'
+            dest: '{{ auth_fixture.path }}/scripts/'
+            mode: '0600'
+            directory_mode: '0700'
+
+        - name: Copy explicit native acceptance script
+          ansible.builtin.copy:
+            src: '{{ playbook_dir }}/../../../backup/tests/native-postgres-password.py'
+            dest: '{{ auth_fixture.path }}/tests/'
+            mode: '0600'
+            directory_mode: '0700'
+
+        - name: Verify real PostgreSQL password and trust outcomes
+          ansible.builtin.command:
+            argv:
+              - python3
+              - '{{ auth_fixture.path }}/tests/native-postgres-password.py'
+              - '--image'
+              - postgres:17.10-alpine
+          changed_when: true
+          register: auth_acceptance
+
+        - name: Report native acceptance results without credentials
+          ansible.builtin.debug:
+            var: auth_acceptance.stdout_lines
+      always:
+        - name: Remove private acceptance source directory
+          ansible.builtin.file:
+            path: '{{ auth_fixture.path }}'
+            state: absent

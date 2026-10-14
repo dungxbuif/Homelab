@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import importlib.util
 import json
+import subprocess
 import unittest
 from unittest.mock import patch
 from pathlib import Path
@@ -15,6 +16,32 @@ SPEC.loader.exec_module(MODULE)
 
 
 class ProvisionerContractTests(unittest.TestCase):
+    def test_password_smoke_requires_tcp_and_rejects_wrong_password(self):
+        denied = subprocess.CalledProcessError(2, ['psql'], stderr=b'FATAL: password authentication failed')
+        with patch.object(MODULE, 'docker_exec', side_effect=[b'1\n', denied]) as execute:
+            MODULE._postgres_password_smoke('pg', 'app', 'db', 'must-not-leak')
+        self.assertEqual(execute.call_count, 2)
+        for call in execute.call_args_list:
+            command = call.args[1][-1]
+            self.assertIn('PGHOST=$(hostname)', command)
+            self.assertIn('-h "$PGHOST" -p 5432 -w', command)
+            self.assertIn('trap', command)
+            self.assertIn('PGCONNECT_TIMEOUT=5', command)
+            self.assertNotIn('must-not-leak', command)
+        self.assertIn(b'must-not-leak', execute.call_args_list[0].kwargs['input_bytes'])
+        self.assertNotIn(b'must-not-leak', execute.call_args_list[1].kwargs['input_bytes'])
+
+    def test_password_smoke_rejects_trust_authentication(self):
+        with patch.object(MODULE, 'docker_exec', side_effect=[b'1\n', b'1\n']):
+            with self.assertRaisesRegex(MODULE.ProvisioningError, 'incorrect password'):
+                MODULE._postgres_password_smoke('pg', 'app', 'db', 'secret')
+
+    def test_password_smoke_does_not_count_network_error_as_password_rejection(self):
+        failure = subprocess.CalledProcessError(2, ['psql'], stderr=b'connection refused')
+        with patch.object(MODULE, 'docker_exec', side_effect=[b'1\n', failure]):
+            with self.assertRaisesRegex(MODULE.ProvisioningError, 'not verified'):
+                MODULE._postgres_password_smoke('pg', 'app', 'db', 'secret')
+
     def test_catalog_conflict_is_rejected_before_native_operations(self):
         normalized = {'engine': 'postgresql', 'name': 'example', 'owner_role': 'new_owner',
                       'secret_ref': 'swarm:example-db'}

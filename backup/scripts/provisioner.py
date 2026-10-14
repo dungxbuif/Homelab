@@ -113,15 +113,28 @@ def _psql_script(container: str, admin_user: str, script: str, database: str = "
 
 
 def _postgres_password_smoke(container: str, role: str, database: str, password: str) -> None:
-    pgpass = f"*:*:*:{role}:{password}\n"
     script = (
-        "umask 077; p=$(mktemp); cat >\"$p\"; export PGPASSFILE=\"$p\"; "
-        f"psql -U {shlex.quote(role)} -d {shlex.quote(database)} -Atqc 'SELECT 1'; "
-        "status=$?; rm -f \"$p\"; exit $status"
+        "set -eu; umask 077; p=$(mktemp); trap 'rm -f \"$p\"' EXIT HUP INT TERM; "
+        "cat >\"$p\"; unset PGPASSWORD PGSERVICE PGHOSTADDR; "
+        "export PGPASSFILE=\"$p\" PGCONNECT_TIMEOUT=5 LC_ALL=C; PGHOST=$(hostname); "
+        f"psql -h \"$PGHOST\" -p 5432 -w -U {shlex.quote(role)} -d {shlex.quote(database)} -Atqc 'SELECT 1'"
     )
-    output = docker_exec(container, ["sh", "-c", script], input_bytes=pgpass.encode()).decode().strip()
+
+    def connect(candidate: str) -> str:
+        escaped = candidate.replace("\\", "\\\\").replace(":", "\\:")
+        pgpass = f"*:5432:{database}:{role}:{escaped}\n"
+        return docker_exec(container, ["sh", "-c", script], input_bytes=pgpass.encode()).decode().strip()
+
+    output = connect(password)
     if output != "1":
         raise ProvisioningError("PostgreSQL application smoke test failed")
+    try:
+        connect("invalid-" + secrets.token_urlsafe(36))
+    except subprocess.CalledProcessError as exc:
+        if b"password authentication failed" not in (exc.stderr or b""):
+            raise ProvisioningError("PostgreSQL password enforcement was not verified") from exc
+    else:
+        raise ProvisioningError("PostgreSQL accepted an incorrect password; refusing backup enrollment")
 
 
 def _validate(request: dict[str, Any], inventory: dict[str, Any], policies: dict[str, Any]) -> dict[str, Any]:
