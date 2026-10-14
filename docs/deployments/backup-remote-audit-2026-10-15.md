@@ -55,3 +55,48 @@ scheduled run. Remaining gates: retrieve and validate snapshot payloads, perform
 isolated restores, correct the two health-reporting defects, and verify an
 entire retention pass after fresh successful backups. Preserve the failed
 retention unit as evidence until that pass actually succeeds.
+
+## Health repair implementation plan
+
+Allow exactly one additional restricted SSH operation, `health`. Pi executes
+its local read-only health script for database/RustFS markers, staging and lock,
+with scheduler-unit inspection and recursive remote checks disabled. VM100
+checks scheduler units and only its local GitLab marker, then combines Pi output
+into one health result/notification. SSH failure or remote warnings must remain
+visible and nonzero. No arbitrary command or path is accepted by the SSH guard.
+
+Use ExecMainStartTimestampMonotonic and `/proc/uptime` for active/activating job
+age. Tests cover activating oneshots, missing timestamps and failed remote
+health. Compare existing live hashes before deployment; back up each replaced
+script. Reload only the health unit configuration, not the backup timers or
+running backup jobs. A real failed retention unit must still fail the audit.
+
+Deployment note: production inventory sets `ansible_become: false`, which
+overrides the task keyword. Explicit task-scoped `ansible_become: true` is
+required only for the system unit copy and daemon reload. Script installation
+continues as the owning backup user; no timer or running backup is restarted.
+
+## Health repair verification
+
+Deployed Pi first, then VM100 through `backup-health-repair.yml`. The VM retry
+was idempotent for scripts and changed only the health unit; daemon reload
+succeeded. All 38 Python backup tests passed, including five health tests.
+Live systemd Environment now selects `gitlab` locally and enables remote Pi
+health. All five backup timers retain their scheduled times.
+
+Live manual check returned exit 1 intentionally: the only reported failure
+was `homelab-backup@retention.service`. Pi health passed, database marker age
+79539s, RustFS 71223s, GitLab 78716s. No false missing marker remained.
+This check did not send a notification and did not reset the failed unit.
+Retention journal confirms permission-denied deletion of old RustFS staging
+under `rustfs-20261012-162842`; an end-to-end retention pass is still required
+after the ownership repair. Snapshot existence is not restore verification.
+
+Public documentation is unchanged: this modifies internal backup supervision,
+not an application API or user-facing configuration contract.
+
+Follow-up ownership audit: the old `rustfs-20261012-162842` staging tree is
+755 MiB and all entries now belong to `dungxbuif`; the 13 RustFS run directories
+also report that owner. No data was deleted by this audit. Add the five health
+regression tests to the CI validation job so the cross-host contract remains
+covered after publication. Scheduler foundation changes are preserved separately.

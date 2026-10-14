@@ -1,0 +1,22 @@
+[Unit]
+Description=Homelab backup health check
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/apps/homelab-backup/app
+EnvironmentFile=/etc/homelab-backup/runner.env
+Environment="BACKUP_HEALTH_EXPECTED_CLASSES=gitlab"
+Environment="BACKUP_HEALTH_REMOTE_PI=true"
+SyslogIdentifier=homelab-backup-health
+StandardOutput=journal
+StandardError=journal
+ExecStart=/opt/apps/homelab-backup/app/backup/scripts/check-backup-health.sh --notify
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ReadWritePaths=/opt/apps/homelab-backup /run/lock /tmp
+TimeoutStartSec=5min
