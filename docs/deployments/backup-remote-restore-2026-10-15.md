@@ -85,7 +85,35 @@ found no concrete defect in this scoped verifier. Read-only execution through
 Ansible against the existing LOCAL source run verified all 29 declared
 artifacts, totaling 6,915,289,967 bytes. This is compatibility/integrity evidence
 for the verifier, explicitly not proof of the remote downloaded copy. The
-recorded remote retrieval job remains unfinished and must not be restarted.
+recorded remote retrieval job reached its terminal timeout and must not be
+reused.
+
+## Timeout diagnosis and controlled retry
+
+The recorded retrieval job `j186891193321.3128007` reached its terminal result
+on 2026-10-15 with `rc=124` after exactly four hours. The Restic log reported
+`Restic command deadline exceeded`; the container was then reconciled and
+removed. This is a bounded timeout failure, not evidence of an invalid
+snapshot: the read-only target had reached about 6.4 GiB, PostgreSQL and most
+metadata files were present, and the large CouchDB export was still being
+written when the deadline fired. The incomplete target is retained as
+evidence and is not reused.
+
+The controlled follow-up uses the same exact snapshot in a new target with an
+8-hour `RESTIC_COMMAND_TIMEOUT` and a longer Ansible observation budget. It
+must still hold the existing backup lock, use the same project-owned OAuth
+repository, and require the terminal zero exit status before verification.
+No production mount, database, or backup source is modified by this retry.
+
+An initial retry wrapper `j213008523879.3252966` terminated immediately with
+`rc=127` because the Ansible shell defaulted to `/bin/sh` and could not run
+`source`; it did not create a restore container or target. The corrected retry
+`1` was started only after that wrapper reached terminal state: async job
+`j871550432349.3253245`, target
+`/home/dungxbuif/.homelab-restore-rehearsals/databases-20261015-023158-remote-retry-1`,
+and timeout override `RESTIC_COMMAND_TIMEOUT=8h`. The first poll reported
+started=true and finished=false. The original incomplete target and its log
+remain untouched for evidence.
 
 Operator command after successful download admission:
 
@@ -95,5 +123,20 @@ python3 backup/scripts/verify-database-payload.py \
   --expected-run databases-20261015-023158
 ```
 
+For retry `1`, substitute:
+
+```sh
+python3 backup/scripts/verify-database-payload.py \
+  --run-dir /home/dungxbuif/.homelab-restore-rehearsals/databases-20261015-023158-remote-retry-1/backup-run \
+  --expected-run databases-20261015-023158
+```
+
 Run as the owner allowed to read the restored files (restored files may retain
 root ownership); do not relax file permissions to accommodate verification.
+
+At the latest observation the corrected retry container was still running with
+the exact snapshot, after roughly 30 minutes. Its network transfer had reached
+about 154 MB and the isolated target had not yet materialized payload files;
+this is an in-progress remote restore, not a verification result. Keep polling
+async job `j871550432349.3253245` and do not start a second retry or run native
+database restore until the container exits zero and the payload verifier passes.

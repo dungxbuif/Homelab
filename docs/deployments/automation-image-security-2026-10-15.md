@@ -565,3 +565,19 @@ retains the same scan-before-push gate and fails on the same policy. This lets
 the safe EE/provisioner release path complete without publishing or enrolling
 the unremediated runner. No active Semaphore runner or production service was
 changed by this separation.
+
+## Pipeline 118 production artifact gate
+
+Pipeline 118 at commit `c80e463866e6447585493af51616255e7ba025e1` passed all
+four jobs. Validation completed successfully, the production automation EE
+passed the unchanged HIGH/CRITICAL gate and published as
+`registry-gitlab.dungxbuif.com/dungxbuif/homelab-automation/automation-ee@sha256:c6ec635b430a1f97168651761988e847f3d9b984da7817559962892051fb1cc5`,
+and the arm64 provisioner passed its native smoke, scan and publication gate
+as
+`registry-gitlab.dungxbuif.com/dungxbuif/homelab-automation/provisioner@sha256:9d1b00677c570247a4789fa955d6ece21270ae6d0e91890953021e163ea06812`.
+
+The default pipeline contained no Semaphore runner candidate job. The
+candidate remains opt-in through `BUILD_SEMAPHORE_RUNNER_CANDIDATE=true` and
+must still clear the same strict scan before any enrollment. No production
+service or active runner was restarted by pipeline 118; the published
+provisioner digest is available for a separately approved rollout.
