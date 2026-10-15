@@ -10,6 +10,7 @@
       - run_restic_container.py
       - restic-lib.sh
       - upload-restic.sh
+      - verify-database-payload.py
     client_content: {}
     client_manifest: {}
   tasks:

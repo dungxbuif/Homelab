@@ -152,9 +152,32 @@ only the RelayHub PostgreSQL adapter metadata, globals, `postgres.dump`,
 `relayhub.dump`, `manifest.json`, `COMPLETE` and the checksum index. The remote
 operation is PID `3367943` with log
 `/home/dungxbuif/.homelab-restore-rehearsals/databases-20261015-023158-pg-only-1.log`.
-This is still in progress until the PID exits zero and the selected files are
-verified; do not start another operation or infer restore acceptance from its
-existence.
+The operation exited successfully after restoring 9 entries (7 files/
+directories) in 5:44. The selected target is verified below; this result does
+not certify the full all-database payload.
+
+## Targeted PostgreSQL rehearsal result
+
+The private target contains the exact run marker, manifest, checksum index,
+PostgreSQL adapter metadata, globals, `postgres.dump`, and `relayhub.dump`.
+The targeted read-only integrity check verified the run ID and `COMPLETE`
+marker, all 3 control files, and all 4 selected PostgreSQL artifacts. The
+selected artifact bytes totalled 98,988 bytes and matched the checksum index.
+
+Native restore then ran twice in disposable `pgvector/pg16` containers because
+the first run's post-check command had a shell-quoting error after import; its
+container was removed by the trap. The corrected run used `network=none`,
+tmpfs-only database storage, 1 CPU, 1 GiB memory, and no published ports or
+production mounts. It loaded `globals.sql`, restored `relayhub.dump` with
+`pg_restore --exit-on-error --no-owner --no-acl`, returned `SELECT 1`, found 30
+user tables and 7 expected application roles, and removed the disposable
+container.
+
+This is a successful remote PostgreSQL selected-payload recovery acceptance,
+not a full all-database/CouchDB/GitLab/RustFS restore. The canonical full
+payload verifier is present in source but was not in the old four-file runtime
+bundle; its release follow-up is recorded in
+[`backup-client-release-2026-10-15.md`](./backup-client-release-2026-10-15.md).
 
 ## Retry progress and checksum diagnosis
 
@@ -164,6 +187,6 @@ started while `restic restore` was still active correctly found 7/29 entries
 missing or incomplete, including large CouchDB/GitLab payloads and several
 PostgreSQL files. This is an in-progress write race, not final corruption
 evidence. The temporary checksum container was removed after its output was
-captured. The retry remains the sole active restore operation; the canonical
-verifier and isolated PostgreSQL rehearsal remain gated on its terminal zero
-exit.
+captured. The full retry remains historical incomplete evidence; the targeted
+PostgreSQL rehearsal above is the only remote recovery acceptance currently
+passed.

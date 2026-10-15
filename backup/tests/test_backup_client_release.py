@@ -8,7 +8,8 @@ import unittest
 from unittest.mock import patch
 
 SCRIPT = Path(__file__).resolve().parents[2] / 'automation/backup-runner/release-backup-client.py'
-FILES = ('prepare_rclone_workdir.py', 'run_restic_container.py', 'restic-lib.sh', 'upload-restic.sh')
+FILES = ('prepare_rclone_workdir.py', 'run_restic_container.py', 'restic-lib.sh',
+         'upload-restic.sh', 'verify-database-payload.py')
 
 
 class BackupClientReleaseTests(unittest.TestCase):

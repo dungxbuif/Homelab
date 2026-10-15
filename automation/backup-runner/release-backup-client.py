@@ -9,7 +9,8 @@ from pathlib import Path
 import stat
 import tempfile
 
-FILES = ('prepare_rclone_workdir.py', 'run_restic_container.py', 'restic-lib.sh', 'upload-restic.sh')
+FILES = ('prepare_rclone_workdir.py', 'run_restic_container.py', 'restic-lib.sh',
+         'upload-restic.sh', 'verify-database-payload.py')
 HOSTS = {
     'pi5': ('/ssd-data/infra/backup-runner/app/backup/scripts',
             '/ssd-data/infra/backups/homelab/.homelab-backup.lock',

@@ -5,6 +5,17 @@ changes through Ansible on Pi5 and VM100. This is not a scheduler, credential,
 catalog, retention-policy or database change. Public app documentation is
 unaffected; this Markdown is the internal operator/agent record.
 
+## Restore verifier follow-up, 2026-10-15
+
+The remote PostgreSQL rehearsal exposed one deployment gap: the source
+`backup/scripts/verify-database-payload.py` verifier was not included in the
+four-file runtime client bundle on Pi5/VM100. The targeted rehearsal therefore
+used an equivalent read-only one-off check for its selected artifact set. Add
+the verifier to the same lock-aware release bundle and require its exact source
+checksum in release tests. This changes no scheduler, backup payload, or
+credential behavior; it makes the documented full-payload verification command
+available on both backup hosts.
+
 The deployment helper must hold the same existing exclusive flock as backups
 for the entire installation. Pi5 uses
 `/ssd-data/infra/backups/homelab/.homelab-backup.lock`; VM100 uses
@@ -12,7 +23,7 @@ for the entire installation. Pi5 uses
 Never unlink or recreate a lock. If busy, return without changing live files;
 do not stop any job to obtain it.
 
-Ansible stages a fixed four-file allowlist and its SHA-256 manifest privately.
+Ansible stages a fixed five-file allowlist and its SHA-256 manifest privately.
 Under the lock, validate all bytes and existing targets, preserve original bytes
 and permissions in a private durable receipt, install helpers before the library
 and uploader, and verify installed hashes. Do not copy the whole repository or
@@ -42,7 +53,7 @@ lint passed its production profile; environment cache/deprecation warnings are
 not treated as rule failures. Independent review's directory-durability finding
 was fixed and re-reviewed before attempting live check mode.
 
-Pi5 `--check` passed: four files would change, live files were not replaced.
+Pi5 `--check` passed for the initial four-file release: live files were not replaced.
 Check mode deliberately creates and removes a private staging candidate while
 validating bytes and acquiring the real lock; its Ansible changed count therefore
 is not evidence of a live deployment. The helper's `check_mode=true` result is
@@ -57,7 +68,7 @@ This proves that run's post-check, not the new source rollout or a restore test.
 
 ## Runtime-directory compatibility correction
 
-The four-file install completed on both hosts, but the first Pi version smoke
+The initial four-file install completed on both hosts, but the first Pi version smoke
 correctly refused group-writable staging ancestors (mode 0775). VM's old runtime
 path is under ubuntu-owned `/opt/apps`, also inappropriate for root OAuth work.
 Do not weaken the no-follow/ownership checks or chmod broad application trees.
@@ -78,7 +89,7 @@ Installation alone was not sufficient; runtime smoke remains required.
 
 ### Installed result
 
-Both hosts completed the lock-aware install (four files, no job restart) and
+Both hosts completed the lock-aware install (initial four files, no job restart) and
 the runtime-path correction. VM systemd definitions were reloaded only.
 The full installed library successfully ran pinned Restic 0.19.1 `version`
 on Pi arm64 and VM amd64 using each host's real environment and private config
@@ -94,7 +105,7 @@ acceptance result: it stalled before producing a payload and was stopped after
 its exact process tree held the global lock for more than three hours. It must
 be rerun with a bounded, observable restore check.
 
-Post-install verification on each host requires all four live SHA-256 hashes
+Post-install verification for the initial release required all four live SHA-256 hashes
 to match the reviewed source, mode-0700 empty runtime directory after smoke,
 and zero remaining invocation-labelled containers. Preserve both release
 receipts and environment rollback copies. The next full upload and the planned
