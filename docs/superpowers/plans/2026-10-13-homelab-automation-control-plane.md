@@ -61,6 +61,16 @@ restart handler are source-backed and applied on VM100. The candidate remains
 an experimental image; the default Debian EE and live Semaphore executor were
 not switched.
 
+CI follow-up, 2026-10-15: the first default-image build gate was stopped after
+its Trivy database download held the VM100 runner without producing progress.
+The scanner now uses a job-scoped Docker cache volume shared by the image scans
+and bounds the scanner start to 20 minutes while remaining fail-closed. Focused
+tests and ShellCheck pass. This correction was published on
+`codex/automation-bootstrap` as `9ed9be1e2`; pipeline 109 is the current
+verification run. Older pipelines 104 and 107 were canceled because they
+targeted superseded commits. This does not yet promote the default image or
+claim a green pipeline until pipeline 109 finishes.
+
 Publication checkpoint: implementation commits are on private GitLab branch
 `codex/automation-bootstrap`, not merged to main. The latest published
 automation-control-plane commit is `47619269b` (source commit `25772f6`), and
