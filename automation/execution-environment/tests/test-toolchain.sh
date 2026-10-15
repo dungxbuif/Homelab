@@ -10,6 +10,7 @@ fail() {
 }
 
 if [[ "${1:-}" == '--run' ]]; then
+  python -c 'import importlib.util; assert importlib.util.find_spec("pip") is None'
   command -v ansible >/dev/null || fail 'ansible is not installed'
   command -v tofu >/dev/null || fail 'tofu is not installed'
   command -v docker >/dev/null || fail 'docker is not installed'

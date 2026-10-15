@@ -12,6 +12,13 @@ The image contains:
   from a digest-pinned source image;
 - ShellCheck, Ruby, `jq`, and SSH client for policy and route validation.
 
+Python and Galaxy dependencies are installed when building the image. The EE
+candidate removes pip afterward to avoid shipping its vulnerable bundled
+libraries. Jobs requiring additional Python packages must update the reviewed
+requirements and rebuild the image, not install packages at runtime. This
+candidate has not replaced the live Semaphore runner and still requires the
+unchanged security and compatibility gates.
+
 Build locally when Docker is available:
 
 ```bash
@@ -44,3 +51,8 @@ for operators who use `ansible-builder`. It references the same pinned Python
 and Galaxy dependency files. The GitLab pipeline builds the checked-in
 Containerfile directly so the published artifact has one auditable Docker
 build path.
+
+The build-time-only pip removal is implemented in that Containerfile path.
+Ansible Builder users must reproduce and verify the same final runtime policy;
+the alternative definition is not claimed to produce an equivalent hardened
+image automatically.

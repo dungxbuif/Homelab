@@ -6,6 +6,14 @@ EE = ROOT / 'automation/execution-environment'
 
 
 class ToolchainSecurityTests(unittest.TestCase):
+    def test_ee_removes_build_pip_only_after_dependency_installation(self):
+        source = (EE / 'Containerfile').read_text()
+        removal = 'RUN python -m pip uninstall --yes pip'
+        self.assertIn(removal, source)
+        self.assertGreater(source.index(removal), source.index('RUN ansible-galaxy collection install'))
+        smoke = (EE / 'tests/test-toolchain.sh').read_text()
+        self.assertIn('find_spec("pip") is None', smoke)
+
     def test_ansible_patch_pin_is_consistent(self):
         self.assertIn('ARG ANSIBLE_CORE_VERSION=2.18.19\n', (EE / 'Containerfile').read_text())
         self.assertIn('ansible-core==2.18.19', (EE / 'requirements.txt').read_text().splitlines())

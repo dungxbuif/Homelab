@@ -243,3 +243,34 @@ pip is absent. No application database or backup job was modified or restarted.
 This release reuses unchanged provisioning logic; fresh create/replay/cleanup
 was not repeated for this security-only image. Earlier native acceptance is
 recorded separately, not relabelled as a test of this new digest.
+
+## EE build-tool removal candidate
+
+Pipeline 78/job 194 still reports 90 HIGH/CRITICAL records, including four in
+pip's bundled dependencies. Installed dependency metadata has no mandatory
+runtime pip dependency among these tools; ansible-lint lists pip only for its
+optional test extra. Ansible-compat source has no runtime pip invocation.
+This is a reason to test removal, not compatibility proof.
+
+Remove pip with its native uninstall AFTER Python and Galaxy dependency
+installation. Dependencies must be baked at build time; runtime pip installation
+is not supported by this candidate. Build a new local tag, preserve old images
+and live runner digests, verify pip absence, run toolchain/Ansible lint and all
+automation/backup/OpenTofu tests, then rescan with the unchanged gate. Any
+compatibility failure blocks adoption. Remaining OS/Go findings still block
+publication; no risk exception or full security clearance is implied.
+
+Candidate result: `homelab-automation-ee:no-pip-20261015`, image ID
+`sha256:6509000682bce4bdb8ff98fe771f19014dfd472c8ff2abac95294b79e289606b`.
+Toolchain smoke (including pip absence) passed; 95 automation, 21 Ansible,
+98 backup (one opt-in skip), and 15 OpenTofu tests passed with that image.
+Ansible lint passed on 61 files, with existing read-only-cache/deprecation
+messages but no rule failures. This is local arm64 compatibility evidence;
+actual CI amd64 and derived runner acceptance remain separate.
+
+The unchanged rescan still exits 1: 81 HIGH plus 5 CRITICAL records, now 86
+instead of 90. Python and Docker CLI report zero; Debian still has 79 records
+and OpenTofu seven. No ignore file or severity filter was relaxed. Report:
+`/tmp/homelab-image-security.SwmOrT/security-reports/automation-ee-no-pip.json`,
+SHA256 `40d5207ebc74337f6ce87ea675a6ed3b360aa62f4f3a72197913622332d3670b`.
+Do not deploy this candidate or claim the EE security gate is clear.
