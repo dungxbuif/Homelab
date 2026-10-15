@@ -109,8 +109,17 @@
             {{ backup_candidate.path }}/backup/policies.yaml
       changed_when: false
 
-    - name: Publish the candidate atomically under the backup lock
+    - name: Ensure the VM100 backup lock belongs to the service account
       become: true
+      ansible.builtin.file:
+        path: /run/lock/homelab-backup.lock
+        state: touch
+        owner: ubuntu
+        group: ubuntu
+        mode: '0660'
+
+    - name: Publish the candidate atomically under the backup lock
+      become: false
       ansible.builtin.command:
         argv:
           - flock
