@@ -23,6 +23,7 @@ variables:
   variables:
     DOCKER_CERT_PATH: '$DOCKER_TLS_CERTDIR/client'
     DOCKER_TLS_VERIFY: '1'
+    ANSIBLE_CONFIG: '$CI_PROJECT_DIR/automation/ansible/ansible.cfg'
   before_script:
     - docker info
 
@@ -115,6 +116,7 @@ validate:experimental-ee:
   variables:
     DOCKER_CERT_PATH: '$DOCKER_TLS_CERTDIR/client'
     DOCKER_TLS_VERIFY: '1'
+    ANSIBLE_CONFIG: '$CI_PROJECT_DIR/automation/ansible/ansible.cfg'
   before_script:
     - docker info
   rules:

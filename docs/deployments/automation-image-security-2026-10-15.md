@@ -461,6 +461,12 @@ not the production adoption gate: registry pull credentials, native CI job,
 runner digest enrollment, full job boundary acceptance and reproducible
 source-to-image build are still required.
 
+Pipeline97 then reached the native suite but `ansible-lint` could not resolve
+role `base` because the candidate job did not set `ANSIBLE_CONFIG`; local
+validation had supplied it explicitly. Set the job variable to the checkout's
+absolute `automation/ansible/ansible.cfg` path and rerun. This is a test-runner
+configuration correction, not a role or production change.
+
 Experimental pipeline95 pulled the exact digest on VM100 and reached the job
 container. Its first script failed because the custom image does not inherit
 the Docker CLI image entrypoint that exports TLS client variables for the
