@@ -35,6 +35,14 @@ docker image save --output "$work/image.tar" "$image"
 # The scanner cannot bypass file permissions; the host directory stays 0700.
 chmod 0444 "$work/image.tar"
 docker volume create "$cache_volume" >/dev/null
+# Docker volumes start root-owned. Initialize only this cache path before the
+# actual scan, which remains non-root and has no daemon or host filesystem mount.
+docker run --rm --user 0:0 --cap-drop ALL --cap-add CHOWN \
+  --security-opt no-new-privileges --read-only \
+  --mount "type=volume,source=$cache_volume,destination=/tmp/cache" \
+  --entrypoint /bin/sh \
+  aquasec/trivy:0.76.0@sha256:2416d1f74045b57274df1a340eee6b510cacd73c66a6ccb8da092b117eb7d222 \
+  -c 'chown 65532:65532 /tmp/cache'
 container=$(docker create --user 65532:65532 --cap-drop ALL --security-opt no-new-privileges \
   --memory 1536m --cpus 1 \
   --mount "type=volume,source=$cache_volume,destination=/tmp/cache" \

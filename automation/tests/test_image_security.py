@@ -24,6 +24,7 @@ if a[0] == os.environ['FAKE_FAIL_COMMAND']: sys.exit(42)
 if a[:2] == ['image', 'save']:
     pathlib.Path(a[a.index('--output')+1]).write_text('archive')
 elif a[:2] == ['volume', 'create']: print('test-volume-id')
+elif a[0] == 'run': pass
 elif a[0] == 'create': print('test-scanner-id')
 elif a[0] == 'start':
     sys.exit(int(os.environ['FAKE_STATUS']))
@@ -72,6 +73,10 @@ else: sys.exit(99)
         result, calls, _ = self.run_scan()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn(['volume', 'create', 'homelab-trivy-cache-local'], calls)
+        helper = next(call for call in calls if call[0] == 'run')
+        self.assertIn('--cap-add', helper)
+        self.assertIn('CHOWN', helper)
+        self.assertIn('65532:65532', ' '.join(helper))
 
     def test_scanner_failure_is_not_green_and_cleans_archive(self):
         for status in (1, 2, 137):

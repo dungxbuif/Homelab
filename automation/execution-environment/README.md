@@ -41,6 +41,9 @@ volume so the EE and runner scans in one job reuse the same download. A hard
 20-minute start timeout prevents an unreachable vulnerability mirror from
 holding a CI runner indefinitely; the scan still fails closed and produces no
 publishable image.
+The cache volume is initialized by a short-lived root helper with only
+`CHOWN`; the vulnerability scan itself remains UID `65532` with all Linux
+capabilities dropped and no host filesystem or Docker socket mount.
 The image build also bounds Ansible Galaxy collection resolution to ten minutes
 with a 60-second per-operation timeout; a registry/network failure therefore
 fails the build instead of occupying the runner indefinitely.
