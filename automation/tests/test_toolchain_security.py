@@ -50,6 +50,13 @@ class ToolchainSecurityTests(unittest.TestCase):
         self.assertIn('RUN python /remove_build_pip.py /target', source)
         self.assertIn('COPY --from=prepare /target/ /', source)
 
+    def test_semaphore_runner_uses_alpine_user_management(self):
+        source = (ROOT / 'automation/semaphore/runner/Containerfile').read_text()
+        self.assertIn('addgroup -S -g 1001 semaphore', source)
+        self.assertIn('adduser -S -D -H -u 1001 -G semaphore semaphore', source)
+        self.assertNotIn('groupadd', source)
+        self.assertNotIn('useradd', source)
+
 
 if __name__ == '__main__':
     unittest.main()
