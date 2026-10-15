@@ -1,0 +1,17 @@
+[Unit]
+Description=Homelab backup class (%i)
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/apps/homelab-backup/app
+EnvironmentFile=/etc/homelab-backup/runner.env
+ExecStart=/opt/apps/homelab-backup/app/automation/backup-runner/run-vm100-scheduled.sh %i
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ReadWritePaths=/opt/apps/homelab-backup /tmp
+

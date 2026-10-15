@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly Homelab GitLab backup
+
+[Timer]
+OnCalendar=*-*-* 02:30:00 Asia/Ho_Chi_Minh
+Persistent=true
+Unit=homelab-backup@gitlab.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly Homelab backup retention
+
+[Timer]
+OnCalendar=*-*-* 05:30:00 Asia/Ho_Chi_Minh
+Persistent=true
+Unit=homelab-backup@retention.service
+
+[Install]
+WantedBy=timers.target

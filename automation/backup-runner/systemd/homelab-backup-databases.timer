@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly Homelab database backup
+
+[Timer]
+OnCalendar=*-*-* 01:00:00 Asia/Ho_Chi_Minh
+Persistent=true
+Unit=homelab-backup@databases.service
+
+[Install]
+WantedBy=timers.target

@@ -39,6 +39,15 @@ both new artifacts were verified mode 0600. Output used canonical
 with a directory argument failed resolution; rerunning the explicit test-file
 glob passed all 24 tests. No application restart or production config change.
 
+## Latest read-only task readback
+
+After the automation branch publication, Semaphore task history was read back
+through the private API. Tasks 42 (VM100 observer, template 4) and 43 (Pi5
+observer, template 5) both finished with `success`. The project still has one
+owner and no additional role-bearing operator account. This is a fresh control
+plane/task-history check; the previously exported private artifacts remain the
+authoritative evidence for network comparison until a new export is written.
+
 Live VM100 recheck: Docker 29.8.2, daemon active, Swarm active, existing node ID
 `35aki2511juhltwuavfuokqa1` retained. No repeated upgrade was performed.
 The separate Pi5 remote restore job `j186891193321.3128007` remained unfinished;

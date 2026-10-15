@@ -62,12 +62,12 @@ an experimental image; the default Debian EE and live Semaphore executor were
 not switched.
 
 Publication checkpoint: implementation commits are on private GitLab branch
-`codex/automation-bootstrap`, not merged to main. Pipeline 72 validators and
-provisioner job 179 succeeded; EE job 178 failed the unchanged vulnerability
-gate. Job 179's scanned immutable provisioner image is deployed on Pi5 with
-health/auth/locking/client-server probes. Pipeline 73 validators passed; newer
-backup/deployment commits still require their own CI acceptance. Latest
-published code at this checkpoint is `2690949b`, not proof of overall green CI.
+`codex/automation-bootstrap`, not merged to main. The latest published
+automation-control-plane commit is `47619269b` (source commit `25772f6`), and
+the experimental immutable execution-environment gate is pipeline 99/job 235.
+This branch publication used `ci.skip`; the native candidate acceptance is
+recorded separately in the image-security evidence. Publication is not proof
+of main-branch adoption or overall production readiness.
 Independent GitLab clones of both vaults passed strict fsck and matched original
 commit/tree IDs; ignored files and nested repositories are outside that proof.
 Historical dirty worktree files are
@@ -119,13 +119,24 @@ This supplement supersedes dated facts above, not the remaining acceptance gates
   passing local automation Python tests. It is NOT wired into live release
   jobs; secret enrollment and actual notification acceptance remain pending.
 - Latest published source is private branch codex/automation-bootstrap at
-  5ae149bab. This does not imply green CI, main-branch adoption or complete
-  automation. Restore async job j186891193321.3128007 remains live; do not restart.
+  47619269b. This does not imply main-branch adoption or complete automation.
+  Restore async job j186891193321.3128007 remains live; do not restart.
 
 Evidence: [Family repair](../../deployments/family-tree-private-data-2026-10-15.md),
 [network audit](../../deployments/network-membership-audit-2026-10-15.md),
 [provider lock](../../deployments/proxmox-ca-trust-2026-10-15.md), and
 [release notifications](../../deployments/release-notifications-2026-10-15.md).
+
+### Supplementary live Semaphore readback, 2026-10-15
+
+The private Semaphore API was read back after the latest source publication.
+Project 1 still has exactly one owner (`admin`), six templates, and no new
+operator account or schedule was created. The latest restricted VM100/Pi5
+host-observer tasks are 42 and 43; both are `success`. This confirms the
+read-only observer path and task-history persistence only. It does not promote
+the contract-only role matrix into live multi-user RBAC, and it does not claim
+backup-health, app-deploy, route-publish, OpenTofu import, rollback, or Mezon
+notification acceptance.
 
 ### Invariants
 
