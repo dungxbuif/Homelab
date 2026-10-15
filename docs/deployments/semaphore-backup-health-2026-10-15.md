@@ -81,3 +81,12 @@ operation reaches a terminal state.
 
 Schema reference for the encrypted Semaphore SSH key payload:
 https://github.com/semaphoreui/semaphore/blob/v2.19.12/db/AccessKey.go
+
+## Clean health acceptance
+
+Semaphore task 57, run against the live read-only health template on
+2026-10-15, completed successfully with `ok=3 changed=0 failed=0
+unreachable=0`. VM100 reported `backup_lock=free` and a valid GitLab success
+marker; the Pi leg reported `backup_lock=free` and valid database/RustFS success
+markers. The health gate is therefore clean at this observation. This does not
+replace the separate remote restore rehearsals or prove future scheduled runs.

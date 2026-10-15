@@ -141,6 +141,21 @@ this is an in-progress remote restore, not a verification result. Keep polling
 async job `j871550432349.3253245` and do not start a second retry or run native
 database restore until the container exits zero and the payload verifier passes.
 
+## Targeted PostgreSQL rehearsal
+
+The full retry later terminated with `rc=143` after its target remained an
+8 KiB private directory; no restore payload was accepted and no process from
+that retry remains. Its target and log are retained as failure evidence. A
+separate bounded PostgreSQL-only rehearsal was then started from the same
+snapshot after the lock became free. It uses a new private target and includes
+only the RelayHub PostgreSQL adapter metadata, globals, `postgres.dump`,
+`relayhub.dump`, `manifest.json`, `COMPLETE` and the checksum index. The remote
+operation is PID `3367943` with log
+`/home/dungxbuif/.homelab-restore-rehearsals/databases-20261015-023158-pg-only-1.log`.
+This is still in progress until the PID exits zero and the selected files are
+verified; do not start another operation or infer restore acceptance from its
+existence.
+
 ## Retry progress and checksum diagnosis
 
 The retry later materialized all 29 manifest paths and the `COMPLETE` marker,
