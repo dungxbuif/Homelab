@@ -337,3 +337,42 @@ Docker CLI and Python now each report zero HIGH/CRITICAL. Full report SHA256:
 This experimentally resolves the seven Go findings, not the complete EE gate.
 No image was published or adopted by a live runner. AMD64 candidate compatibility
 and broader upstream test coverage remain open before any adoption decision.
+
+## Base-distribution compatibility experiment
+
+The remaining79 records span util-linux, Ruby, OpenSSH, curl, Expat and other
+system libraries; deleting scanner metadata or stripping essential packages
+would not be a valid fix. Test a separate Alpine3.24 Python3.13.16 candidate,
+official index pinned to
+`sha256:2d9aefe2fef018a7eb2c13064c89c71929800fd2e5dccdbf52ea5da5bb8d929a`.
+Keep Python/Ansible collection versions unchanged, install native equivalents
+for shell/Ruby/GNU utilities, run compatibility tests and the unchanged scanner.
+Record actual package versions after resolution. Do not change production or
+the main Containerfile on the strength of a base-only scan.
+
+The patched OpenTofu experiment is glibc-linked, so it cannot simply be copied
+into musl Alpine. First isolate base/tool compatibility using the existing
+official binary where compatible; then build a separately verified static or
+musl candidate if the base proves useful. Do not add a hidden glibc shim merely
+to make smoke tests pass. No automatic adoption is authorized by this experiment.
+
+First native ARM64 Alpine build passed toolchain smoke. Its unchanged scanner
+reported zero HIGH/CRITICAL for Alpine, Python and Docker CLI, but seven HIGH
+findings in the original OpenTofu binary; the overall security gate still fails.
+Compatibility suites initially found three backup enrollment failures because
+BusyBox flock lacks `-E` (custom lock-contention exit code). Install Alpine's
+dedicated `flock` package, confirmed available as 2.42.3-r1, and rerun the same
+tests and scan. Do not weaken the lock contract or alter production scripts.
+Ruby 3.4.9 includes JSON; separate `ruby-json` does not exist in this repository.
+
+After adding flock, all four suites pass: automation111, Ansible24, backup98
+(one opt-in skip), OpenTofu15: 247 passed, one skipped. Candidate image ID is
+`sha256:3a63f9b646a084dc546ba22125e413b98f6039d8781d93b61c1c67b7c042180c`.
+Rescan still exits1: zero HIGH/CRITICAL in Alpine3.24.2 (67 packages), Python
+and Docker CLI; seven HIGH in original OpenTofu. Report SHA256:
+`c9ae1df2982030933d376919ad45d5dd9d254068a8af099d020238e8e1093b1b`.
+Report: `/tmp/homelab-alpine-ee.UXMiFFL8/security-reports/automation-ee-alpine-flock.json`.
+Recipe preserved under experiments/Containerfile.alpine, with local-only source
+image dependency documented. No runtime image, CI recipe or production service
+changed. These tests do not prove AMD64, runner integration or full upstream
+OpenTofu behavior. Public application docs are unaffected by this internal trial.

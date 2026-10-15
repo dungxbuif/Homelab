@@ -37,3 +37,26 @@ encrypted-state tests, readonly provider init/validate, and248 suite tests
 the patched OpenTofu binary, but79 in Debian, so the combined image still fails.
 AMD64 rebuild, broader upstream tests, base remediation and CI/runner adoption
 remain unverified. See the [security record](../../../docs/deployments/automation-image-security-2026-10-15.md).
+
+## Alpine compatibility candidate
+
+`Containerfile.alpine` is an experimental recipe, not used by CI or production.
+Prepare a disposable build context containing this file as Dockerfile, the
+parent requirements.txt and requirements.yml, and
+`automation/execution-environment/tests/test-toolchain.sh` as test-toolchain.sh.
+It requires the local
+`homelab-automation-ee:no-pip-20261015` image (recorded source image ID
+`6509000682bce4bdb8ff98fe771f19014dfd472c8ff2abac95294b79e289606b`)
+for the original Docker and OpenTofu binaries. Do not pull a similarly named
+third-party image. This local dependency is not a portable release recipe.
+
+Alpine packages resolve from the pinned base's repositories, not a frozen
+package snapshot. Rebuilds therefore require fresh compatibility tests and
+security scans. Ruby includes JSON; use the dedicated flock package because
+BusyBox flock does not implement the required contention exit-code option.
+
+Native ARM64 suites pass (247 tests, one opt-in skip). The scanner still fails
+on seven original OpenTofu HIGH findings, with zero HIGH/CRITICAL in Alpine,
+Python and Docker CLI. The glibc-linked patched binary above is NOT compatible
+with this musl base. Static/musl remediation, AMD64 execution, full CI and runner
+integration remain required; this is not an approved executor replacement.
