@@ -55,6 +55,13 @@ retains the complete inventory, limits resource inspection to running
 containers, and retries that specific disappearing-object race at most twice.
 Other command failures, permission errors and timeouts still fail the audit.
 
+Fresh post-fix tasks 45 (VM100) and 46 (Pi5) both finished `success`; private
+exports were written and accepted by the comparator. The scoped result remains
+`drift`, not `match`: VM100 has one transient nonterminal
+`vigorous_napier` task, while Pi5 has the intentionally retained Restic restore
+container. Both are reported as unknown nonterminal containers rather than
+silently exempted. No container was removed as part of this verification.
+
 Live VM100 recheck: Docker 29.8.2, daemon active, Swarm active, existing node ID
 `35aki2511juhltwuavfuokqa1` retained. No repeated upgrade was performed.
 The separate Pi5 remote restore job `j186891193321.3128007` remained unfinished;
