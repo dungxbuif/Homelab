@@ -66,4 +66,6 @@
         chdir: '{{ playbook_dir }}/../..'
         stdin: '{{ homepage_release_report | to_json }}'
         stdin_add_newline: true
+      delegate_to: localhost
+      connection: local
       no_log: true

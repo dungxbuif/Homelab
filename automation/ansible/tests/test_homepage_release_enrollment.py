@@ -52,6 +52,8 @@ class EnrollmentTests(unittest.TestCase):
         self.assertEqual(command['argv'][:3], ['python3', 'automation/scripts/notify-homepage-release.py', '--task-id'])
         self.assertEqual(command['argv'][3], '{{ semaphore_vars.task_details.id }}')
         self.assertEqual(command['stdin'], '{{ homepage_release_report | to_json }}')
+        self.assertEqual(notify['delegate_to'], 'localhost')
+        self.assertEqual(notify['connection'], 'local')
         self.assertTrue(notify['no_log'])
 
 
