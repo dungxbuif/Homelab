@@ -27,6 +27,7 @@ test('bootstrap script has an explicit dry-run path and no secret output', async
   assert.match(source, /Release backup client \(Pi5\)/);
   assert.match(source, /Pi5 backup client release \(SSH\)/);
   assert.match(source, /type: 'ssh'/);
+  assert.match(source, /automation\/semaphore\/playbooks\/backup-client-release\.yml/);
   assert.doesNotMatch(source, /console\.log\([^\n]*ansible_password/);
 });
 

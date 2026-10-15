@@ -130,13 +130,23 @@ if (!apply) {
     app: 'ansible',
     arguments: '[]',
     git_branch: desiredBranch,
-    playbook: 'automation/ansible/playbooks/backup-client-release.yml',
+    playbook: 'automation/semaphore/playbooks/backup-client-release.yml',
     description: 'Lock-aware release of the reviewed backup verifier on Pi5 only. No VM100 credential is enrolled.',
   };
   if (!template) template = await api('/templates', {
     method: 'POST',
     body: JSON.stringify(templateDesired),
   });
+  for (const field of ['inventory_id', 'repository_id', 'git_branch', 'playbook']) {
+    if (template[field] !== templateDesired[field]) {
+      await api(`/templates/${template.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({...template, ...templateDesired}),
+      });
+      template = await api(`/templates/${template.id}`);
+      break;
+    }
+  }
   for (const field of ['inventory_id', 'repository_id', 'git_branch', 'playbook']) {
     if (template[field] !== templateDesired[field]) {
       throw new Error(`Existing template mismatch: ${field}`);
