@@ -21,7 +21,8 @@ timestamp: 2026-10-13T00:00:00+07:00
 > (`10.10.0.20`) hosts production VM100. No Kubernetes cluster, node, or Kubernetes VM is part of the current lab; old design docs are historical only in [`archived/k8s-v2/`](./archived/k8s-v2/).
 
 > For exact current image tags, image IDs, replica state, backup markers, and
-> recent deployment reconciliation, use [the 2026-10-13 runtime inventory](./deployments/runtime-inventory-2026-10-13.md).
+> recent deployment reconciliation, use the [runtime inventory](./deployments/runtime-inventory-2026-10-13.md)
+> together with the [2026-10-15 catalog reconciliation](./deployments/runtime-catalog-reconciliation-2026-10-15.md).
 
 ---
 

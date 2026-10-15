@@ -1,10 +1,26 @@
 # Current Homelab Stack
 
-Audit date: 2026-10-13. This is the current navigation/catalog surface, not a
-claim that every application workflow passed. See the
+Audit baseline: 2026-10-13, reconciled by dated records through 2026-10-15.
+This is the current navigation/catalog surface, not a claim that every
+application workflow passed. See the
 [audit evidence and limits](./research/docs-stack-audit-2026-09-16.md).
 The point-in-time runtime and image-version source of truth is the
-[2026-10-13 runtime inventory](./deployments/runtime-inventory-2026-10-13.md).
+[2026-10-13 runtime inventory](./deployments/runtime-inventory-2026-10-13.md)
+plus [runtime/catalog reconciliation](./deployments/runtime-catalog-reconciliation-2026-10-15.md).
+
+## Current corrections, 2026-10-15
+
+- VM100 backup timers and the multi-instance PostgreSQL class are active; the
+  combined health template passed task 57 with both locks free. Remote Drive
+  restore acceptance is still intentionally open.
+- Homepage release template 6 is the only enrolled application release path.
+  Its dedicated Mezon notification boundary passed live task 56. The generic
+  `app-deploy` contract remains design-only.
+- The restricted VM100/Pi5 observers and GitLab CI runner are active. OpenTofu
+  VM100 import, broad route/app apply and fine-grained Semaphore RBAC remain
+  unverified or unenrolled.
+- Older sections below remain useful topology history; when a dated deployment
+  record conflicts with them, the newer record is authoritative.
 
 ## Host Roles
 
@@ -170,9 +186,9 @@ without auditing those consumers.
   administration and network segmentation. The backup design and post-check
   contract are documented in [the backup runbook](./runbooks/backup-restore.md),
   and the scheduler is now active on VM100 with class-specific success markers
-  and remote snapshots. The health oneshot still has a documented
-  start-time/ordering warning and must be fixed before the health gate is called
-  clean. Semaphore's private control plane is documented in [the deployment record](./deployments/semaphore-backup-ui-2026-10-04.md)
+  and remote snapshots. The combined health gate passed through Semaphore task
+  57; remote restore remains a separate acceptance. Semaphore's private control
+  plane is documented in [the deployment record](./deployments/semaphore-backup-ui-2026-10-04.md)
   and the [runtime inventory](./deployments/runtime-inventory-2026-10-13.md);
   it provisions databases/users and enrolls them in the catalog, but remains
   separate from the backup scheduler.
@@ -180,8 +196,10 @@ without auditing those consumers.
   reachable only through LAN/NetBird split DNS and the Pi5 Traefik `lan-only`
   middleware. It is not part of the managed Kubernetes inventory. Do not add
   it to the VPS HostSNI allow-list. Educates was removed on 2026-09-17.
-- Pending GitLab: native lab Docker/Swarm Registry pull, deployed edge routes,
-  CI runner, scheduled/off-host backup and restore drill; SMTP and S3 optional.
+- Pending GitLab: native lab Docker/Swarm Registry pull and final deployed edge
+  route reconciliation; the project CI runner and scheduled/off-host backup
+  classes are active. Remote Drive restore drills remain a separate acceptance
+  gate; SMTP and S3 are optional.
 - NetBird LAN routing requires VM100 peer enrollment with a setup key, a
   `10.10.0.0/24` network route/resource, and policy assignment. Dashboard 200
   and an active external relay alone do not grant LAN access.
