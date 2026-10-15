@@ -63,6 +63,7 @@ validate:automation-ee:
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_drift_evidence.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_private_artifact.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_family_network.py
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_release_notification.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_runtime_network_drift.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_route_paths.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_rustfs_writer_identity.py
