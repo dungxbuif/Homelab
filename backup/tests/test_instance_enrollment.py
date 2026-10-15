@@ -20,6 +20,7 @@ class InstanceEnrollmentTests(unittest.TestCase):
         live = root / 'live'
         (live / 'scripts').mkdir(parents=True)
         shutil.copy(ROOT / 'backup/inventory.yaml', live / 'inventory.yaml')
+        shutil.copy(ROOT / 'backup/policies.yaml', live / 'policies.yaml')
         for source in (ROOT / 'backup/scripts').glob('*.py'):
             shutil.copy(source, generation / source.name)
         for name in ('validate_inventory.py', 'run-database-backup.py'):
