@@ -97,7 +97,7 @@
               - '-n'
               - '-E'
               - '75'
-              - /ssd-data/infra/backups/homelab/.homelab-backup.lock
+              - /run/lock/homelab-backup.lock
               - python3
               - '-c'
               - |

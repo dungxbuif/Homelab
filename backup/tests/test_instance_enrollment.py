@@ -28,7 +28,7 @@ class InstanceEnrollmentTests(unittest.TestCase):
         tasks = next(t['block'] for t in play['tasks'] if 'block' in t)
         task = next(t for t in tasks if t['name'].startswith('Activate and enroll'))
         argv = task['ansible.builtin.command']['argv']
-        self.assertEqual(argv[:5], ['flock', '-n', '-E', '75', '/ssd-data/infra/backups/homelab/.homelab-backup.lock'])
+        self.assertEqual(argv[:5], ['flock', '-n', '-E', '75', '/run/lock/homelab-backup.lock'])
         request = {'id': 'relayhub', 'host': 'pi5', 'container': 'relayhub-pg',
                    'admin_user': 'relayhub', 'databases': [
                        {'name': 'relayhub', 'application': 'relayhub', 'lifecycle': 'active'}]}

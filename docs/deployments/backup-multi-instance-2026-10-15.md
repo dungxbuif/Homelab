@@ -20,6 +20,10 @@ whose backup host is VM100. The class will:
 - participate in health and retention prerequisites without stopping CouchLoom
   or exposing PostgreSQL.
 
+Enrollment and runtime publication both take the same `/run/lock/homelab-backup.lock`
+global lock used by the scheduled runner. Catalog registration also uses its
+separate catalog lock while the reviewed generation is being activated.
+
 The inventory contains instance metadata only: instance ID, host, container,
 backup user, database names, application and lifecycle. Passwords remain in
 the container/runtime secret boundary and are never added to the catalog.
