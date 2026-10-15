@@ -35,7 +35,8 @@ def load_adapter(filename: str, module_name: str):
 def run(inventory_path: Path, staging_root: Path, run_id: str) -> Path:
     validate_run_id(run_id)
     inventory = load_document(inventory_path)
-    instances = validate_postgres_instances(inventory)
+    primary_host = inventory["postgresql"].get("host")
+    instances = validate_postgres_instances(inventory, host=primary_host)
     final_dir = staging_root / run_id
     incomplete_dir = staging_root / f".{run_id}.incomplete"
     if final_dir.exists() or incomplete_dir.exists():

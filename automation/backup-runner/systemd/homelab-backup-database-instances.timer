@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly Homelab VM100 PostgreSQL instance backup
+
+[Timer]
+OnCalendar=*-*-* 01:30:00 Asia/Ho_Chi_Minh
+Persistent=true
+Unit=homelab-backup@database-instances.service
+
+[Install]
+WantedBy=timers.target

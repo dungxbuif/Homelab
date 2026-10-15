@@ -68,7 +68,6 @@ class DatabaseInstancesTest(unittest.TestCase):
     def test_invalid_instances_rejected_before_export(self):
         for mutation in [
             lambda x: x[0].update(id="../escape"),
-            lambda x: x[0].update(host="vm100"),
             lambda x: x.append(dict(x[0])),
             lambda x: x[0].update(container="postgres"),
             lambda x: x[0].pop("admin_user"),
@@ -84,6 +83,17 @@ class DatabaseInstancesTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     self.execute(Path(tmp), inv, pg)
                 pg.create_backup.assert_not_called()
+
+    def test_remote_instance_is_not_run_by_pi_shared_backup(self):
+        inv = self.inventory()
+        inv["postgresql_instances"][0]["host"] = "vm100"
+        pg = Mock()
+        pg.create_backup.return_value = {}
+        with tempfile.TemporaryDirectory() as tmp:
+            run = self.execute(Path(tmp), inv, pg)
+            self.assertEqual(pg.create_backup.call_count, 1)
+            manifest = json.loads((run / "manifest.json").read_text())
+            self.assertNotIn("postgresql_instances", manifest["coverage"])
 
     def test_native_adapter_files_are_separated_and_checksummed(self):
         pg = MODULE.load_adapter("backup-postgres.py", "postgres_instance_fixture")

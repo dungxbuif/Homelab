@@ -17,6 +17,7 @@
           - /usr/bin/systemctl
           - show
           - homelab-backup@databases.service
+          - homelab-backup@database-instances.service
           - homelab-backup@gitlab.service
           - homelab-backup@rustfs.service
           - homelab-backup@retention.service
@@ -29,8 +30,8 @@
     - name: Refuse to replace the scheduler while backup jobs are live
       ansible.builtin.assert:
         that:
-          - backup_gate_job_states.stdout_lines | reject('equalto', '') | list | length == 8
-          - backup_gate_job_states.stdout_lines | select('equalto', 'LoadState=loaded') | list | length == 4
+          - backup_gate_job_states.stdout_lines | reject('equalto', '') | list | length == 10
+          - backup_gate_job_states.stdout_lines | select('equalto', 'LoadState=loaded') | list | length == 5
           - >-
             backup_gate_job_states.stdout_lines |
             reject('in', ['', 'LoadState=loaded', 'ActiveState=inactive', 'ActiveState=failed']) | list | length == 0

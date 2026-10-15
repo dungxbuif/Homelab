@@ -8,6 +8,7 @@ retention="$root/automation/backup-runner/run-retention.sh"
 grep -q 'flock' "$runner"
 grep -q 'run-database-backup.py' "$runner"
 grep -q 'run-rustfs-backup.sh' "$runner"
+grep -q 'run-instance-backup.py' "$runner"
 grep -q 'file=sys.stderr' "$root/automation/rustfs-backup/export-buckets.py"
 if grep -q '| tail -n 1' "$runner"; then
   echo 'backup runner must not capture exporter output through SIGPIPE-prone tail pipeline' >&2

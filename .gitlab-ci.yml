@@ -56,6 +56,7 @@ validate:automation-ee:
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_runner_boundary.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_baseline_observation.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_backup_health_guard.py
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_backup_instance_deploy_contract.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_host_audit_guard.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_host_observer.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_homepage_release.py
@@ -89,6 +90,7 @@ validate:automation-ee:
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_retention_prerequisites.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_scheduler_generation.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_database_instances.py
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_instance_backup.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_instance_registration.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_instance_enrollment.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_restore_staging.py
@@ -98,6 +100,8 @@ validate:automation-ee:
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_backup_client_release.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint bash "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_upload_manifest.sh
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint bash "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_restic_contract.sh
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint bash "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_schedule_contract.sh
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint bash "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_scheduler_contract.sh
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tofu/proxmox/tests/test_import_plan.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tofu/proxmox/tests/test_observed_baseline.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tofu/proxmox/tests/test_ca_trust.py

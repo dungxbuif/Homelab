@@ -20,8 +20,8 @@ implementation plan is [here](../docs/superpowers/plans/2026-10-04-homelab-backu
    verified.
 4. Run `scripts/post-check-report.sh` only after the backup and remote upload
    verification succeed.
-5. Report one status to Mezon after each backup class: PostgreSQL/CouchDB,
-   GitLab, and RustFS.
+5. Report one status to Mezon after each backup class: shared PostgreSQL/CouchDB,
+   additional PostgreSQL instances, GitLab, and RustFS.
 6. Never store the Mezon webhook URL in Git. Provide it at runtime through
    `MEZON_WEBHOOK_URL_FILE` or a secret-mounted `MEZON_WEBHOOK_URL`.
 
@@ -53,6 +53,7 @@ an explicit follow-up and is not silently implied by database provisioning.
 | Backup class | Required mechanism | Not used as the scheduled mechanism |
 |---|---|---|
 | PostgreSQL | `pg_dump`, `pg_dumpall --globals-only` | live data-directory copy |
+| Additional PostgreSQL instances | native `pg_dump` on the owning host | cross-host volume copy or Pi-side container guessing |
 | CouchDB | CouchDB replication/HTTP API or verified native admin tooling | live volume copy |
 | GitLab | `gitlab-backup create` and supported config/secrets backup | custom repository `rsync` |
 | RustFS | `rc`/S3 API object export or replication | live-volume `rsync` |
@@ -102,8 +103,8 @@ For local validation without sending a message, add `--dry-run`.
 - Restic repositories are isolated below the existing `homelab-backups/`
   child of the pinned Google Drive folder: the runtime uses
   `DRIVE_ROOT=homelab-backups` and the effective paths are
-  `homelab-backups/databases`, `homelab-backups/rustfs`, and
-  `homelab-backups/gitlab` on `homelab1`.
+  `homelab-backups/databases`, `homelab-backups/database-instances`,
+  `homelab-backups/rustfs`, and `homelab-backups/gitlab` on `homelab1`.
 - `restic-lib.sh` uses a writable per-process copy of `rclone.conf`, so OAuth
   refreshes do not modify the source config or fail on a read-only mount. The
   runner refuses to implicitly initialize a repository after a failed
@@ -122,6 +123,7 @@ For local validation without sending a message, add `--dry-run`.
 The operator receives one message only after each class passes its post-check:
 
 - `[HOMELAB BACKUP] [OK] databases: ...`
+- `[HOMELAB BACKUP] [OK] database-instances: ...`
 - `[HOMELAB BACKUP] [OK] gitlab: ...`
 - `[HOMELAB BACKUP] [OK] rustfs: ...`
 - `[HOMELAB BACKUP] [FAIL] <kind>: post-check failed ...`

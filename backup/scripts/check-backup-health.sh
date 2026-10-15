@@ -19,7 +19,7 @@ warnings=()
 details=()
 
 if [[ "${BACKUP_HEALTH_CHECK_UNITS:-true}" == true ]] && command -v systemctl >/dev/null 2>&1; then
-  for unit in homelab-backup@databases.service homelab-backup@gitlab.service homelab-backup@rustfs.service homelab-backup@retention.service; do
+  for unit in homelab-backup@databases.service homelab-backup@database-instances.service homelab-backup@gitlab.service homelab-backup@rustfs.service homelab-backup@retention.service; do
     state=$(systemctl is-failed "$unit" 2>/dev/null || true)
     [[ "$state" == failed ]] && problems+=("failed unit: $unit")
 

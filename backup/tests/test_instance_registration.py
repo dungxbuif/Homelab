@@ -17,10 +17,15 @@ class InstanceRegistrationTests(unittest.TestCase):
                 "admin_user": "relayhub", "databases": [
                     {"name": "relayhub", "application": "relayhub", "lifecycle": "active"}]}
 
+    def base_catalog(self):
+        catalog = json.loads((ROOT / "backup/inventory.yaml").read_text())
+        catalog.pop("postgresql_instances", None)
+        return catalog
+
     def test_registration_preserves_catalog_metadata_and_is_idempotent(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "inventory.yaml"
-            original = json.loads((ROOT / "backup/inventory.yaml").read_text())
+            original = self.base_catalog()
             path.write_text(json.dumps(original))
             path.chmod(0o640)
             stat = path.stat()
@@ -39,7 +44,7 @@ class InstanceRegistrationTests(unittest.TestCase):
     def test_conflicts_and_secrets_never_modify_catalog(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "inventory.yaml"
-            path.write_text((ROOT / "backup/inventory.yaml").read_text())
+            path.write_text(json.dumps(self.base_catalog()))
             MODULE.register_instance_file(path, self.request())
             before = path.read_bytes()
             for changed in [{"container": "other"}, {"password": "fixture"}, {"host": "vm100"},
@@ -56,7 +61,7 @@ class InstanceRegistrationTests(unittest.TestCase):
                      "secret_ref": "swarm:fixture"}
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "inventory.yaml"
-            path.write_text((ROOT / "backup/inventory.yaml").read_text())
+            path.write_text(json.dumps(self.base_catalog()))
             processes = [
                 context.Process(target=MODULE.register_instance_file, args=(path, self.request())),
                 context.Process(target=MODULE.register_file,

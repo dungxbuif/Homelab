@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-class=${1:?usage: cleanup-local-runs.sh databases|rustfs|gitlab}
+class=${1:?usage: cleanup-local-runs.sh databases|database-instances|rustfs|gitlab}
 case "$class" in
-  databases|rustfs|gitlab) ;;
+  databases|database-instances|rustfs|gitlab) ;;
   *) echo "unsupported backup class: $class" >&2; exit 2 ;;
 esac
 

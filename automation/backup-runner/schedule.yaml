@@ -4,6 +4,9 @@ jobs:
   - name: databases
     schedule: "0 1 * * *"
     command: run-class.sh databases db-{utc_timestamp}
+  - name: database-instances
+    schedule: "30 1 * * *"
+    command: run-class.sh database-instances database-instances-{utc_timestamp}
   - name: gitlab
     schedule: "30 2 * * *"
     command: run-class.sh gitlab gitlab-{utc_timestamp} /path/from/vm100/native-run/complete

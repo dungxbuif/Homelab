@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-class=${1:?usage: run-vm100-scheduled.sh databases|gitlab|rustfs|retention|health}
+class=${1:?usage: run-vm100-scheduled.sh databases|database-instances|gitlab|rustfs|retention|health}
 case "$class" in
-  databases|gitlab|rustfs|retention|health) ;;
+  databases|database-instances|gitlab|rustfs|retention|health) ;;
   *) echo "unsupported backup class: $class" >&2; exit 2 ;;
 esac
 
@@ -40,6 +40,15 @@ case "$class" in
   databases|rustfs)
     run_pi "$class"
     ;;
+  database-instances)
+    rm -f "$status_root/database-instances.success"
+    run_id="database-instances-$(date -u +%Y%m%d-%H%M%S)"
+    BACKUP_APP_ROOT="$app_root" \
+      BACKUP_STAGING_ROOT="$staging_root" \
+      BACKUP_STATUS_ROOT="$status_root" \
+      BACKUP_INSTANCE_HOST=vm100 \
+      bash "$app_root/automation/backup-runner/run-class.sh" database-instances "$run_id"
+    ;;
   gitlab)
     rm -f "$status_root/gitlab.success"
     run_id="gitlab-$(date -u +%Y%m%d-%H%M%S)"
@@ -64,6 +73,10 @@ case "$class" in
       exit 1
     }
     run_pi retention < "$marker"
+    BACKUP_APP_ROOT="$app_root" \
+      BACKUP_STAGING_ROOT="$staging_root" \
+      BACKUP_STATUS_ROOT="$status_root" \
+      bash "$script_dir/run-instance-retention.sh"
     BACKUP_STAGING_ROOT="$staging_root" \
       bash "$backup_scripts/cleanup-local-runs.sh" gitlab
     ;;

@@ -9,7 +9,7 @@ User=ubuntu
 Group=ubuntu
 WorkingDirectory=/opt/apps/homelab-backup/app
 EnvironmentFile=/etc/homelab-backup/runner.env
-Environment="BACKUP_HEALTH_EXPECTED_CLASSES=gitlab"
+Environment="BACKUP_HEALTH_EXPECTED_CLASSES=gitlab database-instances"
 Environment="BACKUP_HEALTH_REMOTE_PI=true"
 SyslogIdentifier=homelab-backup-health
 StandardOutput=journal

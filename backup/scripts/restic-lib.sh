@@ -77,7 +77,7 @@ restic_run() {
 restic_repo_for() {
   local class=${1:?}
   case "$class" in
-    databases|rustfs|gitlab) printf 'rclone:%s:%s/%s' "${RCLONE_REMOTE:?}" "${DRIVE_ROOT:?}" "$class" ;;
+    databases|database-instances|rustfs|gitlab) printf 'rclone:%s:%s/%s' "${RCLONE_REMOTE:?}" "${DRIVE_ROOT:?}" "$class" ;;
     *) echo "unsupported backup class: $class" >&2; return 2 ;;
   esac
 }

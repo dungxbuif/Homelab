@@ -33,6 +33,7 @@
           - systemctl
           - show
           - homelab-backup@databases.service
+          - homelab-backup@database-instances.service
           - homelab-backup@rustfs.service
           - homelab-backup@gitlab.service
           - homelab-backup@retention.service
@@ -57,6 +58,8 @@
           - -u
           - homelab-backup@databases.service
           - -u
+          - homelab-backup@database-instances.service
+          - -u
           - homelab-backup@rustfs.service
           - -u
           - homelab-backup@gitlab.service
@@ -77,7 +80,7 @@
         argv:
           - cat
           - '{{ backup_audit_staging_roots[inventory_hostname] }}/.state/{{ item }}.success'
-      loop: '{{ ["databases", "rustfs"] if inventory_hostname == "pi5" else ["gitlab"] }}'
+      loop: '{{ ["databases", "rustfs"] if inventory_hostname == "pi5" else ["gitlab", "database-instances"] }}'
       register: local_markers
       changed_when: false
       failed_when: local_markers.rc != 0

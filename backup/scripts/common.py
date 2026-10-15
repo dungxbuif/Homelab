@@ -57,8 +57,8 @@ def validate_run_id(value: str) -> str:
     return value
 
 
-def validate_postgres_instances(inventory: dict) -> list[dict]:
-    """Validate optional local PostgreSQL instances before any export."""
+def validate_postgres_instances(inventory: dict, *, host: str | None = None) -> list[dict]:
+    """Validate cataloged PostgreSQL instances and optionally select one host."""
     instances = inventory.get("postgresql_instances", [])
     if not isinstance(instances, list):
         raise ValueError("postgresql_instances must be a list")
@@ -73,8 +73,6 @@ def validate_postgres_instances(inventory: dict) -> list[dict]:
                 raise ValueError(f"PostgreSQL instance requires {field}")
         validate_name(instance["id"], "instance")
         validate_name(instance["container"], "database")
-        if instance["host"] != inventory["postgresql"].get("host"):
-            raise ValueError("remote PostgreSQL instance requires a separate export transport")
         if instance["id"] in ids or instance["container"] in containers:
             raise ValueError("duplicate PostgreSQL instance ID or container")
         databases = instance.get("databases")
@@ -90,7 +88,10 @@ def validate_postgres_instances(inventory: dict) -> list[dict]:
             names.add(name)
         ids.add(instance["id"])
         containers.add(instance["container"])
-    return instances
+    if host is None:
+        return instances
+    selected = [instance for instance in instances if instance["host"] == host]
+    return selected
 
 
 def select_backup_entries(entries: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:

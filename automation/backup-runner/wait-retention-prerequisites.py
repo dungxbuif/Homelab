@@ -4,7 +4,7 @@ import subprocess
 import sys
 import time
 
-UNITS = tuple('homelab-backup@' + name + '.service' for name in ('databases', 'gitlab', 'rustfs'))
+UNITS = tuple('homelab-backup@' + name + '.service' for name in ('databases', 'database-instances', 'gitlab', 'rustfs'))
 FIELDS = ('LoadState', 'ActiveState', 'Result', 'ExecMainStatus', 'ExecMainExitTimestampMonotonic')
 
 

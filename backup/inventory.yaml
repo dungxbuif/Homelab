@@ -40,6 +40,18 @@
       {"name": "relayhub", "application": "relayhub", "lifecycle": "active"}
     ]
   },
+  "postgresql_instances": [
+    {
+      "id": "couchloom",
+      "host": "vm100",
+      "container": "couchloom-postgres",
+      "admin_user": "couchloom",
+      "databases": [
+        {"name": "couchloom", "application": "couchloom", "lifecycle": "active"},
+        {"name": "postgres", "application": "postgresql", "lifecycle": "system"}
+      ]
+    }
+  ],
   "couchdb": {
     "host": "pi5",
     "container": "couchdb",

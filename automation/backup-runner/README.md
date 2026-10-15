@@ -8,11 +8,15 @@ native/API export -> COMPLETE + manifest + checksums -> restic backup/check
 -> post-check -> one Mezon status
 ```
 
-`run-class.sh` supports `databases`, `rustfs`, and `gitlab`. The GitLab class
-receives a completed directory produced by the VM100 native wrapper; it never
-copies a live GitLab filesystem itself. `run-retention.sh` is separate and
-prunes only after repository checks, using the three class-specific restic
-repositories.
+`run-class.sh` supports `databases`, `database-instances`, `rustfs`, and
+`gitlab`. The `database-instances` class selects only cataloged PostgreSQL
+instances for the owning host (currently CouchLoom on VM100) and invokes the
+native `pg_dumpall`/`pg_dump` adapter through its private Docker container. The
+Pi `databases` class similarly selects only same-host instances, so it cannot
+accidentally export a remote container. The GitLab class receives a completed
+directory produced by the VM100 native wrapper; it never copies a live GitLab
+filesystem itself. `run-retention.sh` is separate and prunes only after
+repository checks, using the Pi class-specific restic repositories.
 
 Required runtime environment is secret-free in the repository and must be
 provided by Semaphore/Docker secrets:
@@ -34,16 +38,18 @@ should retry later without overlapping it.
 
 After a class passes its remote post-check, `run-class.sh` writes a short
 success marker under `BACKUP_STATUS_ROOT`. Starting a new class attempt removes
-that class marker. `run-retention.sh` requires all three markers to be recent
-(26 hours by default) before it invokes any destructive prune, and validates
-all markers before pruning the first repository.
+that class marker. `run-retention.sh` requires the three Pi markers to be
+recent (26 hours by default) before it invokes any destructive prune. VM100
+then verifies and prunes the `database-instances` repository and its local
+staging under the same scheduler workflow.
 
-Local staging is bounded separately from Google Drive retention. After all
-three repositories pass their retention checks, the runner keeps the two most
-recent completed staging runs per class and removes older completed runs. It
-never removes a run before `COMPLETE` exists and never removes an
-`.incomplete` directory automatically. GitLab staging is cleaned on VM100;
-database and RustFS staging is cleaned on Pi5.
+Local staging is bounded separately from Google Drive retention. After the
+three Pi repositories pass their retention checks, VM100 also verifies the
+additional-instance repository. The runner keeps the two most recent
+completed staging runs per class and removes older completed runs. It never
+removes a run before `COMPLETE` exists and never removes an `.incomplete`
+directory automatically. GitLab and additional-instance staging are cleaned
+on VM100; shared database and RustFS staging are cleaned on Pi5.
 
 `check-backup-health.sh` is a non-destructive operator check. It reports
 failed backup units, backup units that remain `active`/`activating` beyond the
@@ -66,8 +72,8 @@ For Google Drive, the runtime rclone config pins `root_folder_id` on the
 active remote to the `Homelab Backup` folder. The currently populated,
 validated repositories remain under its existing `homelab-backups/` child, so
 the runtime value is `DRIVE_ROOT=homelab-backups` and the effective paths are
-`homelab-backups/databases`, `homelab-backups/rustfs`, and
-`homelab-backups/gitlab`. This avoids an extra Drive folder-search call on
+`homelab-backups/databases`, `homelab-backups/database-instances`,
+`homelab-backups/rustfs`, and `homelab-backups/gitlab`. This avoids an extra Drive folder-search call on
 every Restic operation while the direct-root migration is pending.
 
 The runtime config must use the dedicated project-owned Google OAuth client

@@ -8,6 +8,13 @@
       "monthly": 12,
       "restore_test_days": 30
     },
+    "db-instance-default": {
+      "classes": ["database-instances"],
+      "daily": 14,
+      "weekly": 8,
+      "monthly": 12,
+      "restore_test_days": 30
+    },
     "rustfs-default": {
       "classes": ["rustfs"],
       "daily": 14,

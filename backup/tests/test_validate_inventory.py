@@ -35,7 +35,7 @@ class InventoryTests(unittest.TestCase):
         valid = {"id": "relayhub", "host": "pi5", "container": "relayhub-pg",
                  "admin_user": "relayhub", "databases": [
                      {"name": "relayhub", "application": "relayhub", "lifecycle": "active"}]}
-        for changes, rejected in [({}, False), ({"host": "vm100"}, True),
+        for changes, rejected in [({}, False), ({"host": "vm100"}, False),
                                   ({"databases": []}, True), ({"id": "../bad"}, True),
                                   ({"container": "postgres"}, True),
                                   ({"databases": [{"name": "bad"}]}, True)]:

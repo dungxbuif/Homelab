@@ -10,7 +10,7 @@ target=${3:?usage: restore-staging.sh CLASS SNAPSHOT_ID TARGET_DIR}
   exit 2
 }
 case "$class" in
-  databases|rustfs|gitlab) ;;
+  databases|database-instances|rustfs|gitlab) ;;
   *) echo 'unsupported backup class' >&2; exit 2 ;;
 esac
 [[ ! -e "$target" && ! -L "$target" ]] || {

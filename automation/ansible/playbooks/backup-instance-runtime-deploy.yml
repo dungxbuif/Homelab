@@ -1,0 +1,190 @@
+---
+- name: Deploy the VM100 PostgreSQL instance backup runtime
+  hosts: vm100
+  gather_facts: false
+  become: false
+  serial: 1
+  vars:
+    backup_app_root: /opt/apps/homelab-backup/app
+    backup_runtime_files:
+      - backup/inventory.yaml
+      - backup/policies.yaml
+      - backup/scripts/common.py
+      - backup/scripts/backup-postgres.py
+      - backup/scripts/run-database-backup.py
+      - backup/scripts/run-instance-backup.py
+      - backup/scripts/validate_inventory.py
+      - backup/scripts/cleanup-local-runs.sh
+      - backup/scripts/restic-lib.sh
+      - backup/scripts/upload-restic.sh
+      - backup/scripts/verify-retention.sh
+      - backup/scripts/restore-staging.sh
+      - backup/scripts/check-backup-health.sh
+      - automation/backup-runner/run-class.sh
+      - automation/backup-runner/run-vm100-scheduled.sh
+      - automation/backup-runner/run-instance-retention.sh
+      - automation/backup-runner/wait-retention-prerequisites.py
+      - automation/backup-runner/schedule.yaml
+      - automation/scripts/backup-health-helper.sh
+    backup_instance_timer_started: false
+  tasks:
+    - name: Require explicit runtime deployment approval and fixed VM100 identity
+      ansible.builtin.assert:
+        that:
+          - backup_instance_runtime_deploy_approved | default(false) | bool
+          - inventory_hostname == 'vm100'
+          - ansible_host == '10.10.0.31'
+
+    - name: Refuse deployment while any backup operation is active
+      ansible.builtin.command:
+        argv:
+          - systemctl
+          - is-active
+          - homelab-backup@databases.service
+          - homelab-backup@database-instances.service
+          - homelab-backup@gitlab.service
+          - homelab-backup@rustfs.service
+          - homelab-backup@retention.service
+      register: active_backup_units
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Require an idle backup scheduler before publication
+      ansible.builtin.assert:
+        that:
+          - active_backup_units.stdout_lines | reject('equalto', 'inactive') | list | length == 0
+        fail_msg: A backup unit is active; preserve the current runtime and retry after it becomes idle.
+
+    - name: Create a private candidate directory
+      ansible.builtin.tempfile:
+        state: directory
+        path: /opt/apps/homelab-backup
+        prefix: database-instance-runtime-
+      register: backup_candidate
+
+    - name: Create candidate subdirectories
+      ansible.builtin.file:
+        path: '{{ backup_candidate.path }}/{{ item }}'
+        state: directory
+        mode: '0700'
+      loop:
+        - backup
+        - backup/scripts
+        - automation
+        - automation/backup-runner
+        - automation/scripts
+
+    - name: Stage reviewed runtime files
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../../{{ item }}'
+        dest: '{{ backup_candidate.path }}/{{ item }}'
+        mode: '{{ "0755" if item.endswith(".sh") else "0644" }}'
+      loop: '{{ backup_runtime_files }}'
+
+    - name: Validate staged scripts and inventory before activation
+      ansible.builtin.command:
+        argv:
+          - bash
+          - -c
+          - >-
+            python3 -m py_compile
+            {{ backup_candidate.path }}/backup/scripts/common.py
+            {{ backup_candidate.path }}/backup/scripts/backup-postgres.py
+            {{ backup_candidate.path }}/backup/scripts/run-database-backup.py
+            {{ backup_candidate.path }}/backup/scripts/run-instance-backup.py
+            {{ backup_candidate.path }}/backup/scripts/validate_inventory.py
+            {{ backup_candidate.path }}/automation/backup-runner/wait-retention-prerequisites.py
+            && bash -n {{ backup_candidate.path }}/automation/backup-runner/run-class.sh
+            {{ backup_candidate.path }}/automation/backup-runner/run-vm100-scheduled.sh
+            {{ backup_candidate.path }}/automation/backup-runner/run-instance-retention.sh
+            {{ backup_candidate.path }}/backup/scripts/cleanup-local-runs.sh
+            {{ backup_candidate.path }}/backup/scripts/restic-lib.sh
+            {{ backup_candidate.path }}/backup/scripts/upload-restic.sh
+            {{ backup_candidate.path }}/backup/scripts/verify-retention.sh
+            {{ backup_candidate.path }}/backup/scripts/restore-staging.sh
+            {{ backup_candidate.path }}/backup/scripts/check-backup-health.sh
+            && python3 {{ backup_candidate.path }}/backup/scripts/validate_inventory.py
+            {{ backup_candidate.path }}/backup/inventory.yaml
+            {{ backup_candidate.path }}/backup/policies.yaml
+      changed_when: false
+
+    - name: Publish the candidate atomically under the backup lock
+      ansible.builtin.command:
+        argv:
+          - flock
+          - -n
+          - -E
+          - '75'
+          - /run/lock/homelab-backup.lock
+          - python3
+          - -c
+          - |
+            import os, shutil, sys
+            from pathlib import Path
+            candidate, live = map(Path, sys.argv[1:])
+            for source in sorted(path for path in candidate.rglob('*') if path.is_file()):
+                relative = source.relative_to(candidate)
+                target = live / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                temporary = target.with_name('.' + target.name + '.candidate')
+                shutil.copy2(source, temporary)
+                os.chmod(temporary, source.stat().st_mode & 0o777)
+                os.replace(temporary, target)
+            for directory in (live / 'backup/scripts', live / 'automation/backup-runner', live / 'automation/scripts'):
+                fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
+                try:
+                    os.fsync(fd)
+                finally:
+                    os.close(fd)
+          - '{{ backup_candidate.path }}'
+          - '{{ backup_app_root }}'
+      register: backup_runtime_publication
+      changed_when: true
+      check_mode: false
+
+    - name: Install the VM100 database-instance timer unit
+      become: true
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../backup-runner/systemd/homelab-backup-database-instances.timer'
+        dest: /etc/systemd/system/homelab-backup-database-instances.timer
+        mode: '0644'
+        backup: true
+      notify: Reload systemd definitions
+
+    - name: Update health service to require the VM100 instance marker
+      become: true
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../backup-runner/systemd/homelab-backup-health.service'
+        dest: /etc/systemd/system/homelab-backup-health.service
+        mode: '0644'
+        backup: true
+      notify: Reload systemd definitions
+
+    - name: Enable the VM100 database-instance timer without starting a backup yet
+      become: true
+      ansible.builtin.systemd_service:
+        name: homelab-backup-database-instances.timer
+        enabled: true
+        state: '{{ "started" if backup_instance_timer_started | bool else "stopped" }}'
+        daemon_reload: true
+
+    - name: Report sanitized runtime publication
+      ansible.builtin.debug:
+        msg:
+          changed: true
+          timer_enabled: true
+          timer_started: '{{ backup_instance_timer_started | bool }}'
+          host: vm100
+
+    - name: Remove the published candidate after successful activation
+      ansible.builtin.file:
+        path: '{{ backup_candidate.path }}'
+        state: absent
+
+  handlers:
+    - name: Reload systemd definitions
+      become: true
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+

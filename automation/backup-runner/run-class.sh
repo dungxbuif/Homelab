@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-class=${1:?usage: run-class.sh databases|rustfs|gitlab RUN_ID [GITLAB_RUN_DIR]}
+class=${1:?usage: run-class.sh databases|database-instances|rustfs|gitlab RUN_ID [GITLAB_RUN_DIR]}
 run_id=${2:-$(date -u +backup-%Y%m%d-%H%M%S)}
 gitlab_run_dir=${3:-}
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -15,7 +15,7 @@ status_root=${BACKUP_STATUS_ROOT:-$staging_root/.state}
 lock_file=${BACKUP_LOCK_FILE:-/run/lock/homelab-backup.lock}
 
 case "$class" in
-  databases|rustfs|gitlab) ;;
+  databases|database-instances|rustfs|gitlab) ;;
   *) echo "unsupported backup class: $class" >&2; exit 2 ;;
 esac
 
@@ -64,6 +64,15 @@ case "$class" in
       --staging-root "$staging_root" \
       --run-id "$run_id")
     summary='PostgreSQL and CouchDB backup verified'
+    ;;
+  database-instances)
+    stage='PostgreSQL instance export'
+    run_dir=$(python3 "$backup_scripts/run-instance-backup.py" \
+      --inventory "$inventory" \
+      --staging-root "$staging_root" \
+      --run-id "$run_id" \
+      --host "${BACKUP_INSTANCE_HOST:-vm100}")
+    summary='Additional PostgreSQL instance backup verified'
     ;;
   rustfs)
     stage='RustFS export'
