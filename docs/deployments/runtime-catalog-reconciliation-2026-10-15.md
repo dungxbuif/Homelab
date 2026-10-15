@@ -91,3 +91,11 @@ Outstanding data/ownership checks:
   unknown. Stopped legacy containers and this service were not removed.
 - Rootless CI daemon inventory, VPS/Mac observations, routes, owners and resource
   limits remain incomplete. Keep `inventory_complete: false`.
+
+Live Pi runner inventory was subsequently read at
+`/ssd-data/infra/backup-runner/app/backup/inventory.yaml`: its PostgreSQL host is
+pi5 and container is `postgres`; CouchDB container is `couchdb`. Thus the current
+database-class inventory does not enumerate the two extra PostgreSQL instances.
+Do not extend the existing green database-class result into a claim that every
+PostgreSQL instance in the lab is protected; separate export/migration evidence
+for those instances is still required.

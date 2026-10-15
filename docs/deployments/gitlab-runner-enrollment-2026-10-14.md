@@ -70,3 +70,21 @@ Pipeline 4 at `6e3c4e85baa46a6bd75d4ff732185b02c7e8e0ef` adds the non-root
 Semaphore runner image and its real container smoke test. Job 8 was confirmed
 running; job 9 is pending validation. Resume these handles rather than rebuilding
 from assumptions. The rootless runner is still concurrency one.
+
+## Bootstrap credential expiry during continued rollout
+
+On 2026-10-15 the API explicitly returned `invalid_token` with an expired-token
+description. This is an authentication failure, not evidence that pipelines
+41-43 stopped or failed. Recover only the temporary bootstrap API credential
+for existing user dungxbuif through the documented administrator bootstrap path,
+with a short expiry and ignored 0600 local storage. Inspect/revoke the old
+bootstrap record, avoid printing either token, and re-read the same pipeline/job
+handles afterward. Do not re-enroll runners, cancel builds, or restart Docker.
+The scoped project registry tokens and Semaphore keys are separate credentials.
+
+Recovery completed: expired token ID 2 was revoked and replacement ID 3 for
+the same dungxbuif account/API scope expires 2026-10-16. Its value was captured
+without printing and atomically replaced in the ignored 0600 credential file.
+API access works again; pipelines 41, 42 and 43 are all fully successful.
+No runner was recreated, no pipeline retried, and no daemon restarted.
+The replacement remains temporary and must be revoked when bootstrap ends.

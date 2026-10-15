@@ -46,3 +46,19 @@ Public application docs are unaffected by these internal backup changes.
 
 Docker upgrade authorization arrived during this repair. Proceed with VM100
 upgrade preflight next; do not clear retention failure to manufacture success.
+
+## Next-cycle observation, 2026-10-15
+
+At 00:32 UTC the databases and GitLab units are terminal with Result=success.
+Restricted health check confirms fresh database/RustFS/GitLab markers and free
+backup locks on Pi/VM100. Retention's 22:30 UTC attempt failed before deletion:
+`GitLab success marker is missing before retention`. GitLab completed after the
+fixed retention time. This is a prerequisite scheduling race, not evidence that
+the repaired RustFS ownership failed again.
+
+Run the existing guarded retention unit once now that all classes have fresh
+post-check markers; retain its native remote integrity/prune and local cleanup
+gates. Do not reset-failed without executing those checks or delete staging by
+hand. Record terminal outcome before claiming retention recovered. Separately,
+implement a bounded prerequisite-aware retry so late GitLab completion does not
+require manual intervention each night; do not simply disable the marker gate.
