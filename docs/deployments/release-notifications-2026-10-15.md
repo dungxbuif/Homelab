@@ -20,10 +20,12 @@ bound requests to 15 seconds, and return a generic failure without URL, body or
 exception text. No automatic retry after an ambiguous delivery: duplicate
 messages remain possible on operator replay. Task/receipt identify the attempt.
 
-First deliverable is a tested standalone sender and CI enrollment. Wiring into
-the live release playbook and secret storage choice remain pending; do not break
-existing release jobs by requiring a not-yet-enrolled secret. Dry-run is not
-live delivery evidence. A sent HTTP request is not proof of operator receipt.
+The standalone sender is wired into the live Homepage release template only
+after the dedicated secret Variable Group was enrolled. The template must
+provide both the group secret and Semaphore's positive task identity; otherwise
+the release task fails closed after the helper result and cannot claim a
+notification acceptance. Dry-run is not live delivery evidence. A sent HTTP
+request is not proof of operator receipt.
 
 Tests: success/unchanged/failure classification, field injection, invalid digest,
 wrong host/path and redirect rejection, missing secret, transport/HTTP failure
@@ -33,9 +35,13 @@ this internal Markdown supplies human and agent operational guidance.
 ## Source verification
 
 `automation/scripts/notify-homepage-release.py` is implemented; eight targeted
-tests pass, and the sender is included in CI validation. Full local automation
-Python discovery passes111 tests. No webhook credential was read or transmitted
-by these tests, and no live release-playbook wiring has changed.
+tests pass, and the sender is included in CI validation. The live Semaphore
+project now has a dedicated Variable Group named `Homepage release
+notifications` with one encrypted `env` secret named
+`HOMELAB_MEZON_WEBHOOK_URL`; its value is never returned by the API. Template 6
+is attached to that group in addition to its existing defaults. The playbook
+passes only the helper's validated JSON receipt to the sender and suppresses
+command output with `no_log`.
 
 Usage after obtaining an actual fresh helper summary:
 
@@ -44,7 +50,9 @@ python3 automation/scripts/notify-homepage-release.py --task-id 42 --dry-run < r
 ```
 
 For live delivery, omit `--dry-run` and inject `HOMELAB_MEZON_WEBHOOK_URL` through
-the approved secret mechanism. Do not put the webhook in shell arguments or
-paste it into task logs. A rejected/stale summary requires investigation, not
-editing its observation time to force acceptance. The example task ID is an
-argument example, not a claim that audit task42 was a release.
+the dedicated Semaphore Variable Group. Do not put the webhook in shell
+arguments or paste it into task logs. A rejected/stale summary requires
+investigation, not editing its observation time to force acceptance. The
+playbook reads `SEMAPHORE_TASK_ID` from the task environment; a missing or
+invalid identity is a hard failure. The example task ID is an argument example,
+not a claim that audit task42 was a release.

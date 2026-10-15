@@ -193,8 +193,14 @@ This does not replace the root-managed approval or grant arbitrary deployment.
 Add positive/negative contract tests before changing the checker.
 
 Task 29 completed successfully with status `unchanged`, six tasks and changed=0;
-receipt `homepage-release-o1s5ryzr`. Live rollback rehearsal and Mezon deployment
-notification are still outstanding; do not count deploy + no-op as two complete
+receipt `homepage-release-o1s5ryzr`. The live notification boundary is now
+enrolled separately: Semaphore project 1 Variable Group 3, named `Homepage
+release notifications`, stores only the encrypted `env` secret
+`HOMELAB_MEZON_WEBHOOK_URL`, and template 6 references it alongside group 2.
+The playbook sends the validated helper receipt with the positive Semaphore task
+ID after the release/no-op assertions. A task that lacks either value fails
+closed. Live rollback rehearsal and a positive release-to-Mezon delivery are
+still outstanding; do not count deploy + no-op as two complete
 Git-to-notification acceptances.
 
 Before rollback rehearsal, scope registry auth to the approved Homepage registry

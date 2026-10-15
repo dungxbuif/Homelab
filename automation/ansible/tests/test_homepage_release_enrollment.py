@@ -38,6 +38,19 @@ class EnrollmentTests(unittest.TestCase):
         self.assertFalse(task['diff'])
         self.assertEqual(task['ansible.builtin.copy']['mode'], '0600')
 
+    def test_release_playbook_requires_task_identity_and_sends_allowlisted_receipt(self):
+        play = yaml.safe_load((ROOT.parent / 'semaphore/playbooks/homepage-release.yml').read_text())[0]
+        tasks = play['tasks']
+        guard = next(t for t in tasks if 'Require Semaphore task identity' in t['name'])
+        assertions = guard['ansible.builtin.assert']['that']
+        self.assertIn("lookup('env', 'SEMAPHORE_TASK_ID') | int > 0", assertions)
+        self.assertIn("lookup('env', 'HOMELAB_MEZON_WEBHOOK_URL') | length > 0", assertions)
+        notify = next(t for t in tasks if t['name'] == 'Send the validated release receipt to Mezon')
+        command = notify['ansible.builtin.command']
+        self.assertEqual(command['argv'][:3], ['python3', 'automation/scripts/notify-homepage-release.py', '--task-id'])
+        self.assertEqual(command['stdin'], '{{ homepage_release_report | to_json }}')
+        self.assertTrue(notify['no_log'])
+
 
 if __name__ == '__main__':
     unittest.main()

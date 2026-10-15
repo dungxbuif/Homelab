@@ -43,3 +43,25 @@
     - name: Show release summary without credentials or service spec
       ansible.builtin.debug:
         var: homepage_release_report
+
+    - name: Require Semaphore task identity for the release receipt
+      ansible.builtin.assert:
+        that:
+          - lookup('env', 'SEMAPHORE_TASK_ID') | int > 0
+          - lookup('env', 'HOMELAB_MEZON_WEBHOOK_URL') | length > 0
+        fail_msg: >-
+          Release notification boundary is not configured; do not claim a
+          deploy acceptance without the Semaphore task identity and webhook
+          Variable Group.
+
+    - name: Send the validated release receipt to Mezon
+      ansible.builtin.command:
+        argv:
+          - python3
+          - automation/scripts/notify-homepage-release.py
+          - --task-id
+          - '{{ lookup("env", "SEMAPHORE_TASK_ID") }}'
+        chdir: '{{ playbook_dir }}/../..'
+        stdin: '{{ homepage_release_report | to_json }}'
+        stdin_add_newline: true
+      no_log: true
