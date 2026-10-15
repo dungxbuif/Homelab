@@ -35,7 +35,7 @@ function one(items, name) {
   return matches[0];
 }
 
-const keyName = 'Pi5 backup client release';
+const keyName = 'Pi5 backup client release (SSH)';
 const repositoryName = 'Homelab automation release branch';
 const inventoryName = 'Pi5 backup client release only';
 const templateName = 'Release backup client (Pi5)';
@@ -57,24 +57,24 @@ if (!apply) {
     scope: 'pi5-only',
   }));
 } else {
-  if (!routeBootstrap.ansible_user || !routeBootstrap.ansible_password) {
-    throw new Error('Pi route bootstrap credential is incomplete');
+  if (!routeBootstrap.ansible_user) {
+    throw new Error('Pi route bootstrap user is incomplete');
   }
   if (!key) {
     key = await api('/keys', {
       method: 'POST',
       body: JSON.stringify({
         name: keyName,
-        type: 'login_password',
+        type: 'ssh',
         project_id: 1,
-        login_password: {
+        ssh: {
           login: routeBootstrap.ansible_user,
-          password: routeBootstrap.ansible_password,
+          private_key: await fs.readFile('credentials/semaphore-pi-backup-release', 'utf8'),
         },
       }),
     });
   }
-  if (key.type !== 'login_password') throw new Error('Existing key type mismatch');
+  if (key.type !== 'ssh') throw new Error('Existing key type mismatch');
 
   const repositoryDesired = {
     name: repositoryName,
@@ -99,8 +99,7 @@ if (!apply) {
     ansible_host: '10.10.0.5',
     ansible_user: routeBootstrap.ansible_user,
     ansible_become: false,
-    ansible_connection: 'paramiko',
-    ansible_ssh_common_args: '-F /dev/null -o PubkeyAuthentication=no -o PreferredAuthentications=password -o StrictHostKeyChecking=yes -o ConnectTimeout=10',
+    ansible_ssh_common_args: '-F /dev/null -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10',
   }}}});
   if (!inventory) inventory = await api('/inventory', {
     method: 'POST',

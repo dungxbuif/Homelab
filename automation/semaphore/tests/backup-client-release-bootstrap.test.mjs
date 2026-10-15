@@ -25,7 +25,8 @@ test('bootstrap script has an explicit dry-run path and no secret output', async
   assert.match(source, /scope: 'pi5-only'/);
   assert.match(source, /codex\/relayhub-source-foundation/);
   assert.match(source, /Release backup client \(Pi5\)/);
-  assert.match(source, /ansible_connection: 'paramiko'/);
+  assert.match(source, /Pi5 backup client release \(SSH\)/);
+  assert.match(source, /type: 'ssh'/);
   assert.doesNotMatch(source, /console\.log\([^\n]*ansible_password/);
 });
 

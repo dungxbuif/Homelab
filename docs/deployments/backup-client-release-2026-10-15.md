@@ -16,6 +16,10 @@ checksum in release tests. This changes no scheduler, backup payload, or
 credential behavior; it makes the documented full-payload verification command
 available on both backup hosts.
 
+The Pi5 release template uses a dedicated SSH key enrolled only for the
+`dungxbuif` account. The password bootstrap key is not used by the job, and no
+VM100 write credential is enrolled by this follow-up.
+
 The deployment helper must hold the same existing exclusive flock as backups
 for the entire installation. Pi5 uses
 `/ssd-data/infra/backups/homelab/.homelab-backup.lock`; VM100 uses
