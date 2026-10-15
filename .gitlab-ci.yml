@@ -74,6 +74,7 @@ validate:automation-ee:
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_restore_staging.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_rclone_workdir.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_restic_lifecycle.py
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_backup_client_release.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint bash "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_upload_manifest.sh
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint bash "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_restic_contract.sh
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tofu/proxmox/tests/test_import_plan.py

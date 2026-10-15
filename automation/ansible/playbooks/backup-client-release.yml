@@ -1,0 +1,84 @@
+---
+- name: Release reviewed backup client under the existing job lock
+  hosts: pi5:vm100
+  gather_facts: false
+  become: false
+  serial: 1
+  vars:
+    client_files:
+      - prepare_rclone_workdir.py
+      - run_restic_container.py
+      - restic-lib.sh
+      - upload-restic.sh
+    client_content: {}
+    client_manifest: {}
+  tasks:
+    - name: Require explicit release approval and intended hosts
+      ansible.builtin.assert:
+        that:
+          - backup_client_release_approved | default(false) | bool
+          - inventory_hostname in ['pi5', 'vm100']
+          - (inventory_hostname == 'pi5' and ansible_host == '10.10.0.5') or (inventory_hostname == 'vm100' and ansible_host == '10.10.0.31')
+
+    - name: Freeze the fixed client bundle from reviewed source
+      ansible.builtin.set_fact:
+        client_content: >-
+          {{ client_content | combine({item: lookup('file', playbook_dir + '/../../../backup/scripts/' + item, rstrip=false)}) }}
+      loop: '{{ client_files }}'
+
+    - name: Derive exact checksums for the frozen bundle
+      ansible.builtin.set_fact:
+        client_manifest: '{{ client_manifest | combine({item: client_content[item] | hash("sha256")}) }}'
+      loop: '{{ client_files }}'
+
+    - name: Create private candidate even for read-only live check
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: backup-client-candidate-
+      register: client_candidate
+      check_mode: false
+
+    - name: Validate and publish the fixed candidate
+      block:
+        - name: Stage frozen client files
+          ansible.builtin.copy:
+            content: '{{ client_content[item] }}'
+            dest: '{{ client_candidate.path }}/{{ item }}'
+            mode: '0600'
+          loop: '{{ client_files }}'
+          check_mode: false
+
+        - name: Stage allowlisted checksum manifest
+          ansible.builtin.copy:
+            content: '{{ client_manifest | to_json }}'
+            dest: '{{ client_candidate.path }}/manifest.json'
+            mode: '0600'
+          check_mode: false
+
+        - name: Stage the lock-aware release helper
+          ansible.builtin.copy:
+            src: '{{ playbook_dir }}/../../backup-runner/release-backup-client.py'
+            dest: '{{ client_candidate.path }}/release.py'
+            mode: '0600'
+          check_mode: false
+
+        - name: Install or check while holding the existing lock
+          vars:
+            ansible_become: '{{ inventory_hostname == "vm100" }}'
+          ansible.builtin.command:
+            argv: >-
+              {{ ['python3', client_candidate.path + '/release.py', '--host', inventory_hostname,
+              '--payload', client_candidate.path] + (['--check'] if ansible_check_mode else []) }}
+          register: client_release_result
+          changed_when: (client_release_result.stdout | from_json).changed
+          check_mode: false
+
+        - name: Report sanitized release evidence
+          ansible.builtin.debug:
+            msg: '{{ client_release_result.stdout | from_json }}'
+      always:
+        - name: Remove only this candidate directory
+          ansible.builtin.file:
+            path: '{{ client_candidate.path }}'
+            state: absent
+          check_mode: false
