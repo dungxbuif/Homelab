@@ -6,7 +6,7 @@
       - -T
   register: sshd_config
   changed_when: false
-  failed_when: false
+  check_mode: false
 
 - name: Report SSH hardening baseline result
   ansible.builtin.debug:

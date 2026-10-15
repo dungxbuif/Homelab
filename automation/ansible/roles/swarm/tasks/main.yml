@@ -9,7 +9,7 @@
         {{ '{{' }}.Swarm.LocalNodeState{{ '}}' }} {{ '{{' }}.Swarm.ControlAvailable{{ '}}' }}
   register: swarm_state
   changed_when: false
-  failed_when: false
+  check_mode: false
 
 - name: Report Swarm baseline result
   ansible.builtin.debug:

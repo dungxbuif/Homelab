@@ -2,11 +2,11 @@
 - name: Read current swap configuration
   ansible.builtin.command:
     argv:
-      - /usr/bin/swapon
+      - /usr/sbin/swapon
       - --show
   register: swap_devices
   changed_when: false
-  failed_when: false
+  check_mode: false
 
 - name: Report swap baseline result
   ansible.builtin.debug:

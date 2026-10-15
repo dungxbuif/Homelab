@@ -9,7 +9,7 @@
         {{ '{{' }}.Server.Version{{ '}}' }}
   register: docker_version
   changed_when: false
-  failed_when: false
+  check_mode: false
 
 - name: Report Docker baseline result
   ansible.builtin.debug:
