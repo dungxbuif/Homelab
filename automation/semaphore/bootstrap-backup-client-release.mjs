@@ -99,7 +99,7 @@ if (!apply) {
     ansible_host: '10.10.0.5',
     ansible_user: routeBootstrap.ansible_user,
     ansible_become: false,
-    ansible_ssh_common_args: '-F /dev/null -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10',
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=yes -o IdentitiesOnly=yes -o IdentityFile={{ playbook_dir }}/../backup-client-release.pub -o ConnectTimeout=10 -o UserKnownHostsFile={{ playbook_dir }}/../known_hosts',
   }}}});
   if (!inventory) inventory = await api('/inventory', {
     method: 'POST',
