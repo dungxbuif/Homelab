@@ -82,6 +82,38 @@ notification claimed yet. Public application behavior is unchanged.
 
 ## Global Constraints
 
+### Supplementary verified checkpoint, 2026-10-15 05:31 UTC
+
+This supplement supersedes dated facts above, not the remaining acceptance gates.
+
+- Family Tree's real DB DNS failure was repaired with encrypted family-data-net.
+  Swarm converged, actual app SELECT1 through PgBouncer succeeded and login HTTPS
+  returned200. PgBouncer kept its ID/start time and prior networks; Compose
+  persisted the new membership. App catalog records its bind-mounted source and
+  explicitly keeps release automation disabled until image/rollback enrollment.
+- Restricted Semaphore audits42/43 observed all48 declared Pi/VM network
+  bindings matching policy. Uncatalogued diagnostic/restore containers remain
+  visible as drift; this is not full inventory or dependency-path acceptance.
+- Homepage installed helper hash matches the scoped registry-auth correction.
+  No reinstall was needed; rollback rehearsal still has not been performed.
+- GitLab validation213 exposed an AMD64 provider-lock checksum failure. Native
+  signed platform lock generation adds package hashes without changing provider
+  version or bypassing verification. ARM readonly init/validate passes; exact
+  AMD64 validation job221 is still running at this checkpoint.
+- Standalone Mezon release sender is implemented, with8 focused tests and111
+  passing local automation Python tests. It is NOT wired into live release
+  jobs; secret enrollment and actual notification acceptance remain pending.
+- Latest published source is private branch codex/automation-bootstrap at
+  5ae149bab. This does not imply green CI, main-branch adoption or complete
+  automation. Restore async job j186891193321.3128007 remains live; do not restart.
+
+Evidence: [Family repair](../../deployments/family-tree-private-data-2026-10-15.md),
+[network audit](../../deployments/network-membership-audit-2026-10-15.md),
+[provider lock](../../deployments/proxmox-ca-trust-2026-10-15.md), and
+[release notifications](../../deployments/release-notifications-2026-10-15.md).
+
+### Invariants
+
 - Pi5 `10.10.0.5` remains the active edge, DNS, Swarm manager, PostgreSQL/PgBouncer, Redis, RustFS, CouchDB, registry, and Semaphore/provisioner host.
 - VM100 `10.10.0.31` remains the production application worker and GitLab/backup host; it is not the database host.
 - The VPS remains the public Traefik/Rathole boundary; application databases and general application workloads must not move there.
