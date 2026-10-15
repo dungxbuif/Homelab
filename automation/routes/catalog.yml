@@ -98,8 +98,8 @@ routes:
     exposure: public
     owner: mac-services
     backend:
-      kind: mac_exception
-      url: http://10.10.0.6:1234
+      kind: tunnel
+      url: http://103.82.21.202:18123
     health_path: /v1/models
     rollback_version: current
   - id: ocr
@@ -218,5 +218,32 @@ routes:
     backend:
       kind: service_dns
       url: http://tasks.netbird-dashboard:80
+    health_path: /
+    rollback_version: current
+  - id: semaphore
+    hostnames: [semaphore.dungxbuif.com]
+    exposure: lan
+    owner: platform
+    backend:
+      kind: service_dns
+      url: http://tasks.semaphore_semaphore:3000
+    health_path: /
+    rollback_version: current
+  - id: kubekosh
+    hostnames: [kubekosh.dungxbuif.com]
+    exposure: lan
+    owner: platform
+    backend:
+      kind: service_dns
+      url: http://kubekosh:80
+    health_path: /
+    rollback_version: current
+  - id: k8s-syntax
+    hostnames: [k8s-syntax.dungxbuif.com]
+    exposure: public
+    owner: platform
+    backend:
+      kind: service_dns
+      url: http://tasks.k8s-syntax:80
     health_path: /
     rollback_version: current

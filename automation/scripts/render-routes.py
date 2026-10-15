@@ -4,11 +4,15 @@
 from __future__ import annotations
 
 import argparse
+import ipaddress
+import json
+import re
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
 import yaml
+from jsonschema import Draft202012Validator
 
 
 FORBIDDEN_BACKEND_TOKENS = (
@@ -22,6 +26,10 @@ FORBIDDEN_BACKEND_TOKENS = (
 )
 EXPOSURES = {"public", "lan", "netbird", "internal"}
 BACKEND_KINDS = {"service_dns", "tunnel", "mac_exception"}
+SCHEMA = Path(__file__).resolve().parents[1] / "routes/schemas/route.schema.json"
+PRIVATE_RANGES = tuple(ipaddress.ip_network(value) for value in (
+    '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '100.64.0.0/10', 'fc00::/7'
+))
 PASS_HOST_ROUTES = {
     "homepage",
     "stirling-pdf",
@@ -50,6 +58,9 @@ def load_catalog(path: Path) -> dict:
 
 
 def validate_catalog(data: dict) -> None:
+    validator = Draft202012Validator(json.loads(SCHEMA.read_text()))
+    if next(validator.iter_errors(data), None) is not None:
+        fail('catalog does not match the route schema')
     routes = data["routes"]
     route_ids: set[str] = set()
     hostnames: set[str] = set()
@@ -65,6 +76,33 @@ def validate_catalog(data: dict) -> None:
         backend = route.get("backend") or {}
         kind = backend.get("kind")
         url = backend.get("url", "")
+        if exposure == 'public' and (
+            route_id == 'semaphore'
+            or 'semaphore.dungxbuif.com' in route['hostnames']
+            or re.search(r'(^|[._-])semaphore([._-]|$)', urlparse(url).hostname or '')
+        ):
+            fail('Semaphore must remain private')
+        if exposure in {'lan', 'netbird'}:
+            middleware = 'lan-only' if exposure == 'lan' else 'netbird-only'
+            definition = middlewares.get(middleware, {})
+            allowlist = definition.get('ipAllowList')
+            if set(definition) != {'ipAllowList'} or not isinstance(allowlist, dict):
+                fail(f'{route_id}: {middleware} must contain only an IP allowlist')
+            if set(allowlist) != {'sourceRange'}:
+                fail(f'{route_id}: private address strategy overrides are not approved')
+            ranges = allowlist.get('sourceRange')
+            if not isinstance(ranges, list) or not ranges:
+                fail(f'{route_id}: {middleware} requires explicit private source ranges')
+            for value in ranges:
+                if not isinstance(value, str):
+                    fail(f'{route_id}: private source ranges must be CIDR strings')
+                try:
+                    network = ipaddress.ip_network(value, strict=True)
+                except (ValueError, TypeError):
+                    fail(f'{route_id}: invalid private source range')
+                if not any(network.version == allowed.version and network.subnet_of(allowed)
+                           for allowed in PRIVATE_RANGES):
+                    fail(f'{route_id}: source range is not private')
         if kind not in BACKEND_KINDS:
             fail(f"{route_id}: invalid backend kind")
         if not url.startswith(("http://", "h2c://")):
@@ -92,6 +130,7 @@ def host_rule(route: dict) -> str:
 
 
 def render(data: dict) -> dict:
+    validate_catalog(data)
     middlewares = dict(data.get("middlewares", {}))
     routers: dict = {}
     services: dict = {}
@@ -105,10 +144,13 @@ def render(data: dict) -> dict:
         ],
     }
     for route in data["routes"]:
+        if route['exposure'] == 'internal':
+            continue
         route_id = route["id"]
         route_middlewares = list(route.get("middlewares", []))
-        if route["exposure"] == "lan" and "lan-only" not in route_middlewares:
-            route_middlewares.append("lan-only")
+        for exposure, middleware in [('lan', 'lan-only'), ('netbird', 'netbird-only')]:
+            if route['exposure'] == exposure:
+                route_middlewares = [middleware] + [item for item in route_middlewares if item != middleware]
         router = {
             "rule": host_rule(route),
             "entryPoints": list(data["entrypoints"]),
