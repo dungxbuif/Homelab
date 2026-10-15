@@ -104,8 +104,8 @@ Outstanding data/ownership checks:
 - Local backup inventory declares the shared Pi `postgres` only. Coverage of
   those two separate PostgreSQL instances is not proven; inspect live runner
   inventory and native exports before claiming all database instances backed up.
-- VM100 `vigorous_napier` continues cycling Alpine tasks; owner/purpose is
-  unknown. Stopped legacy containers and this service were not removed.
+- VM100 `vigorous_napier` was confirmed as an orphaned one-shot Alpine
+  architecture probe and removed. Stopped legacy containers remain untouched.
 - Rootless CI daemon inventory, VPS/Mac observations, routes, owners and resource
   limits remain incomplete. Keep `inventory_complete: false`.
 

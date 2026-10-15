@@ -41,7 +41,8 @@ start a task and inspect its output. Keep the task ID when reporting an issue.
 
 Templates 3/4/5 require no application passwords or survey values. A successful
 host audit means its declared collection completed, not that every application
-works. Tasks 38/39 demonstrate the current VM100/Pi5 collection. Rootless CI,
+works. Tasks 49/50 are the latest successful VM100/Pi5 collection checkpoint.
+Rootless CI,
 VPS and Mac are not included by those host observers. A failed audit must be
 investigated rather than rerun until a green result conceals missing coverage.
 
