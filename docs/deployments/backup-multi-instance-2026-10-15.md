@@ -79,5 +79,11 @@ then invokes the atomic publication explicitly through `runuser -u ubuntu`,
 matching the systemd backup unit and avoiding Ansible become-precedence
 differences.
 
+The first native VM100 run then stopped before Restic because an older runner
+environment/drop-in still pointed at root-owned `/var/lib/homelab-backup/runtime`.
+The runtime-config playbook now converges both environment and systemd to the
+existing service-owned `/opt/apps/homelab-backup/.runtime/rclone` directory;
+the failed run produced no snapshot or success marker.
+
 This is an internal backup/operations change. No public API or public user
 documentation changes are required.

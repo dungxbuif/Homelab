@@ -27,6 +27,8 @@ class BackupHealthGuardTests(unittest.TestCase):
         playbook = (ROOT / 'ansible/playbooks/backup-runtime-config.yml').read_text()
         self.assertIn("group: ubuntu", playbook)
         self.assertIn("mode: '0640'", playbook)
+        self.assertIn("/opt/apps/homelab-backup/.runtime/rclone", playbook)
+        self.assertNotIn("/var/lib/homelab-backup/runtime", playbook)
         self.assertIn("when: inventory_hostname == 'vm100'", playbook)
 
 

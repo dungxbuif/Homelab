@@ -5,7 +5,7 @@
   serial: 1
   vars:
     ansible_become: '{{ inventory_hostname == "vm100" }}'
-    backup_runtime_root: '{{ "/home/dungxbuif/.homelab-backup-runtime" if inventory_hostname == "pi5" else "/var/lib/homelab-backup/runtime" }}'
+    backup_runtime_root: '{{ "/home/dungxbuif/.homelab-backup-runtime" if inventory_hostname == "pi5" else "/opt/apps/homelab-backup/.runtime/rclone" }}'
     backup_runner_env: '{{ "/ssd-data/infra/backup/runner.env" if inventory_hostname == "pi5" else "/etc/homelab-backup/runner.env" }}'
   tasks:
     - name: Require approved runtime-only repair
@@ -18,8 +18,8 @@
       ansible.builtin.file:
         path: '{{ backup_runtime_root }}'
         state: directory
-        owner: '{{ "dungxbuif" if inventory_hostname == "pi5" else "root" }}'
-        group: '{{ "dungxbuif" if inventory_hostname == "pi5" else "root" }}'
+        owner: '{{ "dungxbuif" if inventory_hostname == "pi5" else "ubuntu" }}'
+        group: '{{ "dungxbuif" if inventory_hostname == "pi5" else "ubuntu" }}'
         mode: '0700'
 
     - name: Update only working-copy path in the existing private environment
@@ -48,14 +48,14 @@
         mode: '0755'
       when: inventory_hostname == 'vm100'
 
-    - name: Override obsolete VM working-copy location
+    - name: Pin VM working-copy location to the service-owned Docker-visible path
       ansible.builtin.copy:
         dest: /etc/systemd/system/homelab-backup@.service.d/30-rclone-runtime.conf
         mode: '0644'
         backup: true
         content: |
           [Service]
-          Environment=RCLONE_CONFIG_WORK_ROOT=/var/lib/homelab-backup/runtime
+          Environment=RCLONE_CONFIG_WORK_ROOT={{ backup_runtime_root }}
       when: inventory_hostname == 'vm100'
       notify: Reload backup service definitions
 

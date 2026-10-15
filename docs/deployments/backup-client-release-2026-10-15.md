@@ -63,11 +63,12 @@ path is under ubuntu-owned `/opt/apps`, also inappropriate for root OAuth work.
 Do not weaken the no-follow/ownership checks or chmod broad application trees.
 Move only temporary OAuth working copies to Docker-visible private paths:
 Pi5 `/home/dungxbuif/.homelab-backup-runtime` owned by dungxbuif, and VM100
-`/var/lib/homelab-backup/runtime` owned by root, both mode 0700. Preserve source
-credentials and update only `RCLONE_CONFIG_WORK_ROOT` in each private runner env.
-Override the obsolete VM systemd Environment value with a drop-in, then reload
+`/opt/apps/homelab-backup/.runtime/rclone` owned by ubuntu, both mode 0700.
+Preserve source credentials and update only `RCLONE_CONFIG_WORK_ROOT` in each
+private runner env. Pin the same VM path in the systemd drop-in, then reload
 definitions without restarting any job. VM has ProtectSystem=full, not strict;
-the new /var/lib path is writable without weakening that setting.
+the service-owned path is writable and visible to Docker without weakening that
+setting.
 
 Use `backup-runtime-config.yml` with explicit approval and per-file rollback
 copies. Repeat version smoke through the full installed library on both hosts
