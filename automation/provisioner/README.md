@@ -32,11 +32,12 @@ digest, with live 401/409/422 probes and PostgreSQL/CouchDB create/replay/cleanu
 acceptance through Semaphore. Do not use the old `20261005` tag as current state.
 See [release evidence](../../docs/deployments/provisioner-concurrency-2026-10-15.md).
 
-The newer security candidate uses digest-pinned Docker CLI 29.9.0 and removes
+The deployed security release uses digest-pinned Docker CLI 29.9.0 and removes
 pip from the final runtime; provisioning uses Python stdlib and copied modules,
 not runtime package installation. New builds must pass the unchanged image
-security gate before publication. This source change is not evidence of a live
-upgrade. See [security evidence](../../docs/deployments/automation-image-security-2026-10-15.md).
+security gate before publication. The live Pi5 release and bounded acceptance
+are recorded in [security evidence](../../docs/deployments/automation-image-security-2026-10-15.md);
+source changes alone are never deployment evidence.
 
 Cross-builds do not execute target binaries. A native BUILDPLATFORM stage copies
 the pinned target Python filesystem and removes build-only pip after validating

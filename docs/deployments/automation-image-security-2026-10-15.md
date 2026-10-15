@@ -208,3 +208,38 @@ The ARM64 rescan exited 0 with zero HIGH/CRITICAL records, report SHA-256
 `b0cb3b2af88b55f136451b8ed6aac62573d3d0f601ea4dab261d9b3617a2ed02`.
 Independent scoped code review found no blocker. Actual amd64 runner acceptance
 and target-daemon compatibility remain pending; production is unchanged.
+
+## CI-verified provisioner rollout gate
+
+Pipeline 72 validators passed; job 179 completed native amd64 smoke, amd64-to-
+arm64 cross-build, the unchanged vulnerability scan and image publication.
+The scan has zero HIGH/CRITICAL records; artifact SHA-256 is
+`43e3982eaa95d2f50abb6f11fcbc26f564f6539d565cff2929d271d734642f3d`.
+Published image:
+`registry-gitlab.dungxbuif.com/dungxbuif/homelab-automation/provisioner@sha256:c7b60154e9d445bc0cb445fecf6ecae92f0de107ec672c14c77750515ebb59d3`.
+The EE job remains failed and is not covered by provisioner acceptance.
+
+Proceed through `provisioner-release.yml` under the approved control-plane
+implementation scope, after rechecking Semaphore has no active provisioning
+tasks. Preserve the previous service spec and temporary-registry-auth cleanup.
+Post-check actual Docker client/server negotiation plus health, baked imports,
+pip absence and the existing 401/409/422 native lock probe. Do not create an
+application database or restart backup jobs. Record actual receipt/outcome below;
+publication alone is not deployment evidence.
+
+### Live Pi5 result
+
+Release completed through Ansible: 17 tasks OK, 7 changed, zero failed or
+unreachable. Previous spec and sanitized receipt are preserved at
+`/ssd-data/infra/provisioner/releases/provisioner-release-j31r8olp`.
+Temporary registry credentials were removed by the playbook. Container
+`6d395b007b04` reports the exact CI-published `c7b60154...ebb59d3` image above.
+Baked imports and private HTTP health passed.
+
+The existing opt-in lock probe passed on this live container: unauthenticated
+401, locked 409, unlocked unsupported engine 422, native DB mutations false.
+Actual client/server negotiation returned Docker CLI 29.9.0 and daemon 28.4.0;
+pip is absent. No application database or backup job was modified or restarted.
+This release reuses unchanged provisioning logic; fresh create/replay/cleanup
+was not repeated for this security-only image. Earlier native acceptance is
+recorded separately, not relabelled as a test of this new digest.
