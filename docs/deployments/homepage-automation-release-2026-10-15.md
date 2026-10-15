@@ -198,8 +198,9 @@ enrolled separately: Semaphore project 1 Variable Group 3, named `Homepage
 release notifications`, stores only the encrypted `env` secret
 `HOMELAB_MEZON_WEBHOOK_URL`, and template 6 references it alongside group 2.
 The playbook sends the validated helper receipt with the positive Semaphore task
-ID after the release/no-op assertions. A task that lacks either value fails
-closed. Live rollback rehearsal and a positive release-to-Mezon delivery are
+ID from `semaphore_vars.task_details.id` after the release/no-op assertions. A
+task that lacks either value fails closed. Live rollback rehearsal and a
+positive release-to-Mezon delivery are
 still outstanding; do not count deploy + no-op as two complete
 Git-to-notification acceptances.
 

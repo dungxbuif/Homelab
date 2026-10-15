@@ -47,7 +47,9 @@
     - name: Require Semaphore task identity for the release receipt
       ansible.builtin.assert:
         that:
-          - lookup('env', 'SEMAPHORE_TASK_ID') | int > 0
+          - semaphore_vars is mapping
+          - semaphore_vars.task_details is mapping
+          - semaphore_vars.task_details.id | int > 0
           - lookup('env', 'HOMELAB_MEZON_WEBHOOK_URL') | length > 0
         fail_msg: >-
           Release notification boundary is not configured; do not claim a
@@ -60,7 +62,7 @@
           - python3
           - automation/scripts/notify-homepage-release.py
           - --task-id
-          - '{{ lookup("env", "SEMAPHORE_TASK_ID") }}'
+          - '{{ semaphore_vars.task_details.id }}'
         chdir: '{{ playbook_dir }}/../..'
         stdin: '{{ homepage_release_report | to_json }}'
         stdin_add_newline: true

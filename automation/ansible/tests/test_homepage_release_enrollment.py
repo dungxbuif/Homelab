@@ -43,11 +43,14 @@ class EnrollmentTests(unittest.TestCase):
         tasks = play['tasks']
         guard = next(t for t in tasks if 'Require Semaphore task identity' in t['name'])
         assertions = guard['ansible.builtin.assert']['that']
-        self.assertIn("lookup('env', 'SEMAPHORE_TASK_ID') | int > 0", assertions)
+        self.assertIn('semaphore_vars is mapping', assertions)
+        self.assertIn('semaphore_vars.task_details is mapping', assertions)
+        self.assertIn('semaphore_vars.task_details.id | int > 0', assertions)
         self.assertIn("lookup('env', 'HOMELAB_MEZON_WEBHOOK_URL') | length > 0", assertions)
         notify = next(t for t in tasks if t['name'] == 'Send the validated release receipt to Mezon')
         command = notify['ansible.builtin.command']
         self.assertEqual(command['argv'][:3], ['python3', 'automation/scripts/notify-homepage-release.py', '--task-id'])
+        self.assertEqual(command['argv'][3], '{{ semaphore_vars.task_details.id }}')
         self.assertEqual(command['stdin'], '{{ homepage_release_report | to_json }}')
         self.assertTrue(notify['no_log'])
 

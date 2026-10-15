@@ -22,10 +22,13 @@ messages remain possible on operator replay. Task/receipt identify the attempt.
 
 The standalone sender is wired into the live Homepage release template only
 after the dedicated secret Variable Group was enrolled. The template must
-provide both the group secret and Semaphore's positive task identity; otherwise
+provide both the group secret and Semaphore's positive Ansible task identity;
+otherwise
 the release task fails closed after the helper result and cannot claim a
-notification acceptance. Dry-run is not live delivery evidence. A sent HTTP
-request is not proof of operator receipt.
+notification acceptance. On Semaphore v2.19.12, the identity is passed to
+Ansible as the extra var `semaphore_vars.task_details.id`; the executor does
+not provide a portable `SEMAPHORE_TASK_ID` environment variable. Dry-run is not
+live delivery evidence. A sent HTTP request is not proof of operator receipt.
 
 Tests: success/unchanged/failure classification, field injection, invalid digest,
 wrong host/path and redirect rejection, missing secret, transport/HTTP failure
@@ -53,6 +56,7 @@ For live delivery, omit `--dry-run` and inject `HOMELAB_MEZON_WEBHOOK_URL` throu
 the dedicated Semaphore Variable Group. Do not put the webhook in shell
 arguments or paste it into task logs. A rejected/stale summary requires
 investigation, not editing its observation time to force acceptance. The
-playbook reads `SEMAPHORE_TASK_ID` from the task environment; a missing or
+playbook reads `semaphore_vars.task_details.id` from Semaphore's Ansible extra
+vars; a missing or
 invalid identity is a hard failure. The example task ID is an argument example,
 not a claim that audit task42 was a release.
