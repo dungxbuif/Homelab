@@ -69,5 +69,15 @@ then template 3 must be rerun. A successful task is required before backup
 health is considered restored; no backup or retention job is started by this
 permission repair.
 
+The permission repair was applied to VM100 with check-mode first (`ok=6,
+changed=2`) and then apply (`ok=6, failed=0`). The live file is
+`root:ubuntu 0640`; its secret value was not printed or changed. Task 48 then
+confirmed the permission issue was fixed, but correctly remained `error` because
+the Pi health leg reported `homelab-backup.lock` held by PID 3128034, the parent
+of the active Restic restore (PIDs 3128100/3128133). This is an intentional
+serialization condition while the restore rehearsal is active, not a reason to
+remove the lock or terminate the restore. Rerun template 3 only after that
+operation reaches a terminal state.
+
 Schema reference for the encrypted Semaphore SSH key payload:
 https://github.com/semaphoreui/semaphore/blob/v2.19.12/db/AccessKey.go
