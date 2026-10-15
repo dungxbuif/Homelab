@@ -1,7 +1,7 @@
 variable "proxmox_endpoint" {
   type        = string
-  description = "Private Proxmox API endpoint. Set TF_VAR_proxmox_endpoint in Semaphore."
-  default     = "https://10.10.0.20:8006/"
+  description = "TLS-certified node name. The controlled executor must map pve to 10.10.0.20."
+  default     = "https://pve:8006/"
 }
 
 variable "proxmox_api_token" {

@@ -22,7 +22,7 @@ linked above is the dated baseline, superseded by newer observation records.
 | 1: Catalog | Active/retired policies, no K8s infrastructure targets, bounded Pi/VM runtime audits | Full VPS/Mac/rootless coverage, unknown service ownership, complete cross-catalog reconciliation |
 | 2: Execution image | Pinned toolchain, CI registry publication, isolated rootless CI executor | Keep actual runner digest tied to accepted CI revision; full security scan gates |
 | 3: Semaphore | Source-backed templates, restricted Pi/VM observers, backup health and exact Homepage release | Viewer/Task Runner/Manager isolation, general approved plan/apply flows and notification acceptance |
-| 4: OpenTofu | Observed VM baseline, import/no-destroy tests, enforced state encryption, verified-TLS default | Trusted CA, scoped token, recoverable key escrow/backend, actual VM100 import and no-op plan |
+| 4: OpenTofu | Observed VM baseline, import/no-destroy tests, enforced state encryption, pinned public CA and named curl/Go TLS probes | Runner mapping/trust and provider acceptance, Python strict-CA compatibility, scoped token, recoverable key escrow/backend, actual VM100 import and no-op plan |
 | 5: Host baseline | VM100 Docker CE 29.8.2, encrypted overlay restored, restricted accounts enrolled on Pi/VM | VPS enrollment, all-host idempotent baseline, durable standalone overlay boot ordering |
 | 6: Routes | 24 catalog routes, schema/private-gate tests, both-gateway endpoint probes | Generated live Pi/VPS publish/rollback, Stirling public ingress, private-policy/consumer reconciliation, protocol-specific checks |
 | 7: Apps | Homepage digest deploy via template 6, receipt and idempotent repeat; catalog corrections | Real rollback rehearsal, other apps' build/apply boundaries, private networks, peak-resource policies, registry-pull acceptance |
@@ -40,6 +40,7 @@ Evidence index:
 - [Route probes](../../deployments/route-reconciliation-2026-10-15.md)
 - [App deployment preflight](../../deployments/app-catalog-reconciliation-2026-10-15.md)
 - [Retention prerequisite gate](../../deployments/backup-retention-ownership-2026-10-14.md)
+- [Proxmox CA evidence and compatibility limits](../../deployments/proxmox-ca-trust-2026-10-15.md)
 
 Publication checkpoint: implementation commits are on private GitLab branch
 `codex/automation-bootstrap`, not merged to main. Most recent observed pipeline

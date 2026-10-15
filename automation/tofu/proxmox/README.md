@@ -38,6 +38,28 @@ needs separately approved restricted credentials; the agent flag must not be
 re-enabled as a shortcut. Scoped API credentials and independently recoverable
 state encryption keys are still prerequisites, not implemented by these defaults.
 
+The public cluster CA is now bundled at `pki/pve-root-ca.pem`, acquired through
+host-key-verified SSH and pinned by a certificate hash test. See
+[CA bootstrap evidence](../../../docs/deployments/proxmox-ca-trust-2026-10-15.md).
+For the controlled executor, set `SSL_CERT_FILE` to that absolute file path
+before the provider runs; do not install it as system-wide trust. Certificate
+rotation requires a fresh independently authenticated fingerprint check and
+reviewed certificate/test update. This trust artifact does not provide an API
+credential, state key, or approval to import/apply.
+
+The existing node certificate covers `pve`, not the current IP. The module
+therefore defaults to `https://pve:8006/`. The executor needs an explicit host
+mapping `pve:10.10.0.20` (Docker `--add-host` or Swarm `extra_hosts`) alongside
+`SSL_CERT_FILE`. Do not use the old IP-based endpoint with verification disabled.
+This mapping is not yet installed in the live runner. The CA and hostname
+checks must pass there before enrolling an OpenTofu plan template.
+
+Compatibility warning: the old Proxmox CA lacks a key-usage extension. curl
+and a Go TLS probe verified the chain/name, but Python 3.13 strict verification
+rejects it. Do not disable SSL validation for Python/Ansible tasks; plan a
+separate PKI correction if those clients need the API. Provider-generated
+planning and live runner acceptance still remain unverified.
+
 Run through the pinned execution image and Semaphore `tofu-plan` template:
 
 ```bash
