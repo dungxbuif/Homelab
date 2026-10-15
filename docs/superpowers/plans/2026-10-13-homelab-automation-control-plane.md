@@ -114,6 +114,11 @@ Evidence: [Family repair](../../deployments/family-tree-private-data-2026-10-15.
 
 ### Invariants
 
+Follow-up05:35 UTC: GitLab pipeline86 validation job221 succeeded on AMD64,
+including signed provider installation and real readonly init/validate. The
+provider checksum issue is closed; all separate Task4 live-import prerequisites
+and the execution-image security gate remain open.
+
 - Pi5 `10.10.0.5` remains the active edge, DNS, Swarm manager, PostgreSQL/PgBouncer, Redis, RustFS, CouchDB, registry, and Semaphore/provisioner host.
 - VM100 `10.10.0.31` remains the production application worker and GitLab/backup host; it is not the database host.
 - The VPS remains the public Traefik/Rathole boundary; application databases and general application workloads must not move there.

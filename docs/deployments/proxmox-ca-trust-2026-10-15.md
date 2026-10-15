@@ -100,3 +100,11 @@ platform. The diff only adds 12 `h1` package hashes; pinned version, constraints
 and existing archive hashes are unchanged. Fresh linux_arm64 readonly init and
 validate now pass without the previous lock-update warning. Actual linux_amd64
 CI validation remains the acceptance gate; do not infer it from ARM success.
+
+AMD64 acceptance is now verified: GitLab pipeline86, job221 completed
+successfully at2026-10-15T05:35:01Z (duration394.8s). Its trace records signed
+bpg/proxmox0.116.0 installation, successful readonly initialization and
+`Success! The configuration is valid.` at05:34:57Z, followed by a successful
+tracked-file secret scan. The previous checksum failure is resolved on the
+actual CI platform. This does not import VM100 or resolve scoped credentials,
+runner API trust/mapping, state-key escrow or live no-op planning prerequisites.
