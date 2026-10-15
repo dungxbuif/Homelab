@@ -15,7 +15,7 @@ class RestoreStagingTests(unittest.TestCase):
         self.calls = self.root / 'calls'
         for name, content in {
             'timeout': '#!/bin/sh\nshift 2\nexec "$@"\n',
-            'docker': '#!/bin/sh\nprintf "%s\\n" "$@" > "$CALLS"\nexit "${FAKE_EXIT:-0}"\n',
+            'docker': '#!/bin/sh\n[ "${1:-}" != container ] || exit 0\nif [ "$1" = create ]; then\nprintf "%s\\n" "$@" > "$CALLS"\nprintf "%064d\\n" 1\nexit 0\nfi\nexit "${FAKE_EXIT:-0}"\n',
         }.items():
             path = self.root / name
             path.write_text(content)
