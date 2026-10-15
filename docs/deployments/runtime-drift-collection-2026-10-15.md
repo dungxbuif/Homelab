@@ -99,6 +99,21 @@ requires no traceback or input excerpt. Full automation Python suite: 94 tests
 passed in the EE; runtime-policy Ruby suite: 4 tests, 13 assertions passed.
 No public app/API behavior changed, so public app docs remain unchanged.
 
+## Cross-host collector added
+
+`automation/scripts/collect-runtime-evidence.py` now combines the private
+`pi5.json` and `vm100.json` exports into one structured report. It validates the
+mode-0700 artifact directory, mode-0600 regular files, freshness, probe set,
+exact container/service-name matches and duplicate-safe catalog input. The
+collector never infers route, VPS, Mac, Proxmox or application-health evidence
+from a Linux container row. It therefore returns `status: not_verified` and
+exit 2 until those independent evidence classes are present; this is a
+fail-closed collector, not a shortcut to full inventory acceptance.
+
+The output is suitable as a hand-off artifact for the drift gate once the
+missing coverage is supplied. It has not changed production containers,
+networks, routes, credentials or backup data.
+
 ## Resource-limit follow-up
 
 Historical task 40/41 snapshot at 04:32 UTC: matching every running container

@@ -70,6 +70,23 @@ The read-only runtime and drift contracts are in
 [`policies/approvals.yml`](./policies/approvals.yml). The operator workflow is
 documented in [automation operations](../docs/runbooks/automation-operations.md).
 
+After exporting fresh private Semaphore artifacts for `pi5` and `vm100`,
+`scripts/collect-runtime-evidence.py` can aggregate them into a single,
+machine-readable report:
+
+```bash
+python automation/scripts/collect-runtime-evidence.py \
+  --active automation/policies/active-runtime.yaml \
+  --artifacts-dir "$PRIVATE_AUDIT_DIR" \
+  --output "$PRIVATE_AUDIT_DIR/combined.json"
+```
+
+The collector is deliberately fail-closed. It reports `not_verified` until
+VPS, Mac-native, Proxmox and route evidence are supplied by their own
+collectors; container rows are never used to infer those facts. It validates
+freshness and private artifact permissions and only matches exact container or
+Swarm-service bindings from the active catalog.
+
 The drift comparator requires explicit `hosts`, `services`, and `routes` lists
 in its active policy, each containing unique nonempty string IDs. Missing or
 malformed policy input returns JSON `status: not_verified` and exit 2 rather
