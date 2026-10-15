@@ -11,6 +11,19 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class PolicyContractTest(unittest.TestCase):
+    def test_pi_vm_services_have_unique_explicit_runtime_bindings(self):
+        active = yaml.safe_load((ROOT / 'automation/policies/active-runtime.yaml').read_text())
+        bindings = set()
+        for service in active['services']:
+            if service['host'] not in ('pi5', 'vm100'):
+                continue
+            keys = [key for key in ('runtime_container', 'runtime_service') if key in service]
+            self.assertEqual(len(keys), 1, service['id'])
+            identity = (service['host'], keys[0], service[keys[0]])
+            self.assertNotIn(identity, bindings)
+            bindings.add(identity)
+        self.assertEqual(len(bindings), 48)
+
     def test_verified_control_and_app_network_boundaries(self):
         active = yaml.safe_load((ROOT / "automation/policies/active-runtime.yaml").read_text())
         services = {item['id']: item for item in active['services']}

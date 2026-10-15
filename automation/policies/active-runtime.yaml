@@ -74,33 +74,39 @@ services:
     observed_host_ports: [53, 81]
     port_review_required: true
   - id: postgres
+    runtime_container: postgres
     host: pi5
     class: database
     lifecycle: active
     networks: [homelab-net, proxy_net]
   - id: pgbouncer
+    runtime_container: pgbouncer
     host: pi5
     class: database_gateway
     lifecycle: active
     networks: [homelab-net, data-net, proxy_net]
     lan_ports: [5432]
   - id: redis-prod
+    runtime_container: redis-prod
     host: pi5
     class: cache
     lifecycle: active
     networks: [homelab-net, mypocket-redis-net, redis-prod_default, data-net]
     lan_ports: [16379]
   - id: rustfs
+    runtime_container: rustfs
     host: pi5
     class: object_storage
     lifecycle: active
     networks: [homelab-net, edge-http-net, proxy_net]
   - id: couchdb
+    runtime_container: couchdb
     host: pi5
     class: document_database
     lifecycle: active
     networks: [homelab-net, edge-http-net, proxy_net]
   - id: docker-registry
+    runtime_container: docker-registry
     host: pi5
     class: registry
     lifecycle: active
@@ -124,6 +130,7 @@ services:
     lifecycle: active
     networks: [homelab-net, homelab-control-net]
   - id: homepage
+    runtime_service: homepage
     host: vm100
     class: application
     lifecycle: active
@@ -141,16 +148,19 @@ services:
     lifecycle: active
     networks: [gitlab-net, homelab-net]
   - id: couchloom
+    runtime_container: couchloom
     host: vm100
     class: application
     lifecycle: active
     networks: [couchloom-internal, homelab-net]
   - id: bds-app
+    runtime_container: bds-app
     host: vm100
     class: application
     lifecycle: active
     networks: [bds-tunnel-net, homelab-net]
   - id: bds-cloudflared
+    runtime_container: bds-cloudflared
     host: vm100
     class: tunnel_client
     lifecycle: active
@@ -166,23 +176,27 @@ services:
     lifecycle: active
     networks: [outbound-tunnel]
   - id: kubekosh
+    runtime_container: kubekosh
     host: vm100
     class: learning_app
     lifecycle: active
     networks: [homelab-net]
   - id: family-tree
+    runtime_service: family-tree
     host: vm100
     class: application
     lifecycle: active
     networks: [edge-http-net]
     observed_image: oven/bun:1-slim
   - id: mypocket-api
+    runtime_service: mypocket-api
     host: vm100
     class: application
     lifecycle: active
     networks: [data-net, homelab-net, mypocket-net, mypocket-redis-net]
     observed_image: registry.dungxbuif.com/mypocket-api:auth-12572c87
   - id: mypocket-worker
+    runtime_service: mypocket-worker
     host: vm100
     class: worker
     lifecycle: active
@@ -203,6 +217,7 @@ services:
     networks: [homelab-net, netbird-net, edge-http-net]
     observed_image: netbirdio/dashboard:latest
   - id: macocr-proxy
+    runtime_service: macocr-proxy
     host: vm100
     class: application
     lifecycle: active
@@ -227,42 +242,49 @@ services:
     runtime_service: gitlab-ssh-tunnel_client
     networks: [gitlab-net, homelab-net]
   - id: n8n
+    runtime_service: n8n
     host: vm100
     class: application
     lifecycle: active
     networks: [data-net, edge-http-net]
     observed_image: docker.n8n.io/n8nio/n8n:stable
   - id: openclaw
+    runtime_service: openclaw
     host: vm100
     class: application
     lifecycle: active
     networks: [homelab-net]
     observed_image: homelab/openclaw:vm100-20260912
   - id: mezonhook
+    runtime_service: mezonhook
     host: vm100
     class: application
     lifecycle: active
     networks: [edge-http-net]
     observed_image: homelab/mezonhook:vm100-20260911
   - id: k8s-syntax
+    runtime_service: k8s-syntax
     host: vm100
     class: learning_app
     lifecycle: active
     networks: [homelab-net]
     observed_image: homelab/k8s-syntax:af8481e
   - id: stirling-pdf
+    runtime_service: stirling-pdf
     host: vm100
     class: application
     lifecycle: active
     networks: [homelab-net]
     observed_image: docker.stirlingpdf.com/stirlingtools/stirling-pdf:3.1.0
   - id: couchloom-ollama
+    runtime_container: couchloom-ollama
     host: vm100
     class: model_runtime
     lifecycle: active
     networks: [couchloom-internal]
     observed_image: ollama/ollama:0.34.0
   - id: couchloom-postgres
+    runtime_container: couchloom-postgres
     host: vm100
     class: database
     lifecycle: active
@@ -270,18 +292,21 @@ services:
     observed_image: pgvector/pgvector:0.8.6-pg17-bookworm
     placement_review_required: true
   - id: relayhub-worker
+    runtime_container: relayhub-worker
     host: vm100
     class: worker
     lifecycle: active
     networks: [relayhub-net]
     observed_image: homelab/relayhub:prod-eee9e7c
   - id: relayhub-nats
+    runtime_container: relayhub-nats
     host: vm100
     class: message_broker
     lifecycle: active
     networks: [relayhub-net]
     observed_image: nats:2.14.5-alpine
   - id: relayhub-redis
+    runtime_container: relayhub-redis
     host: vm100
     class: cache
     lifecycle: active
@@ -296,24 +321,28 @@ services:
     observed_image: postgres:17-alpine
     ownership_review_required: true
   - id: blackbox-exporter
+    runtime_container: blackbox-exporter
     host: pi5
     class: monitoring
     lifecycle: active
     networks: [proxy_net]
     observed_image: prom/blackbox-exporter:latest
   - id: node-exporter
+    runtime_container: node-exporter
     host: pi5
     class: monitoring
     lifecycle: active
     networks: [proxy_net]
     observed_image: prom/node-exporter:latest
   - id: snmp-exporter
+    runtime_container: snmp-exporter
     host: pi5
     class: monitoring
     lifecycle: active
     networks: [proxy_net]
     observed_image: prom/snmp-exporter:latest
   - id: alertmanager
+    runtime_container: alertmanager
     host: pi5
     class: monitoring
     lifecycle: active
@@ -322,6 +351,7 @@ services:
     observed_host_ports: [9093]
     port_review_required: true
   - id: victoriametrics
+    runtime_container: victoriametrics
     host: pi5
     class: monitoring
     lifecycle: active
@@ -330,24 +360,28 @@ services:
     observed_host_ports: [8428]
     port_review_required: true
   - id: cadvisor
+    runtime_container: cadvisor
     host: pi5
     class: monitoring
     lifecycle: active
     networks: [proxy_net]
     observed_image: gcr.io/cadvisor/cadvisor:v0.49.1
   - id: postgres-exporter
+    runtime_container: postgres-exporter
     host: pi5
     class: monitoring
     lifecycle: active
     networks: [proxy_net]
     observed_image: prometheuscommunity/postgres-exporter:latest
   - id: pgadmin
+    runtime_container: pgadmin
     host: pi5
     class: database_admin_ui
     lifecycle: active
     networks: [edge-http-net, homelab-net, proxy_net]
     observed_image: dpage/pgadmin4:latest
   - id: librespeed
+    runtime_container: librespeed
     host: pi5
     class: diagnostic_app
     lifecycle: active

@@ -43,3 +43,35 @@ Live VM100 recheck: Docker 29.8.2, daemon active, Swarm active, existing node ID
 `35aki2511juhltwuavfuokqa1` retained. No repeated upgrade was performed.
 The separate Pi5 remote restore job `j186891193321.3128007` remained unfinished;
 its shell PID 3128034 was alive after 12 minutes. This is not restore acceptance.
+
+Next implementation: bind 34 previously unbound policy services to the exact
+container name or Swarm service label observed in tasks 40/41. Add a read-only
+network comparator requiring fresh, matching exported evidence. Compare network
+sets for every running replica, report missing/unbound services and unknown
+nonterminal containers, retain stopped-container counts separately. Report only
+rootful container network membership, never full lab, route or health acceptance.
+Do not silently allow transient backup containers by name prefix. Tests must
+cover extra/missing networks, old exited Swarm tasks, unknown active containers,
+duplicate IDs/bindings, malformed probes, mismatched provenance and stale data.
+
+Implemented `automation/scripts/compare-runtime-networks.py`; CLI accepts
+`--active automation/policies/active-runtime.yaml --observed PRIVATE_JSON`.
+Run using the automation EE (PyYAML required). Exit 0 means scoped membership
+match only, 1 means drift, 2 means invalid/unverified evidence. Evidence expires
+after 15 minutes; rerun the read-only Semaphore templates before comparing again.
+
+Real task 40/41 comparisons within that window: 27 VM100 and 21 Pi5 bound
+services had no missing running service or network-set difference. Both reports
+correctly returned drift because an unbound nonterminal container existed:
+VM100 `vigorous_napier` task in `created`, and Pi5 a running Restic invocation.
+Each host had 11 stopped containers, reported separately, not removed. The
+Restic invocation still needs lifecycle provenance reconciliation rather than a
+name-prefix exemption. This comparison does not establish optimal segmentation,
+peak-load capacity, route exposure, replica availability or app health.
+
+Review confirmed the exporter security fixes. One new comparator finding was
+reproduced: malformed YAML escaped the CLI error boundary. Catching
+`yaml.YAMLError` now returns sanitized `not_verified` JSON and exit 2; regression
+requires no traceback or input excerpt. Full automation Python suite: 94 tests
+passed in the EE; runtime-policy Ruby suite: 4 tests, 13 assertions passed.
+No public app/API behavior changed, so public app docs remain unchanged.
