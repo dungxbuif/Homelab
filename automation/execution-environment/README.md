@@ -47,6 +47,9 @@ capabilities dropped and no host filesystem or Docker socket mount.
 The image build also bounds Ansible Galaxy collection resolution to ten minutes
 with a 60-second per-operation timeout; a registry/network failure therefore
 fails the build instead of occupying the runner indefinitely.
+The Proxmox module validation script similarly bounds provider initialization to
+ten minutes and validation to two minutes, while retaining readonly lockfile
+validation and failing closed on timeout.
 
 The default container command runs `test-toolchain --run`, checking the installed
 tools without needing a repository mount. Run the script without `--run` from

@@ -11,5 +11,5 @@ cp -- "$module"/*.tf "$module/.terraform.lock.hcl" "$work/"
 unset TF_DATA_DIR TF_CLI_ARGS TF_CLI_ARGS_init TF_CLI_ARGS_validate
 export TF_INPUT=0 TF_IN_AUTOMATION=1
 cd -- "$work"
-tofu init -backend=false -lockfile=readonly -input=false -no-color
-tofu validate -no-color
+timeout "${TOFU_INIT_TIMEOUT:-10m}" tofu init -backend=false -lockfile=readonly -input=false -no-color
+timeout "${TOFU_VALIDATE_TIMEOUT:-2m}" tofu validate -no-color

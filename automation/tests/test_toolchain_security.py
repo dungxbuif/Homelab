@@ -19,6 +19,11 @@ class ToolchainSecurityTests(unittest.TestCase):
         self.assertIn('RUN timeout 10m ansible-galaxy collection install', source)
         self.assertIn('--timeout 60', source)
 
+    def test_proxmox_validation_has_bounded_provider_wait(self):
+        source = (ROOT / 'automation/scripts/validate-proxmox-module.sh').read_text()
+        self.assertIn('timeout "${TOFU_INIT_TIMEOUT:-10m}" tofu init', source)
+        self.assertIn('timeout "${TOFU_VALIDATE_TIMEOUT:-2m}" tofu validate', source)
+
     def test_ansible_patch_pin_is_consistent(self):
         self.assertIn('ARG ANSIBLE_CORE_VERSION=2.18.19\n', (EE / 'Containerfile').read_text())
         self.assertIn('ansible-core==2.18.19', (EE / 'requirements.txt').read_text().splitlines())
