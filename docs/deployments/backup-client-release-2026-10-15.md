@@ -73,6 +73,12 @@ The five live Pi5 client hashes were compared against the checked-out release
 source after task 65 and matched byte-for-byte. This closes the deployment
 integrity check for Pi5; it does not enroll a write path for VM100.
 
+The follow-up live task 66 ran commit `bb2c924` through the same template and
+completed successfully. The release helper returned `changed=false` with an
+empty file-change list, proving the published client is idempotent. The
+playbook produced the controller-side `artifacts/backup-client-release.json`
+post-check artifact; the recap was `unreachable=0` and `failed=0`.
+
 The selected remote PostgreSQL rehearsal also passed: four restored payload
 artifacts, 98,988 bytes, native import in a disposable network-isolated
 PostgreSQL 16 container, `SELECT 1`, 30 user tables and seven expected roles;

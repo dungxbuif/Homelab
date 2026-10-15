@@ -71,7 +71,10 @@ Variable Group; task 56 is the live notification acceptance record.
 Backup-client template 7 completed live task 65. The Pi5 canonical database
 payload verifier then passed its full local source-run check for 29 artifacts
 and 6,915,289,967 bytes. The separate targeted remote PostgreSQL rehearsal
-passed, while full remote restore acceptance remains open.
+passed, while full remote restore acceptance remains open. Follow-up task 66
+ran the source-backed contract, produced the sanitized
+`artifacts/backup-client-release.json` post-check artifact, and returned an
+idempotent empty change set.
 
 The target normal change path is GitLab change -> Semaphore check/plan -> approved
 apply -> post-check -> sanitized Mezon notice. An agent does not open a host

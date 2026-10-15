@@ -96,8 +96,10 @@ The enrolled backup-client release is template 7, `Release backup client (Pi5)`.
 It uses a dedicated SSH key and a Pi5-only inventory. The playbook stages the
 reviewed five-file bundle, acquires the existing backup lock, verifies hashes,
 and leaves a receipt on the target. Set the explicit approval variable required
-by the template before running it. A successful task proves client installation
-and post-check only; it does not prove a complete Google Drive restore.
+by the template before running it. The playbook also writes the sanitized
+`artifacts/backup-client-release.json` result used by the Semaphore post-check.
+A successful task proves client installation and post-check only; it does not
+prove a complete Google Drive restore.
 
 The `db-provision` playbook is in `playbooks/db-provision.yml`. It accepts only
 the request fields documented in the database provisioning runbook. Generated
