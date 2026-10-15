@@ -75,8 +75,9 @@ playbook's global `become: false` left the lock ownership implicit. A later
 attempt showed Ubuntu's `fs.protected_regular=2` correctly rejects root opening
 a lock file owned by the service user inside sticky `/run/lock`. The playbook
 now uses root only to ensure that lock is owned by `ubuntu` with mode `0660`,
-then performs the atomic publication as `ubuntu`, matching the systemd backup
-unit and avoiding a privilege-boundary mismatch.
+then invokes the atomic publication explicitly through `runuser -u ubuntu`,
+matching the systemd backup unit and avoiding Ansible become-precedence
+differences.
 
 This is an internal backup/operations change. No public API or public user
 documentation changes are required.

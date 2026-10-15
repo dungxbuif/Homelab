@@ -119,9 +119,12 @@
         mode: '0660'
 
     - name: Publish the candidate atomically under the backup lock
-      become: false
+      become: true
       ansible.builtin.command:
         argv:
+          - runuser
+          - --user=ubuntu
+          - --
           - flock
           - -n
           - -E

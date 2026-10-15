@@ -18,7 +18,8 @@ class BackupInstanceDeployContractTests(unittest.TestCase):
         self.assertIn("enable", source)
         self.assertIn("Ensure the VM100 backup lock belongs to the service account", source)
         self.assertIn("owner: ubuntu", source)
-        self.assertIn("- name: Publish the candidate atomically under the backup lock\n      become: false", source)
+        self.assertIn("- name: Publish the candidate atomically under the backup lock\n      become: true", source)
+        self.assertIn("- runuser\n          - --user=ubuntu", source)
 
     def test_enrollment_publishes_policy_with_catalog_generation(self):
         source = ENROLL.read_text()
