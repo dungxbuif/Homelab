@@ -408,7 +408,14 @@ Failure test:
 
 ## Future Ingress: Caddy To Kubernetes
 
-The current homelab ingress boundary is Caddy on the Orange Pi Zero 3 (`10.10.0.2`). Future Kubernetes workloads should integrate with that existing edge instead of exposing random NodePorts directly.
+> This entire section is a historical design snapshot. Caddy on Orange Pi
+> (`10.10.0.2`) is retired and must not be restored from these instructions.
+> The current edge is Pi5 Traefik with file-provider routes and Rathole; no
+> Kubernetes ingress is active in the lab.
+
+The historical design assumed Caddy on the Orange Pi Zero 3 (`10.10.0.2`).
+That edge was later retired; this section is retained only to explain the old
+Kubernetes ingress proposal.
 
 Recommended future model:
 
