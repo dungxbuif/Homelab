@@ -88,3 +88,19 @@ are not established by this observation. Do not apply arbitrary low ceilings
 to databases or change replica counts from this evidence alone. Collect fresh
 resource/pressure samples during representative load and baseline each service
 before a controlled limit rollout. No resource changes were applied.
+
+## CI coverage reconciliation
+
+The explicit GitLab validation script did not yet invoke the new private-writer,
+network-comparison and database-payload suites. Add those three entry points to
+`validate:automation-ee` using the same read-only source mount and execution
+image as existing tests. Keep all security scan gates and manual production
+boundaries unchanged. Verify parsed YAML references existing tracked test files,
+run the exact new test commands in the EE, then inspect the actual CI result.
+Source publication alone is not a passing pipeline.
+
+Local verification: parsed CI YAML contains all three entry points; their exact
+test files passed inside the EE (3 private-writer, 8 network-drift, 6 payload
+tests). Existing pipeline 78/job 193 was still progressing through backup tests;
+pipeline 79 was canceled by the server after newer publication, and pipeline 80
+was pending. No pipeline was manually canceled as a workaround for a failure.
