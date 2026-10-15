@@ -51,6 +51,8 @@ class InstanceBackupTests(unittest.TestCase):
             manifest = json.loads((run / "manifest.json").read_text())
             self.assertEqual(manifest["kind"], "database-instances")
             self.assertEqual(manifest["coverage"]["postgresql_instances"]["couchloom"]["host"], "vm100")
+            self.assertEqual(run.stat().st_mode & 0o777, 0o700)
+            self.assertEqual((run / "manifest.json").stat().st_mode & 0o777, 0o600)
 
     def test_missing_host_instance_fails_before_export(self):
         postgres = Mock()

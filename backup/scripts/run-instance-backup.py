@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import os
 import sys
 from pathlib import Path
 
@@ -38,6 +39,7 @@ def run(inventory_path: Path, staging_root: Path, run_id: str, host: str) -> Pat
     instances = validate_postgres_instances(inventory, host=host)
     if not instances:
         raise ValueError(f"no PostgreSQL instances configured for host: {host}")
+    os.umask(0o077)
     final_dir = staging_root / run_id
     incomplete_dir = staging_root / f".{run_id}.incomplete"
     if final_dir.exists() or incomplete_dir.exists():
