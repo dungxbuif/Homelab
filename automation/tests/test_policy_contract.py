@@ -22,7 +22,7 @@ class PolicyContractTest(unittest.TestCase):
             identity = (service['host'], keys[0], service[keys[0]])
             self.assertNotIn(identity, bindings)
             bindings.add(identity)
-        self.assertEqual(len(bindings), 48)
+        self.assertEqual(len(bindings), 47)
 
     def test_verified_control_and_app_network_boundaries(self):
         active = yaml.safe_load((ROOT / "automation/policies/active-runtime.yaml").read_text())

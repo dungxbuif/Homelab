@@ -327,13 +327,6 @@ services:
     lifecycle: active
     networks: [proxy_net]
     observed_image: prom/blackbox-exporter:latest
-  - id: node-exporter
-    runtime_container: node-exporter
-    host: pi5
-    class: monitoring
-    lifecycle: active
-    networks: [proxy_net]
-    observed_image: prom/node-exporter:latest
   - id: snmp-exporter
     runtime_container: snmp-exporter
     host: pi5

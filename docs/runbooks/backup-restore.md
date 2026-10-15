@@ -2,8 +2,9 @@
 
 **Status:** Online adapters, encrypted Drive upload, remote restore rehearsal,
 and the replacement VM100 scheduler are deployed. The latest database, RustFS,
-and GitLab class markers are successful; the health oneshot still needs a
-start-time/ordering fix. The legacy
+and GitLab class markers are successful; the combined Semaphore read-only health
+check passed task 57 on 2026-10-15. Remote Drive restore acceptance remains a
+separate gate. The legacy
 `/ssd-data/backup/simple-backup.sh` cron entry was disabled on the Pi on
 2026-10-05; its script and historical local artifacts remain for rollback and
 audit until the replacement flow is fully verified.
@@ -233,9 +234,8 @@ tests are mandatory before claiming operational recovery.
   and [rehearsal evidence](../deployments/backup-restore-rehearsal-2026-10-05.md).
 - Semaphore and the internal provisioner are an active private provisioning
   control plane on Pi5. They are intentionally separate from the VM100 backup
-  scheduler. The last health oneshot exited 1 because it ran before two class
-  markers existed and logged a unit start-time parsing warning; fix that
-  reporting gate before claiming the entire backup system is clean.
+  scheduler. Task 57 is the current read-only health acceptance; it does not
+  replace remote restore testing.
 - The Mezon webhook secret is intentionally not stored in this repository.
 - Redis recovery is out of scope.
 - A successful database backup does not restore application files or RustFS

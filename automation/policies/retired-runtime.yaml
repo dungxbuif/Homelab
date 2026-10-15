@@ -31,6 +31,9 @@ services:
   - id: coturn
     lifecycle: historical
     reason: retired
+  - id: node-exporter
+    lifecycle: historical
+    reason: operator_requested_retirement
 routes:
   - id: transfer
     lifecycle: historical

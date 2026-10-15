@@ -20,6 +20,19 @@ timestamp: 2026-07-03T15:14:00Z
 > Every significant change appends to this log; the current version marker also
 > lives in [`index.md`](../index.md) and [`MAIN.md`](./MAIN.md).
 
+## 2026-10-15 - Automation and runtime reconciliation
+
+- **Backup health gate:** Semaphore task 57 passed the combined read-only
+  health check. It confirmed free space, a free backup lock, and fresh
+  PostgreSQL/CouchDB, RustFS, and GitLab success markers. Remote Drive restore
+  remains open and is tracked separately.
+- **Homepage release notification:** Semaphore task 56 passed the dedicated
+  Mezon notification boundary using the secret Variable Group; the generic
+  application deploy template remains unenrolled/design-only.
+- **Policy correction:** Pi5 `node-exporter` was observed running despite the
+  retired topology documentation. Its service removal and post-check are
+  tracked in [the retirement record](./deployments/node-exporter-retirement-2026-10-15.md).
+
 ## 2026-10-13 — Runtime reconciliation
 
 - **Runtime inventory refreshed:** Pi5 (`rpivn`, Docker `28.4.0`) is the active

@@ -194,8 +194,9 @@ run and isolated restore rehearsal are recorded in
 VM100 systemd timers now own the schedule and Pi5 remains the online
 datastore/object executor. The latest database, RustFS, and GitLab success
 markers plus remote snapshot IDs are in the [runtime inventory](./deployments/runtime-inventory-2026-10-13.md).
-Redis and NATS remain excluded. The health oneshot still has an ordering/start-time
-parse warning and is not yet a clean health-gate pass.
+Redis and NATS remain excluded. The combined Semaphore health check passed as
+task 57 on 2026-10-15 with free space, lock state, and all three class markers
+within policy; remote Drive restore remains a separate acceptance gate.
 
 ---
 
