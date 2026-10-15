@@ -1,4 +1,5 @@
 ---
 # Keep Semaphore-managed public key material and playbook_dir together. The
 # implementation remains in the shared Ansible playbook tree.
-- import_playbook: ../../ansible/playbooks/backup-client-release.yml
+- name: Release the reviewed backup client from Semaphore
+  import_playbook: ../../ansible/playbooks/backup-client-release.yml

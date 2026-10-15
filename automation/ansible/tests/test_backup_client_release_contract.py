@@ -21,7 +21,7 @@ class BackupClientReleaseContractTests(unittest.TestCase):
             self.assertIn(filename, source)
         self.assertIn("dest: artifacts/backup-client-release.json", source)
         self.assertIn("delegate_to: localhost", source)
-        self.assertIn("run_once: true", source)
+        self.assertIn("inventory_hostname == ansible_play_hosts_all[0]", source)
 
 
 if __name__ == "__main__":

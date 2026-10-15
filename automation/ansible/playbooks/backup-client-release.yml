@@ -84,7 +84,7 @@
             state: directory
             mode: '0700'
           delegate_to: localhost
-          run_once: true
+          when: inventory_hostname == ansible_play_hosts_all[0]
 
         - name: Write sanitized release evidence for the Semaphore post-check
           ansible.builtin.copy:
@@ -92,7 +92,7 @@
             dest: artifacts/backup-client-release.json
             mode: '0600'
           delegate_to: localhost
-          run_once: true
+          when: inventory_hostname == ansible_play_hosts_all[0]
       always:
         - name: Remove only this candidate directory
           ansible.builtin.file:
