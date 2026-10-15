@@ -291,3 +291,49 @@ required; changing version strings or suppressing findings is not remediation.
 The runtime EE remains unapproved. Derived runner publication/adoption must not
 proceed from this failed image. Provisioner uses its separate image/gate and
 must not be conflated with this EE result.
+
+## Isolated OpenTofu remediation experiment
+
+Prepare an isolated source build from upstream tagv1.13.1, observed peeled
+commit233700b795b6d2372f1c56ed57a4abaec9d36475. Test Go1.27.2 and the minimum
+scanner-reported fixed module versions (x/mod0.40.0, x/net0.60.0, grpc1.83.2).
+Keep native Go checksum verification enabled and inspect the resulting module
+diff; no automatic upgrade of unrelated dependencies. Preserve upstream source
+and distinguish any modified build from the official release in its provenance.
+
+This is a local candidate experiment only: no replacement of the production EE,
+runner or existing local known-good tag. Verify build metadata, native encrypted
+state tests and provider init/validate, then rescan without exclusions. A clean
+Go scan alone cannot clear the separate Debian findings. Record incompatibility
+or unavailable toolchain honestly; do not rename versions to bypass the scanner.
+
+Native dependency resolution rejected x/mod0.40.0 because x/net0.60.0 requires
+x/mod0.41.0; the failed attempt left source unchanged. Use the explicit required
+0.41.0 floor for the experiment, not `latest`. Builder image is the official
+Go1.27.2 Bookworm index pinned at
+`sha256:5cf287a799e6b94384bad13d16b14904c531f51ba65792237e122ce42b392f61`.
+Local containers are limited to2CPU/4GiB/512PIDs and mount only the disposable
+source checkout, not homelab credentials or Docker sockets.
+
+### Experiment outcome
+
+Native ARM64 build succeeded as `OpenTofu v1.13.1-homelab.1`, with Go1.27.2
+metadata and the pinned upstream revision marked modified. Source diff contains
+only9 module version changes and18 new checksum entries. The generated patch
+and reproduction notes are retained under execution-environment/experiments;
+the main Containerfile is unchanged.
+
+Candidate image `homelab-automation-ee:tofu-patched-experiment-20261015` has ID
+`sha256:7298483e75c1f832cb36eddaf33a770119d2e6b811e2ce09081ce9280711af95`.
+Binary SHA256: `e503994fb350293e0748aec8f885f1979079950642f72843097cd006955bf9c8`.
+The native encrypted-state test and readonly Proxmox provider init/validate pass.
+Full suites: automation111, Ansible24, backup98 (one opt-in skip), OpenTofu15;
+247 tests pass, one skips. No live Proxmox API/state was used.
+
+Unchanged Trivy scan exits1 because Debian retains74 HIGH+5 CRITICAL. OpenTofu,
+Docker CLI and Python now each report zero HIGH/CRITICAL. Full report SHA256:
+`939ebd99ce657cbc81baf37d26941551effaff04469e5945f33431841ee5ab9a`, stored at
+`/tmp/homelab-tofu-remediation.fIFciK53/security-reports/automation-ee-tofu-patched.json`.
+This experimentally resolves the seven Go findings, not the complete EE gate.
+No image was published or adopted by a live runner. AMD64 candidate compatibility
+and broader upstream test coverage remain open before any adoption decision.
