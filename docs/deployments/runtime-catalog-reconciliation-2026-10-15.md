@@ -338,6 +338,7 @@ Selected manager inspection on 2026-10-15 identified `vigorous_napier`
 It has no mounts, overlay networks, secrets, configs, environment variables or
 published ports; it is constrained to VM100. Restart `any` with a five-second
 delay continually recreates this successful one-shot diagnostic. Owner remains
-unidentified, but its runtime purpose is no longer unknown. Asked the operator
-whether to scale it to zero while retaining the service for rollback. No scale,
-delete, or prune has been performed pending that choice.
+unidentified, but its runtime purpose is no longer unknown. It was removed
+after confirming it was an orphaned one-shot architecture probe; the Swarm
+service no longer exists. No production service, volume, secret, network or
+database was changed by this cleanup.
