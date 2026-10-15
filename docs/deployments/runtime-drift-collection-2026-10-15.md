@@ -75,3 +75,16 @@ reproduced: malformed YAML escaped the CLI error boundary. Catching
 requires no traceback or input excerpt. Full automation Python suite: 94 tests
 passed in the EE; runtime-policy Ruby suite: 4 tests, 13 assertions passed.
 No public app/API behavior changed, so public app docs remain unchanged.
+
+## Resource-limit follow-up
+
+Historical task 40/41 snapshot at 04:32 UTC: matching every running container
+to exactly one full-ID `resource_limits` row found 21 of 22 Pi5 containers and
+18 of 27 VM100 containers with Memory=0, NanoCpus=0 and CpuQuota<=0. None of
+those 49 running containers had a positive PidsLimit. Pi counts include the
+temporary Restic invocation. These are absent container limits, not measured
+capacity shortages; ancestor cgroup controls, host pressure and peak workload
+are not established by this observation. Do not apply arbitrary low ceilings
+to databases or change replica counts from this evidence alone. Collect fresh
+resource/pressure samples during representative load and baseline each service
+before a controlled limit rollout. No resource changes were applied.

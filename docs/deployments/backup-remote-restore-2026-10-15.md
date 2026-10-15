@@ -63,3 +63,37 @@ Started async job `j186891193321.3128007`; its result file is
 `/home/dungxbuif/.ansible_async/j186891193321.3128007`.
 First poll reported started=true, finished=false, and the private PID receipt
 matched live bash PID `3128034`. No terminal download/restore success is claimed.
+
+## Payload verification implementation
+
+Add a read-only `verify-database-payload.py` gate before native restore. Require
+the exact expected run ID, complete database manifest, matching COMPLETE marker,
+nonempty unique safe artifact paths, and agreement between manifest hashes and
+the checksum index. Stream SHA256 over every declared artifact, reject symlinks
+and traversal, and return only counts/bytes/run identity. This verifies retrieved
+payload integrity, not remote provenance by itself, DB recoverability or runtime
+health. The orchestration must first require the recorded retrieval job's zero
+exit status and the exact snapshot admission receipt. Reports stay outside the
+retrieved tree. Native PostgreSQL export/restore mechanisms remain unchanged.
+
+Tests cover successful full verification, byte corruption, missing files,
+wrong run/marker, duplicate paths, checksum-index mismatch, symlinks and escape.
+
+Verification: six targeted tests passed; full backup Python suite ran 98 tests,
+97 passed and one opt-in native integration test skipped. Independent review
+found no concrete defect in this scoped verifier. Read-only execution through
+Ansible against the existing LOCAL source run verified all 29 declared
+artifacts, totaling 6,915,289,967 bytes. This is compatibility/integrity evidence
+for the verifier, explicitly not proof of the remote downloaded copy. The
+recorded remote retrieval job remains unfinished and must not be restarted.
+
+Operator command after successful download admission:
+
+```sh
+python3 backup/scripts/verify-database-payload.py \
+  --run-dir /home/dungxbuif/.homelab-restore-rehearsals/databases-20261015-023158-remote/backup-run \
+  --expected-run databases-20261015-023158
+```
+
+Run as the owner allowed to read the restored files (restored files may retain
+root ownership); do not relax file permissions to accommodate verification.
