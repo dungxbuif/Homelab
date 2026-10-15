@@ -3,9 +3,13 @@ type: Reference
 title: "Code Index: longhorn"
 description: "Aggregated code index for longhorn folder"
 timestamp: 2026-07-03T15:11:00Z
+lifecycle: historical
 ---
 
 # Code Index: longhorn
+
+> **HISTORICAL ONLY: DO NOT RUN.** This Longhorn material belongs to the
+> retired Kubernetes design and is excluded from the active homelab inventory.
 
 > This index aggregates code files in the [[longhorn/]] directory.
 > Edit the source files directly; this index is auto-generated for Obsidian reading.

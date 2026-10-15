@@ -3,9 +3,14 @@ type: Reference
 title: "Code Index: traefik"
 description: "Aggregated code index for traefik folder"
 timestamp: 2026-07-03T15:11:00Z
+lifecycle: historical
 ---
 
 # Code Index: traefik
+
+> **HISTORICAL ONLY: DO NOT RUN.** This Kubernetes Traefik material belongs to
+> the retired cluster design. The active edge is Pi5 file-provider Traefik;
+> these manifests are not a current route source.
 
 > This index aggregates code files in the [[traefik/]] directory.
 > Edit the source files directly; this index is auto-generated for Obsidian reading.

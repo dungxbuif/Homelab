@@ -3,10 +3,16 @@ type: infrastructure-runbook
 title: 'LocalStack on Kubernetes'
 description: 'Internal-only LocalStack deployment for AWS SAA lab practice on the homelab Kubernetes cluster'
 timestamp: 2026-07-09T00:00:00Z
+lifecycle: historical
 tags: [homelab, kubernetes, localstack, aws, lab]
 ---
 
 # LocalStack on Kubernetes
+
+> **HISTORICAL ONLY: DO NOT RUN.** The homelab no longer has a Kubernetes
+> cluster. This learning manifest is retained as archived study material and
+> is excluded from the active automation inventory; it must not be applied to
+> VM100 or the current Swarm stack.
 
 Internal LocalStack deployment for AWS SAA lab practice.
 

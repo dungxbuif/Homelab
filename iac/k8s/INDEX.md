@@ -5,7 +5,19 @@ description: "Aggregated code index for k8s folder"
 timestamp: 2026-07-03T15:11:00Z
 ---
 
+---
+type: Reference
+title: "Historical Code Index: k8s"
+description: "Retired Kubernetes manifests retained for study only"
+lifecycle: historical
+---
+
 # Code Index: k8s
+
+> **HISTORICAL ONLY: DO NOT RUN.** Kubernetes and kube-vip were removed from
+> the current lab. These manifests are retained for study/history only and
+> are excluded from the active runtime policy; do not apply them to VM100 or
+> any current host.
 
 > This index aggregates code files in the [[k8s/]] directory.
 > Edit the source files directly; this index is auto-generated for Obsidian reading.
