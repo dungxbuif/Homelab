@@ -1,0 +1,56 @@
+---
+- name: Configure private Docker-visible backup OAuth runtime directories
+  hosts: pi5:vm100
+  gather_facts: false
+  serial: 1
+  vars:
+    ansible_become: '{{ inventory_hostname == "vm100" }}'
+    backup_runtime_root: '{{ "/home/dungxbuif/.homelab-backup-runtime" if inventory_hostname == "pi5" else "/var/lib/homelab-backup/runtime" }}'
+    backup_runner_env: '{{ "/ssd-data/infra/backup/runner.env" if inventory_hostname == "pi5" else "/etc/homelab-backup/runner.env" }}'
+  tasks:
+    - name: Require approved runtime-only repair
+      ansible.builtin.assert:
+        that:
+          - backup_runtime_config_approved | default(false) | bool
+          - inventory_hostname in ['pi5', 'vm100']
+
+    - name: Create private owned runtime directory without touching application trees
+      ansible.builtin.file:
+        path: '{{ backup_runtime_root }}'
+        state: directory
+        owner: '{{ "dungxbuif" if inventory_hostname == "pi5" else "root" }}'
+        group: '{{ "dungxbuif" if inventory_hostname == "pi5" else "root" }}'
+        mode: '0700'
+
+    - name: Update only working-copy path in the existing private environment
+      ansible.builtin.lineinfile:
+        path: '{{ backup_runner_env }}'
+        regexp: '^RCLONE_CONFIG_WORK_ROOT='
+        line: 'RCLONE_CONFIG_WORK_ROOT={{ backup_runtime_root }}'
+        create: false
+        backup: true
+        mode: '0600'
+      no_log: true
+
+    - name: Create backup service override directory on VM100
+      ansible.builtin.file:
+        path: /etc/systemd/system/homelab-backup@.service.d
+        state: directory
+        mode: '0755'
+      when: inventory_hostname == 'vm100'
+
+    - name: Override obsolete VM working-copy location
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/homelab-backup@.service.d/30-rclone-runtime.conf
+        mode: '0644'
+        backup: true
+        content: |
+          [Service]
+          Environment=RCLONE_CONFIG_WORK_ROOT=/var/lib/homelab-backup/runtime
+      when: inventory_hostname == 'vm100'
+      notify: Reload backup service definitions
+
+  handlers:
+    - name: Reload backup service definitions
+      ansible.builtin.systemd_service:
+        daemon_reload: true

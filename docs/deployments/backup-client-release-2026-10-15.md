@@ -54,3 +54,39 @@ Result=success, ExecMainStatus=0. Pi success marker and remote receipt agree on
 run `databases-20261015-023158`, snapshot
 `28872481b537f9666a30cbca00b8f137fe886deff549d4f7c8bb135a23c093c3`.
 This proves that run's post-check, not the new source rollout or a restore test.
+
+## Runtime-directory compatibility correction
+
+The four-file install completed on both hosts, but the first Pi version smoke
+correctly refused group-writable staging ancestors (mode 0775). VM's old runtime
+path is under ubuntu-owned `/opt/apps`, also inappropriate for root OAuth work.
+Do not weaken the no-follow/ownership checks or chmod broad application trees.
+Move only temporary OAuth working copies to Docker-visible private paths:
+Pi5 `/home/dungxbuif/.homelab-backup-runtime` owned by dungxbuif, and VM100
+`/var/lib/homelab-backup/runtime` owned by root, both mode 0700. Preserve source
+credentials and update only `RCLONE_CONFIG_WORK_ROOT` in each private runner env.
+Override the obsolete VM systemd Environment value with a drop-in, then reload
+definitions without restarting any job. VM has ProtectSystem=full, not strict;
+the new /var/lib path is writable without weakening that setting.
+
+Use `backup-runtime-config.yml` with explicit approval and per-file rollback
+copies. Repeat version smoke through the full installed library on both hosts
+and verify temporary configs/container cleanup. Release receipts for the first
+installation are Pi `backup-client-xhk3u6rk` and VM `backup-client-qp175jxt`.
+Installation alone was not sufficient; runtime smoke remains required.
+
+### Installed result
+
+Both hosts completed the lock-aware install (four files, no job restart) and
+the runtime-path correction. VM systemd definitions were reloaded only.
+The full installed library successfully ran pinned Restic 0.19.1 `version`
+on Pi arm64 and VM amd64 using each host's real environment and private config
+working copy. This command does not upload or verify remote repository data.
+The source OAuth credential was not rotated or moved.
+
+Post-install verification on each host requires all four live SHA-256 hashes
+to match the reviewed source, mode-0700 empty runtime directory after smoke,
+and zero remaining invocation-labelled containers. Preserve both release
+receipts and environment rollback copies. The next full upload and the planned
+Google Drive restore rehearsal remain required; do not infer them from version
+smoke or from the successful backup that preceded this deployment.
