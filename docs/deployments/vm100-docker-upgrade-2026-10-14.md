@@ -63,3 +63,30 @@ Public app docs are unchanged; this is internal maintenance.
 
 Do not roll back the VM snapshot automatically: it predates new application
 writes. Keep it as an emergency checkpoint until post-checks and retention review.
+
+## Revalidation and startup follow-up, 2026-10-15
+
+Live checks confirm Docker 29.8.2, active Docker/containerd, active Swarm node
+`35aki2511juhltwuavfuokqa1`, and an empty `dpkg --audit`. The rollback package
+directory still exists. Running containers with healthchecks report healthy;
+containers without healthchecks are only confirmed running, not functionally tested.
+
+The Docker journal at 2026-10-14 16:41:21 UTC explicitly records container
+startup failures because `homelab-net` did not yet exist locally. The four affected
+standalone apps currently have `restart=unless-stopped`, use `homelab-net` as
+their network mode, and are running with empty `State.Error` after recovery.
+No dedicated Compose/overlay startup reconciliation service was found in the
+systemd unit inventory. A restart policy alone did not recover this incident.
+
+Proposed follow-up, awaiting operator confirmation: an Ansible-managed bounded
+systemd startup reconciliation job after Docker startup. Restrict it to the four
+known app containers and an observed missing-network startup error, wait for their
+required overlay networks, and never restart a running container or revive an
+intentionally stopped app. Unknown errors must fail closed. It must not recreate
+containers, change images, or modify network membership. Test eligibility,
+timeouts, missing containers/networks, and no-op behavior before enrollment.
+
+This mechanism is not implemented or deployed yet. A no-reboot dry run cannot
+prove cold-start recovery; a later explicitly scheduled restart rehearsal remains
+necessary. Public docs are unaffected because this changes internal startup
+operations only.

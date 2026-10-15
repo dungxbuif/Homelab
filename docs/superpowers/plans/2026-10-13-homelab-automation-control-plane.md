@@ -41,17 +41,24 @@ Evidence index:
 - [App deployment preflight](../../deployments/app-catalog-reconciliation-2026-10-15.md)
 - [Retention prerequisite gate](../../deployments/backup-retention-ownership-2026-10-14.md)
 - [Proxmox CA evidence and compatibility limits](../../deployments/proxmox-ca-trust-2026-10-15.md)
+- [Independent vault clone recovery and excluded content](../../deployments/vault-source-verification-2026-10-15.md)
 
 Publication checkpoint: implementation commits are on private GitLab branch
 `codex/automation-bootstrap`, not merged to main. Most recent observed pipeline
-states: 50/51/53 succeeded; 55/56 were still running. Those statuses are not a
-claim that the newest source has passed CI. Historical dirty worktree files are
+states: 50/51/53/55/56 succeeded; 58 (`13e3de9f`) was still running at the latest
+API check. Docs-only publications 57 and 59 intentionally skipped CI. These
+statuses are not a claim that the newest implementation has passed CI.
+Independent GitLab clones of both vaults passed strict fsck and matched original
+commit/tree IDs; ignored files and nested repositories are outside that proof.
+Historical dirty worktree files are
 not automatically included in publication; preserve and reconcile them rather
 than silently discarding or treating them as shipped.
 
 Operational wait: retention unit PID 1133089 remains live, with successful
 sampled pack reads logged through 01:46:48 UTC and the next repository check
-started at 01:47:36. Do not restart it because it is slow or install the new
+progressing through snapshots/trees/blobs at 02:16:41 UTC. The systemd start
+timeout is 12 hours; the 69 backup Python tests passed again during observation.
+Neither fact proves the live remote check complete. Do not restart it because it is slow or install the new
 scheduler/instance runner over the live operation. The wait is specific to that
 process, not a global blocker for unrelated work.
 
