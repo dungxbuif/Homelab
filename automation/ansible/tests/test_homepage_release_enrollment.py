@@ -54,7 +54,12 @@ class EnrollmentTests(unittest.TestCase):
         self.assertEqual(command['stdin'], '{{ homepage_release_report | to_json }}')
         self.assertEqual(notify['delegate_to'], 'localhost')
         self.assertEqual(notify['connection'], 'local')
+        self.assertEqual(notify['register'], 'homepage_notification_result')
+        self.assertFalse(notify['changed_when'])
+        self.assertFalse(notify['failed_when'])
         self.assertTrue(notify['no_log'])
+        require = next(t for t in tasks if t['name'] == 'Require an accepted Mezon release notification')
+        self.assertIn('homepage_notification_result.rc == 0', require['ansible.builtin.assert']['that'])
 
 
 if __name__ == '__main__':

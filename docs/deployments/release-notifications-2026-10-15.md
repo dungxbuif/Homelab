@@ -60,5 +60,6 @@ playbook reads `semaphore_vars.task_details.id` from Semaphore's Ansible extra
 vars; a missing or invalid identity is a hard failure. The sender runs on the
 Semaphore controller (`delegate_to: localhost`) because its reviewed source is
 in the runner checkout; the Pi5 only performs the approved release helper. The
-example task ID is an argument example, not a claim that audit task42 was a
-release.
+command result is redacted, then a separate assertion reports only the exit
+code and the sender's generic redacted diagnostic. The example task ID is an
+argument example, not a claim that audit task42 was a release.

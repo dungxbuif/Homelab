@@ -68,4 +68,15 @@
         stdin_add_newline: true
       delegate_to: localhost
       connection: local
+      register: homepage_notification_result
+      changed_when: false
+      failed_when: false
       no_log: true
+
+    - name: Require an accepted Mezon release notification
+      ansible.builtin.assert:
+        that:
+          - homepage_notification_result.rc == 0
+        fail_msg: >-
+          Mezon release notification failed with rc={{ homepage_notification_result.rc }}:
+          {{ homepage_notification_result.stderr | default('no diagnostic') | trim }}
