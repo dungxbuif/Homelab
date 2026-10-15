@@ -30,6 +30,22 @@ class InventoryTests(unittest.TestCase):
         errors = MODULE.validate(inventory, json.loads((ROOT / "backup/policies.yaml").read_text()))
         self.assertTrue(any("invalid bucket" in error for error in errors))
 
+    def test_additional_instance_schema_is_enforced(self):
+        policies = json.loads((ROOT / "backup/policies.yaml").read_text())
+        valid = {"id": "relayhub", "host": "pi5", "container": "relayhub-pg",
+                 "admin_user": "relayhub", "databases": [
+                     {"name": "relayhub", "application": "relayhub", "lifecycle": "active"}]}
+        for changes, rejected in [({}, False), ({"host": "vm100"}, True),
+                                  ({"databases": []}, True), ({"id": "../bad"}, True),
+                                  ({"container": "postgres"}, True),
+                                  ({"databases": [{"name": "bad"}]}, True)]:
+            with self.subTest(changes=changes):
+                inventory = json.loads((ROOT / "backup/inventory.yaml").read_text())
+                inventory["postgresql_instances"] = [{**valid, **changes}]
+                self.assertEqual(bool(MODULE.validate(inventory, policies)), rejected)
+        inventory["postgresql_instances"] = [valid, valid]
+        self.assertTrue(MODULE.validate(inventory, policies))
+
 
 if __name__ == "__main__":
     unittest.main()

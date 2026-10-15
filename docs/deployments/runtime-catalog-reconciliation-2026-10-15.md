@@ -200,3 +200,18 @@ Runtime inventory and installed runner remain unchanged. Before enrollment,
 reconcile standalone inventory validation with the optional instance schema,
 then verify the Pi instance export and remote snapshot. Cross-host CouchLoom
 transport and complete multi-instance restore acceptance remain outstanding.
+
+Validator reconciliation: move the additional-instance schema validation to
+the existing shared helper module so offline validation and the live runner
+use the exact same checks. Regress valid configuration, remote-host rejection,
+duplicate IDs/containers, empty databases and malformed entries in the offline
+validator. Preserve primary inventory behavior and verify the full suite before
+deployment. No public interface changes beyond the documented optional schema.
+
+Reconciliation completed: both entry points now call
+`common.validate_postgres_instances`. The new offline regression failed in six
+cases before the fix; all 63 Python backup tests now pass in the execution
+image. Read-only review found no new blockers. This is source/CI readiness,
+not deployment: active retention still owns the backup operation and runtime
+inventory has not changed. Production enrollment and remote post-check remain
+separate acceptance steps.

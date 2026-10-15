@@ -10,7 +10,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from common import load_document, validate_name  # noqa: E402
+from common import load_document, validate_name, validate_postgres_instances  # noqa: E402
 
 
 def validate(inventory: dict, policies: dict) -> list[str]:
@@ -50,6 +50,10 @@ def validate(inventory: dict, policies: dict) -> list[str]:
     check_entries("postgresql", "databases")
     check_entries("couchdb", "databases")
     check_entries("rustfs", "buckets")
+    try:
+        validate_postgres_instances(inventory)
+    except (ValueError, KeyError, TypeError) as exc:
+        errors.append(f"invalid PostgreSQL instances: {exc}")
     if inventory.get("postgresql", {}).get("container") != "postgres":
         errors.append("postgresql container must be postgres")
     if inventory.get("couchdb", {}).get("container") != "couchdb":

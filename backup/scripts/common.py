@@ -57,6 +57,42 @@ def validate_run_id(value: str) -> str:
     return value
 
 
+def validate_postgres_instances(inventory: dict) -> list[dict]:
+    """Validate optional local PostgreSQL instances before any export."""
+    instances = inventory.get("postgresql_instances", [])
+    if not isinstance(instances, list):
+        raise ValueError("postgresql_instances must be a list")
+    ids: set[str] = set()
+    containers = {inventory["postgresql"]["container"]}
+    for instance in instances:
+        if not isinstance(instance, dict):
+            raise ValueError("PostgreSQL instance must be an object")
+        for field in ("id", "host", "container", "admin_user"):
+            value = instance.get(field)
+            if not isinstance(value, str) or not value:
+                raise ValueError(f"PostgreSQL instance requires {field}")
+        validate_name(instance["id"], "instance")
+        validate_name(instance["container"], "database")
+        if instance["host"] != inventory["postgresql"].get("host"):
+            raise ValueError("remote PostgreSQL instance requires a separate export transport")
+        if instance["id"] in ids or instance["container"] in containers:
+            raise ValueError("duplicate PostgreSQL instance ID or container")
+        databases = instance.get("databases")
+        if not isinstance(databases, list) or not databases:
+            raise ValueError("PostgreSQL instance databases must be a non-empty list")
+        names: set[str] = set()
+        for entry in databases:
+            if not isinstance(entry, dict):
+                raise ValueError("PostgreSQL database entry must be an object")
+            name = validate_name(entry.get("name"), "database")
+            if name in names or not all(isinstance(entry.get(k), str) and entry[k] for k in ("application", "lifecycle")):
+                raise ValueError("duplicate or malformed PostgreSQL database entry")
+            names.add(name)
+        ids.add(instance["id"])
+        containers.add(instance["container"])
+    return instances
+
+
 def select_backup_entries(entries: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
     """Select current targets while preserving a visible retired exclusion list."""
     selected: list[dict[str, Any]] = []
