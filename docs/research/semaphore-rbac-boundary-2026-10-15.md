@@ -22,7 +22,7 @@ Sources:
 - [Pinned task permission middleware](https://raw.githubusercontent.com/semaphoreui/semaphore/v2.19.12/api/projects/tasks.go)
 - [Official roles and template permission behavior](https://semaphoreui.com/docs/user-guide/team)
 
-## Proposed boundary, awaiting operator choice
+## Community boundary decision
 
 Keep one Semaphore installation. Retain production mutations and privileged
 credentials in the existing project; add a separate audit project containing
@@ -31,9 +31,20 @@ run all templates there without inheriting database-create or release access.
 Do not copy privileged release/provisioner secrets to the audit project. Keep
 existing owner access and history; do not delete or move live resources blindly.
 
-Alternative: keep owner-only operation until another authorization boundary is
-chosen. No purchase, license change, project creation, credential copy or user
-creation is approved by this note. The operator question has been sent.
+The operator approved completion of the safe Community-edition boundary without
+inventing fine-grained roles. The source-backed bootstrap creates a separate
+`Homelab Audit` project owned by the existing administrator. It contains only
+the read-only GitLab source checkout, fixed-command host audits for VM100 and
+Pi5, and the combined read-only backup-health template.
+
+The audit project receives only the read-only source, host-observer, and
+backup-health credentials. It receives no provisioner, release, route, Docker,
+OpenTofu, database-provisioning, or application-deployment credential. The
+bootstrap is idempotent and fails on duplicate names or resource drift; it does
+not delete or mutate the existing production project. The single admin account
+remains the only member until a real non-admin identity and a separate denial
+test plan are supplied. This is an isolation boundary, not proof of multi-user
+RBAC.
 
 Acceptance after approval must include API denial tests using non-admin test
 identities: audit execution allowed, production execution denied, template/key/

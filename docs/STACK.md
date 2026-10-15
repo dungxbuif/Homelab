@@ -16,9 +16,10 @@ plus [runtime/catalog reconciliation](./deployments/runtime-catalog-reconciliati
 - Homepage release template 6 is the only enrolled application release path.
   Its dedicated Mezon notification boundary passed live task 56. The generic
   `app-deploy` contract remains design-only.
-- The restricted VM100/Pi5 observers and GitLab CI runner are active. OpenTofu
-  VM100 import, broad route/app apply and fine-grained Semaphore RBAC remain
-  unverified or unenrolled.
+- The restricted VM100/Pi5 observers and GitLab CI runner are active. Semaphore
+  project 2 (`Homelab Audit`) now provides a separate owner-only read-only
+  boundary for host and backup audits. OpenTofu VM100 import, broad route/app
+  apply and fine-grained non-admin RBAC remain unverified or unenrolled.
 - Older sections below remain useful topology history; when a dated deployment
   record conflicts with them, the newer record is authoritative.
 

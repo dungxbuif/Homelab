@@ -28,7 +28,9 @@ deployment, and rollback. The declarative catalog is in
 [`project-resources.yaml`](./project-resources.yaml) and the template contracts
 are in [`templates/`](./templates/).
 
-The proposed roles are deliberately narrow (not yet enforced by these files):
+The proposed roles are deliberately narrow, but Semaphore Community does not
+enforce them as per-template roles. The live boundary is therefore split into
+an owner-only production project and a separate read-only audit project:
 
 | Role | Allowed work |
 |---|---|
@@ -41,6 +43,15 @@ variables, execution image reference, approval boundary, and post-check. The
 execution image is resolved from `AUTOMATION_EE_IMAGE_DIGEST`; mutable tags are
 rejected by the contract tests. The intended apply workflow requires a reviewed
 plan artifact and `Manager` approval; those tests do not enforce live UI access.
+
+`Homelab Audit` is live as project 2. It contains only the read-only source
+checkout, fixed-command host audits for VM100 and Pi5, and combined backup
+health. It has one member (`admin`, owner) and no provisioner, release, route,
+Docker, OpenTofu, database-provisioning, or application-deployment credential.
+Bootstrap it with `node bootstrap-audit-project.mjs --apply`; the script is
+idempotent, dry-run safe, and fails on duplicate names or resource drift. A
+successful task is required to verify the checkout and forced command path.
+This project boundary is not a substitute for non-admin denial tests.
 
 `app-deploy` and `rollback` are currently design-only contracts. Their generic
 executor scripts are intentionally absent, so they are not exposed through any
