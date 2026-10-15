@@ -110,6 +110,11 @@ from a Linux container row. It therefore returns `status: not_verified` and
 exit 2 until those independent evidence classes are present; this is a
 fail-closed collector, not a shortcut to full inventory acceptance.
 
+Its optional output is now an exclusive mode-0600 file under the caller-owned
+mode-0700 artifact directory; an existing file, symlink or non-absolute output
+path is rejected. This keeps the aggregation boundary consistent with the
+private Semaphore exporter.
+
 The output is suitable as a hand-off artifact for the drift gate once the
 missing coverage is supplied. It has not changed production containers,
 networks, routes, credentials or backup data.

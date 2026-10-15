@@ -175,6 +175,31 @@ def collect(policy: dict, artifacts_dir: Path, now: datetime) -> dict:
     }
 
 
+def write_private(path: Path, text: str) -> None:
+    if not path.is_absolute():
+        raise ValueError("output must be an absolute path")
+    check_private_dir(path.parent)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    fd = None
+    try:
+        fd = os.open(path, flags, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            fd = None
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+    except Exception:
+        if fd is not None:
+            os.close(fd)
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
+        raise
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--active", type=Path, required=True)
@@ -187,11 +212,11 @@ def main() -> int:
         report = fail(str(exc))
     text = json.dumps(report, sort_keys=True) + "\n"
     if args.output:
-        if args.output.exists() or args.output.is_symlink():
-            print(json.dumps(fail("output already exists"), sort_keys=True))
+        try:
+            write_private(args.output, text)
+        except (OSError, ValueError):
+            print(json.dumps(fail("private output could not be created"), sort_keys=True))
             return 2
-        args.output.write_text(text, encoding="utf-8")
-        os.chmod(args.output, 0o600)
     else:
         sys.stdout.write(text)
     return 0 if report.get("complete") else 2

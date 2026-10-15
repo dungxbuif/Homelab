@@ -82,6 +82,19 @@ class CollectorTest(unittest.TestCase):
         report = json.loads(result.stdout)
         self.assertTrue(any("mode 0600" in error for error in report["coverage"]["errors"]))
 
+    def test_output_is_exclusive_and_private(self):
+        output = self.artifacts / "combined.json"
+        result = subprocess.run([sys.executable, str(SCRIPT), "--active", str(self.policy),
+                                 "--artifacts-dir", str(self.artifacts), "--output", str(output)],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(stat.S_IMODE(output.stat().st_mode), 0o600)
+        second = subprocess.run([sys.executable, str(SCRIPT), "--active", str(self.policy),
+                                 "--artifacts-dir", str(self.artifacts), "--output", str(output)],
+                                capture_output=True, text=True)
+        self.assertEqual(second.returncode, 2)
+        self.assertEqual(json.loads(second.stdout)["reason"], "private output could not be created")
+
 
 if __name__ == "__main__":
     unittest.main()
