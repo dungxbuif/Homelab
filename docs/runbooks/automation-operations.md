@@ -9,21 +9,22 @@ timestamp: 2026-10-15T00:00:00+07:00
 
 ## Implementation status, 2026-10-15
 
-The full flow below is still a target, but seven live Semaphore templates now
-exist. GitLab CI/registry publication, restricted Pi5/VM100 observers, backup
-health, a fixed-digest Homepage release, and the Homepage Mezon deployment
-notification boundary are installed. VM100 OpenTofu import, general route/app
-apply and full RBAC remain incomplete.
+The full flow below is still a target, but seven live production templates and
+three isolated audit templates now exist. GitLab CI/registry publication,
+restricted Pi5/VM100 observers, backup health, a fixed-digest Homepage release,
+and the Homepage Mezon deployment notification boundary are installed. VM100
+OpenTofu import, general route/app apply and full RBAC remain incomplete.
 Do not execute arbitrary declarative apply templates as though they were enrolled.
-The project currently has one owner membership; separate Viewer/Task Runner/
-Manager permissions have not been proven. Backup health reports state and
-markers; it does not independently restore Drive payloads.
+The production project still has one owner membership. Project 2
+(`Homelab Audit`) is owner-only and read-only; it proves a project boundary,
+not separate Viewer/Task Runner/Manager permissions. Backup health reports
+state and markers; it does not independently restore Drive payloads.
 
 Do not grant `task_runner` in this mixed project merely to allow audits: that
-built-in role can run its mutating templates too. The proposed separate audit
-project and its denial-test requirements are recorded in the
-[RBAC boundary review](../research/semaphore-rbac-boundary-2026-10-15.md), pending
-operator choice. No fine-grained authorization has been enabled by this document.
+built-in role can run its mutating templates too. The separate audit project
+is live, but its denial-test requirements and a real non-admin identity remain
+open in the [RBAC boundary review](../research/semaphore-rbac-boundary-2026-10-15.md).
+No fine-grained authorization has been enabled by this document.
 
 ## What you can run in the UI
 
@@ -49,8 +50,8 @@ job remains Manager/approval-gated.
 
 Templates 3/4/5 require no application passwords or survey values. A successful
 host audit means its declared collection completed, not that every application
-works. Tasks 49/50 are the latest successful VM100/Pi5 collection checkpoint.
-Rootless CI,
+works. Project 2 tasks 67/68/69 are the latest successful VM100, Pi5 and backup
+health checkpoint. Rootless CI,
 VPS and Mac are not included by those host observers. A failed audit must be
 investigated rather than rerun until a green result conceals missing coverage.
 
@@ -111,7 +112,9 @@ a resource sample; they must not be fed directly into the full drift gate.
 Pi5 and VM100 now have restricted controller credentials and live Semaphore
 templates. Bootstrap administration is still used for unenrolled operations;
 general agent SSH has not been removed. Complete route/backup/remote-host
-collection remains pending.
+collection remains pending. Project 2 was bootstrapped by
+`automation/semaphore/bootstrap-audit-project.mjs`; rerunning it must remain
+idempotent and must abort on resource drift rather than delete or repair it.
 
 ## Change gates
 
