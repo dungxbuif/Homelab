@@ -54,5 +54,20 @@ Operator: open project 1, template **Check backup health (read only)**, then Run
 No survey or password is required. A red result requires reading the reported
 unit/marker failure; this template does not repair, prune or initiate backups.
 
+## Runtime secret permission correction
+
+Task 47 later found a permission regression: the forced health helper correctly
+ran as the unprivileged `ubuntu` backup account, but
+`/etc/homelab-backup/runner.env` had become `root:root 0600`, so the helper
+could not load its private runtime configuration. The repair contract now keeps
+the file owned by `root`, group-readable only by `ubuntu`, mode `0640`, and
+leaves the Pi5 copy at its private `0600` boundary. This changes no secret
+value and does not grant the `homelab-audit` account direct file access.
+
+The Ansible playbook must be applied with its explicit runtime-config approval,
+then template 3 must be rerun. A successful task is required before backup
+health is considered restored; no backup or retention job is started by this
+permission repair.
+
 Schema reference for the encrypted Semaphore SSH key payload:
 https://github.com/semaphoreui/semaphore/blob/v2.19.12/db/AccessKey.go

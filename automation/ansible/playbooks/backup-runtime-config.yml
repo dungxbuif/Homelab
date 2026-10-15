@@ -29,8 +29,17 @@
         line: 'RCLONE_CONFIG_WORK_ROOT={{ backup_runtime_root }}'
         create: false
         backup: true
-        mode: '0600'
+        mode: '{{ "0640" if inventory_hostname == "vm100" else "0600" }}'
       no_log: true
+
+    - name: Permit only the backup service account to read VM100 runtime secrets
+      ansible.builtin.file:
+        path: '{{ backup_runner_env }}'
+        owner: root
+        group: ubuntu
+        mode: '0640'
+      no_log: true
+      when: inventory_hostname == 'vm100'
 
     - name: Create backup service override directory on VM100
       ansible.builtin.file:

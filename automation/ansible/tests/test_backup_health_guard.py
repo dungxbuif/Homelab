@@ -23,6 +23,12 @@ class BackupHealthGuardTests(unittest.TestCase):
         self.assertNotIn('eval ', source)
         self.assertNotIn('bash -c', source)
 
+    def test_vm100_runtime_secret_is_readable_only_by_backup_service_account(self):
+        playbook = (ROOT / 'ansible/playbooks/backup-runtime-config.yml').read_text()
+        self.assertIn("group: ubuntu", playbook)
+        self.assertIn("mode: '0640'", playbook)
+        self.assertIn("when: inventory_hostname == 'vm100'", playbook)
+
 
 if __name__ == '__main__':
     unittest.main()
