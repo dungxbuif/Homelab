@@ -274,3 +274,20 @@ and OpenTofu seven. No ignore file or severity filter was relaxed. Report:
 `/tmp/homelab-image-security.SwmOrT/security-reports/automation-ee-no-pip.json`,
 SHA256 `40d5207ebc74337f6ce87ea675a6ed3b360aa62f4f3a72197913622332d3670b`.
 Do not deploy this candidate or claim the EE security gate is clear.
+
+## Actual AMD64 CI scan
+
+Pipeline86/job222 failed the unchanged image gate after validation221 passed.
+Artifact `security-reports/automation-ee.json` SHA256:
+`57ebd95be3d3698f83aed7fe462668b888c24689ae64df00deed7d7edf2ca982`.
+It independently confirms86 findings: Debian74 HIGH+5 CRITICAL, OpenTofu7 HIGH,
+Python0 and Docker CLI0. No Debian finding in this artifact advertises a fixed
+version; that is scanner metadata, not a claim that no upstream mitigation exists.
+
+OpenTofu1.13.1 embeds vulnerable Go1.27.1 and dependencies. Scanner-reported
+fixed versions include Go1.27.2, x/mod0.40.0, x/net0.60.0 and grpc1.83.2.
+An official patched release or separately reviewed reproducible rebuild is
+required; changing version strings or suppressing findings is not remediation.
+The runtime EE remains unapproved. Derived runner publication/adoption must not
+proceed from this failed image. Provisioner uses its separate image/gate and
+must not be conflated with this EE result.
