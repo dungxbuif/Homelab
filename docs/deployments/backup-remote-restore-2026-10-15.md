@@ -140,3 +140,15 @@ about 154 MB and the isolated target had not yet materialized payload files;
 this is an in-progress remote restore, not a verification result. Keep polling
 async job `j871550432349.3253245` and do not start a second retry or run native
 database restore until the container exits zero and the payload verifier passes.
+
+## Retry progress and checksum diagnosis
+
+The retry later materialized all 29 manifest paths and the `COMPLETE` marker,
+with about 6.4 GiB visible from inside the restore container. A checksum pass
+started while `restic restore` was still active correctly found 7/29 entries
+missing or incomplete, including large CouchDB/GitLab payloads and several
+PostgreSQL files. This is an in-progress write race, not final corruption
+evidence. The temporary checksum container was removed after its output was
+captured. The retry remains the sole active restore operation; the canonical
+verifier and isolated PostgreSQL rehearsal remain gated on its terminal zero
+exit.
