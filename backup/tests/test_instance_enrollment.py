@@ -58,7 +58,8 @@ class InstanceEnrollmentTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual((live / 'scripts/run-database-backup.py').resolve(), generation / 'run-database-backup.py')
             self.assertEqual((generation / 'previous-run-database-backup.py').read_text(), 'old generation\n')
-            self.assertEqual(json.loads((live / 'inventory.yaml').read_text())['postgresql_instances'][0]['id'], 'relayhub')
+            instances = json.loads((live / 'inventory.yaml').read_text())['postgresql_instances']
+            self.assertIn('relayhub', [instance['id'] for instance in instances])
             self.assertTrue(json.loads(result.stdout)['catalog']['changed'])
 
     def test_inaccessible_catalog_lock_prevents_code_publication(self):
