@@ -23,6 +23,7 @@ with open('calls.jsonl', 'a') as f: f.write(json.dumps(a) + '\\n')
 if a[0] == os.environ['FAKE_FAIL_COMMAND']: sys.exit(42)
 if a[:2] == ['image', 'save']:
     pathlib.Path(a[a.index('--output')+1]).write_text('archive')
+elif a[:2] == ['volume', 'create']: print('test-volume-id')
 elif a[0] == 'create': print('test-scanner-id')
 elif a[0] == 'start':
     sys.exit(int(os.environ['FAKE_STATUS']))
@@ -50,10 +51,11 @@ else: sys.exit(99)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(calls[0][:2], ['image', 'save'])
         self.assertFalse(leftovers)
-        scan = calls[1]
+        scan = next(call for call in calls if call[0] == 'create')
         self.assertEqual(scan[0], 'create')
-        self.assertNotIn('--mount', scan)
         self.assertNotIn('--volume', scan)
+        self.assertIn('--mount', scan)
+        self.assertIn('type=volume,source=homelab-trivy-cache-local,destination=/tmp/cache', scan)
         self.assertIn('--user', scan)
         self.assertEqual(scan[scan.index('--user') + 1], '65532:65532')
         self.assertTrue(any(c[:2] == ['cp', 'test-scanner-id:/tmp/report.json'] for c in calls))
@@ -61,9 +63,15 @@ else: sys.exit(99)
         self.assertIn('aquasec/trivy:0.76.0@sha256:2416d1f74045b57274df1a340eee6b510cacd73c66a6ccb8da092b117eb7d222', scan)
         for flag in ['--input', '--exit-code', '--exit-on-eol', '--cap-drop', '--memory']:
             self.assertIn(flag, scan)
+        self.assertIn('--cache-dir', scan)
         self.assertIn('HIGH,CRITICAL', scan)
         self.assertNotIn('--ignore-unfixed', scan)
         self.assertNotIn('docker.sock', ' '.join(scan))
+
+    def test_scan_creates_reusable_cache_volume(self):
+        result, calls, _ = self.run_scan()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(['volume', 'create', 'homelab-trivy-cache-local'], calls)
 
     def test_scanner_failure_is_not_green_and_cleans_archive(self):
         for status in (1, 2, 137):

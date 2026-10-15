@@ -10,6 +10,8 @@ esac
 root=${CI_PROJECT_DIR:-$PWD}
 root=$(cd "$root" && pwd)
 reports="$root/security-reports"
+cache_volume=${TRIVY_CACHE_VOLUME:-homelab-trivy-cache-${CI_JOB_ID:-local}}
+start_timeout=${TRIVY_START_TIMEOUT:-20m}
 umask 077
 mkdir -p "$reports"
 rm -f -- "$reports/$name.json"
@@ -32,8 +34,10 @@ trap 'exit 143' TERM
 docker image save --output "$work/image.tar" "$image"
 # The scanner cannot bypass file permissions; the host directory stays 0700.
 chmod 0444 "$work/image.tar"
+docker volume create "$cache_volume" >/dev/null
 container=$(docker create --user 65532:65532 --cap-drop ALL --security-opt no-new-privileges \
   --memory 1536m --cpus 1 \
+  --mount "type=volume,source=$cache_volume,destination=/tmp/cache" \
   aquasec/trivy:0.76.0@sha256:2416d1f74045b57274df1a340eee6b510cacd73c66a6ccb8da092b117eb7d222 \
   image --input /tmp/image.tar --cache-dir /tmp/cache --scanners vuln \
   --severity HIGH,CRITICAL --exit-code 1 --exit-on-eol 1 \
@@ -42,7 +46,7 @@ container=$(docker create --user 65532:65532 --cap-drop ALL --security-opt no-ne
 # API copies also work when the rootless daemon cannot traverse job-owned paths.
 docker cp "$work/image.tar" "$container:/tmp/image.tar"
 status=0
-docker start --attach "$container" || status=$?
+timeout "$start_timeout" docker start --attach "$container" || status=$?
 if ! docker cp "$container:/tmp/report.json" "$reports/$name.json"; then
   echo 'scanner report could not be retrieved' >&2
   [ "$status" -ne 0 ] || status=1

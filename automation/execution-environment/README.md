@@ -36,6 +36,11 @@ Build candidate images with a separate tag to preserve the previous local image.
 Before publication, CI scans each image and retains `security-reports/` even
 when a vulnerability blocks the push. See the
 [security gate and remediation evidence](../../docs/deployments/automation-image-security-2026-10-15.md).
+The scanner keeps the Trivy vulnerability database in a job-scoped Docker
+volume so the EE and runner scans in one job reuse the same download. A hard
+20-minute start timeout prevents an unreachable vulnerability mirror from
+holding a CI runner indefinitely; the scan still fails closed and produces no
+publishable image.
 
 The default container command runs `test-toolchain --run`, checking the installed
 tools without needing a repository mount. Run the script without `--run` from
