@@ -63,3 +63,18 @@ in the runner checkout; the Pi5 only performs the approved release helper. The
 command result is redacted, then a separate assertion reports only the exit
 code and the sender's generic redacted diagnostic. The example task ID is an
 argument example, not a claim that audit task42 was a release.
+
+## Live acceptance
+
+Task 56 on template 6 completed successfully on 2026-10-15 using commit
+`4e8050219b16706dcd959240dd68ae1db423e750`. The approved Homepage helper
+returned `unchanged`, the task identity and receipt assertions passed, the
+runner-local sender returned success, and the final recap was `ok=9 changed=0
+failed=0 unreachable=0`. The Mezon webhook value was not printed or returned by
+the API.
+
+Tasks 52-55 were controlled diagnostics, not production failures: task 52
+exposed the wrong Semaphore variable assumption; task 53 exposed execution on
+Pi5; task 54 exposed the runner checkout path; task 55 confirmed that path
+diagnostically. Those defects were fixed before task 56 and are retained in
+Semaphore history for audit.
