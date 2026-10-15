@@ -232,3 +232,34 @@ as Semaphore's normal DB registration. All 66 Python backup tests pass in the
 execution image, including a two-process mixed-writer test retaining both a
 new DB and new instance, nested-secret rejection, and mode/owner preservation.
 No public provisioner endpoint was added. Production enrollment remains pending.
+
+Deployment design: stage a private candidate directory on Pi using the reviewed
+runner/common/registration/validation modules and copies of the currently
+installed native adapters. Validate a copy of the live catalog with the proposed
+instance before touching production. Under the actual backup flock
+`/ssd-data/infra/backups/homelab/.homelab-backup.lock`, save rollback copies,
+atomically point the runner and validator at the staged generation, then enroll
+the instance through the catalog lock. Publish code before catalog so a crash
+cannot leave an old runner silently ignoring newly declared instances. Never
+restart services or wait while holding partial deployment state; lock contention
+returns 75 without activation. Keep the old files and staged generation until
+remote backup acceptance. Ansible check mode must not activate or enroll.
+
+Deployment playbook `automation/ansible/playbooks/backup-instance-enroll.yml`
+and three executable enrollment tests are now in place. Review identified a
+power-loss ordering gap: the fix fsyncs staged files, generation directory,
+candidate parent and its parent before publishing links; fsyncs live scripts
+before catalog registration; and fsyncs the catalog parent afterward. An
+instrumented subprocess regression failed before the fix and now verifies
+these ordering points. The full execution-image suite passes 69 tests and
+Ansible lint passes. Final focused review has no outstanding blockers.
+
+Real Pi check mode passed with zero changes. The subsequent apply staged
+`/ssd-data/infra/backup-runner/candidates/postgres-instances-skt69dsw` and
+validated a copy of the live catalog with `relayhub-dedicated` (relayhub and
+postgres databases). Activation returned the expected busy-lock code 75 while
+retention remained live. Independent follow-up confirmed the production runner
+is not a symlink and live `postgresql_instances` is still empty. No service was
+restarted and no production inventory entry was added. Preserve this candidate
+until the active retention operation ends; do not repeatedly retry activation.
+This is successful staging and lock-safety verification, not completed rollout.
