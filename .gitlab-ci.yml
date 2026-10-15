@@ -57,6 +57,7 @@ validate:automation-ee:
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'if find /workspace/automation/tofu -name "*.tf" -type f -print -quit 2>/dev/null | grep -q .; then tofu -chdir=/workspace/automation/tofu fmt -check -recursive; fi'
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'ruby /workspace/automation/scripts/validate-runtime-policy.rb --active /workspace/automation/policies/active-runtime.yaml --retired /workspace/automation/policies/retired-runtime.yaml'
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_secret_scan.py
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_image_security.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_drift_evidence.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_route_paths.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_rustfs_writer_identity.py
@@ -78,6 +79,11 @@ validate:automation-ee:
 build:automation-ee:
   extends: .docker-job
   stage: build
+  artifacts:
+    when: always
+    expire_in: 14 days
+    paths:
+      - security-reports/
   needs:
     - validate:automation-ee
     - validate:semaphore-bootstrap
@@ -87,16 +93,23 @@ build:automation-ee:
   script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" --username "$CI_REGISTRY_USER" --password-stdin
     - docker build --file automation/execution-environment/Containerfile --tag "$EE_IMAGE:$EE_TAG" automation/execution-environment
+    - sh automation/scripts/scan-image.sh "$EE_IMAGE:$EE_TAG" automation-ee
     - docker push "$EE_IMAGE:$EE_TAG"
     - docker image inspect "$EE_IMAGE:$EE_TAG" --format 'published={{index .RepoDigests 0}}'
     - docker build --build-arg AUTOMATION_EE_IMAGE="$EE_IMAGE:$EE_TAG" --file automation/semaphore/runner/Containerfile --tag "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG" automation/semaphore/runner
     - sh automation/semaphore/tests/test-runner-image.sh "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG"
+    - sh automation/scripts/scan-image.sh "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG" semaphore-runner
     - docker push "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG"
     - docker image inspect "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG" --format 'published={{index .RepoDigests 0}}'
 
 build:provisioner:
   extends: .docker-job
   stage: build
+  artifacts:
+    when: always
+    expire_in: 14 days
+    paths:
+      - security-reports/
   needs:
     - validate:automation-ee
     - validate:semaphore-bootstrap
@@ -106,5 +119,6 @@ build:provisioner:
     - docker run --rm --entrypoint docker "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-amd64" --version
     - docker run --rm --entrypoint python "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-amd64" -c 'import sys; sys.path.insert(0, "/app/provisioner"); import server; assert server.ProvisioningBusyError; assert server.ProvisionerHandler.provision'
     - docker build --platform linux/arm64 --file automation/provisioner/Dockerfile --tag "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-arm64" .
+    - sh automation/scripts/scan-image.sh "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-arm64" provisioner-arm64
     - docker push "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-arm64"
     - docker image inspect "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-arm64" --format 'published={{index .RepoDigests 0}}'

@@ -103,6 +103,20 @@ collection remains pending.
 
 ## Current limits
 
+### Image security before publication
+
+New automation builds run a pinned Trivy scan before pushing each EE, runner or
+arm64 provisioner image. Open the build job's `security-reports/` artifact to
+inspect HIGH/CRITICAL findings. Reports are retained for 14 days, including
+failed jobs. Scanner errors and end-of-life OS also fail the gate; a failed
+scan does not stop an already running application or authorize an upgrade.
+
+Fix the affected dependency/base image and rerun CI. Do not bypass the gate with
+`allow_failure`, an ignore file or `--ignore-unfixed` to obtain a green pipeline.
+See the [security gate record](../deployments/automation-image-security-2026-10-15.md)
+for pinned version, tests and the current rollout status. Passing this scan is
+not proof of complete system security or permission to deploy without approval.
+
 The active production inventory has `vps-gateway`, `pi5`, and `vm100` host
 roles plus the explicit Mac-native dependency exception. Kubernetes is not an
 active lab target. KubeKosh is a LAN-only learning application and is not a
