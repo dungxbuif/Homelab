@@ -263,3 +263,14 @@ is not a symlink and live `postgresql_instances` is still empty. No service was
 restarted and no production inventory entry was added. Preserve this candidate
 until the active retention operation ends; do not repeatedly retry activation.
 This is successful staging and lock-safety verification, not completed rollout.
+
+## Auxiliary service identification
+
+Selected manager inspection on 2026-10-15 identified `vigorous_napier`
+(`txyu8u4cn1cj14nxdzvj97qen`) as Alpine 3.22 executing exactly `uname -m`.
+It has no mounts, overlay networks, secrets, configs, environment variables or
+published ports; it is constrained to VM100. Restart `any` with a five-second
+delay continually recreates this successful one-shot diagnostic. Owner remains
+unidentified, but its runtime purpose is no longer unknown. Asked the operator
+whether to scale it to zero while retaining the service for rollback. No scale,
+delete, or prune has been performed pending that choice.

@@ -80,3 +80,30 @@ not successful fields. Both hosts retain the existing forced-command boundary.
 Ten focused observer tests and the full 50-test automation Python suite pass;
 review found no blockers. Live success is a bounded point-in-time resource
 observation, not application health, network acceptance or backup certification.
+
+## Short workload observation
+
+Seven read-only `/proc` samples per host, ten seconds apart, were taken while
+retention PID 1133089 remained active. VM100's window was 01:54:10-01:55:10 UTC;
+Pi's was 01:59:28-02:00:28. These are separate one-minute windows, not a peak
+load test or proof that backup and CI overlapped for every sample. Pipeline 55
+had finished its builds and pipeline 56's validation job was observed running.
+
+| Measurement | VM100 | Pi5 |
+| --- | --- | --- |
+| Available RAM range | 8.00-8.19 GiB | 5.12-5.21 GiB |
+| Load average (1 min) range | 6.53-7.96 | 0.35-0.60 |
+| Swap-in delta | 0 pages | 3 pages |
+| Swap-out delta | 0 pages | 0 pages |
+| OOM kill counter delta | 0 | 0 |
+| Memory PSI full delta | about 0.055% of window | 0 |
+| CPU PSI some delta | about 16.4% | about 0.86% |
+| I/O PSI full delta | about 15.7% | about 0.38% |
+
+PSI is stall time, not CPU utilization or disk throughput. These observations
+do not support increasing RAM merely to reduce swap occupancy. VM100 shows
+CPU/I/O contention worth profiling through a complete build/backup cycle before
+raising concurrency or imposing new per-app limits. Pi had no measured memory
+stall or swap-out in its sample. No caches were dropped, swap cycled, load
+generated, or resource limits changed. Sustained per-app peak acceptance remains
+open; existing container limits/uncapped workloads still require reconciliation.
