@@ -46,3 +46,28 @@ for early rollout but still require the managed apply boundary and route tests.
 No network, host port or container was modified by these jobs. Internal docs and
 catalog metadata change; public application docs do not because behavior does
 not change. Inventory completeness remains false.
+
+## Post-Family repair verification
+
+Semaphore task42 (VM100, 05:25:44 UTC) and task43 (Pi5, 05:25:59 UTC) both
+succeeded. Fresh strict exports were compared with the updated active policy:
+all27 VM bindings and all21 Pi bindings match their declared network sets.
+Family Tree now uses edge-http-net plus encrypted family-data-net; PgBouncer
+retains proxy_net, homelab-net and data-net plus family-data-net. The earlier
+edge-only Family observation is superseded, not a current target topology.
+
+Comparison deliberately remains `drift`: VM has diagnostic `vigorous_napier`
+in created state (container03d49720a852), and Pi has the separately tracked
+active restore container4d054a2b66f2 outside the permanent service catalog.
+Neither was removed or silently ignored. Stopped-container counts are12 on VM
+and11 on Pi. No membership drift was found among declared services, but this
+does not prove all app dependency paths; only Family's DB path was tested in
+the associated repair record.
+
+Manager inspection confirms vigorous_napier is a one-replica Alpine3.22
+diagnostic service created2026-10-01; its current task is ready without an error,
+and prior tasks completed. The created container alone is not evidence of a
+crashed production app. Ownership/retirement still needs reconciliation.
+
+Private evidence: `/private/tmp/homelab-runtime-after-family.DkjpFT8w/`, files
+`vm100.json` and `pi5.json`, produced by the restricted Semaphore exporter.

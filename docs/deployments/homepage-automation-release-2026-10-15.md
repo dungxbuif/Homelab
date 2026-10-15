@@ -210,3 +210,14 @@ review found no blocker. Two deploy-catalog tests and ShellCheck also passed.
 This improves the rollback boundary but is not a substitute for a live recovery
 rehearsal. No public UI/API changed; internal operational docs are the affected
 documentation surface.
+
+## Installed helper revalidation
+
+Read-only SHA256 comparison on 2026-10-15 confirms the installed Pi helper and
+reviewed source both equal
+`931fe0e5c2d9758b0a8ba40cb2602e8e7e062e08eeac817af029db954ddd99ae`.
+The scoped registry-auth correction is installed; no reinstall or production
+restart was needed. All 18 helper tests passed again. Semaphore bootstrap
+dry-run returned existing key6/inventory5/template6. Live rollback and
+notification acceptance remain outstanding; matching helper hashes and an
+idempotent bootstrap do not prove either acceptance.
