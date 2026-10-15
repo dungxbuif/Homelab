@@ -65,12 +65,11 @@ CI follow-up, 2026-10-15: the first default-image build gate was stopped after
 its Trivy database download held the VM100 runner without producing progress.
 The scanner now uses a job-scoped Docker cache volume shared by the image scans
 and bounds the scanner start to 20 minutes while remaining fail-closed. Focused
-tests and ShellCheck pass. The follow-up Galaxy timeout correction was then
-published on `codex/automation-bootstrap` as `176ff86b0`; pipeline 111 is the
-current verification run. Pipelines 104, 107, and 109 were canceled because
-they targeted superseded commits or the unbounded dependency-download path.
-This does not yet promote the default image or claim a green pipeline until
-pipeline 111 finishes.
+tests and ShellCheck pass. The follow-up Galaxy and OpenTofu network-timeout
+corrections are published on `codex/automation-bootstrap` as `308824109`; the
+current verification run is pipeline 114. Pipelines 104, 107, 109, 111, and
+113 were canceled or failed on superseded/unhardened paths. This does not yet
+promote the default image or claim a green pipeline until pipeline 114 finishes.
 
 Publication checkpoint: implementation commits are on private GitLab branch
 `codex/automation-bootstrap`, not merged to main. The latest published
