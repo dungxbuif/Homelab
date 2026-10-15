@@ -122,3 +122,41 @@ Prior pipeline 69/job 165 failed before reaching the scanner during Galaxy
 installation (`KeyError: results`, old ansible-core 2.18.6). The candidate's
 Galaxy install succeeded locally, but this does not prove the CI failure cannot
 recur. No running job was canceled or restarted to work around that failure.
+
+## Actual rootless CI acceptance and provisioner remediation
+
+Pipeline 70 passed both validation jobs. Jobs 170 (EE) and 171 (provisioner)
+then completed actual Trivy scans through rootless DinD, retrieved JSON reports,
+uploaded private artifacts, and stopped before push with exit 1. The amd64 EE
+report matches the local candidate's 90 findings. Runner build/scan was not
+reached because EE publication was blocked, so it is not certified.
+
+The arm64 provisioner report has zero Alpine OS findings, four pip-vendored
+Python records and 25 records in Docker CLI 27.5.1 (including one CRITICAL).
+Next scoped remediation: use the already verified Docker CLI 29.9.0 digest,
+and remove pip from the final provisioner runtime using its native uninstall.
+The service has no dependency-install step or runtime use of pip: it runs the
+standard-library HTTP server and copied provisioning modules. Do not remove
+Python, Docker CLI or any provisioning module, or apply this removal to the
+general EE without separate compatibility evidence.
+
+Verify candidate import/startup contracts and absence of pip, rescan the exact
+image with the unchanged gate, and keep live provisioner untouched until an
+approved digest deployment with its own acceptance. This does not authorize
+rotating database credentials or reprovisioning any database.
+
+The arm64 provisioner candidate built successfully as
+`sha256:b7836fa656b675f69d05c892b81d2febb4898f842943de3636e62d13d194bdc5`.
+Native image checks confirmed no importable pip, Docker CLI 29.9.0, server
+health 200 and unauthenticated provision rejection 401 in a network=none,
+256-MiB/1-CPU disposable container with no Docker socket or production data.
+All 17 provisioner Python tests and four toolchain-source tests passed.
+Review found no runtime dependency omitted by removing pip. Compatibility with
+the target Docker daemon remains a separate live read-only acceptance check.
+
+The unchanged Trivy scan returned exit 0 with zero HIGH/CRITICAL findings in
+the Alpine OS and Docker binary; no Python package findings remained. This is
+not a claim of absolute security. Local report
+`/tmp/homelab-image-security.SwmOrT/security-reports/provisioner-patched.json`,
+SHA-256 `7b6eae040106cfda0c5be2c0376a7f001e1d82cd007197c4382dec11c8a98851`.
+Actual new CI build/publication and production rollout are not yet completed.

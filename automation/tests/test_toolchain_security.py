@@ -21,6 +21,11 @@ class ToolchainSecurityTests(unittest.TestCase):
         self.assertRegex(source, r'FROM python:3\.13\.16-slim-trixie@sha256:[a-f0-9]{64}\n')
         self.assertRegex(source, r'FROM docker:\$\{DOCKER_CLI_VERSION\}-cli@sha256:[a-f0-9]{64} AS docker-cli')
 
+    def test_provisioner_cli_patched_and_build_only_pip_removed(self):
+        source = (ROOT / 'automation/provisioner/Dockerfile').read_text()
+        self.assertIn('FROM docker:29.9.0-cli@sha256:1a4c7cb63513f349bdad01fcc6e0f3f2f67d37b9da86f14dc0d4a0942eecda00 AS dockercli', source)
+        self.assertIn('RUN python -m pip uninstall --yes pip', source)
+
 
 if __name__ == '__main__':
     unittest.main()

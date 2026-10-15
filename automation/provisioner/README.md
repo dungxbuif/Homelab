@@ -18,7 +18,7 @@ privileged boundary between Semaphore and the Pi5 data services.
 - The catalog is updated atomically only after native creation and a smoke
   test succeed.
 
-## Pending concurrency release
+## Concurrency release
 
 Source now serializes complete provisioning operations with a persistent
 `inventory.yaml.provision.lock`, acquired before reading the catalog. Concurrent
@@ -27,10 +27,16 @@ The lock is separate from catalog registration's lock and is never deleted.
 Native partial failures still preserve generated secrets for reconciliation;
 this does not provide rollback across Docker, PostgreSQL and CouchDB.
 
-This behavior is tested but not yet deployed. Live image remains
-`homelab/provisioner:20261005`; publish and verify an immutable replacement
-containing the new HTTP handler before updating both handler and mounted module.
+The 2026-10-15 release record confirms this behavior was deployed by immutable
+digest, with live 401/409/422 probes and PostgreSQL/CouchDB create/replay/cleanup
+acceptance through Semaphore. Do not use the old `20261005` tag as current state.
 See [release evidence](../../docs/deployments/provisioner-concurrency-2026-10-15.md).
+
+The newer security candidate uses digest-pinned Docker CLI 29.9.0 and removes
+pip from the final runtime; provisioning uses Python stdlib and copied modules,
+not runtime package installation. New builds must pass the unchanged image
+security gate before publication. This source change is not evidence of a live
+upgrade. See [security evidence](../../docs/deployments/automation-image-security-2026-10-15.md).
 
 ## Deploy on Pi5
 
