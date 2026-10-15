@@ -153,3 +153,12 @@ and zero remaining invocation-labelled containers. Preserve both release
 receipts and environment rollback copies. The next full upload and the planned
 Google Drive restore rehearsal remain required; do not infer them from version
 smoke or from the successful backup that preceded this deployment.
+
+## Source CI confirmation
+
+After the live Pi5 client release, the source branch passed GitLab pipeline 166
+at commit `bc8eacebac2389db9e3d66cec49c13148410c4ae`. This includes the
+candidate-generation enrollment tests, scheduler contract, backup contracts,
+and the OpenTofu/Proxmox static validation suite. The published automation
+execution environment is digest-pinned in the automation image security
+runbook; this CI result does not by itself perform a VM100 or Pi5 rollout.

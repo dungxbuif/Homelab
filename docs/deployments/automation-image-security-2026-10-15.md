@@ -581,3 +581,21 @@ candidate remains opt-in through `BUILD_SEMAPHORE_RUNNER_CANDIDATE=true` and
 must still clear the same strict scan before any enrollment. No production
 service or active runner was restarted by pipeline 118; the published
 provisioner digest is available for a separately approved rollout.
+
+## Pipeline 166 source-validation and artifact gate
+
+Commit `bc8eacebac2389db9e3d66cec49c13148410c4ae` passed the complete GitLab
+pipeline 166. The validation jobs passed Ansible lint, ShellCheck, route and
+runtime policy checks, secret scanning, backup enrollment/restore contracts,
+and Proxmox OpenTofu module validation. The enrollment fixture now stages the
+policy catalog with each candidate generation and asserts the new instance by
+identity rather than assuming catalog order. The scheduler contract also
+tracks VM100's safe private rclone work root
+`/home/ubuntu/.homelab-backup-runtime`.
+
+The production automation EE was published as
+`registry-gitlab.dungxbuif.com/dungxbuif/homelab-automation/automation-ee@sha256:9343d1a76f79ba539776451b5251066952fc58790000e20a7f965a258ddab2c3`.
+The arm64 provisioner was published as
+`registry-gitlab.dungxbuif.com/dungxbuif/homelab-automation/provisioner@sha256:eb4922e9f0d062553582f46dcf7285b3d6a8e6d2ae78377c2b354e2c4bf7fb29`.
+These are published artifacts only; no VM100 automation image, Semaphore
+runner, or production service was restarted by pipeline 166.
