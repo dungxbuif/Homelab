@@ -20,13 +20,13 @@ linked above is the dated baseline, superseded by newer observation records.
 | Task | Verified progress | Required work still open |
 | --- | --- | --- |
 | 1: Catalog | Active/retired policies, no K8s infrastructure targets, bounded Pi/VM runtime audits | Full VPS/Mac/rootless coverage, unknown service ownership, complete cross-catalog reconciliation |
-| 2: Execution image | Pinned toolchain, CI registry publication, isolated rootless CI executor | Keep actual runner digest tied to accepted CI revision; full security scan gates |
+| 2: Execution image | Pinned toolchain, isolated rootless CI, working pre-push image scan; provisioner security image published and deployed | EE blocked on HIGH/CRITICAL findings; actual runner digest adoption and complete scan remediation |
 | 3: Semaphore | Source-backed templates, restricted Pi/VM observers, backup health and exact Homepage release | Viewer/Task Runner/Manager isolation, general approved plan/apply flows and notification acceptance |
 | 4: OpenTofu | Observed VM baseline, import/no-destroy tests, enforced state encryption, pinned public CA and named curl/Go TLS probes | Runner mapping/trust and provider acceptance, Python strict-CA compatibility, scoped token, recoverable key escrow/backend, actual VM100 import and no-op plan |
 | 5: Host baseline | VM100 Docker CE 29.8.2, encrypted overlay restored, restricted accounts enrolled on Pi/VM | VPS enrollment, all-host idempotent baseline, durable standalone overlay boot ordering |
 | 6: Routes | 24 catalog routes, schema/private-gate tests, both-gateway endpoint probes | Generated live Pi/VPS publish/rollback, Stirling public ingress, private-policy/consumer reconciliation, protocol-specific checks |
 | 7: Apps | Homepage digest deploy via template 6, receipt and idempotent repeat; catalog corrections | Real rollback rehearsal, other apps' build/apply boundaries, private networks, peak-resource policies, registry-pull acceptance |
-| 8: DB/backup | UI provisioner, remote class snapshots, restricted health job, native local restores, successful retention and scheduler activation, dedicated RelayHub instance enrollment | New instance remote backup/restore acceptance, CouchLoom DB placement/coverage, complete remote payload restore acceptance |
+| 8: DB/backup | UI provisioner, remote class snapshots, restricted health, local native restores, retention/scheduler activation, dedicated RelayHub remote snapshot; locked client release and private OAuth roots installed | Remote restore rehearsal in progress, new-client full-upload acceptance, CouchLoom DB placement/coverage, complete remote payload/application restore acceptance |
 | 9: Gates/drift | Policy tests, source CI, resource/route evidence and bounded release receipt | Complete automated drift/security scan, per-apply Mezon notices, full rollback artifacts |
 | 10: Lockdown | Restricted pilot transport exists | Two complete Git-to-apply-to-notification acceptances, break-glass escrow and removal of general agent SSH |
 
@@ -42,12 +42,17 @@ Evidence index:
 - [Retention prerequisite gate](../../deployments/backup-retention-ownership-2026-10-14.md)
 - [Proxmox CA evidence and compatibility limits](../../deployments/proxmox-ca-trust-2026-10-15.md)
 - [Independent vault clone recovery and excluded content](../../deployments/vault-source-verification-2026-10-15.md)
+- [Image security and live provisioner rollout](../../deployments/automation-image-security-2026-10-15.md)
+- [Locked backup client deployment](../../deployments/backup-client-release-2026-10-15.md)
+- [Exact-snapshot remote recovery acceptance](../../deployments/backup-remote-restore-2026-10-15.md)
 
 Publication checkpoint: implementation commits are on private GitLab branch
-`codex/automation-bootstrap`, not merged to main. Most recent observed pipeline
-states: 50/51/53/55/56 succeeded; 58 (`13e3de9f`) was still running at the latest
-API check. Docs-only publications 57 and 59 intentionally skipped CI. These
-statuses are not a claim that the newest implementation has passed CI.
+`codex/automation-bootstrap`, not merged to main. Pipeline 72 validators and
+provisioner job 179 succeeded; EE job 178 failed the unchanged vulnerability
+gate. Job 179's scanned immutable provisioner image is deployed on Pi5 with
+health/auth/locking/client-server probes. Pipeline 73 validators passed; newer
+backup/deployment commits still require their own CI acceptance. Latest
+published code at this checkpoint is `2690949b`, not proof of overall green CI.
 Independent GitLab clones of both vaults passed strict fsck and matched original
 commit/tree IDs; ignored files and nested repositories are outside that proof.
 Historical dirty worktree files are
@@ -58,11 +63,17 @@ Operational checkpoint: retention finished successfully at 02:26:29 UTC.
 The immutable prerequisite-aware scheduler was installed and a repeat apply
 returned changed=0. RelayHub dedicated PostgreSQL was enrolled after repairing
 the shared catalog lock ownership in place; registration repeat returned
-changed=false. The backup suite now has 70 passing tests. Fresh database run
-`databases-20261015-023158` is live as VM100 unit PID 1659814, currently exporting
-the native database payload. Do not restart or overlap it. The new instance is
-not yet certified remotely; wait for its native manifest, remote post-check,
-and independent restore evidence. This wait does not block unrelated work.
+changed=false. The backup suite now passes 91 tests with one native opt-in skip.
+Database run `databases-20261015-023158` finished naturally with systemd success;
+its marker and remote receipt agree on snapshot
+`28872481b537f9666a30cbca00b8f137fe886deff549d4f7c8bb135a23c093c3`.
+The reviewed backup client bundle was then installed on Pi5/VM100 under their
+existing locks, with durable rollback receipts, live hashes and version smoke.
+OAuth working copies use private Docker-visible roots, not writable application
+ancestry. Full remote retrieval now runs as Pi async job
+`j186891193321.3128007` (initial PID 3128034). Poll that exact operation; do not
+overlap or restart it. Native restoration of the downloaded payload remains
+unverified. See the linked execution records for precise evidence boundaries.
 
 Webhook storage for deploy notifications is being clarified with the operator;
 the candidate is a separate encrypted Semaphore Secret Variable Group scoped
