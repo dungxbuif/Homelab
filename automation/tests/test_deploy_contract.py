@@ -9,6 +9,23 @@ DIGEST = 'sha256:c128afca4e026cfc4f33d4cf1c77adc8cb08f01215a3f2bde76a1ecca12b79f
 
 
 class DeployContractTests(unittest.TestCase):
+    def test_family_runtime_is_catalogued_but_not_release_ready(self):
+        services = {x['id']: x for x in yaml.safe_load((ROOT / 'automation/stacks/catalog.yml').read_text())['services']}
+        family = services['family-tree']
+        self.assertEqual(family['target'], {'host': 'vm100', 'mode': 'swarm'})
+        self.assertEqual(set(family['networks']), {'edge-http-net', 'family-data-net'})
+        self.assertEqual(family['routes'], ['family'])
+        self.assertEqual(family['resources'], {})
+        self.assertIsNone(family['image']['digest'])
+        self.assertFalse(family['deployable'])
+        self.assertIsNone(family['rollback_image'])
+        self.assertEqual(family['source_mount'], '/opt/apps/family-tree/src')
+        result = subprocess.run(['bash', str(ROOT / 'automation/scripts/verify-deploy.sh'),
+                                 '--service', 'family-tree', '--image', DIGEST,
+                                 '--environment', 'production'], capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('not release-ready', result.stderr)
+
     def test_unenrolled_release_or_truthy_flag_cannot_pass(self):
         catalog = yaml.safe_load((ROOT / 'automation/stacks/catalog.yml').read_text())
         homepage = next(x for x in catalog['services'] if x['id'] == 'homepage')

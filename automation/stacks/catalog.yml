@@ -6,6 +6,20 @@ defaults:
   published_ports: []
   rollback_required: true
 services:
+  - id: family-tree
+    target: {host: vm100, mode: swarm}
+    image:
+      repository: oven/bun
+      digest: null
+      observed_tag: 1-slim
+    source_mount: /opt/apps/family-tree/src
+    data_mounts: [/opt/apps/family-tree/uploads]
+    networks: [edge-http-net, family-data-net]
+    routes: [family]
+    health: {path: /login, expected_status: [200]}
+    resources: {}
+    rollback_image: null
+    deployable: false
   - id: homepage
     target: {host: vm100, mode: swarm}
     image:

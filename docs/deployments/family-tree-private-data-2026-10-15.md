@@ -94,3 +94,16 @@ matches the saved candidate. PgBouncer retained its original container ID and
 2026-10-06 start time. The overlay is encrypted, Compose persists all four
 PgBouncer memberships, and source permissions remain0664. The policy regression
 fixture was updated from the former edge-only membership to the verified pair.
+
+Catalog follow-up: declare Family Tree as an observed, non-deployable Swarm app.
+Live inspection shows `oven/bun:1-slim` with host-bound source and uploads, empty
+limits/reservations, and no immutable application image. Record those facts
+without inventing an app digest or claiming image-only rollback is sufficient.
+Keep deployment blocked until a built app image, source/data-safe rollback and
+release template exist. Verify the catalog entry and rejection by deploy gate.
+
+Catalog regression failed for the missing service before addition and passes
+afterward, including an attempted release rejected as not release-ready.
+The full local automation Python suite passes 103 tests. GitLab publication of
+the live repair is commit `2d506b81e`, pipeline85; its validation is still pending
+at this checkpoint, independently of the local tests.
