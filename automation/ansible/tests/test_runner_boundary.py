@@ -2,11 +2,21 @@ import json
 from pathlib import Path
 import tomllib
 import unittest
+import yaml
 
 from jinja2 import Environment, StrictUndefined
 
 
 class RunnerBoundaryTest(unittest.TestCase):
+    def test_linger_checks_logind_not_only_file_presence(self):
+        path = Path(__file__).resolve().parents[1] / 'playbooks/ci-rootless-bootstrap.yml'
+        tasks = yaml.safe_load(path.read_text())[0]['tasks']
+        enable = next(t for t in tasks if t['name'] == 'Enable persistent user services')
+        self.assertNotIn('creates', enable['ansible.builtin.command'])
+        self.assertIn('ci_linger', enable['when'])
+        self.assertTrue(any(t.get('register') == 'ci_linger' for t in tasks))
+        self.assertTrue(any(t['name'] == 'Verify logind keeps the CI user persistent' for t in tasks))
+
     def test_jobs_cannot_mount_production_socket(self):
         template = Path(__file__).resolve().parents[1] / 'templates/ci-runner-config.toml.j2'
         env = Environment(undefined=StrictUndefined)

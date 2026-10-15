@@ -86,10 +86,27 @@
       loop: [dockerd-rootless.sh, dockerd-rootless-setuptool.sh]
       when: not ansible_check_mode
 
+    - name: Observe current CI persistence in logind
+      ansible.builtin.command:
+        argv: [loginctl, show-user, '{{ ci_user }}', '--property=Linger', '--value']
+      register: ci_linger
+      changed_when: false
+      failed_when: ci_linger.rc not in [0, 1]
+      check_mode: false
+
     - name: Enable persistent user services
       ansible.builtin.command:
         argv: [loginctl, enable-linger, '{{ ci_user }}']
-        creates: '/var/lib/systemd/linger/{{ ci_user }}'
+      when: ci_linger.stdout | trim != 'yes'
+      changed_when: true
+
+    - name: Verify logind keeps the CI user persistent
+      ansible.builtin.command:
+        argv: [loginctl, show-user, '{{ ci_user }}', '--property=Linger', '--value']
+      register: ci_linger_verified
+      changed_when: false
+      failed_when: ci_linger_verified.stdout | trim != 'yes'
+      when: not ansible_check_mode
 
     - name: Configure and start rootless services
       when: not ansible_check_mode

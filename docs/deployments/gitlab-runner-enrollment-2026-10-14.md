@@ -88,3 +88,28 @@ without printing and atomically replaced in the ignored 0600 credential file.
 API access works again; pipelines 41, 42 and 43 are all fully successful.
 No runner was recreated, no pipeline retried, and no daemon restarted.
 The replacement remains temporary and must be revoked when bootstrap ends.
+
+## Rootless runtime audit, 2026-10-15
+
+VM100 UID/GID 1001 (`homelab-ci`) has no supplementary production Docker group.
+Its daemon reports 29.8.2, rootless/cgroupns security, Swarm inactive and data
+root `/home/homelab-ci/.local/share/docker`. The runner controller mounts only
+its own rootless socket and private runner directories, not the production
+socket. Live job/DinD containers use per-job bridge networks. The user slice
+enforces MemoryMax=4294967296, CPUQuotaPerSecUSec=2s and TasksMax=4096.
+
+The enabled user Docker service is active, but logind lists only ubuntu and
+`loginctl show-user homelab-ci` fails despite the root-owned linger file existing.
+The bootstrap's `creates` file guard cannot reconcile this live-state mismatch.
+Replace that guard with a read-only logind observation, conditionally invoke
+`loginctl enable-linger homelab-ci`, then verify `Linger=yes`. Apply that narrow
+repair through Ansible only; do not restart Docker, user manager or logind and
+do not pause/cancel running CI. Verify the daemon PID is unchanged afterward.
+This does not by itself prove a later cold boot; restart rehearsal remains open.
+
+The narrow Ansible repair succeeded: logind now returns `State=lingering` and
+`Linger=yes`. Outer rootless dockerd PID 3688462 and rootlesskit PID 3688264 are
+unchanged; production dockerd PID 3684245 is also unchanged. No job was stopped.
+The new regression failed against the file-only guard; all 21 Ansible Python
+tests pass after the change. This verifies persistence reconciliation, not a
+reboot rehearsal or full rootless CI security review.
