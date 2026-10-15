@@ -3,6 +3,7 @@
 
 import datetime
 import json
+import re
 import subprocess
 import sys
 
@@ -34,22 +35,53 @@ PROBES = {
 }
 
 
+def execute_probe(argv):
+    try:
+        result = subprocess.run(
+            argv, env=ENV, cwd='/', stdin=subprocess.DEVNULL,
+            capture_output=True, text=True, timeout=30, check=False,
+        )
+        if result.returncode:
+            reasons = [('no such object', 'object_disappeared'),
+                       ('no such container', 'object_disappeared'),
+                       ('permission denied', 'permission_denied'),
+                       ('cannot connect', 'daemon_unavailable'),
+                       ('template', 'template_error'),
+                       ('client version', 'api_version')]
+            reason = next((label for text, label in reasons if text in result.stderr.lower()), 'other')
+            return {'error': 'command_failed', 'exit_code': result.returncode, 'reason': reason}
+        return {'output': result.stdout}
+    except subprocess.TimeoutExpired:
+        return {'error': 'timeout'}
+    except OSError:
+        return {'error': 'command_unavailable'}
+
+
+def collect_limits(inventory):
+    if 'error' in inventory:
+        return dict(inventory)
+    try:
+        ids = [json.loads(line)['id'] for line in inventory['output'].splitlines() if line.strip()]
+        if any(not isinstance(value, str) or not re.fullmatch(r'[0-9a-f]{12,64}', value) for value in ids):
+            raise ValueError('invalid container identifier')
+    except (ValueError, KeyError, TypeError):
+        return {'error': 'invalid_container_inventory'}
+    if not ids:
+        return {'output': ''}
+    fields = ['Memory', 'MemoryReservation', 'MemorySwap', 'NanoCpus',
+              'CpuQuota', 'CpuPeriod', 'CpuShares', 'PidsLimit']
+    template = '{"id":{{json .Id}},"name":{{json .Name}},' + ','.join(
+        '"' + field + '":{{json .HostConfig.' + field + '}}' for field in fields
+    ) + '}'
+    return execute_probe(('/usr/bin/docker', 'inspect', '--format', template, *ids))
+
+
 def collect():
     probes = {}
     for name, argv in PROBES.items():
-        try:
-            result = subprocess.run(
-                argv, env=ENV, cwd='/', stdin=subprocess.DEVNULL,
-                capture_output=True, text=True, timeout=30, check=False,
-            )
-            if result.returncode:
-                probes[name] = {'error': 'command_failed', 'exit_code': result.returncode}
-            else:
-                probes[name] = {'output': result.stdout}
-        except subprocess.TimeoutExpired:
-            probes[name] = {'error': 'timeout'}
-        except OSError:
-            probes[name] = {'error': 'command_unavailable'}
+        probes[name] = execute_probe(argv)
+        if name == 'container_inventory':
+            probes['resource_limits'] = collect_limits(probes[name])
     return {
         'schema_version': 1,
         'observed_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),

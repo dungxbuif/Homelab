@@ -1,4 +1,5 @@
 import importlib.util
+import json
 from pathlib import Path
 import subprocess
 import unittest
@@ -18,7 +19,7 @@ class HostObserverTests(unittest.TestCase):
 
     def test_only_fixed_read_commands_and_environment(self):
         module = self.module()
-        with patch.object(module.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, 'ok', '')) as run:
+        with patch.object(module.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, '', '')) as run:
             result = module.collect()
         self.assertTrue(result['collection_complete'])
         self.assertFalse(result['inventory_complete'])
@@ -32,6 +33,47 @@ class HostObserverTests(unittest.TestCase):
             self.assertLessEqual(call.kwargs['timeout'], 30)
             self.assertEqual(call.kwargs['env']['DOCKER_HOST'], 'unix:///var/run/docker.sock')
             self.assertNotIn('SSH_AUTH_SOCK', call.kwargs['env'])
+
+    def test_limits_select_only_resource_fields_for_known_ids(self):
+        module = self.module()
+        inventory = {'output': json.dumps({'id': 'a' * 12}) + '\n'}
+        with patch.object(module.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, '{}\n', '')) as run:
+            result = module.collect_limits(inventory)
+        self.assertEqual(result['output'], '{}\n')
+        argv = run.call_args.args[0]
+        self.assertEqual(argv[:3], ('/usr/bin/docker', 'inspect', '--format'))
+        self.assertEqual(argv[-1], 'a' * 12)
+        for field in ['Memory', 'MemoryReservation', 'MemorySwap', 'NanoCpus', 'CpuQuota', 'CpuPeriod', 'CpuShares', 'PidsLimit']:
+            self.assertIn('.HostConfig.' + field, argv[3])
+        for forbidden in ['.Env', '.Labels', '.Mounts', '.Cmd', '{{json .}}', '{{json .HostConfig}}']:
+            self.assertNotIn(forbidden, argv[3])
+
+    def test_limits_reject_unknown_ids_and_preserve_failure(self):
+        module = self.module()
+        with patch.object(module.subprocess, 'run') as run:
+            for raw in ['not-json', '{"id":"--help"}', '{"id":""}']:
+                self.assertIn('error', module.collect_limits({'output': raw}))
+            self.assertEqual(module.collect_limits({'error': 'timeout'}), {'error': 'timeout'})
+            self.assertEqual(module.collect_limits({'output': ''}), {'output': ''})
+            run.assert_not_called()
+
+    def test_limits_follow_inventory_before_slow_stats_probe(self):
+        module = self.module()
+        def run(argv, **kwargs):
+            output = json.dumps({'id': 'a' * 12}) if argv == module.PROBES['container_inventory'] else ''
+            return subprocess.CompletedProcess(argv, 0, output, '')
+        with patch.object(module.subprocess, 'run', side_effect=run) as mocked:
+            module.collect()
+        calls = [x.args[0] for x in mocked.call_args_list]
+        inventory_at = calls.index(module.PROBES['container_inventory'])
+        self.assertEqual(calls[inventory_at + 1][1], 'inspect')
+
+    def test_failed_command_exposes_only_allowlisted_diagnostic(self):
+        module = self.module()
+        with patch.object(module.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, '', 'Error: No such object: fixture-secret')):
+            result = module.execute_probe(('/usr/bin/docker', 'inspect'))
+        self.assertEqual(result['reason'], 'object_disappeared')
+        self.assertNotIn('fixture-secret', str(result))
 
     def test_failed_probe_does_not_become_healthy_or_leak_stderr(self):
         module = self.module()
