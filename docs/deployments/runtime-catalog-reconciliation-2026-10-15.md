@@ -26,6 +26,23 @@ in 1Password), strict host trust, and IdentitiesOnly. This is diagnostic bootstr
 access, not production observer enrollment. Never change sshd or authentication
 policy to bypass agent approval.
 
+### Gateway retry evidence, 2026-10-15
+
+A bounded retry selected only `credentials/gateway-agent.pub` through the
+existing 1Password socket, strict known-host checking and `IdentitiesOnly=yes`.
+The agent socket path contains spaces and must be quoted inside the SSH
+`IdentityAgent` option; an initial malformed option failed locally before any
+connection and was corrected.
+
+Verbose diagnostics then confirmed TCP/22 connected, the known ED25519 server
+key matched, the agent returned identities, and the server accepted the selected
+Gateway public key. The attempt did not complete authentication before the
+30-second outer deadline. This narrows the blockage to the stage after key
+acceptance; it does not prove a server networking failure or establish whether
+the agent is locked, waiting for approval, or unable to sign. Asked the operator
+to unlock/check the 1Password SSH prompt. No sshd, firewall, key, password or
+Rathole configuration was changed, and no host command ran successfully.
+
 ## Reconciled result
 
 The policy now reflects the observed network corrections and includes the
