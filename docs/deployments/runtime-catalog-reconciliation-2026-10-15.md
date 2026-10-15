@@ -135,3 +135,33 @@ Checkpoint execution completed without production DB mutations:
   verification remain required. Retain these checkpoints until replacement
   remote protection is verified; do not let ordinary successful shared-PG
   backups imply permission to remove them.
+
+Next verification: restore each checkpoint into a uniquely named disposable
+container using the exact locally installed source image ID (no pull). Use
+`--network none`, no published ports, tmpfs PGDATA, resource limits, and no
+production mounts. Create a separate test superuser, restore globals with
+ON_ERROR_STOP, then restore both custom dumps with exit-on-error. Compare
+non-system table counts and run native SQL against the restored databases.
+Remove only the exact disposable container after verification; preserve source
+checkpoints. This proves an isolated local restore, not remote recovery.
+
+### Independent local restore results
+
+Both rehearsals passed on 2026-10-15 with 512 MiB memory/one CPU limits,
+256 MiB tmpfs PGDATA, no published ports, and network mode `none`:
+- CouchLoom test `homelab-restore-couchloom-20261015T005555Z`, exact image
+  `sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f`.
+  Globals restored with ON_ERROR_STOP; both database dumps restored with
+  exit-on-error. Restored schema counts match observed source counts:
+  pgboss 13, public 2.
+- RelayHub test `homelab-restore-relayhub-20261015T005607Z`, exact image
+  `sha256:ff80089083d7365046af7f03d949a2defa14e0b09e14bd5b8f08a242291be8b2`.
+  The same globals/dump checks passed; restored public table count is 14,
+  matching the source.
+- Cleanup removed only each newly created test container by captured container
+  ID. Subsequent `docker ps -a` name filters returned no matching containers
+  on either host. Production data/containers and checkpoints remain unchanged.
+
+These are real local native restores, but not application-level acceptance or
+recovery from Google Drive. Automatic backup inclusion and remote recovery
+remain outstanding; no overall backup completion claim is warranted.
