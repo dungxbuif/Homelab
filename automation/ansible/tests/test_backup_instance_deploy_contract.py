@@ -4,6 +4,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
 PLAY = ROOT / "automation/ansible/playbooks/backup-instance-runtime-deploy.yml"
+ENROLL = ROOT / "automation/ansible/playbooks/backup-instance-enroll.yml"
 
 
 class BackupInstanceDeployContractTests(unittest.TestCase):
@@ -15,6 +16,15 @@ class BackupInstanceDeployContractTests(unittest.TestCase):
         self.assertIn("homelab-backup-database-instances.timer", source)
         self.assertIn("daemon_reload", source)
         self.assertIn("enable", source)
+
+    def test_enrollment_publishes_policy_with_catalog_generation(self):
+        source = ENROLL.read_text()
+        self.assertIn("Stage the reviewed policy catalog", source)
+        self.assertIn("db-instance-default", (ROOT / "backup/policies.yaml").read_text())
+        self.assertIn("previous-policies.yaml", source)
+        self.assertIn("Path(sys.argv[1]) / 'policies.yaml'", source)
+        self.assertIn("/run/lock/homelab-backup.lock", source)
+        self.assertIn("Verify the active generation resolves", source)
 
 
 if __name__ == "__main__":

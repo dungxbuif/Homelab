@@ -64,6 +64,12 @@
             mode: '0444'
           loop: '{{ backup_preserved_modules }}'
 
+        - name: Stage the reviewed policy catalog with the candidate generation
+          ansible.builtin.copy:
+            src: '{{ playbook_dir }}/../../../backup/policies.yaml'
+            dest: '{{ backup_candidate.path }}/policies.yaml'
+            mode: '0644'
+
         - name: Validate candidate catalog without changing production
           ansible.builtin.command:
             argv:
@@ -80,7 +86,7 @@
                 candidate = Path(sys.argv[1]) / 'inventory-check.json'
                 write_json(candidate, load_document(root / 'inventory.yaml'))
                 register_instance_file(candidate, json.loads(sys.argv[3]))
-                errors = validate(load_document(candidate), load_document(root / 'policies.yaml'))
+                errors = validate(load_document(candidate), load_document(Path(sys.argv[1]) / 'policies.yaml'))
                 if errors:
                     raise SystemExit('; '.join(errors))
                 print('candidate inventory valid')
@@ -123,6 +129,8 @@
                     target = root / 'scripts' / name
                     previous[name] = os.readlink(target) if target.is_symlink() else None
                     shutil.copy2(target, generation / ('previous-' + name))
+                shutil.copy2(root / 'policies.yaml', generation / 'previous-policies.yaml')
+                previous['policies.yaml'] = 'previous-policies.yaml'
                 write_json(generation / 'rollback.json', previous)
                 for staged in generation.iterdir():
                     if staged.is_file():
@@ -132,11 +140,18 @@
                 sync_directory(generation.parent)
                 sync_directory(generation.parent.parent)
                 for name in previous:
-                    target = root / 'scripts' / name
-                    temporary = generation / ('activate-' + name)
-                    temporary.symlink_to(generation / name)
-                    os.replace(temporary, target)
+                    if name == 'policies.yaml':
+                        target = root / name
+                        temporary = target.with_name('.' + target.name + '.candidate')
+                        shutil.copy2(generation / name, temporary)
+                        os.replace(temporary, target)
+                    else:
+                        target = root / 'scripts' / name
+                        temporary = generation / ('activate-' + name)
+                        temporary.symlink_to(generation / name)
+                        os.replace(temporary, target)
                 sync_directory(root / 'scripts')
+                sync_directory(root)
                 report = register_instance_file(root / 'inventory.yaml', json.loads(sys.argv[3]))
                 sync_directory(root)
                 print(json.dumps({'generation': str(generation), 'catalog': report}))
@@ -159,3 +174,16 @@
         - name: Report installed generation and catalog outcome
           ansible.builtin.debug:
             var: backup_enrollment.stdout
+
+        - name: Verify the active generation resolves after publication
+          ansible.builtin.command:
+            argv:
+              - bash
+              - -c
+              - >-
+                set -eu;
+                test -f "$(readlink -e {{ backup_live_root }}/scripts/run-database-backup.py)";
+                test -f "$(readlink -e {{ backup_live_root }}/scripts/validate_inventory.py)";
+                python3 {{ backup_live_root }}/scripts/validate_inventory.py
+                {{ backup_live_root }}/inventory.yaml {{ backup_live_root }}/policies.yaml
+          changed_when: false

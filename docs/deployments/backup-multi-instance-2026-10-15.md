@@ -23,6 +23,10 @@ whose backup host is VM100. The class will:
 Enrollment and runtime publication both take the same `/run/lock/homelab-backup.lock`
 global lock used by the scheduled runner. Catalog registration also uses its
 separate catalog lock while the reviewed generation is being activated.
+The enrollment generation publishes `policies.yaml` together with the catalog
+and reviewed scripts. This is required because an older live Pi policy file may
+still predate the `db-instance-default` class; candidate validation must fail
+closed rather than silently enroll an instance that cannot be scheduled.
 
 The inventory contains instance metadata only: instance ID, host, container,
 backup user, database names, application and lifecycle. Passwords remain in
@@ -53,6 +57,18 @@ the container/runtime secret boundary and are never added to the catalog.
    PostgreSQL container using the exact installed image.
 5. Keep the existing local checkpoints until remote restore acceptance passes;
    do not delete production containers or data as part of enrollment.
+
+The first live enrollment attempt on 2026-10-15 stopped during candidate
+validation because the live Pi policy catalog lacked `db-instance-default`.
+Nothing was published. The playbook now stages, validates and atomically
+publishes the reviewed policy catalog with a private rollback copy before the
+next attempt.
+
+The corrected retry succeeded with `ok=12 changed=5 failed=0`. The live catalog
+contains both `relayhub-dedicated` and `couchloom`, the new instance policy is
+present, and the active generation symlinks resolve to their retained private
+generation. Enrollment now repeats that resolution and catalog validation as a
+post-check.
 
 This is an internal backup/operations change. No public API or public user
 documentation changes are required.
