@@ -63,12 +63,12 @@ path is under ubuntu-owned `/opt/apps`, also inappropriate for root OAuth work.
 Do not weaken the no-follow/ownership checks or chmod broad application trees.
 Move only temporary OAuth working copies to Docker-visible private paths:
 Pi5 `/home/dungxbuif/.homelab-backup-runtime` owned by dungxbuif, and VM100
-`/opt/apps/homelab-backup/.runtime/rclone` owned by ubuntu, both mode 0700.
+`/home/ubuntu/.homelab-backup-runtime` owned by ubuntu, both mode 0700.
 Preserve source credentials and update only `RCLONE_CONFIG_WORK_ROOT` in each
 private runner env. Pin the same VM path in the systemd drop-in, then reload
 definitions without restarting any job. VM has ProtectSystem=full, not strict;
-the service-owned path is writable and visible to Docker without weakening that
-setting.
+the service-owned home path also passes the helper's ancestor ownership check
+and is visible to Docker without weakening that setting.
 
 Use `backup-runtime-config.yml` with explicit approval and per-file rollback
 copies. Repeat version smoke through the full installed library on both hosts
@@ -84,6 +84,15 @@ The full installed library successfully ran pinned Restic 0.19.1 `version`
 on Pi arm64 and VM amd64 using each host's real environment and private config
 working copy. This command does not upload or verify remote repository data.
 The source OAuth credential was not rotated or moved.
+
+The first live VM100 `database-instances` upload after the runtime-path
+correction completed successfully: run
+`database-instances-20261015-112854`, snapshot
+`fa3aa6c6606183910918917784e12546e08f77668ccb8efd58cc791dfbd42943`, and
+Restic integrity check passed. The separate Pi5 restore rehearsal was not an
+acceptance result: it stalled before producing a payload and was stopped after
+its exact process tree held the global lock for more than three hours. It must
+be rerun with a bounded, observable restore check.
 
 Post-install verification on each host requires all four live SHA-256 hashes
 to match the reviewed source, mode-0700 empty runtime directory after smoke,

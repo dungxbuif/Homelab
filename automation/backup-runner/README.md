@@ -88,10 +88,10 @@ without a verified remote snapshot ID.
 The VM100 systemd unit keeps `PrivateTmp=yes`. Restic therefore must not create
 the Docker-mounted rclone working copy under `/tmp`, because Docker's daemon
 namespace cannot see systemd's private temporary directory. Set
-`RCLONE_CONFIG_WORK_ROOT` to `/opt/apps/homelab-backup/.runtime/rclone` (or use
-the staging root fallback); this path is writable by the service and visible
-to Docker. The working copy remains mode `0600` and is removed after each
-Restic process.
+`RCLONE_CONFIG_WORK_ROOT` to `/home/ubuntu/.homelab-backup-runtime` (or use the
+staging root fallback); all ancestors satisfy the no-follow ownership check,
+the path is writable by the service and visible to Docker. The working copy
+remains mode `0600` and is removed after each Restic process.
 
 Exporter stdout is a machine-readable contract: database and RustFS wrappers
 must emit only the completed run directory on stdout. Verification and

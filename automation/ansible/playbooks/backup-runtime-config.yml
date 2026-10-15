@@ -5,7 +5,7 @@
   serial: 1
   vars:
     ansible_become: '{{ inventory_hostname == "vm100" }}'
-    backup_runtime_root: '{{ "/home/dungxbuif/.homelab-backup-runtime" if inventory_hostname == "pi5" else "/opt/apps/homelab-backup/.runtime/rclone" }}'
+    backup_runtime_root: '{{ "/home/dungxbuif/.homelab-backup-runtime" if inventory_hostname == "pi5" else "/home/ubuntu/.homelab-backup-runtime" }}'
     backup_runner_env: '{{ "/ssd-data/infra/backup/runner.env" if inventory_hostname == "pi5" else "/etc/homelab-backup/runner.env" }}'
   tasks:
     - name: Require approved runtime-only repair

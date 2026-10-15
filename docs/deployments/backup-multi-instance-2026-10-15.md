@@ -81,9 +81,33 @@ differences.
 
 The first native VM100 run then stopped before Restic because an older runner
 environment/drop-in still pointed at root-owned `/var/lib/homelab-backup/runtime`.
-The runtime-config playbook now converges both environment and systemd to the
-existing service-owned `/opt/apps/homelab-backup/.runtime/rclone` directory;
-the failed run produced no snapshot or success marker.
+The next retry showed the no-follow helper also rejects group-writable
+`/opt/apps` ancestors. The runtime-config playbook now converges both
+environment and systemd to `/home/ubuntu/.homelab-backup-runtime`, whose full
+ancestor chain and owner satisfy that helper; the failed runs produced no
+remote snapshot or success marker.
+
+## Live acceptance
+
+The controlled VM100 run completed on 2026-10-15 as
+`database-instances-20261015-112854` with `rc=0`. The native payload was
+complete (7 files, about 27.4 MiB), Restic created snapshot
+`fa3aa6c6606183910918917784e12546e08f77668ccb8efd58cc791dfbd42943`, and the
+remote post-check passed `restic check --read-data-subset=1/10`. The run keeps
+its remote metadata under `remote/` and the `database-instances.success` marker
+was written only after the Mezon post-check.
+
+The VM100 timer is now enabled and active, with the next scheduled run at
+18:30 UTC. The VM100 health service completed with `Result=success`; its
+health check covers the local `gitlab` and `database-instances` markers and the
+Pi5 health result. The Pi5 health check also passes with a free backup lock.
+
+An older Pi5 remote-restore rehearsal was found holding the global lock for
+over three hours while its target remained at 8 KiB and produced no restore
+payload. Only that exact rehearsal process tree was terminated with `TERM`;
+production backup data and containers were not touched. The rehearsal remains
+unaccepted and must be rerun later with a bounded timeout before declaring
+restore acceptance complete.
 
 This is an internal backup/operations change. No public API or public user
 documentation changes are required.
