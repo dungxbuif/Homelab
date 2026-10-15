@@ -64,6 +64,7 @@ validate:automation-ee:
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_health_reporting.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_retention_prerequisites.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_scheduler_generation.py
+    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_database_instances.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_restore_staging.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tofu/proxmox/tests/test_import_plan.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tofu/proxmox/tests/test_observed_baseline.py

@@ -165,3 +165,38 @@ Both rehearsals passed on 2026-10-15 with 512 MiB memory/one CPU limits,
 These are real local native restores, but not application-level acceptance or
 recovery from Google Drive. Automatic backup inclusion and remote recovery
 remain outstanding; no overall backup completion claim is warranted.
+
+## Multi-instance backup implementation contract
+
+Preserve the existing shared PostgreSQL manifest and provisioner inventory
+shape. Add optional `postgresql_instances` entries with unique `id`, `host`,
+`container`, `admin_user`, and `databases`. Each additional local instance gets
+its own `instances/<id>/` subtree and adapter manifest; database names may
+repeat across instances without overwriting dumps. Add coverage under
+`postgresql_instances` only when configured. Any configured instance failure
+must prevent COMPLETE and publication of the whole database run.
+
+Validate the complete instance list before any export: reject malformed entries,
+duplicate IDs/containers, unsafe IDs, and a host differing from the primary
+PostgreSQL host. A remote instance must not accidentally execute against a
+same-named local container. Cross-host CouchLoom export still needs a restricted
+transport or migration to Pi; do not pretend this local adapter covers it.
+Keep production inventory unchanged until deployment and native export checks.
+Verify legacy compatibility, separate paths, failure atomicity and invalid-input
+rejection with unit tests. Existing restore CLI can target an instance subtree
+as its `--run-dir`. This is an incremental implementation of complete instance
+coverage, not a replacement for cross-host backup or remote restore acceptance.
+
+Implementation now passes five new tests, including actual adapter output
+layout/checksum coverage with mocked native CLI. The full Python backup suite
+passes 62 tests in `homelab-automation-ee:local`. Host Python lacked Jinja2 for
+an existing scheduler test; only the execution-image full run is the valid
+suite result. CI includes the new tests.
+
+Review found that an empty database list could produce globals-only success;
+an added regression failed first and now passes after rejecting empty lists
+before any export. Invalid/option-like container names are also rejected.
+Runtime inventory and installed runner remain unchanged. Before enrollment,
+reconcile standalone inventory validation with the optional instance schema,
+then verify the Pi instance export and remote snapshot. Cross-host CouchLoom
+transport and complete multi-instance restore acceptance remain outstanding.
