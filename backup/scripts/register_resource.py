@@ -17,7 +17,7 @@ _validator = importlib.util.module_from_spec(_spec)
 assert _spec.loader
 _spec.loader.exec_module(_validator)
 
-from common import load_document, write_json  # noqa: E402
+from common import load_document, validate_postgres_instances, write_json  # noqa: E402
 
 
 class CatalogConflict(ValueError):
@@ -96,6 +96,37 @@ def register_file(
             write_json(path, updated, preserve_metadata=True)
         fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
     return {"changed": changed, "engine": request.get("engine"), "name": request.get("name")}
+
+
+def register_instance_file(inventory_path: str | Path, request: dict) -> dict:
+    """Enroll local instance metadata under the existing catalog writer lock."""
+    fields = {"id", "host", "container", "admin_user", "databases"}
+    if not isinstance(request, dict) or set(request) != fields:
+        raise ValueError("instance registration accepts only explicit metadata fields")
+    databases = request["databases"]
+    if not isinstance(databases, list) or any(
+        not isinstance(entry, dict) or set(entry) != {"name", "application", "lifecycle"}
+        for entry in databases
+    ):
+        raise ValueError("instance database entries accept only name, application and lifecycle")
+    expected = deepcopy(request)
+    path = Path(inventory_path)
+    lock_path = path.parent / f".{path.name}.lock"
+    lock_path.touch(mode=0o600, exist_ok=True)
+    with lock_path.open("r+", encoding="utf-8") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        inventory = load_document(path)
+        instances = validate_postgres_instances(inventory)
+        for existing in instances:
+            if existing["id"] == expected["id"]:
+                if existing != expected:
+                    raise CatalogConflict("PostgreSQL instance registration conflicts with catalog")
+                return {"changed": False, "instance": expected["id"]}
+        updated = deepcopy(inventory)
+        updated.setdefault("postgresql_instances", []).append(expected)
+        validate_postgres_instances(updated)
+        write_json(path, updated, preserve_metadata=True)
+    return {"changed": True, "instance": expected["id"]}
 
 
 if __name__ == "__main__":

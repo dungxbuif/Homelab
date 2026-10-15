@@ -215,3 +215,20 @@ image. Read-only review found no new blockers. This is source/CI readiness,
 not deployment: active retention still owns the backup operation and runtime
 inventory has not changed. Production enrollment and remote post-check remain
 separate acceptance steps.
+
+Instance enrollment must reuse the catalog's `.inventory.yaml.lock` and atomic
+metadata-preserving JSON writer. Add an operator-only registration function
+(not exposed by the public provisioner API): validate the optional schema,
+append a new instance without changing any existing resource, treat exact
+repeats as no-op, and reject same-ID drift. Accept only explicit metadata
+fields, never credentials. Test conflict nonmutation, idempotence, catalog
+preservation and file mode/ownership before using this to enroll production.
+
+The operator registration helper is implemented and reviewed. It accepts only
+the six instance fields and three database metadata fields; unexpected fields
+at either level are rejected. An exact existing instance returns unchanged,
+drift raises a conflict without writing, and updates use the same sidecar lock
+as Semaphore's normal DB registration. All 66 Python backup tests pass in the
+execution image, including a two-process mixed-writer test retaining both a
+new DB and new instance, nested-secret rejection, and mode/owner preservation.
+No public provisioner endpoint was added. Production enrollment remains pending.
