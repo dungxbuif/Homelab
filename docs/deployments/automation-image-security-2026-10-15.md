@@ -515,6 +515,25 @@ the same source-to-image recipe, scan both executor images, and pass the
 native runner boundary before the new digest is enrolled. Until then the
 existing executor remains unchanged.
 
+The first local runner build exposed a separate blocker: copying Semaphore
+`v2.19.12` into the otherwise clean Alpine runner added 9 HIGH Go findings
+(Docker Engine, go-git, x/crypto, x/net, x/text and Go stdlib). The runner
+recipe was tested with the pinned latest stable Semaphore `v2.19.16` digest,
+but it still reports the same 9 HIGH findings. It is rejected. The server
+deployment is not changed by this executor-image experiment. Test the newer
+`v2.20.0-alpha4` binary only as an isolated compatibility candidate; it must
+clear the strict runner scan and pass runner smoke before it can be considered.
+
+The isolated alpha candidate passes runner smoke, but its unchanged scan still
+reports 3 HIGH findings: two `github.com/docker/docker v28.5.2` records with
+no scanner-advertised fixed version and `golang.org/x/net v0.58.0` fixed at
+`0.60.0`. It is also rejected for production. The remaining Docker findings
+belong to the proprietary Semaphore runner binary, not the Docker CLI copied
+into the image, so changing the Alpine base cannot remove them. The next valid
+remediation requires a vendor-patched Semaphore runner build or a reviewed
+executor design change; no scanner suppression or metadata stripping is
+acceptable.
+
 ## Explicit native runner gate
 
 Add a CI-only experimental job selected by `EXPERIMENTAL_EE_ONLY=true`. It uses

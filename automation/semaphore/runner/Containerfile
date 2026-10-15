@@ -1,10 +1,10 @@
 ARG AUTOMATION_EE_IMAGE
-FROM semaphoreui/semaphore@sha256:3996804607ebb63690528185bb9adc3507ee896851098e4453975f2ce7f8b435 AS semaphore
+FROM semaphoreui/semaphore@sha256:19b8769d95849418104bf51eca0dfd4559f76eab7b89030bf88c7531465b27f1 AS semaphore
 FROM ${AUTOMATION_EE_IMAGE}
 
 COPY --from=semaphore /usr/local/bin/semaphore /usr/local/bin/semaphore
-RUN groupadd --gid 1001 semaphore \
-    && useradd --uid 1001 --gid 1001 --create-home semaphore \
+RUN addgroup -S -g 1001 semaphore \
+    && adduser -S -D -H -u 1001 -G semaphore semaphore \
     && mkdir -p /tmp/semaphore /opt/semaphore \
     && chown 1001:1001 /tmp/semaphore /opt/semaphore
 
