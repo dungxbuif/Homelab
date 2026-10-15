@@ -80,3 +80,21 @@ a bootstrap exception, not the intended restricted Semaphore identity.
   inventory.
 - The first export attempt under `/tmp` was rejected by the private-artifact
   policy on macOS; the retry under the user's private home directory passed.
+
+### Fresh resource observations
+
+- VM100 reported 74% root filesystem usage with about 55.7 GB available,
+  7.7 GiB memory available, and an 8 GiB swapfile with only about 36 MiB
+  used at collection time. GitLab has a 10 GiB memory limit, Stirling has a
+  2 GiB limit, and Semaphore's runner has a 1 GiB limit; several application
+  services still report no explicit CPU or memory limit.
+- Pi5 reported 40% root filesystem usage with about 292 GB available,
+  5.1 GiB memory available, and about 1.9 GiB of its 4 GiB swapfile used.
+  The sample was not a capacity test. RustFS used about 686 MiB, PostgreSQL
+  about 458 MiB under its 2 GiB limit, VictoriaMetrics about 143 MiB, and
+  cAdvisor about 102 MiB.
+- The observer still sees stopped historical containers and several local
+  Compose networks. They remain an ownership/cleanup review item; this audit
+  made no container, volume or network changes.
+- Resource-limit standardization remains a separate change: define per-app
+  budgets, apply them one service at a time, then verify health and rollback.
