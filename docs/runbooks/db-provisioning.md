@@ -26,13 +26,14 @@ reads that catalog, so no backup script or schedule edit is needed for a newly
 created application.
 
 The catalog stores the engine, resource name, application, lifecycle, policy ID,
-and secret reference only. A nightly drift check compares live resources with
-the catalog and reports resources created outside the UI. Retiring a resource
-changes its lifecycle and preserves its historical backup records.
+and secret reference only. A complete nightly live-resource drift check is a
+planned gate, not a verified installed capability. Databases created outside
+this workflow must be reconciled explicitly; do not assume they were enrolled.
+Retiring a resource changes its lifecycle and preserves historical backups.
 
-The current pilot is on Pi5: open `semaphore.dungxbuif.com` from LAN or
-NetBird, choose the `Homelab Control Plane` project and run the `db-provision`
-template. The form fields `database_name` and `target_environment` are mapped
+The current control plane is on Pi5: open `semaphore.dungxbuif.com` from LAN or
+NetBird, choose project 1 and run **Provision database and application owner**
+(template 1). The form fields `database_name` and `target_environment` are mapped
 to API keys `name` and `environment`; this avoids Ansible's reserved variable
 names. When starting a task through the Semaphore API, pass survey values as a
 JSON string in the task `environment` field. The provisioner API itself remains
@@ -91,9 +92,36 @@ It is never printed in job logs, committed to Git, or copied into the catalog.
 Credential rotation is an explicit operation; a normal idempotent rerun does
 not silently rotate a live application's password.
 
-The first pilot uses `swarm:<secret-name>` references. A new credential is
+The current implementation uses `swarm:<secret-name>` references. A new credential is
 generated in memory and written directly to a Swarm secret; the value is never
 returned in the API response or job log. If the secret already exists, the
 workflow will not rotate it implicitly. Production backup schedules remain
-unchanged while this provisioning path is verified with disposable staging
-requests.
+owned by the VM100 systemd runner and read the catalog after successful
+provisioning. Use a staging name for the first request; do not use a destructive
+drop/rename operation to “reset” an existing production database.
+
+## Current Semaphore form
+
+The live template is named **Provision database and application owner**. The UI
+asks for:
+
+| UI field | Example |
+|---|---|
+| Database engine | `PostgreSQL` or `CouchDB` |
+| Database name | `notes_staging` |
+| Application or service | `notes` |
+| Target environment | `Staging` |
+| PostgreSQL owner role | `notes_app` |
+| CouchDB owner identity | `notes_app` |
+| Backup policy | `Default database backup` |
+| Swarm secret reference | `swarm:notes-db` |
+
+Do not treat Ansible `--check` as a working provisioning preview: the current
+playbook's HTTP operation is skipped in check mode and it has no dedicated
+validation-only API flow. Use the local validator above for request validation;
+normal template execution is the mutating create operation. A successful job
+prints the engine, resource name and changed flag, not the generated password
+or a full connection string. The project currently has six templates and one
+owner membership; see the [automation UI guide](automation-operations.md).
+Old task history remains for audit. Fine-grained operator RBAC and a supported
+UI preview are still required before the full control-plane rollout is complete.
