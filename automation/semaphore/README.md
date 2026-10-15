@@ -54,6 +54,9 @@ The private GitLab project `dungxbuif/homelab-automation` now exists and CI runs
 on VM100. The production runner and restricted observer/backup templates are
 active. Homepage template 6 is the only enrolled application release path; its
 dedicated Mezon notification Variable Group was accepted by live task 56.
+Pi5 backup-client template 7 is also enrolled, but its scope is limited to the
+lock-aware five-file runtime release described in the backup-client runbook. It
+is not an application deployer and it has no VM100 write credential.
 These files are versioned contracts, not native Semaphore API import payloads.
 The installed Community version has no per-template Docker executor: an
 `execution_image` field here does not select a runtime image in the live UI.
@@ -81,12 +84,20 @@ current vendor runner candidate is blocked by unresolved HIGH findings; the
 existing production runner remains unchanged until a patched vendor build or
 an approved executor redesign is available.
 
-Semaphore currently keeps the existing `db-provision`, observer, backup-health
-and Homepage release templates; the generic app catalog above has not been
-deployed. Backup scheduling is not owned by this UI. The canonical serial runner is in
+Semaphore currently keeps the existing `db-provision`, observer, backup-health,
+Pi5 backup-client release and Homepage release templates; the generic app
+catalog above has not been deployed. Backup scheduling is not owned by this UI.
+The canonical serial runner is in
 [`../backup-runner/`](../backup-runner/) and its schedules are defined by the
 runner/systemd deployment, so there is no second schedule template to import
 or maintain here.
+
+The enrolled backup-client release is template 7, `Release backup client (Pi5)`.
+It uses a dedicated SSH key and a Pi5-only inventory. The playbook stages the
+reviewed five-file bundle, acquires the existing backup lock, verifies hashes,
+and leaves a receipt on the target. Set the explicit approval variable required
+by the template before running it. A successful task proves client installation
+and post-check only; it does not prove a complete Google Drive restore.
 
 The `db-provision` playbook is in `playbooks/db-provision.yml`. It accepts only
 the request fields documented in the database provisioning runbook. Generated

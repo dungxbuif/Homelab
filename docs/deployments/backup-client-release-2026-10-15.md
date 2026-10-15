@@ -47,6 +47,38 @@ Run Ansible lint and check mode before applying after backup completes. Then
 verify live hashes and a bounded non-upload command; the next actual backup
 and full remote restore remain separate acceptance gates.
 
+## Live release acceptance, 2026-10-15
+
+Semaphore template 7, `Release backup client (Pi5)`, is now the enrolled
+operator path for this change. It uses the dedicated Pi5 SSH key and inventory
+only; no VM100 write credential was added. Live task 65 completed successfully
+after the path-resolution correction for the imported playbook. Its receipt
+reports the five staged files and the Pi5 lock-aware release changed only the
+three files whose source bytes differed:
+
+- `prepare_rclone_workdir.py`
+- `restic-lib.sh`
+- `verify-database-payload.py`
+
+The canonical verifier is installed on Pi5 at
+`/ssd-data/infra/backup-runner/app/backup/scripts/verify-database-payload.py`
+with the expected non-secret ownership and mode. A full local source-run
+verification passed on Pi5 for run `databases-20261015-023158`:
+
+```json
+{"artifacts_verified":29,"bytes_verified":6915289967,"run_id":"databases-20261015-023158","scope":"database_payload_integrity_only","status":"verified"}
+```
+
+The five live Pi5 client hashes were compared against the checked-out release
+source after task 65 and matched byte-for-byte. This closes the deployment
+integrity check for Pi5; it does not enroll a write path for VM100.
+
+The selected remote PostgreSQL rehearsal also passed: four restored payload
+artifacts, 98,988 bytes, native import in a disposable network-isolated
+PostgreSQL 16 container, `SELECT 1`, 30 user tables and seven expected roles;
+the disposable container was removed. This is targeted PostgreSQL evidence,
+not acceptance of a full all-database/CouchDB/GitLab/RustFS Drive restore.
+
 ## Implementation verification
 
 The helper and `automation/ansible/playbooks/backup-client-release.yml` implement

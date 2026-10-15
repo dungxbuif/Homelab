@@ -9,7 +9,7 @@ timestamp: 2026-10-15T00:00:00+07:00
 
 ## Implementation status, 2026-10-15
 
-The full flow below is still a target, but six live Semaphore templates now
+The full flow below is still a target, but seven live Semaphore templates now
 exist. GitLab CI/registry publication, restricted Pi5/VM100 observers, backup
 health, a fixed-digest Homepage release, and the Homepage Mezon deployment
 notification boundary are installed. VM100 OpenTofu import, general route/app
@@ -39,6 +39,7 @@ start a task and inspect its output. Keep the task ID when reporting an issue.
 | [4: Inspect VM100 runtime (read only)](https://semaphore.dungxbuif.com/project/1/templates/4) | Collects rootful Docker, networks, listeners and resource observations. |
 | [5: Inspect Pi5 runtime (read only)](https://semaphore.dungxbuif.com/project/1/templates/5) | The equivalent Pi5 observation. |
 | [6: Release approved Homepage](https://semaphore.dungxbuif.com/project/1/templates/6) | Applies only the exact root-approved Homepage digest. It is not a generic deploy form or arbitrary-image input. |
+| [7: Release backup client (Pi5)](https://semaphore.dungxbuif.com/project/1/templates/7) | Installs the reviewed five-file backup runtime bundle under the Pi5 backup lock. It is Pi5-only, requires explicit release approval, and is not an application deployer. |
 
 Templates 3/4/5 require no application passwords or survey values. A successful
 host audit means its declared collection completed, not that every application
@@ -61,6 +62,10 @@ RelayHub instance has a successful native VM100 backup and remote snapshot
 post-check; remote Drive restore acceptance remains a separate bounded gate.
 Homepage template 6 sends its validated receipt through a dedicated secret
 Variable Group; task 56 is the live notification acceptance record.
+Backup-client template 7 completed live task 65. The Pi5 canonical database
+payload verifier then passed its full local source-run check for 29 artifacts
+and 6,915,289,967 bytes. The separate targeted remote PostgreSQL rehearsal
+passed, while full remote restore acceptance remains open.
 
 The target normal change path is GitLab change -> Semaphore check/plan -> approved
 apply -> post-check -> sanitized Mezon notice. An agent does not open a host
