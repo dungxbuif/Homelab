@@ -42,8 +42,11 @@ service_id = os.environ["SERVICE_ID"]
 if service_id not in services:
     raise SystemExit(f"deploy verification failed: unknown service {service_id}")
 service = services[service_id]
-if not service.get("deployable"):
-    raise SystemExit(f"deploy verification failed: {service_id} is not digest-ready")
+if service.get("deployable") is not True:
+    raise SystemExit(f"deploy verification failed: {service_id} is not release-ready")
+template = service.get("release_template_id")
+if type(template) is not int or template <= 0:
+    raise SystemExit(f"deploy verification failed: {service_id} has no enrolled release template")
 if service.get("image", {}).get("digest") != os.environ["IMAGE"]:
     raise SystemExit(f"deploy verification failed: {service_id} does not match the approved catalog digest")
 if not service.get("networks"):

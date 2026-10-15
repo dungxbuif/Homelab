@@ -28,12 +28,13 @@ services:
       observed_tag: prod-eee9e7c
     networks: [relayhub-net, homelab-net]
     routes: [relayhub]
-    health: {path: /health, expected_status: [200]}
-    resources: {cpus: '1.00', memory_mb: 1024}
+    health: {path: /readyz, expected_status: [200]}
+    resources: {}
+    proposed_resources: {cpus: '1.00', memory_mb: 1024}
     rollback_image: homelab/relayhub:prod-eee9e7c
     deployable: false
   - id: gitlab
-    target: {host: vm100, mode: compose}
+    target: {host: vm100, mode: swarm}
     image:
       repository: gitlab/gitlab-ce
       digest: null
@@ -41,7 +42,7 @@ services:
     networks: [gitlab-net, homelab-net]
     routes: [gitlab]
     health: {path: /users/sign_in, expected_status: [200, 302]}
-    resources: {cpus: '4.00', memory_mb: 8192}
+    resources: {cpus: '4.00', memory_mb: 10240}
     rollback_image: gitlab/gitlab-ce:18.11.11-ce.0
     deployable: false
   - id: macocr-proxy
@@ -50,22 +51,24 @@ services:
       repository: homelab/macocr-proxy
       digest: sha256:e6907a8247b61aec142fcce4197e58c812db0f850f05ce5fd7e7aa6f18d33225
       observed_tag: scan-api-20261008
-    networks: [homelab-net]
+    networks: [edge-http-net, homelab-net]
     routes: [ocr]
     health: {path: /health, expected_status: [200]}
-    resources: {cpus: '1.00', memory_mb: 1024}
+    resources: {}
+    proposed_resources: {cpus: '1.00', memory_mb: 1024}
     rollback_image: homelab/macocr-proxy:scan-api-20261008
-    deployable: true
+    deployable: false
   - id: mypocket
     target: {host: vm100, mode: swarm}
     image:
       repository: registry.dungxbuif.com/mypocket-api
       digest: null
-      observed_tag: release-73c4c37
-    networks: [homelab-net]
+      observed_tag: auth-12572c87
+    networks: [data-net, homelab-net, mypocket-net, mypocket-redis-net]
     routes: [money]
-    health: {path: /health, expected_status: [200]}
-    resources: {cpus: '1.00', memory_mb: 1024}
+    health: {path: /api/v1/health, expected_status: [200]}
+    resources: {}
+    proposed_resources: {cpus: '1.00', memory_mb: 1024}
     rollback_image: registry.dungxbuif.com/mypocket-api:release-73c4c37
     deployable: false
   - id: stirling-pdf
@@ -77,9 +80,9 @@ services:
     networks: [homelab-net]
     routes: [stirling-pdf]
     health: {path: /, expected_status: [200, 302]}
-    resources: {cpus: '1.00', memory_mb: 2048}
+    resources: {cpus: '2.00', memory_mb: 2048}
     rollback_image: docker.stirlingpdf.com/stirlingtools/stirling-pdf:3.1.0
-    deployable: true
+    deployable: false
   - id: openclaw
     target: {host: vm100, mode: swarm}
     image:
@@ -89,7 +92,8 @@ services:
     networks: [homelab-net]
     routes: [openclaw]
     health: {path: /, expected_status: [200, 401, 403]}
-    resources: {cpus: '1.00', memory_mb: 2048}
+    resources: {}
+    proposed_resources: {cpus: '1.00', memory_mb: 2048}
     rollback_image: homelab/openclaw:vm100-20260912
     deployable: false
   - id: n8n
@@ -98,10 +102,11 @@ services:
       repository: docker.n8n.io/n8nio/n8n
       digest: null
       observed_tag: stable
-    networks: [homelab-net]
+    networks: [data-net, edge-http-net]
     routes: [n8n]
     health: {path: /healthz, expected_status: [200]}
-    resources: {cpus: '1.00', memory_mb: 2048}
+    resources: {}
+    proposed_resources: {cpus: '1.00', memory_mb: 2048}
     rollback_image: docker.n8n.io/n8nio/n8n:stable
     deployable: false
   - id: kubekosh
@@ -110,21 +115,22 @@ services:
       repository: zeborg/kubekosh
       digest: sha256:c623098b4cd4a7813a04e08d08ee14c6dff26f30f8ff5272a076ca07a03a2125
       observed_tag: latest
-    networks: [lan-only]
+    networks: [homelab-net]
     routes: [kubekosh]
     health: {path: /, expected_status: [200]}
-    resources: {cpus: '1.00', memory_mb: 2048}
+    resources: {cpus: '2.00', memory_mb: 4096, memory_reservation_mb: 1024}
     rollback_image: zeborg/kubekosh:latest
-    deployable: true
+    deployable: false
   - id: bds-app
     target: {host: vm100, mode: compose}
     image:
       repository: homelab/bds-app
       digest: null
       observed_tag: vm100-20260913-static
-    networks: [bds-tunnel-net]
+    networks: [bds-tunnel-net, homelab-net]
     routes: []
     health: {path: /health, expected_status: [200]}
-    resources: {cpus: '1.00', memory_mb: 1024}
+    resources: {}
+    proposed_resources: {cpus: '1.00', memory_mb: 1024}
     rollback_image: homelab/bds-app:vm100-20260913-static
     deployable: false
