@@ -61,10 +61,11 @@ def collect_limits(inventory):
     if 'error' in inventory:
         return dict(inventory)
     try:
-        ids = [json.loads(line)['id'] for line in inventory['output'].splitlines() if line.strip()]
+        rows = [json.loads(line) for line in inventory['output'].splitlines() if line.strip()]
+        ids = [row['id'] for row in rows if row.get('state', 'running') == 'running']
         if any(not isinstance(value, str) or not re.fullmatch(r'[0-9a-f]{12,64}', value) for value in ids):
             raise ValueError('invalid container identifier')
-    except (ValueError, KeyError, TypeError):
+    except (json.JSONDecodeError, ValueError, KeyError, TypeError):
         return {'error': 'invalid_container_inventory'}
     if not ids:
         return {'output': ''}
@@ -79,9 +80,18 @@ def collect_limits(inventory):
 def collect():
     probes = {}
     for name, argv in PROBES.items():
-        probes[name] = execute_probe(argv)
         if name == 'container_inventory':
-            probes['resource_limits'] = collect_limits(probes[name])
+            # Swarm can retire a short-lived task between `docker ps` and
+            # `docker inspect`. Refresh the bounded inventory instead of
+            # turning a normal rollout race into a failed host audit.
+            for attempt in range(3):
+                probes[name] = execute_probe(argv)
+                probes['resource_limits'] = collect_limits(probes[name])
+                if (probes['resource_limits'].get('reason') != 'object_disappeared'
+                        or attempt == 2):
+                    break
+            continue
+        probes[name] = execute_probe(argv)
     return {
         'schema_version': 1,
         'observed_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),

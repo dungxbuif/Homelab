@@ -68,6 +68,36 @@ class HostObserverTests(unittest.TestCase):
         inventory_at = calls.index(module.PROBES['container_inventory'])
         self.assertEqual(calls[inventory_at + 1][1], 'inspect')
 
+    def test_limits_ignore_stopped_tasks_and_retry_transient_disappearance(self):
+        module = self.module()
+        inventories = iter([
+            json.dumps({'id': 'a' * 12, 'state': 'exited'}) + '\n' +
+            json.dumps({'id': 'b' * 12, 'state': 'running'}) + '\n',
+            json.dumps({'id': 'b' * 12, 'state': 'running'}) + '\n',
+        ])
+        inspect_calls = 0
+
+        def run(argv, **kwargs):
+            nonlocal inspect_calls
+            if argv == module.PROBES['container_inventory']:
+                return subprocess.CompletedProcess(argv, 0, next(inventories), '')
+            if len(argv) > 1 and argv[1] == 'inspect':
+                inspect_calls += 1
+                if inspect_calls == 1:
+                    return subprocess.CompletedProcess(argv, 1, '', 'No such object')
+                return subprocess.CompletedProcess(argv, 0, '{}\n', '')
+            return subprocess.CompletedProcess(argv, 0, '', '')
+
+        with patch.object(module.subprocess, 'run', side_effect=run) as mocked:
+            result = module.collect()
+
+        self.assertTrue(result['collection_complete'])
+        self.assertEqual(inspect_calls, 2)
+        inspect_argv = [call.args[0] for call in mocked.call_args_list
+                        if len(call.args[0]) > 1 and call.args[0][1] == 'inspect']
+        self.assertEqual(inspect_argv[0][-1], 'b' * 12)
+        self.assertEqual(inspect_argv[1][-1], 'b' * 12)
+
     def test_failed_command_exposes_only_allowlisted_diagnostic(self):
         module = self.module()
         with patch.object(module.subprocess, 'run', return_value=subprocess.CompletedProcess([], 1, '', 'Error: No such object: fixture-secret')):

@@ -48,6 +48,13 @@ owner and no additional role-bearing operator account. This is a fresh control
 plane/task-history check; the previously exported private artifacts remain the
 authoritative evidence for network comparison until a new export is written.
 
+Task 44 then exposed a collector race on VM100: a short-lived Swarm task was
+retired between the inventory and `docker inspect` calls, so the report was
+correctly marked incomplete rather than treated as healthy. The observer now
+retains the complete inventory, limits resource inspection to running
+containers, and retries that specific disappearing-object race at most twice.
+Other command failures, permission errors and timeouts still fail the audit.
+
 Live VM100 recheck: Docker 29.8.2, daemon active, Swarm active, existing node ID
 `35aki2511juhltwuavfuokqa1` retained. No repeated upgrade was performed.
 The separate Pi5 remote restore job `j186891193321.3128007` remained unfinished;
