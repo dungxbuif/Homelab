@@ -23,6 +23,7 @@ class InstanceEnrollmentTests(unittest.TestCase):
         shutil.copy(ROOT / 'backup/policies.yaml', live / 'policies.yaml')
         for source in (ROOT / 'backup/scripts').glob('*.py'):
             shutil.copy(source, generation / source.name)
+        shutil.copy(ROOT / 'backup/policies.yaml', generation / 'policies.yaml')
         for name in ('validate_inventory.py', 'run-database-backup.py'):
             (live / 'scripts' / name).write_text('old generation\n')
         play = yaml.safe_load(PLAY.read_text())[0]
