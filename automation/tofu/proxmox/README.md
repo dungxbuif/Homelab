@@ -30,6 +30,14 @@ application data and must never be committed.
 
 ## Import workflow
 
+TLS verification is enabled by default and the provider does not inherit the
+operator's SSH agent. Install and independently verify Proxmox CA trust in the
+controlled executor before connecting. Do not use `proxmox_tls_insecure=true`
+to make a production job pass. Any future provider operation requiring SSH
+needs separately approved restricted credentials; the agent flag must not be
+re-enabled as a shortcut. Scoped API credentials and independently recoverable
+state encryption keys are still prerequisites, not implemented by these defaults.
+
 Run through the pinned execution image and Semaphore `tofu-plan` template:
 
 ```bash

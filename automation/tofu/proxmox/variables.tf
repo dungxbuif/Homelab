@@ -12,8 +12,8 @@ variable "proxmox_api_token" {
 
 variable "proxmox_tls_insecure" {
   type        = bool
-  description = "Whether to accept the current private Proxmox certificate."
-  default     = true
+  description = "Explicit bootstrap-only TLS bypass; production requires trusted TLS and the default false."
+  default     = false
 }
 
 variable "proxmox_node" {

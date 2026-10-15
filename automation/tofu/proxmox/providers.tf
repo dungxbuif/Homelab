@@ -4,6 +4,6 @@ provider "proxmox" {
   insecure  = var.proxmox_tls_insecure
 
   ssh {
-    agent = true
+    agent = false
   }
 }

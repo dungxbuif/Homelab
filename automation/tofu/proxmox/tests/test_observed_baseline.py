@@ -6,6 +6,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ObservedBaselineTests(unittest.TestCase):
+    def test_controller_does_not_default_to_insecure_tls_or_operator_agent(self):
+        variables = (ROOT / 'variables.tf').read_text()
+        block = re.search(r'variable "proxmox_tls_insecure" \{([^}]+)\}', variables).group(1)
+        self.assertRegex(block, r'default\s*=\s*false')
+        provider = (ROOT / 'providers.tf').read_text()
+        self.assertRegex(provider, r'agent\s*=\s*false')
+
     def test_name_must_be_supplied_instead_of_renamed_during_import(self):
         source = (ROOT / 'variables.tf').read_text()
         block = re.search(r'variable "vm_name" \{([^}]+)\}', source).group(1)

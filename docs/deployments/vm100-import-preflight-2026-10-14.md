@@ -66,3 +66,22 @@ old guessed name/protection fields before implementation. No API mutation,
 provider import, production state, saved live plan or apply was performed.
 The operator was asked where the independent state encryption recovery key
 should be escrowed; bootstrap can continue elsewhere while that is decided.
+
+## Controller transport hardening
+
+Before this change, the unused scaffold defaulted `proxmox_tls_insecure` to true
+and enabled the operator SSH agent. Before any controller enrollment, make TLS verification
+the default and disable agent inheritance. This does not establish certificate
+trust or create a scoped credential; it ensures those missing prerequisites
+fail visibly instead of silently weakening transport. Keep the known hardware
+baseline and import-only gate unchanged. Verify defaults with regression tests,
+format/schema validation, and the existing import-plan tests. No live provider
+plan, import, VM mutation or state key creation is authorized by this change.
+Public app docs are unaffected; update the operator README.
+
+Implemented: TLS bypass now defaults to false and SSH agent use is explicitly
+false. The new regression failed before the change, then passed. All 12 module
+tests pass in the execution image, including real disposable encrypted-state
+tests and strict import-plan rejection tests. `tofu fmt -check` and initialized
+provider `tofu validate` pass. Review found no blockers. No live plan/import,
+certificate trust change, credential creation or VM mutation occurred.
