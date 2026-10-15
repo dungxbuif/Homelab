@@ -293,6 +293,27 @@ database-class systemd run is being requested through the normal scheduler;
 native exports, remote post-check and restore of this new coverage must still
 be verified before declaring the extra instance protected remotely.
 
+Fresh run `databases-20261015-023158` now has COMPLETE and manifest coverage
+for `relayhub-dedicated` (`relayhub`, `postgres`, and globals). Rehearse this
+new export locally using the already installed matching PostgreSQL image in
+a uniquely named disposable container: no network, no host ports, tmpfs data,
+bounded memory/CPU. Verify selected artifact hashes against the parent manifest,
+restore globals and both DB dumps with error-stop, compare schema counts, and
+remove only the captured new container ID. Do not write restore reports into
+the completed backup tree while its upload is running. Local success will not
+substitute for later Google Drive retrieval and restore acceptance.
+
+The fresh native restore passed: selected dump/global SHA256 values matched
+the completed parent manifest; PostgreSQL globals and both databases restored
+with error-stop using image
+`sha256:ff80089083d7365046af7f03d949a2defa14e0b09e14bd5b8f08a242291be8b2`.
+Restored public base-table counts were relayhub=14 and postgres=0. Disposable
+container `f418f85f2bfe80d1c12062d954fbd9050e7d4419034d5e536cf71f81bd01cae2`
+was removed by its captured ID. No reports were written into the backup tree.
+This verifies local native schema/global recovery of the newly enrolled instance,
+not application acceptance or recovery from the remote snapshot. VM100 database
+unit PID 1659814 was still active afterward; do not restart it.
+
 ## Auxiliary service identification
 
 Selected manager inspection on 2026-10-15 identified `vigorous_napier`
