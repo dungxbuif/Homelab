@@ -84,7 +84,7 @@ services:
     host: pi5
     class: database_gateway
     lifecycle: active
-    networks: [homelab-net, data-net, proxy_net]
+    networks: [homelab-net, data-net, proxy_net, family-data-net]
     lan_ports: [5432]
   - id: redis-prod
     runtime_container: redis-prod
@@ -186,7 +186,7 @@ services:
     host: vm100
     class: application
     lifecycle: active
-    networks: [edge-http-net]
+    networks: [edge-http-net, family-data-net]
     observed_image: oven/bun:1-slim
   - id: mypocket-api
     runtime_service: mypocket-api

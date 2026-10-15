@@ -28,9 +28,9 @@ Pre-apply review requires preserving source UID/GID/mode, capturing PgBouncer's
 immutable container ID and rechecking its memberships before source publication.
 Persist candidate source/hash and endpoint pre-state before any network/source
 mutation. Reject symlink/non-regular source files and concurrent replacement.
-Regression tests must cover metadata preservation, endpoint replacement, and a
+Regression tests cover metadata preservation, endpoint replacement, and a
 connection failure after source publication; such failure must retain recovery
-evidence and must not report a successful rollout. Apply remains pending.
+evidence and must not report a successful rollout.
 
 ## Review corrections
 
@@ -66,3 +66,31 @@ retry; an existing network/source change is not automatically rolled back.
    than removing a network owned by another rollout.
 4. Record failed/rolled-back/conflict explicitly, then test the resulting state.
    Restoring the former topology restores the pre-existing DB outage, not health.
+
+## Applied and verified
+
+Applied through Ansible on 2026-10-15 after confirming VM100-only placement,
+one replica, and source owner UID/GID1004 with mode0664. Private receipt:
+`/home/dungxbuif/.homelab-network-repairs/family-q6r8e6wb` on Pi5.
+
+New VM100 task container `8fc4e6ec06dc` joined edge-http-net and family-data-net.
+Read-only `SELECT 1 AS ok` using the app's installed pg client and actual
+DATABASE_URL succeeded through `pgbouncer:6432`. Public HTTPS `/login` returned
+200. No application image/code, credentials, or database records were changed.
+
+An initial post-check used pg's `statement_timeout` startup parameter, which
+PgBouncer rejected with 08P01. This was a probe incompatibility, not an app
+configuration change. The corrected probe uses client-side `query_timeout`
+and `connectionTimeoutMillis` (both 5000ms) and succeeds. Do not reintroduce
+unsupported startup parameters into operational probes.
+
+Seven regression tests pass. Runtime policy now includes the dedicated network
+for Family Tree and PgBouncer. This verifies database connectivity and login
+ingress, not every app workflow or S3 operation, and is not the full automation
+control-plane acceptance.
+
+Manager verification: Swarm update completed at 05:19:08 UTC; live Spec exactly
+matches the saved candidate. PgBouncer retained its original container ID and
+2026-10-06 start time. The overlay is encrypted, Compose persists all four
+PgBouncer memberships, and source permissions remain0664. The policy regression
+fixture was updated from the former edge-only membership to the verified pair.

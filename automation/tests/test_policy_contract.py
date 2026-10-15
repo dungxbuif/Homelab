@@ -56,7 +56,7 @@ class PolicyContractTest(unittest.TestCase):
         active = yaml.safe_load((ROOT / 'automation/policies/active-runtime.yaml').read_text())
         services = {item['id']: item for item in active['services']}
         expected = {
-            'family-tree': ('vm100', {'edge-http-net'}),
+            'family-tree': ('vm100', {'edge-http-net', 'family-data-net'}),
             'mypocket-api': ('vm100', {'data-net', 'homelab-net', 'mypocket-net', 'mypocket-redis-net'}),
             'mypocket-worker': ('vm100', {'data-net', 'homelab-net', 'mypocket-net', 'mypocket-redis-net'}),
             'macocr-proxy': ('vm100', {'edge-http-net', 'homelab-net'}),
