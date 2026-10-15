@@ -160,3 +160,51 @@ not a claim of absolute security. Local report
 `/tmp/homelab-image-security.SwmOrT/security-reports/provisioner-patched.json`,
 SHA-256 `7b6eae040106cfda0c5be2c0376a7f001e1d82cd007197c4382dec11c8a98851`.
 Actual new CI build/publication and production rollout are not yet completed.
+
+## Pipeline 71 follow-up
+
+Pipeline 71 at published commit `50ca1663` passed validation jobs 172 and 173.
+EE build job 174 failed; provisioner job 175 failed before reaching its scanner.
+The provisioner's amd64 import smoke passed, but the arm64 build failed executing
+`python -m pip uninstall --yes pip` with `/bin/sh: exec format error`.
+The new native RUN instruction requires an arm64 builder or explicitly managed
+emulation; local arm64 build success did not establish amd64 CI cross-build
+support. No new provisioner image was published or deployed by this job.
+
+Before changing the build, select and document a controlled native-arm64 or
+cross-build implementation, then verify both target architectures and repeat
+the unchanged pre-push scan. Do not install privileged host binfmt handlers as
+an implicit workaround or bypass the vulnerability gate. Public app docs are
+unchanged because this concerns only internal image delivery.
+
+### Cross-build repair decision
+
+Use the same pinned Python image twice: a target-platform filesystem source and
+a BUILDPLATFORM preparation stage. Copy the target root filesystem under
+`/target`, remove only pip's package, distribution metadata and console scripts
+using the native builder's Python, and copy that filesystem into a scratch final
+stage. The final image retains Alpine, target Python, CA certificates and all
+system libraries; scratch is only the assembly stage, not a replacement runtime.
+Restore the observed runtime PATH and existing provisioner entrypoint explicitly.
+Upstream Python build-only GPG/version/hash environment metadata is not required
+by the service; immutable source digests remain the provenance reference.
+
+Test removal against a disposable filesystem, require the expected pip layout
+before mutation, preserve unrelated packages, and reject symlinked inputs. Build
+both architectures, run native runtime smoke and the unchanged vulnerability
+scan, then confirm the amd64 CI runner can produce arm64 without emulation.
+No production rollout is included until these gates and target-daemon acceptance
+pass. This supersedes target-native pip uninstall, which failed in pipeline 71.
+
+Local verification: 82 automation tests and 17 provisioner tests passed. Both
+architectures built successfully using the native preparation stage. ARM64 image
+`sha256:db64c1c9e05117970c016f81769fb3f090a067d667b6331bc3eb9858e5ce0f79`
+passed native Python/server import, pip-absence and Docker CLI checks with no
+network, socket or production data. AMD64 assembly produced
+`sha256:9ee3ed75bbdb054766f631df1a2bb1912c1095a1a0bb467ee9b839108d117175`;
+this build alone does not certify native amd64 execution.
+
+The ARM64 rescan exited 0 with zero HIGH/CRITICAL records, report SHA-256
+`b0cb3b2af88b55f136451b8ed6aac62573d3d0f601ea4dab261d9b3617a2ed02`.
+Independent scoped code review found no blocker. Actual amd64 runner acceptance
+and target-daemon compatibility remain pending; production is unchanged.

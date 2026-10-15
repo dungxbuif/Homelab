@@ -24,7 +24,9 @@ class ToolchainSecurityTests(unittest.TestCase):
     def test_provisioner_cli_patched_and_build_only_pip_removed(self):
         source = (ROOT / 'automation/provisioner/Dockerfile').read_text()
         self.assertIn('FROM docker:29.9.0-cli@sha256:1a4c7cb63513f349bdad01fcc6e0f3f2f67d37b9da86f14dc0d4a0942eecda00 AS dockercli', source)
-        self.assertIn('RUN python -m pip uninstall --yes pip', source)
+        self.assertIn('FROM --platform=$BUILDPLATFORM python:', source)
+        self.assertIn('RUN python /remove_build_pip.py /target', source)
+        self.assertIn('COPY --from=prepare /target/ /', source)
 
 
 if __name__ == '__main__':

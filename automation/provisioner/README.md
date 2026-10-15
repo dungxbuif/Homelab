@@ -38,6 +38,11 @@ not runtime package installation. New builds must pass the unchanged image
 security gate before publication. This source change is not evidence of a live
 upgrade. See [security evidence](../../docs/deployments/automation-image-security-2026-10-15.md).
 
+Cross-builds do not execute target binaries. A native BUILDPLATFORM stage copies
+the pinned target Python filesystem and removes build-only pip after validating
+its layout. The final image contains that complete target Alpine/Python runtime,
+Docker CLI and provisioner modules. No privileged emulation setup is required.
+
 ## Deploy on Pi5
 
 Run from the repository root on a machine with the Pi5 Docker context:
