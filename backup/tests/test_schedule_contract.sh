@@ -2,7 +2,7 @@
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "$0")/../.." && pwd)
-schedule="$root/automation/semaphore/templates/schedule.yaml"
+schedule="$root/automation/backup-runner/schedule.yaml"
 grep -q 'timezone: Asia/Ho_Chi_Minh' "$schedule"
 grep -q '0 1 \* \* \*' "$schedule"
 grep -q '30 2 \* \* \*' "$schedule"

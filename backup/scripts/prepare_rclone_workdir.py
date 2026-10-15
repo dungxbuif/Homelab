@@ -38,13 +38,23 @@ def checked_directory(path, *, create=False, private=False):
         raise
 
 
+def resolve_os_alias(path):
+    """Resolve macOS's /var alias without following application path links."""
+    if len(path.parts) > 1 and path.parts[1] == 'var':
+        var = Path('/var')
+        if var.is_symlink():
+            return var.resolve() / Path(*path.parts[2:])
+    return path
+
+
 def prepare(source, root=None, existing=None):
     if existing is not None:
         work = existing
         work_fd = checked_directory(work, private=True)
     else:
         # Resolve only the OS temporary-root alias (e.g. macOS /var -> /private/var).
-        parent = root if root is not None else Path(tempfile.gettempdir()).resolve()
+        parent = resolve_os_alias(root if root is not None
+                                  else Path(tempfile.gettempdir()).resolve())
         parent_fd = checked_directory(parent, create=root is not None, private=root is not None)
         try:
             name = 'homelab-rclone.' + secrets.token_hex(16)

@@ -1,8 +1,8 @@
 ---
 type: Playbook
 title: "System Ingress & Tunnels Configuration"
-description: "End-to-end setup and configuration for VPS Traefik, Rathole, Orange Pi Traefik and split DNS, and the Pi5 datastore topology"
-timestamp: 2026-09-16T00:00:00+07:00
+description: "End-to-end setup and configuration for VPS Traefik, Rathole, Pi5 Traefik/split DNS, VM100 compute, and Pi5 datastore topology"
+timestamp: 2026-10-13T00:00:00+07:00
 ---
 
 # 🏠 HOMELAB SYSTEM CONTEXT & AI AGENT PLAYBOOK
@@ -11,21 +11,23 @@ timestamp: 2026-09-16T00:00:00+07:00
 > Start with [STACK.md](./STACK.md) for the audited inventory and evidence
 > boundaries; consult manifests and runtime before changing infrastructure.
 >
-> **Architecture version:** v3.2 (2026-09). User-facing workloads run on
-> **VM100** (`10.10.0.31`); the **Orange Pi Zero 3** (`10.10.0.2`) is the home
-> edge (Traefik+Rathole+AdGuard via Docker Swarm); the **Pi5** (`10.10.0.5`) is
-> the datastore backend and Swarm manager; the **Mac mini** (`10.10.0.6` active
-> Wi-Fi; Ethernet `10.10.0.10` currently unplugged) provides native OCR, LM
-> Studio, and local MyPocket development support; the **Cloud VPS**
+> **Architecture version:** v3.4 (2026-10). User-facing workloads run on
+> **VM100** (`10.10.0.31`); the **Pi5** (`10.10.0.5`) is the active home edge
+> (Traefik+Rathole+AdGuard), datastore backend, and Swarm manager while the
+> **Orange Pi Zero 3** (`10.10.0.2`) is unavailable; the **Mac mini**
+> (`10.10.0.6` documented LAN) provides native OCR, LM Studio, and local
+> MyPocket development support through the Mac service tunnel; the **Cloud VPS**
 > (`103.82.21.202`) is the public boundary; the **Proxmox** host
-> (`10.10.0.20`) hosts production VM100; optional practice VMs are separate. The 3-node K8s cluster was retired
-> and its docs archived — see [`archived/k8s-v2/`](./archived/k8s-v2/).
+> (`10.10.0.20`) hosts production VM100. No Kubernetes cluster, node, or Kubernetes VM is part of the current lab; old design docs are historical only in [`archived/k8s-v2/`](./archived/k8s-v2/).
+
+> For exact current image tags, image IDs, replica state, backup markers, and
+> recent deployment reconciliation, use [the 2026-10-13 runtime inventory](./deployments/runtime-inventory-2026-10-13.md).
 
 ---
 
 ## 🗺️ System Topology & Network Architecture
 
-The homelab is a hybrid of a cloud boundary (VPS), a home TLS edge (Orange Pi),
+The homelab is a hybrid of a cloud boundary (VPS), a home TLS edge (currently Pi5),
 a production compute VM (VM100), Mac-hosted native dependencies, and a production
 hypervisor (Proxmox). Headscale, the old VPS-hosted NetBird stack, Coturn,
 RustDesk, node-exporter, and Tailscale were removed from the VPS on
@@ -37,7 +39,7 @@ operations.
 
 ```text
 Shared public HTTP:
-  VPS -> Rathole :7000 -> Orange Pi Traefik -> Docker DNS on homelab-net
+  VPS -> Rathole :7000 -> Pi5 Traefik -> Docker DNS on homelab-net
 GitLab web / Registry trial:
   VPS Traefik -> separate Rathole :7002 / :7003 -> VM100 -> GitLab :80 / :5005
 Git SSH:
@@ -47,13 +49,16 @@ BDS:
 Datastores:
   VM100 -> Pi5 PostgreSQL/PgBouncer/Redis over homelab-net
 Native dependencies:
-  OCR proxy -> Mac :8787; Orange Pi LLM route -> Mac :1234
+  Mac OCR apps -> outbound WSS/443 -> OCR proxy (no local OCR tunnel or listener)
+  LLM route -> Mac Rathole tunnel :18123 -> LM Studio :1234
 ```
 
 No VM100 application host ports `18080/18081/18084/18085` remain as current
 upstreams. The diagram below describes the shared-edge path; GitLab and BDS
-exceptions are in [the complete catalog](./STACK.md). Mac NetBird roaming is
-proposed, not deployed.
+exceptions are in [the complete catalog](./STACK.md). Mac OCR/LLM public
+roaming uses the Mac Rathole client. NetBird's VM100 control plane and VPS
+relay are active; private LAN routing still depends on peer enrollment and
+policy assignment.
 
 ### 1. High-Level Traffic & Data Flow
 
@@ -64,27 +69,29 @@ graph TD
         VPS -->|HostSNI allow-list| GatewayTraefik["gateway-traefik"]
         GatewayTraefik -->|Allowed only| RatholeServer["rathole-server :7000"]
     end
-    RatholeServer -->|TCP Tunnel| RatholeClient["Rathole Client (Orange Pi)"]
+    RatholeServer -->|TCP Tunnel| RatholeClient["Rathole Client (Pi5)"]
 
-    subgraph OrangePi ["Orange Pi Zero 3 - 10.10.0.2 (TLS edge, Swarm worker)"]
-        RatholeClient --> EdgeTraefik["edge_traefik wildcard TLS (Cloudflare DNS-01)"]
+    subgraph Pi5Edge ["Pi5 - 10.10.0.5 (active TLS edge/datastore/manager)"]
+        RatholeClient --> EdgeTraefik["edge-traefik-pi5 wildcard TLS (Cloudflare DNS-01)"]
         EdgeTraefik -->|Swarm overlay homelab-net| Pi5Backends["Pi5 HTTP backends"]
         EdgeTraefik -->|Swarm overlay homelab-net| VM100Swarm["tasks.homepage:80<br/>tasks.macocr-proxy:8080<br/>tasks.mezonhook:8080<br/>tasks.family-tree:3000<br/>tasks.openclaw:18789<br/>tasks.n8n:5678"]
-        EdgeTraefik -->|LAN HTTP| MacDeps["10.10.0.6:1234 (llm)"]
+        EdgeTraefik -->|VPS :18123| MacDeps["Mac LM Studio :1234"]
         EdgeTraefik -->|approved routes| Pi5Apps["RustFS, Registry, LibreSpeed,<br/>pgAdmin, CouchDB"]
-        SplitDNS["edge_adguardhome split DNS"] --> EdgeTraefik
+        SplitDNS["edge-adguardhome-pi5 split DNS"] --> EdgeTraefik
     end
 
-    subgraph Pi5 ["Pi5 - 10.10.0.5 (Swarm manager/datastore)"]
+    subgraph Pi5Data ["Pi5 datastore"]
         Pi5Redis["redis-prod :6379 (LAN mapping :16379)"]
         Pi5Pg["pgbouncer :6432 / postgres :5432"]
     end
 
     subgraph Mac ["Mac mini - 10.10.0.6 (dependencies)"]
-        NativeOCR["mac-ocr-native :8787"]
+        MacTunnel["mac-service-tunnel"]
+        NativeOCR["Mac OCR outbound app"]
         LMStudio["LM Studio :1234"]
     end
-    VM100Swarm -.->|OCR proxy LAN request| NativeOCR
+    NativeOCR -.->|WSS/443 public OCR domain| VM100Swarm
+    MacTunnel --> LMStudio
 
     Modem["Viettel Modem (bridge)"] --> MikroTik["MikroTik hEX S 10.10.0.1"]
     MikroTik --> Pi5
@@ -114,12 +121,12 @@ graph TD
 | :--- | :--- | :--- |
 | Viettel Modem (Huawei) | internal | Bridge Mode (VLAN 35); forwards PPPoE to MikroTik. WiFi disabled. |
 | MikroTik hEX S | `10.10.0.1` | Primary router & gateway: PPPoE, NAT, DHCP, LAN routing, FastTrack. |
-| Orange Pi Zero 3 | `10.10.0.2` (LAN) | **Home edge** (v3.2): `edge_traefik`, `edge_rathole`, `edge_adguardhome`, Docker Swarm worker. Traefik file routes reach portless Swarm services through `tasks.*` DNS on `homelab-net`. |
-| Raspberry Pi 5 | `10.10.0.5` (LAN) | **Manager/datastore**: Postgres+PgBouncer, Redis-prod, RustFS, production Docker Registry, LibreSpeed, pgAdmin, CouchDB. No edge proxy. |
+| Orange Pi Zero 3 | `10.10.0.2` (LAN) | Former home edge; currently unavailable/retired from active edge duty until deliberately restored. |
+| Raspberry Pi 5 | `10.10.0.5` (LAN) | **Active edge + manager/datastore**: `edge-traefik-pi5`, `edge-rathole-pi5`, `edge-adguardhome-pi5`, Postgres+PgBouncer, Redis-prod, RustFS, production Docker Registry, LibreSpeed, pgAdmin, CouchDB. |
 | VM100 | `10.10.0.31` | **Production compute / Swarm worker**: homepage, macocr-proxy, Family Tree, MezonHook, OpenClaw, n8n, MyPocket, Batdongsan, RelayHub bootstrap, and GitLab CE (public SSH, temporary VPS-terminated HTTPS, and a separate bundled Registry trial). |
-| Mac mini | `10.10.0.6` active LAN (`10.10.0.10` Ethernet unplugged) | Native OCR (`:8787`) and LM Studio (`:1234`) dependency host. |
+| Mac mini | `10.10.0.6` documented LAN; OCR connects outbound via public domain | Universal OCR app connects WSS/443 to production; only LM Studio (`:1234`) uses `/Users/dungxbuif/dev-env/mac-service-tunnel`. |
 | Cloud VPS | `103.82.21.202` (public) | **Public boundary**. `gateway-traefik`, production Rathole `7000`, isolated GitLab SSH `7001`/`:2222`, temporary GitLab HTTP `7002`, and Registry trial `7003` Rathole servers; no GitLab app/database/registry storage container. Batdongsan app/database containers and source were removed from the VPS on 2026-09-13; SQL snapshots remain under `/root/backup-bds`. Headscale, the old VPS-hosted NetBird stack, Coturn, RustDesk, node-exporter, and Tailscale were removed the same day. |
-| Proxmox VE | `10.10.0.20` (LAN) | **Production hypervisor for VM100**; optional AWS practice VMs must be isolated. K8s cluster retired; old VM100-102 IaC must not destroy reused VM100. |
+| Proxmox VE | `10.10.0.20` (LAN) | **Production hypervisor for VM100**; no Kubernetes VM/cluster is active. Old VM100-102 IaC is historical and must not destroy or recreate VM100. |
 | Mesh WiFi | dynamic `10.10.0.x` | AP / bridge mode; DHCP centralized on MikroTik. |
 
 ### 3. Production Stack Context
@@ -171,11 +178,11 @@ reusing it; the proposed Mac private access layer is NetBird.
 * **Dynamic config:** `/root/gateway/dynamic.yml`.
 * Public home-edge names are admitted by the `rathole-passthrough` TCP router's
   exact HostSNI rule and forwarded to Rathole. Unknown names are not forwarded.
-* Add public names with `edge-registrar/scripts/edge-publish.sh`; it updates the
-  Orange Pi router/service and the VPS HostSNI allow-list together.
+* Add public names with `edge-registrar/scripts/edge-publish.sh`; update it for
+  the active Pi5 edge path before using it again.
 
 #### B. Rathole Server (`rathole-server`)
-* **Dir:** `/root/gateway` (`rathole.toml`). **Port:** `7000/tcp`. Anchor of the NAT traversal tunnel (receives the outbound Orange Pi client connection).
+* **Dir:** `/root/gateway` (`rathole.toml`). **Port:** `7000/tcp`. Anchor of the NAT traversal tunnel (receives the outbound Pi5 edge client connection).
 
 #### C. Batdongsan legacy snapshots
 * **Dir:** `/root/backup-bds`. Batdongsan app/database containers, the old
@@ -195,13 +202,18 @@ NetBird was reintroduced as a new VM100 bootstrap on 2026-09-13, not as a VPS
 service. NetBird runs as Swarm services on `homelab-net` with no VM100 host
 ports published. Its management, activity, and embedded IdP stores use Pi5
 PostgreSQL databases `netbird`, `netbird_activity`, and `netbird_idp` through
-`pgbouncer:6432`. Orange Pi routes `netbird.dungxbuif.com` to
+`pgbouncer:6432`. Pi5 Traefik routes `netbird.dungxbuif.com` to
 `tasks.netbird-server` and `tasks.netbird-dashboard`; the VPS
 `gateway-traefik` HostSNI allow-list includes `netbird.dungxbuif.com`.
+On 2026-09-17, a VPS-only NetBird relay/STUN container was added at
+`netbird-relay.dungxbuif.com`: Traefik routes TCP `443` by exact HostSNI to
+`netbird-relay:443` on `gateway-network`, while UDP `3478` is published
+directly for STUN. This is relay infrastructure only; NetBird management and
+dashboard remain on VM100.
 
 RelayHub bootstrap was deployed on VM100 on 2026-09-14 as Swarm service
 `relayhub` with image `homelab/relayhub:bootstrap-20260914`. It publishes no
-host port. Orange Pi `dynamic.yml` routes the public domain to
+host port. Pi5 `dynamic.yml` routes the public domain to
 `tasks.relayhub:8080`, matching the established pattern for portless Swarm
 applications.
 
@@ -216,6 +228,7 @@ applications.
 ├── gitlab-ssh-tunnel/        # isolated Git SSH :7001 / public :2222
 ├── gitlab-https-tunnel/      # temporary GitLab web :7002 / Docker-private :8085
 ├── gitlab-registry-trial/    # Registry trial :7003 / Docker-private :8086
+├── netbird-relay/            # NetBird relay via Traefik TCP SNI + UDP 3478 STUN
 ├── backup-bds/               # retained Batdongsan SQL snapshots only
 ├── wg0-client-pi-gateway.conf
 ├── wg0-client-Mac.conf
@@ -226,22 +239,22 @@ applications.
 
 ## 🛡️ Pi5 Datastore Role & Core Network Flows
 
-The Pi5 (`10.10.0.5`) is the **database & persistent-services node** for the
+The Pi5 (`10.10.0.5`) is the **database, persistent-services, and active edge node** for the
 homelab (v3.2). Deep technical detail (volumes, compose structure, host
-security): 📖 [PI.md](./PI.md). Edge duties live on the Orange Pi Zero
-3 (`10.10.0.2`) — see [System Topology & Network Architecture](#-system-topology--network-architecture).
+security): 📖 [PI.md](./PI.md). Orange Pi edge duties are retired until the
+operator deliberately restores them — see [System Topology & Network Architecture](#-system-topology--network-architecture).
 
 ### 1. Rathole Ingress Flow (NAT Traversal)
-The Rathole client on the **Orange Pi** opens an **outbound** TCP tunnel to the
+The Rathole client on the **Pi5** opens an **outbound** TCP tunnel to the
 VPS (`103.82.21.202:7000`). Any inbound `*.dungxbuif.com` request reaching the
-VPS `gateway-traefik` is tunneled through Rathole to `edge_traefik` on the
-Orange Pi. Orange Pi Traefik terminates TLS (Cloudflare DNS-01 wildcard) and
+VPS `gateway-traefik` is tunneled through Rathole to `edge-traefik-pi5`.
+Pi5 Traefik terminates TLS (Cloudflare DNS-01 wildcard) and
 routes to Pi5 HTTP services over the Swarm
 overlay (`homelab-net`, 172.30.0.0/16) to portless VM100 services including
 Homepage (`tasks.homepage:80`), macocr-proxy (`tasks.macocr-proxy:8080`),
 OpenClaw, and n8n. No VM100 HTTP host port remains in this cutover.
-The Mac mini
-remains a dependency host for LM Studio (`10.10.0.6:1234`) and native OCR.
+The Mac mini remains a dependency host for LM Studio and native OCR through
+the Mac service tunnel, not direct public/LAN upstreams.
 
 ### 2. Admin Remote Access
 Headscale is no longer active. The old VPS-hosted NetBird stack was removed,
@@ -266,16 +279,16 @@ is not a replacement for the retired Headscale/NetBird control plane.
 GitLab uses a dedicated `gitlabhq_production` database/role on the same Pi5
 PostgreSQL instance via direct `postgres:5432` and Redis DB `/2`. Its
 [runbook](./services/gitlab.md) distinguishes public VPS Git SSH `:2222`
-and **temporary VPS-terminated GitLab HTTPS** from the Orange Pi GitLab
+and **temporary VPS-terminated GitLab HTTPS** from the Pi5 GitLab
 file route that still returns 404. The SSH Rathole server uses VPS
 `7001/tcp`; a separate HTTP Rathole server uses `7002/tcp` for its VM100
 client and private VPS Docker port `8085`. Both are separate from the
-production Orange Pi HTTPS tunnel on `7000`. Self-registration is disabled.
+production Pi5 HTTPS tunnel on `7000`. Self-registration is disabled.
 GitLab's bundled Container Registry is trial-active at
 `registry-gitlab.dungxbuif.com` through its own VPS `7003` control tunnel;
 the Pi5 Docker Registry at `registry.dungxbuif.com` remains production.
 The trial's ARM64 push/pull, AMD64 push, and backup-archive inclusion passed,
-but internal split DNS still targets Orange Pi (route not live), so native
+but internal split DNS still targets Pi5 (route not live), so native
 Docker/Swarm pull from lab nodes is not yet verified. See
 [Registry trial evidence](./deployments/gitlab-registry-trial-2026-09-16.md).
 
@@ -284,7 +297,7 @@ Docker/Swarm pull from lab nodes is not yet verified. See
 ## 🚀 Service Export Playbook (End-to-End, v3)
 
 To expose an approved HTTP application, add a file-provider router and
-`tasks.<swarm-service>:<container-port>` upstream to the Orange Pi Traefik
+`tasks.<swarm-service>:<container-port>` upstream to the active Pi5 Traefik
 dynamic YAML, then add the hostname to the VPS HostSNI allow-list. Validate
 both configs and verify through LAN and the public Rathole path. Do not use
 `edge-registrar/scripts/edge-publish.sh`: it still edits retired Pi5 Caddy
@@ -293,14 +306,15 @@ and is not the current publisher.
 GitLab is a documented temporary exception: VPS Traefik Docker labels on
 its **VPS-local HTTP Rathole container** route only
 `gitlab.dungxbuif.com`, with VPS TLS termination. This does not enable
-Traefik Swarm labels on Orange Pi. Cut it back to the file-provider edge
-path once Orange Pi admin access is restored.
+Traefik Swarm labels on the Pi5 edge. Cut it back to the file-provider edge
+path once the intended permanent edge path is selected and verified.
 
 ### Step 1: Run the workload
 * **On VM100** — deploy a portless Swarm service on `homelab-net`, placed on
   VM100. Record its internal HTTP port and verify task health.
-* **On the Mac** — use LAN only for explicitly approved native/development
-  dependencies such as OCR and LM Studio; MyPocket production is on VM100.
+* **On the Mac** — OCR apps connect outbound to the public OCR domain over
+  WSS/443; only the LLM backend still uses the Mac service tunnel. MyPocket
+  production is on VM100.
 * **On the Pi5** — deploy only approved datastore/infrastructure services;
   attach a routed HTTP backend to `homelab-net` without a new host port.
 
@@ -308,7 +322,7 @@ path once Orange Pi admin access is restored.
 
 Use the existing router/service pattern in
 [`migration/traefik/dynamic.yml`](../migration/traefik/dynamic.yml). The live
-Orange Pi copy is `/opt/edge/traefik/dynamic.yml`. Its service URL must use
+Pi5 copy is `/home/dungxbuif/edge/traefik/dynamic.yml`. Its service URL must use
 `http://tasks.<service>:<port>` on `homelab-net`; do not point at VM100's LAN
 IP. For public exposure, add the hostname to the VPS
 `/root/gateway/dynamic.yml` Rathole HostSNI allow-list. Internal-only
@@ -440,10 +454,11 @@ configuration assertions. Current verification scope is in [STACK.md](./STACK.md
    images may be `arm64` (native) or `amd64` (Rosetta emulation), preferring
    arm64-native where available.
 2. **Pi5 portless principle:** never declare host `ports:` for new Pi5
-   `proxy_net` microservices; route approved HTTP services via Orange Pi Traefik over the Swarm
-   overlay. VM100 app host ports from the earlier Compose phase are retired;
-   use `tasks.<service>:<port>`. Approved native Mac dependencies still use
-   LAN `:8787/:1234`; do not infer those exceptions apply to Docker apps.
+   `proxy_net` microservices; route approved HTTP services via the active Pi5
+   Traefik edge over the Swarm overlay. VM100 app host ports from the earlier
+   Compose phase are retired; use `tasks.<service>:<port>`. Approved native
+   Mac dependencies use the Mac service tunnel when they need to work outside
+   the LAN; do not infer those exceptions apply to Docker apps.
 3. **Image pinning target:** pin versions/digests for reproducible changes.
    Current NetBird uses `latest`, Family Tree `oven/bun:1-slim`, and n8n
    `stable` per runtime inventory. These are existing reproducibility risks,
@@ -452,7 +467,7 @@ configuration assertions. Current verification scope is in [STACK.md](./STACK.md
 5. **Runbook continuity:** keep verification scripts in `/ssd-data/scratch/`
    updated when credentials or routing paths change, so health tests stay green.
 6. **mac-ocr source is read-only:** never edit
-   `~/workspace/homelab/projects/mac-ocr/` to change behaviour; apply all
+   `~/workspace/mac-ocr/` to change behaviour; apply all
    behaviour changes at build time via patches in deployment-specific build
    context.
 7. **Proxmox lab is ephemeral:** lab VMs on Proxmox are disposable — never treat

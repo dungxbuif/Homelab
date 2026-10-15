@@ -8,6 +8,8 @@ timestamp: 2026-07-03T15:14:00Z
 # Directory Update Log
 
 > **Versioning scheme** (architecture evolution, newest first):
+> - **v3.4** — Pi5 active edge, VM100 production worker, active backup runner, and Semaphore provisioning control plane
+> - **v3.3** — VM100 production compute + Pi5 edge recovery
 > - **v3.2** — VM100 production compute + Orange Pi Traefik edge
 > - **v3.1** — Orange Pi Zero 3 edge migration (Pi5 → datastore only)
 > - **v3.0** — Mac mini consolidation (K8s retired, Proxmox → AWS lab)
@@ -17,8 +19,119 @@ timestamp: 2026-07-03T15:14:00Z
 > Dated entries below are grouped under their architecture version heading.
 > Every significant change appends to this log; the current version marker also
 > lives in [`index.md`](../index.md) and [`MAIN.md`](./MAIN.md).
+
+## 2026-10-13 — Runtime reconciliation
+
+- **Runtime inventory refreshed:** Pi5 (`rpivn`, Docker `28.4.0`) is the active
+  standalone Traefik/Rathole/AdGuard edge and Swarm manager. VM100
+  (`vm100-prod`, Docker `29.1.3`) is the production worker and Compose host.
+  Orange Pi is still `Down`; old Swarm edge services remain `0/0`.
+- **Recent deployment versions reconciled:** current image tags and observed
+  image IDs for RelayHub `prod-eee9e7c`, CouchLoom `8f7a8e0`, MyPocket release
+  images, OCR `scan-api-20261008`, Homepage `vm100-20261007-stirling`, K8s
+  Syntax `af8481e`, GitLab CE `18.11.11-ce.0`, Stirling `3.1.0`, NetBird,
+  KubeKosh, OpenClaw, n8n, and the GitLab tunnel clients are recorded in the
+  [runtime inventory](./deployments/runtime-inventory-2026-10-13.md).
+- **Backup state reconciled:** VM100 timers remain enabled. The latest Pi5
+  class markers are successful for databases (`databases-20261012-180003`),
+  RustFS (`rustfs-20261012-213004`), and GitLab (`gitlab-20261012-193002`) with
+  fresh remote snapshot IDs. The health oneshot itself last exited 1 because it
+  ran before two markers existed and logged a start-time parsing warning; this
+  reporting defect remains explicitly open and is not hidden by the later class
+  success markers.
+- **GitLab notification mismatch fixed:** GitLab's VM100 runner had a stale
+  121-byte Mezon webhook secret while Pi5 used the current 205-byte secret.
+  The secret was synchronized with mode `0640` and matching SHA-256; one
+  warning-level delivery probe returned successfully. The next scheduled
+  GitLab run is the normal success-notification confirmation.
+- **Semaphore metadata reconciled:** restored task history from the preserved
+  SQLite snapshot, kept one project/template/user/access key, and normalized
+  the UI field labels and task messages. The current `db-provision` workflow is
+  a private database/user provisioning control plane, not a second backup
+  scheduler.
+- Updated the catalog, Pi5/VM100 host references, backup runbook, and
+  provisioning runbook so “pilot”, “pending”, and Orange Pi edge statements
+  remain only where they describe historical state.
+
+## 2026-10-07
+
+- **Backup OAuth project corrected (2026-10-08):** created a new desktop OAuth
+  client in the dedicated Google Cloud project `homelab-backup-488616`, enabled
+  the Drive API there, and installed the resulting private rclone config on
+  Pi5 and VM100. The existing `Homelab Backup/homelab-backups/` root and
+  `databases`, `gitlab`, and `rustfs` repositories were preserved; the older
+  client config is archived on each host for rollback. `rclone about` and
+  repository directory checks pass. Database run
+  `databases-20261008-014054` uploaded with the new client, passed the Restic
+  metadata/tree check plus a `1/100` read-data subset using temporary
+  maintenance pacing, sent a successful Mezon post-check, and wrote a fresh
+  success marker. Nine duplicate pack files remain as a non-critical warning;
+  no prune or retention cleanup was run.
+
+- **Database backup failure remediation started (2026-10-08):** the two
+  database alerts were traced to a stale Restic repository lock left by a dead
+  process; the newer retry is still online while its large CouchDB export and
+  Drive upload complete. The fix will recover stale locks only after checking
+  that no local Restic process is active, remove SIGPIPE-prone path-capture
+  pipelines, and require the existing remote post-check before marking the
+  class successful. Retention remains blocked until all class markers are
+  fresh. The Restic operation timeout was also raised from two to four hours
+  because the paced, project-owned Drive client can take longer for the large
+  CouchDB export; the systemd service timeout remains the outer limit. The
+  Pi5 deployment also removes SIGPIPE-prone path capture and includes the
+  failing runner stage in Mezon diagnostics; a live database retry is still
+  uploading and has not yet written a success marker.
+
+- **Stirling-PDF deployed on VM100:** Added the portless Swarm service
+  `stirling-pdf` on `homelab-net` using the pinned official `3.1.0` image,
+  persistent config/OCR/pipeline mounts, login, 2 CPU/2 GiB limits, and
+  bounded Docker JSON logs. Orange Pi Traefik now routes the hostname to
+  `tasks.stirling-pdf:8080`; Homepage was rebuilt with a Stirling PDF link.
+  LAN/edge HTTPS and overlay health checks pass. VPS HostSNI admission remains
+  pending because the gateway SSH agent was unavailable; direct VPS probe is
+  currently 404 while the edge probe is 200.
+- **VM100 resource audit:** 9.0 GiB RAM available after deployment and 56 GiB
+  disk free. Docker has a 16 GiB GitLab JSON log without rotation, 3.8 GiB of
+  systemd journal, 61 stopped containers, and three dangling images. Docker
+  system-df also reports a missing overlay snapshot, so cleanup is deferred to
+  a maintenance window rather than running an unsafe blanket prune.
+- **Backup overnight failure repaired/diagnosed:** Timers did run, but the
+  first window failed on runtime drift, an unreadable VM100 lock/secret setup,
+  and a RustFS stdout path-capture bug. The wrapper, lock path, secret modes,
+  health class list, and path capture were corrected; a manual health run
+  reached Mezon notification without a delivery error. Local DB, RustFS, and
+  GitLab exports are complete, while all Drive Restic uploads remain blocked
+  by Google Drive `RATE_LIMIT_EXCEEDED`; no retention or local cleanup ran.
+  Follow-up confirmed Drive has about 1.27 TiB free; the remaining blocker is
+  API project quota because the rclone config uses the shared/default OAuth
+  client and has no project-owned `client_id`/`client_secret`. The runner now
+  preserves quota diagnostics, bounds preflight retries, and reports failed
+  classes immediately. A new remote snapshot is intentionally not claimed
+  until the project-owned client is installed and all three classes pass.
+
 ## 2026-10-06
 
+- **Backup automation enabled:** VM100 now has active systemd timers for
+  PostgreSQL/CouchDB, GitLab, RustFS, retention, and read-only health checks.
+  Pi5 remains the database/object-storage executor. The runner uses the
+  pinned Google Drive root and the already populated
+  `Homelab Backup/homelab-backups/` Restic repositories; local staging keeps
+  the two newest completed runs per class and preserves incomplete runs. The
+  first scheduled end-to-end window is still pending.
+- **Backup preflight note:** all three populated legacy Restic repositories
+  opened successfully in read-only checks. A controlled retention run was
+  stopped after repeated Google Drive rate-limit responses; no remote prune or
+  local staging deletion occurred, and the lock/process cleanup was verified.
+- **Overnight verification prepared:** VM100 backup and health services now
+  emit class-specific journald identifiers, and the scheduler/health systemd
+  units pass `systemd-analyze verify`. The 2026-10-07 window is intentionally
+  left to the timers; morning review will inspect journal results, marker ages,
+  Drive rate-limit errors, and the retention cleanup gate before any manual
+  retry.
+- **Backup scheduler re-enable started:** the replacement schedule will run on
+  VM100, invoke database/RustFS executors on Pi5 over a restricted SSH key,
+  keep GitLab native backup local to VM100, and retain the native post-check plus
+  Mezon notification contract. The retired `simple-backup.sh` cron remains off.
 - **Private provisioning control plane:** Deployed Semaphore UI plus the internal
   `homelab-provisioner` service on Pi5. Semaphore remains LAN/NetBird-only and
   has no Docker socket; the provisioner is the only Docker API holder, has no
@@ -28,8 +141,52 @@ timestamp: 2026-07-03T15:14:00Z
   generated credentials.
 - **Verification:** PostgreSQL and CouchDB disposable staging canaries passed
   through the full Semaphore -> Ansible -> provisioner path. Both were removed
-  completely, including users, Swarm secrets, and catalog rows. Production
-  backup schedules remain disabled pending the VM100 runner migration.
+  completely, including users, Swarm secrets, and catalog rows. The first
+  scheduled end-to-end backup window remains the final live verification.
+
+## v3.2 — 2026-10-05 · Backup and restore rehearsal
+
+- Ran the current PostgreSQL/CouchDB inventory online on Pi5 and produced a
+  complete, checksummed local run with paginated CouchDB exports. Restored one
+  PostgreSQL database and one CouchDB database into disposable targets, then
+  removed only those test targets.
+- Ran the RustFS S3/API export for all 8 approved buckets and restored an
+  isolated bucket. Fixed the restore verifier so backup control metadata is not
+  copied into production object namespaces.
+- Ran the VM100 GitLab native backup online, including config/secrets and local
+  Registry artifacts. Restored its SQL into a PostgreSQL 17 disposable target
+  after loading globals; the run records PostgreSQL 16.14 server and 17.10
+  dump-client versions. See [rehearsal evidence](./deployments/backup-restore-rehearsal-2026-10-05.md).
+- Restic/rclone disposable Drive tooling passed init, backup, check, restore,
+  comparison, and cleanup. A first real upload exposed the need for a writable
+  per-process OAuth config copy; that fix is covered by the restic contract
+  test. Production Drive snapshots, Mezon post-checks, retention, and the
+  VM100 scheduler remain pending.
+
+- **CouchLoom deployed to VM100 (2026-10-05):** built and started the pinned
+  image `couchloom:vm100-20261005-direct-couchdb` under
+  `/opt/apps/couchloom/src` with the existing runtime config. The service is
+  private and portless, attached to `homelab-net` for direct access to the
+  existing CouchDB source of truth, with PostgreSQL/pgvector and Ollama on its
+  private bridge. Container health is `healthy`; metadata indexing loaded the
+  `personal` vault with `1,223` notes. Authenticated MCP `initialize`,
+  `tools/list`, and `list_vaults` probes passed. RAG backfill was intentionally
+  left running in the background (`509` documents / `1,411` chunks at the
+  verification point). The optional local LiveSync CLI runner is not deployed
+  on VM100. Ollama initially reached roughly `570%` CPU during backfill, so its
+  Compose service is now capped at `2.0` vCPU; the embedding endpoint remains
+  healthy with lower throughput. GPU passthrough is not currently available.
+  OpenClaw registration and production write-back UAT remain pending.
+
+- **CouchLoom LiveSync verification (2026-10-05):** confirmed the production
+  design uses the vendored LiveSync common library directly against the
+  `obsidian_vault` CouchDB database; the optional CLI runner is not deployed
+  on VM100. Local verification passed the production build, `225` repository
+  tests with `2` pgvector skips, the disposable CouchDB obfuscation suite, and
+  a `linux/amd64` Docker image build. The current VM100 host key was observed
+  as `SHA256:Dc7bRD6/p0X/WPlfJCZIb/NHifojNv2GAKam1b0v7fg` through the Pi5
+  manager. VM100 deployment was subsequently completed with the homelab SSH
+  key `id_homelab_k8s`; no secrets were added to the repository.
 
 ---
 

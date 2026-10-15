@@ -1,7 +1,14 @@
 # Semaphore Control Plane Pilot
 
 **Date:** 2026-10-04 (updated 2026-10-06)
-**Status:** Private database-provisioning pilot is deployed; production backup schedules are still disabled
+**Status:** Private database-provisioning control plane is deployed. Backup
+scheduling is now owned by the active VM100 systemd runner; Semaphore remains
+UI/provisioner only.
+
+> The original rollout record below is retained as history. For the current
+> task history, labels, image versions, and verification state, see [Semaphore
+> History and Metadata Recovery](./semaphore-recovery-2026-10-13.md) and the
+> [runtime inventory](./runtime-inventory-2026-10-13.md).
 
 ## Runtime
 
@@ -9,7 +16,7 @@
 |---|---|
 | Host | Pi5 `rpivn` / `10.10.0.5` |
 | Runtime | Docker Swarm service `semaphore_semaphore`, `1/1` |
-| Image | `semaphoreui/semaphore:v2.19.12` (`sha256:399680...`) |
+| Image | `semaphoreui/semaphore:v2.19.12` (`sha256:b85760f41eac1964a89b830aee9e6240a3bdee804b27ce689beeea49c6082103`) |
 | Metadata | SQLite at host `/ssd-data/infra/semaphore/data`, mounted as `/var/lib/semaphore` |
 | Network | Existing `homelab-net` overlay; no host port published |
 | Route | `https://semaphore.dungxbuif.com` through Pi5 Traefik |

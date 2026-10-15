@@ -85,6 +85,12 @@ Independent read-only review found no new blocker in this P1 fix. Shell upload
 manifest and Restic contract tests passed. The native snapshot exclusion test
 remains opt-in; no remote data or running backup was modified by these tests.
 
+The helper now resolves only macOS's `/var` compatibility symlink when an
+explicit Docker-visible working root is supplied. This keeps the no-follow
+checks intact for application-controlled path components while allowing the
+same contract tests and local development path to run on macOS. The four
+restore-staging tests and the upload-manifest regression pass after this fix.
+
 Deployment must include the new helper alongside `restic-lib.sh`; copying the
 library alone is invalid. Do not publish this combined uploader/library bundle
 as production-ready until timeout cleanup is implemented and verified too.

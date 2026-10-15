@@ -10,17 +10,18 @@ timestamp: 2026-07-03T15:14:00Z
 Date: 2026-06-02
 Workspace: `/Users/dungxbuif/workspace/homelab`
 
-Current local source project aggregation lives under
-`/Users/dungxbuif/workspace/homelab/projects/`; see
-[PROJECTS.md](./PROJECTS.md). `MyPocket` intentionally remains at
+Current local source project checkouts live under
+`/Users/dungxbuif/workspace/`; see [PROJECTS.md](./PROJECTS.md) for the
+summary inventory and remote origins. `MyPocket` intentionally remains at
 `/Users/dungxbuif/workspace/MyPocket/` while under active development.
 
 > [!IMPORTANT]
 > This file is a dated diagnostic record. Container inventories, benchmarks,
 > and Caddy/Nginx observations below describe the 2026-06-02 environment and
 > are not current operating instructions. Current ingress is VPS
-> `gateway-traefik` -> Rathole -> Orange Pi `edge_traefik`; Orange Pi
-> `edge_adguardhome` provides split DNS, and Pi5 is manager/datastore only.
+> `gateway-traefik` -> Rathole -> Pi5 `edge-traefik-pi5`; Pi5
+> `edge-adguardhome-pi5` provides split DNS, and Pi5 is manager/datastore plus
+> the active edge while Orange Pi is unavailable.
 
 ## Scope And Rules
 
@@ -34,20 +35,24 @@ Current local source project aggregation lives under
 - ISP/ONT: Viettel modem in bridge mode, VLAN 35.
 - Router: MikroTik hEX S, LAN gateway `<MIKROTIK_IP>`, handles PPPoE, NAT, DHCP.
 - LAN subnet: `<LAN_SUBNET>`.
-- Raspberry Pi 5: `<PI_IP>`, **manager/datastore** (PostgreSQL+Redis, RustFS, registry, and persistent services; no edge proxy).
-- Orange Pi Zero 3: `10.10.0.2` (`<ORANGE_PI_IP>`), home edge
-  (`edge_traefik`, `edge_rathole`, `edge_adguardhome`) as Docker Swarm worker.
+- Raspberry Pi 5: `<PI_IP>`, **active edge + manager/datastore**
+  (Traefik/Rathole/AdGuard, PostgreSQL+Redis, RustFS, registry, and persistent
+  services).
+- Orange Pi Zero 3: `10.10.0.2` (`<ORANGE_PI_IP>`), former home edge; currently
+  unavailable/retired from active edge duty until deliberately restored.
 - Mesh Wi-Fi: AP / bridge mode, DHCP delegated to MikroTik.
 - VM100: `10.10.0.31`, production compute for homepage, OCR proxy, Family Tree,
   and MezonHook.
 - Mac mini: documented LAN `10.10.0.6`, native OCR and LM Studio dependency
-  host. MyPocket dev checkout remains local/unmoved, but production runtime
-  is on VM100. NetBird roaming is proposed, not deployed.
+  host exposed through the Mac Rathole service tunnel. MyPocket dev checkout
+  remains local/unmoved, but production runtime is on VM100. NetBird private
+  admin access is proposed, not deployed.
 - Proxmox VE Host: `10.10.0.20`, production hypervisor for VM100; optional
   practice VMs need an isolated lifecycle. Old Kubernetes topology retired.
-- Public ingress: Cloud VPS `gateway-traefik` -> TCP Rathole port 7000 -> Orange Pi `edge_traefik` -> approved HTTP services.
-- Internal DNS override: active names resolve to `10.10.0.2` through Orange Pi
-  `edge_adguardhome`.
+- Public ingress: Cloud VPS `gateway-traefik` -> TCP Rathole port 7000 -> Pi5
+  `edge-traefik-pi5` -> approved HTTP services.
+- Internal DNS override: active names resolve to `10.10.0.5` through Pi5
+  `edge-adguardhome-pi5`.
 - Public DNS: `speed.dungxbuif.com` resolves to `<VPS_PUBLIC_IP>` via `1.1.1.1`.
 
 ## Historical Local Mac Network State (2026-06-02)
@@ -314,7 +319,8 @@ Possible changes only after explicit approval:
    - Restrict SSH/WWW/API/WinBox to trusted LAN/admin IPs.
    - Create a dedicated read-only operator account.
 5. Remove accidental `console-dump.txt` from MikroTik Files if user approves.
-6. Decide whether `my-cv:3000` host exposure was intentional; any current route change belongs in Orange Pi Traefik.
+6. Decide whether `my-cv:3000` host exposure was intentional; any new route
+   change now belongs in the active Pi5 Traefik file-provider edge.
 
 ## Pending Deep Collection Request
 
@@ -353,8 +359,8 @@ Current collection state:
 ## Historical Pi Config Best-Practice Review
 
 The Pi gateway configuration observed in 2026-06 was functional and performant,
-but this review predates the Orange Pi Traefik edge. Do not use it as a current
-service inventory.
+but this review predates both the Orange Pi Traefik period and the current Pi5
+edge restore. Do not use it as a current service inventory.
 
 Positive state:
 
@@ -389,11 +395,11 @@ Proposals recorded in the trace:
    - Monitor:
      - `<MIKROTIK_IP>` MikroTik ping.
      - `<PI_IP>` Pi5 datastore ping.
-     - `10.10.0.2:53` Orange Pi `edge_adguardhome` DNS TCP/UDP as possible.
+     - `10.10.0.5:53` Pi5 `edge-adguardhome-pi5` DNS TCP/UDP as possible.
      - `https://dungxbuif.com`.
      - `https://speed.dungxbuif.com`.
      - Rathole/VPS public path availability.
-     - Orange Pi Traefik public HTTPS endpoints.
+     - Pi5 Traefik public HTTPS endpoints.
 
 2. The trace proposed Prometheus + Alertmanager for resource metrics. Grafana
    is retired and must not be added by this historical note.
@@ -418,19 +424,20 @@ Suggested alert rules:
   - VPS unreachable.
   - Proxmox/worker unreachable.
 - DNS failure:
-  - Orange Pi `10.10.0.2:53` unavailable.
+  - Pi5 `10.10.0.5:53` unavailable.
   - AdGuard not resolving external names.
-  - Split-horizon record like `speed.dungxbuif.com -> 10.10.0.2` missing internally.
+  - Split-horizon record like `speed.dungxbuif.com -> 10.10.0.5` missing internally.
 - Ingress/tunnel failure:
   - Public HTTPS domain down.
   - Rathole path not reachable.
-  - `edge_traefik` not responding on `80/443`.
+  - `edge-traefik-pi5` not responding on `80/443`.
 - Resource:
   - CPU sustained high for 10-15 minutes.
   - Memory pressure.
   - Disk > 80% warning, > 90% critical.
   - SSD mount `/ssd-data` missing.
-  - Swarm service stopped/restarting for `edge_traefik`, `edge_rathole`, or `edge_adguardhome`.
+  - Active edge container stopped/restarting for `edge-traefik-pi5`,
+    `edge-rathole-pi5`, or `edge-adguardhome-pi5`.
   - PostgreSQL health regression on Pi5, checked separately from edge routing.
 - Network quality:
   - WAN latency above baseline threshold.

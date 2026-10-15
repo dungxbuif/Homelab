@@ -5,7 +5,11 @@ description: "Aggregated code index for iac folder"
 timestamp: 2026-07-03T15:11:00Z
 ---
 
-# Code Index: iac
+# Historical Code Index: iac
+
+> **HISTORICAL ONLY: DO NOT RUN.** Kubernetes is not present in the current
+> homelab. The files indexed here are retained for history and are excluded
+> from the active automation inventory.
 
 > This index aggregates code files in the [[iac/]] directory.
 > Edit the source files directly; this index is auto-generated for Obsidian reading.

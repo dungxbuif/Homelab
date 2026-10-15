@@ -1,8 +1,9 @@
 # Homelab Backup and Restore Runbook
 
-**Status:** Online adapters, encrypted Drive upload, retention, and remote
-restore rehearsal verified on 2026-10-05; scheduled deployment remains
-pending. The legacy
+**Status:** Online adapters, encrypted Drive upload, remote restore rehearsal,
+and the replacement VM100 scheduler are deployed. The latest database, RustFS,
+and GitLab class markers are successful; the health oneshot still needs a
+start-time/ordering fix. The legacy
 `/ssd-data/backup/simple-backup.sh` cron entry was disabled on the Pi on
 2026-10-05; its script and historical local artifacts remain for rollback and
 audit until the replacement flow is fully verified.
@@ -140,10 +141,17 @@ The executable flow is defined in `automation/backup-runner/`:
 - `schedule.yaml` is the single schedule source. Do not add a second cron or
   systemd schedule while importing these jobs into Semaphore.
 
+The current deployment record is [Backup Scheduler Re-enable](../deployments/backup-scheduler-2026-10-06.md),
+and the point-in-time result is in the [runtime inventory](../deployments/runtime-inventory-2026-10-13.md).
+The VM100 timers are the only active schedule; do not restore the legacy Pi5
+cron entry.
+
 ## Google Drive and Retention
 
 Use three encrypted restic repositories via a dedicated rclone Google Drive
-remote:
+remote pinned to the `Homelab Backup` folder. The populated repositories are
+under the existing `homelab-backups/` child, so the configured `DRIVE_ROOT` is
+`homelab-backups`:
 
 ```text
 homelab-backups/databases
@@ -159,7 +167,16 @@ Retention policy:
 
 The retention job runs `restic check` first and prunes only the matching
 repository after a successful upload. It must not use `rclone sync --delete`,
-Drive-wide age deletion, or a path outside `homelab-backups/`.
+Drive-wide age deletion, or a path outside the three repositories below the
+pinned `Homelab Backup/homelab-backups` root.
+
+After all three repository checks pass, the same retention window keeps the two
+newest completed local staging runs per class on the export host. It never
+removes an `.incomplete` run automatically.
+
+The daily VM100 health check is read-only. It checks failed backup units, stale
+markers, old incomplete runs, lock state, and free space, and reports detected
+problems to Mezon without deleting backup data.
 
 The rclone remote must be configured so deletion behavior is intentional. A
 disposable backup folder is used to verify whether expired objects are trashed
@@ -211,11 +228,14 @@ tests are mandatory before claiming operational recovery.
 ## Current Limitations
 
 - The adapters have been exercised against current Pi5/VM100 data and local
-  restore targets, but the three real Drive snapshots and production post-check
-  notifications are still pending. See the [rehearsal evidence](../deployments/backup-restore-rehearsal-2026-10-05.md).
-- Semaphore and the internal provisioner are a private provisioning pilot on
-  Pi5. The durable runner, provisioning scheduler, and final control metadata
-  still belong on VM100; production backup schedules remain disabled here.
+  restore targets. The latest database, RustFS, and GitLab runs have verified
+  remote snapshot IDs and success markers; see the [runtime inventory](../deployments/runtime-inventory-2026-10-13.md)
+  and [rehearsal evidence](../deployments/backup-restore-rehearsal-2026-10-05.md).
+- Semaphore and the internal provisioner are an active private provisioning
+  control plane on Pi5. They are intentionally separate from the VM100 backup
+  scheduler. The last health oneshot exited 1 because it ran before two class
+  markers existed and logged a unit start-time parsing warning; fix that
+  reporting gate before claiming the entire backup system is clean.
 - The Mezon webhook secret is intentionally not stored in this repository.
 - Redis recovery is out of scope.
 - A successful database backup does not restore application files or RustFS

@@ -1,6 +1,6 @@
 # GitLab on VM100
 
-## Current status (2026-09-16)
+## Current status (2026-10-13; route history retained below)
 
 GitLab CE 18.11.11 is installed as one Docker Swarm service on VM100. The
 container and internal web/SSH endpoints are healthy. **Public HTTPS now
@@ -10,7 +10,9 @@ uses an isolated VM100 Rathole tunnel; direct Orange Pi GitLab HTTPS still
 returns 404 because its file-provider router has not been applied. SSH to
 Orange Pi resets before key exchange from both Mac and Pi5. The login page,
 CSS, and basic route are verified; Git repository clone/push/pull, web
-account login, and backup restore are not yet verified.
+account login, and the local native backup/restore rehearsal are verified. The
+off-host encrypted snapshot and scheduled recovery workflow are active; the
+latest verified run is recorded in [Current backup status](#current-backup-status-2026-10-13).
 
 GitLab's bundled Container Registry is now **trial-active**, not the lab's
 production registry. The Pi5 `docker-registry` and
@@ -175,8 +177,11 @@ One-time GitLab backup after the Registry trial completed and included
 `registry.tar.gz` with the trial project's manifests/layers:
 `/opt/apps/gitlab/data/backups/1789494830_2026_09_15_18.11.11_gitlab_backup.tar`.
 Separate before/after VM100 config snapshots and a prechange Pi5 DB dump
-were created (paths in the trial report). **No off-host or scheduled GitLab
-backup or restore drill has been verified yet.** VM100 data
+ were created (paths in the trial report). The current online GitLab backup
+wrapper has been verified locally and restored into an isolated PostgreSQL 17
+target after loading Pi5 globals; see [the rehearsal evidence](../deployments/backup-restore-rehearsal-2026-10-05.md).
+The three off-host encrypted repositories and scheduled runner are not enabled
+yet. VM100 data
 bind mounts include Gitaly repositories, uploads, and configuration; the
 Pi5 PostgreSQL database is separate. A recoverable backup must include both
 plus secret references and a restore drill. To restore public Git SSH,
@@ -227,3 +232,20 @@ registry_trial_metadata_database: false
 pi5_registry_current_status: active
 lab_native_docker_pull_verified: false
 ```
+## Current backup status (2026-10-13)
+
+GitLab is a separate backup class; it is not covered by the generic PostgreSQL
+or CouchDB export. The VM100 `homelab-backup-gitlab.timer` is enabled and runs
+the native Omnibus command `gitlab-backup create` beside the GitLab container,
+then captures configuration/secrets and the local bundled Registry artifacts
+before uploading and checking the encrypted Restic repository.
+
+The latest verified run is `gitlab-20261012-193002` with snapshot ID
+`0e4c88063586aece8b924c56422ee0272779bac7b5743cc517b7a858e18b0df3`. The run
+completed successfully; the warning that `/var/opt/gitlab/backups` may be
+readable by non-root users did not fail the job. Redis cache/session data is
+deliberately excluded because it is rebuildable; Git repositories, uploads,
+CI artifacts, Registry layers, config, and secrets remain in the GitLab-native
+backup class. On 2026-10-13 the VM100 Mezon secret was corrected to match the
+Pi5 executor secret after the GitLab notification was found to target an old
+webhook; a warning-level delivery probe returned successfully.

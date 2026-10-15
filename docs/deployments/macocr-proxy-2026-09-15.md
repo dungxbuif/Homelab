@@ -3,10 +3,16 @@
 ## Intent and boundaries
 
 Move only the OCR HTTP proxy from VM100 Compose with host port `18080` to a
-portless VM100 Swarm task on `homelab-net`. Keep the native OCR engine on the
-Mac mini `10.10.0.6:8787`, the existing Pi5 databases/Redis, and the old
-Compose image/configuration as a stopped rollback path. No app source or data
-was changed. No user OCR document was submitted as a synthetic test.
+portless VM100 Swarm task on `homelab-net`. At cutover time, the native OCR
+engine stayed on the Mac mini LAN endpoint `10.10.0.6:8787`, with existing Pi5
+databases/Redis and the old Compose image/configuration as a stopped rollback
+path. No app source or data was changed. No user OCR document was submitted as
+a synthetic test.
+
+Current update: on 2026-09-16 the public route still targets VM100
+`tasks.macocr-proxy:8080`, but the proxy's native backend was moved from the
+Mac LAN endpoint to the Mac Rathole backend listener `103.82.21.202:18087`, so
+the Mac can leave the LAN while preserving the proxy API/docs/auth layer.
 
 ## Runtime and route
 
@@ -62,6 +68,9 @@ development. No Redis data was cleared or LAN port closed.
   the native process on LAN port `8787`. Earlier `connection refused` logs
   were from the native process being down; no such warning appeared after
   restart in the three-minute post-start log window.
+- Later 2026-09-16 verification after the Mac service tunnel change confirmed
+  public OCR `/` and `/healthz` return `200` through `macocr-proxy`, while the
+  proxy backend target is `NATIVE_BASE_URL=http://103.82.21.202:18087`.
 - PostgreSQL `SELECT 1` through the current OCR database URL passed.
   The OCR URL password matched the Redis server credential; authenticated
   `redis-cli --askpass PING` from the task network namespace returned `PONG`.

@@ -9,9 +9,15 @@ User=ubuntu
 Group=ubuntu
 WorkingDirectory=/opt/apps/homelab-backup/app
 EnvironmentFile=/etc/homelab-backup/runner.env
+Environment=RCLONE_CONFIG_WORK_ROOT=/opt/apps/homelab-backup/.runtime/rclone
+SyslogIdentifier=homelab-backup-%i
+StandardOutput=journal
+StandardError=journal
 ExecStart=/opt/apps/homelab-backup/app/automation/backup-runner/run-vm100-scheduled.sh %i
 NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=full
 ReadWritePaths=/opt/apps/homelab-backup /tmp
-
+TimeoutStartSec=12h
+TimeoutStopSec=2min
+KillMode=control-group

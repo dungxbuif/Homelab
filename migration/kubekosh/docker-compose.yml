@@ -1,0 +1,19 @@
+services:
+  kubekosh:
+    image: zeborg/kubekosh:latest
+    container_name: kubekosh
+    restart: unless-stopped
+    privileged: true
+    mem_limit: 4g
+    mem_reservation: 1g
+    cpus: 2
+    volumes:
+      - /opt/apps/kubekosh/data:/data
+    networks:
+      homelab-net:
+        aliases:
+          - kubekosh
+
+networks:
+  homelab-net:
+    external: true

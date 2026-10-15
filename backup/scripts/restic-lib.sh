@@ -16,13 +16,13 @@ rclone_prepare_script=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/prepar
 if [[ -z "${RCLONE_CONFIG_WORKDIR:-}" ]]; then
   # systemd may isolate /tmp with PrivateTmp=yes. Docker's daemon cannot see
   # that namespace, so keep the bind-mounted config under a shared path.
-  rclone_work_args=()
+  rclone_prepare_args=("$RCLONE_CONFIG_FILE")
   if [[ -n "${RCLONE_CONFIG_WORK_ROOT:-}" ]]; then
-    rclone_work_args=(--root "$RCLONE_CONFIG_WORK_ROOT")
+    rclone_prepare_args+=(--root "$RCLONE_CONFIG_WORK_ROOT")
   elif [[ -n "${BACKUP_STAGING_ROOT:-}" ]]; then
-    rclone_work_args=(--root "$BACKUP_STAGING_ROOT/.runtime/rclone")
+    rclone_prepare_args+=(--root "$BACKUP_STAGING_ROOT/.runtime/rclone")
   fi
-  RCLONE_CONFIG_WORKDIR=$(python3 "$rclone_prepare_script" "$RCLONE_CONFIG_FILE" "${rclone_work_args[@]}")
+  RCLONE_CONFIG_WORKDIR=$(python3 "$rclone_prepare_script" "${rclone_prepare_args[@]}")
   export RCLONE_CONFIG_WORKDIR
   export RCLONE_CONFIG_WORKDIR_CREATED=1
   trap 'rm -rf -- "$RCLONE_CONFIG_WORKDIR"' EXIT

@@ -14,7 +14,7 @@
   },
   "storage": {
     "local_root": "/ssd-data/infra/backups/homelab",
-    "drive_remote": "gdrive",
+    "drive_remote": "homelab1",
     "drive_root": "homelab-backups",
     "restic_password_file": "/ssd-data/infra/backup/secrets/restic-password",
     "mezon_webhook_file": "/ssd-data/infra/backup/secrets/mezon-webhook"

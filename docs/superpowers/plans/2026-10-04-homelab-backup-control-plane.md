@@ -185,7 +185,8 @@
 - `verify-retention.sh --class <class>` performs `restic check`, then applies 14 daily/8 weekly/12 monthly retention only to that repository.
 
 - [ ] Add failing tests for prune after failed upload, wrong repository prefix, missing restic password, and a policy that would delete a required recovery point.
-- [x] Create separate Drive repositories/prefixes `homelab-backups/databases`, `homelab-backups/rustfs`, and `homelab-backups/gitlab`.
+- [x] Create separate Drive repositories/prefixes below the deployed
+  `Homelab Backup/` root: `databases`, `rustfs`, and `gitlab`.
 - [x] Configure rclone with a dedicated Google Drive remote and a separate RustFS source remote; never mount Google Drive as a filesystem.
 - [x] Upload only complete manifests/runs; keep `manifest.json` immutable and record the repository-specific restic snapshot ID in `remote/snapshot-id` and Semaphore output.
 - [x] Run repository check before prune and skip all deletion if check or upload fails.

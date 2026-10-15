@@ -123,6 +123,32 @@ Expected:
 - `homelab` exists and returns metadata with `doc_count=0` when queried as the
   CouchDB admin.
 
+## Headless Local LiveSync CLI
+
+The optional local headless client uses the upstream Self-hosted LiveSync CLI.
+CouchLoom on VM100 uses the vendored LiveSync common library directly against
+this CouchDB database and does not run a second CLI sync node. The local
+runner and state layout are documented in
+[`couchloom/docs/LOCAL_LIVESYNC.md`](../../couchloom/docs/LOCAL_LIVESYNC.md).
+
+Run the checks from the CouchLoom checkout:
+
+```bash
+tools/livesync/livesync.sh doctor
+tools/livesync/livesync.sh remote-status
+tools/livesync/livesync.sh sync
+```
+
+The runner stores its settings and PouchDB state outside Git with mode `0600`
+settings. It reads the sync credentials from the existing homelab
+`local_vars.json` unless explicit `LIVESYNC_*` variables are supplied.
+
+If LiveSync reports that the remote database is locked and this device is not
+accepted, stop. Do not use `unlock-remote` from an empty or unverified local
+database. Complete the rebuild on the existing trusted Obsidian device first,
+then retry the commands above. Only after a successful sync and mirror pass
+should a persistent daemon be enabled.
+
 ## CORS
 
 Configured in:

@@ -84,8 +84,10 @@ The corrected runner completed one real snapshot in each dedicated repository:
 | RustFS | `rustfs-20261005-140503-final` | 7 active buckets; retired `goclaw` excluded; snapshot/check passed |
 | GitLab | `gitlab-20261005-0100-final` | GitLab CE `18.11.11` native archive/config/registry artifacts; snapshot/check passed |
 
-The three repositories are isolated below `homelab-backups/databases`,
-`homelab-backups/rustfs`, and `homelab-backups/gitlab`. Retention passed
+The current three repositories are isolated below `Homelab Backup/databases`,
+`Homelab Backup/rustfs`, and `Homelab Backup/gitlab` on the `homelab1` remote.
+Historical runs may still exist below the older `homelab-backups/` folder;
+retention is scoped to the active repositories only. Retention passed
 pre-check and post-prune repository checks for all three classes. The legacy
 Pi cron entry calling `/ssd-data/backup/simple-backup.sh all` was disabled; the
 script and historical artifacts were retained for audit.

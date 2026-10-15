@@ -19,6 +19,24 @@ case "$class" in
   *) echo "unsupported backup class: $class" >&2; exit 2 ;;
 esac
 
+backup_succeeded=false
+stage='startup'
+on_exit() {
+  local exit_code=$?
+  trap - EXIT
+  if ((exit_code != 0)) && [[ "$backup_succeeded" != true ]] && [[ -n "${MEZON_WEBHOOK_URL_FILE:-}" ]]; then
+    bash "$backup_scripts/notify-mezon.sh" \
+      --kind "$class" \
+      --status failure \
+      --summary 'backup runner failed before remote post-check' \
+      --details "stage=${stage}; runner exit code=${exit_code}; inspect the class journal and run directory" \
+      --run-id "$run_id" \
+      || true
+  fi
+  exit "$exit_code"
+}
+trap on_exit EXIT
+
 mkdir -p "$(dirname -- "$lock_file")"
 exec 9>"$lock_file"
 if ! flock -n 9; then
@@ -40,6 +58,7 @@ rm -f "$status_root/$class.success"
 
 case "$class" in
   databases)
+    stage='database export'
     run_dir=$(python3 "$backup_scripts/run-database-backup.py" \
       --inventory "$inventory" \
       --staging-root "$staging_root" \
@@ -47,6 +66,7 @@ case "$class" in
     summary='PostgreSQL and CouchDB backup verified'
     ;;
   rustfs)
+    stage='RustFS export'
     run_dir=$(bash "$rustfs_scripts/run-rustfs-backup.sh" \
       "$staging_root" \
       "$run_id" \
@@ -55,6 +75,7 @@ case "$class" in
     summary='RustFS object backup verified'
     ;;
   gitlab)
+    stage='GitLab run validation'
     [[ -n "$gitlab_run_dir" ]] || {
       echo 'GitLab class requires a completed run directory from the VM100 native job' >&2
       exit 2
@@ -68,7 +89,9 @@ case "$class" in
     ;;
 esac
 
+stage='Restic upload and remote check'
 snapshot_id=$(bash "$backup_scripts/upload-restic.sh" "$class" "$run_dir" "$run_id")
+stage='Mezon post-check'
 post_check_args=(
   --kind "$class"
   --run-dir "$run_dir"
@@ -80,6 +103,7 @@ if [[ "${BACKUP_DRY_RUN:-false}" == 'true' ]]; then
   post_check_args+=(--dry-run)
 fi
 bash "$backup_scripts/post-check-report.sh" "${post_check_args[@]}"
+stage='success marker'
 status_tmp=$(mktemp "$status_root/.${class}.success.XXXXXX")
 {
   printf 'status=success\n'
@@ -88,4 +112,5 @@ status_tmp=$(mktemp "$status_root/.${class}.success.XXXXXX")
   printf 'snapshot_id=%s\n' "$snapshot_id"
 } > "$status_tmp"
 mv -f "$status_tmp" "$status_root/$class.success"
+backup_succeeded=true
 printf '%s\n' "$snapshot_id"

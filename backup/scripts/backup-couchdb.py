@@ -23,7 +23,13 @@ MAX_PAGE_BYTES = 128 * 1024 * 1024
 def curl_db(container: str, database: str, suffix: str) -> bytes:
     validate_name(database, "database")
     url = f"http://127.0.0.1:5984/{database}{suffix}"
-    script = f"curl -fsS -u \"$COUCHDB_USER:$COUCHDB_PASSWORD\" {shlex.quote(url)}"
+    # Bound each page request and retry transient CouchDB/network failures.
+    # Without a max time, one stalled page can hold the whole backup forever.
+    curl_options = (
+        "--connect-timeout 15 --max-time 900 --retry 5 --retry-delay 5 "
+        "--retry-max-time 900 --retry-connrefused"
+    )
+    script = f"curl -fsS {curl_options} -u \"$COUCHDB_USER:$COUCHDB_PASSWORD\" {shlex.quote(url)}"
     return docker_exec(container, ["sh", "-c", script])
 
 

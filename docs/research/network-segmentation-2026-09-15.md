@@ -45,17 +45,19 @@ isolation. The Orange Pi file provider targets `tasks.<service>` on
 | GitLab -> Pi5 PostgreSQL/Redis | `homelab-net`, direct `postgres:5432/gitlabhq_production`, `redis-prod:6379/2` | VM100-constrained service and secret-mounted temporary probes passed `SELECT 1`/`PONG`; GitLab internal login 200 and `gitlab:check` Gitaly/Shell/Sidekiq/migrations OK; public HTTPS is temporarily VPS-routed |
 | VPS Git SSH -> VM100 GitLab | Isolated Rathole server VPS `7001`/`2222` -> portless VM100 Swarm `gitlab-ssh-tunnel_client` -> `tasks.gitlab_gitlab:22` on `homelab-net` | Noise control channel established; public SSH host key fingerprint matches GitLab container. VPS server does not join the overlay; client uses static VPS address only for the external tunnel endpoint. |
 | VPS GitLab HTTPS -> VM100 GitLab | VPS Traefik Docker label -> `gitlab-https-rathole-server:8085` on VPS `gateway-network`; VM100 portless `gitlab-https-tunnel_client` -> `tasks.gitlab_gitlab:80` on `homelab-net` | VPS server publishes only control `7002`, never joins `homelab-net`; public HTTPS/login/CSS 200 with valid TLS. Orange Pi direct GitLab route remains 404. The static VPS address in the client secret is an external tunnel exception, not an internal datastore call. |
-| OCR proxy -> Mac native OCR | LAN `10.10.0.6:8787` | VM100 task namespace `/capacity 200`; required outside-Docker exception |
+| OCR proxy -> Mac native OCR | Pi5 edge -> VM100 `tasks.macocr-proxy:8080`; proxy backend -> VPS `103.82.21.202:18087` -> Mac Rathole client -> `host.docker.internal:8787` | Roaming-safe outside-Docker exception; public route keeps proxy API/docs layer |
 | VPS Registry trial -> VM100 GitLab | VPS labels -> private server `:8086`; control `7003`; VM100 client -> `tasks.gitlab_gitlab:5005` | Trial OCI push/pull and local backup verified on 2026-09-16; old Pi5 registry remains production; lab split DNS/edge route blocks native lab pull cutover. |
-| Edge LLM route -> Mac LM Studio | LAN `10.10.0.6:1234` | Active file route; `llm` remains in development, not changed |
+| Edge LLM route -> Mac LM Studio | Pi5 edge -> VPS `103.82.21.202:18123` -> Mac Rathole client -> `host.docker.internal:1234` | Tunnel control channel established; public route reaches LM Studio and returns its expected unauthenticated 401 |
 
 The refreshed running Swarm/VM100 env scan (variable names only, no secret
-values) found no Pi5 DB/Redis IP literals. Mac native OCR in OCR proxy and
-`OPENCLAW_TRUSTED_PROXIES=10.10.0.2,172.30.0.0/16` are intentional. The
-dynamic file's `10.10.0.0/24` entry is
-another allow-list, not an upstream. Running BDS app/tunnel env contained
-no `10.10.0.*` literal. No synthetic user OCR document, MyPocket action,
-or NetBird enrollment was submitted to claim end-to-end flow coverage.
+values) found no Pi5 DB/Redis IP literals. `OPENCLAW_TRUSTED_PROXIES` and the
+dynamic file's `10.10.0.0/24` entry are allow-lists, not upstreams. Running
+BDS app/tunnel env contained no `10.10.0.*` literal. Mac OCR backend access
+was later moved from the proxy's LAN upstream to the Mac Rathole client under
+`/Users/dungxbuif/dev-env/mac-service-tunnel`; the public OCR domain still
+targets VM100 `macocr-proxy`. Mac LLM public routing uses the same tunnel
+client. No synthetic user OCR document, MyPocket action, or NetBird enrollment
+was submitted to claim end-to-end flow coverage.
 
 ## Risk and design recommendation
 
@@ -168,7 +170,7 @@ reported `Down` from the Swarm manager. SSH to `10.10.0.2` returned no route
 or host down, so Orange could not be repaired in place.
 
 To restore public traffic while leaving the Orange node untouched, temporary
-standalone containers were started on VM100:
+standalone containers were first started on VM100:
 
 | Temporary container | Host | Purpose |
 |---|---|---|
@@ -179,15 +181,50 @@ Public smoke through the VM100 fallback returned 200 for homepage, Family
 Tree, MezonHook, n8n healthz, OpenClaw, MyPocket, and GitLab sign-in; GitLab
 Registry trial returned the expected 401 challenge.
 
-This fallback is intentionally temporary. When Orange Pi is reachable again:
+This VM100 fallback is now retired. After Pi5 edge restore, `rathole-temp` and
+`traefik-temp` were removed from VM100.
+
+When Orange Pi is reachable again:
 
 1. Confirm Orange Docker/Swarm is healthy and `edge_traefik` can run `1/1`.
-2. Stop VM100 `rathole-temp` first so the VPS shared tunnel returns to Orange.
-3. Verify public routes through Orange.
-4. Stop VM100 `traefik-temp` and remove `/home/ubuntu/edge-temp*` only after
-   Orange edge has been stable.
+2. Decide explicitly whether Orange Pi should retake edge duty or remain
+   retired.
+3. If Orange should retake edge duty, stop Pi5 `edge-rathole-pi5` first so
+   there is only one shared Rathole client.
+4. Verify public routes before re-enabling any Orange-hosted edge services.
 
 Do not continue app network segmentation while the edge is in fallback mode.
+
+## Pi5 edge restore while Orange Pi is unavailable (2026-09-16)
+
+Orange Pi is currently unreachable, so the shared edge is restored on Pi5:
+
+| Container | Host | Purpose |
+|---|---|---|
+| `edge-traefik-pi5` | Pi5 | Active shared HTTP/HTTPS edge on host `80/443`; uses Traefik file provider and joins `homelab-net`. |
+| `edge-rathole-pi5` | Pi5 | Active shared Rathole client to VPS `rathole-server:7000`. Service names are `traefik-http` and `traefik-https`, replacing the retired Caddy-era names. |
+| `edge-adguardhome-pi5` | Pi5 | Active LAN DNS on host `53/tcp+udp`, UI on `81/tcp`, using the restored Orange edge AdGuard config/data. |
+
+The old Swarm edge services `edge_traefik`, `edge_rathole`, and
+`edge_adguardhome` are scaled to zero. Runtime state lives under
+`/home/dungxbuif/edge`; the former `/home/dungxbuif/edge-temp` directory was
+removed after verification. AdGuard LAN rewrites for `*.dungxbuif.com`,
+`money.dungxbuif.com`, and `netbird.dungxbuif.com` point to Pi5 `10.10.0.5`.
+The AdGuard data files (`stats.db`, `sessions.db`, and `querylog.json`) are
+persisted on Pi5 under `/home/dungxbuif/edge/adguard/work/data`.
+
+### Pi5 edge network tightening
+
+After Pi5 became the active edge, `edge-traefik-pi5` must join
+`edge-http-net` before any HTTP app can safely leave the broad `homelab-net`.
+The intended steady state is:
+
+* `edge-http-net`: Traefik to HTTP backends only.
+* `data-net`: application access to PgBouncer and Redis.
+* app-specific private overlays such as `mypocket-net`, `gitlab-net`, and
+  `netbird-net` for intra-app traffic.
+* `homelab-net`: temporary compatibility network, removed app by app after
+  smoke tests.
 
 ## App-by-app canary attachment while edge fallback is active (2026-09-16)
 
@@ -239,9 +276,11 @@ Observed caveats:
 - GitLab took about a minute to boot Puma/Rails. During that window, tunnel
   clients could not resolve or connect to `tasks.gitlab_gitlab`; this cleared
   after GitLab finished network attachment and app boot.
-- `macocr-proxy` is healthy, but logs show the native Mac OCR endpoint
-  `10.10.0.6:8787` returning connection refused. That is an existing native
-  dependency issue, not caused by the overlay attachment.
+- Mac OCR no longer uses the old LAN upstream directly inside the proxy. The
+  active OCR route is Pi5 edge -> VM100 `macocr-proxy` -> VPS Rathole listener
+  -> Mac `mac-service-tunnel`; public OCR docs and health returned 200. LLM
+  reached LM Studio through the tunnel and returned its expected
+  unauthenticated 401.
 - `homelab-net` removal remains deliberately **not done**. The next cut must
   happen after Orange Pi returns or after a deliberate decision to make VM100
   the permanent edge.

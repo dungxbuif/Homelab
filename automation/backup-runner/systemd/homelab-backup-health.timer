@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily Homelab backup health check
+
+[Timer]
+OnCalendar=*-*-* 06:15:00 Asia/Ho_Chi_Minh
+Persistent=true
+Unit=homelab-backup-health.service
+
+[Install]
+WantedBy=timers.target

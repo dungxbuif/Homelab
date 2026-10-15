@@ -46,3 +46,11 @@ done
 for class in databases rustfs gitlab; do
   bash "$backup_scripts/verify-retention.sh" "$class"
 done
+
+# Only clean local staging after every remote repository has passed its
+# integrity check and prune. Pi5 has no GitLab staging directory, so that class
+# is simply a no-op here; VM100 cleans its GitLab runs after this succeeds.
+cleanup_local=${BACKUP_LOCAL_CLEANUP_SCRIPT:-$backup_scripts/cleanup-local-runs.sh}
+for class in databases rustfs gitlab; do
+  bash "$cleanup_local" "$class"
+done

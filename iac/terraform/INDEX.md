@@ -5,7 +5,11 @@ description: "Aggregated code index for terraform folder"
 timestamp: 2026-07-03T15:11:00Z
 ---
 
-# Code Index: terraform
+# Historical Code Index: terraform
+
+> **HISTORICAL ONLY: DO NOT RUN.** Kubernetes is not present in the current
+> homelab. This Terraform/Kubernetes material is excluded from the active
+> automation inventory and must not be used against VM100.
 
 > This index aggregates code files in the [[terraform/]] directory.
 > Edit the source files directly; this index is auto-generated for Obsidian reading.

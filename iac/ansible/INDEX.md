@@ -5,7 +5,11 @@ description: "Aggregated code index for ansible folder"
 timestamp: 2026-07-03T15:11:00Z
 ---
 
-# Code Index: ansible
+# Historical Code Index: ansible
+
+> **HISTORICAL ONLY: DO NOT RUN.** Kubernetes is not present in the current
+> homelab. This Ansible/Kubernetes material is excluded from the active
+> automation inventory and must not be used against VM100.
 
 > This index aggregates code files in the [[ansible/]] directory.
 > Edit the source files directly; this index is auto-generated for Obsidian reading.

@@ -23,6 +23,20 @@ service's two URL values; do not clear PostgreSQL or Redis data.
 Public docs do not change: this is an internal endpoint migration with no
 new API, domain, or user-facing configuration.
 
+## Runtime secret names
+
+MyPocket production stores S3/RustFS credentials under
+`MYPOCKET_SECRETS` in gitignored `local_vars.json`. Keep both naming
+families populated there:
+
+- Canonical backup/restore names: `S3_ACCESS_KEY_ID`,
+  `S3_SECRET_ACCESS_KEY`.
+- Runtime service names used by the deployed API and worker:
+  `S3_ACCESS_KEY`, `S3_SECRET_KEY`.
+
+Both alias pairs point to the same bucket-scoped RustFS credential. Do not
+print the values in docs, shell history, or deployment logs.
+
 ## Executed result
 
 Both old task namespaces authenticated to `pgbouncer:6432` (`SELECT 1`)

@@ -1,20 +1,24 @@
 ---
 type: Dashboard
 title: "Homelab Core Documentation Index"
-description: "Centralized table of contents for Homelab core files, workloads, and services (v3.3 — Pi5 edge and Mac service tunnel)"
-timestamp: 2026-09-16T00:00:00+07:00
+description: "Centralized table of contents for Homelab core files, workloads, and services (v3.4 — Pi5 edge, VM100 production worker, and Mac service tunnel)"
+timestamp: 2026-10-13T00:00:00+07:00
 ---
 
-# Homelab Core Infrastructure (v3.3)
+# Homelab Core Infrastructure (v3.4)
 
+* [Runtime Inventory and Deployment Reconciliation](./deployments/runtime-inventory-2026-10-13.md) — authoritative 2026-10-13 host, service, image-version, network, backup, and Semaphore snapshot; use this when older deployment notes disagree with runtime.
 * [Current Stack Catalog](./STACK.md) - current workloads, tunnel exceptions, DB endpoints, backup boundaries, and proposed work; Markdown for people and agents.
 * [Documentation Audit](./research/docs-stack-audit-2026-09-16.md) - corrected drift and runtime verification coverage.
 * [System Context & Playbook](./MAIN.md) — current VPS `gateway-traefik` -> Rathole -> Pi5 `edge-traefik-pi5` topology, Pi5 split DNS, service-export playbook, and bug registry.
 * [Raspberry Pi 5 Datastore Spec](./PI.md) — Pi5 **active edge + manager/datastore node**: Traefik/Rathole/AdGuard, Postgres+PgBouncer, Redis-prod, RustFS, Registry, LibreSpeed, pgAdmin, and CouchDB.
 * [VM100 Production Compute](./VM100.md) — production apps including MyPocket, n8n, OpenClaw, NetBird, RelayHub bootstrap and GitLab; portless Swarm plus isolated BDS Compose connector.
-* [Mac Mini Runtime Dependencies](./MAC.md) — native OCR and LM Studio exposed through the Mac Rathole service tunnel; MyPocket dev checkout unmoved, production runtime on VM100; NetBird private admin access proposed.
+* [Mac Mini Runtime Dependencies](./MAC.md) — native OCR connects outbound over WSS; only LM Studio remains on the Mac Rathole tunnel; includes the installed app and manual artifact locations.
+* [MacOCR Outbound Worker Release](./deployments/macocr-outbound-2026-10-06.md) — production image, Universal app artifacts, admin routes, verification, account cleanup, and rollback boundary.
+* [MyPocket API-only Runtime](./deployments/mypocket-api-only-2026-10-13.md) — production web shutdown, direct API route, service state, verification and rollback.
 * [MikroTik Router Hardening](./MIKROTIK.md) — PPPoE, local DHCP, WireGuard return-path routing, security hardening.
-* [Proxmox Production Hypervisor](./PROXMOX.md) — VM100 production storage/lifecycle; optional practice VMs must be isolated from production and old K8s IaC.
+* [Proxmox Production Hypervisor](./PROXMOX.md) — VM100 production storage/lifecycle; no Kubernetes VM or cluster is active, and any future practice VM must be isolated from production.
+* [VM100 OpenTofu import module](../automation/tofu/proxmox/README.md) — import-only boundary for VM ID 100 with destroy protection and no historical K8s targets.
 * [Proxmox IaC Prerequisites](./PRE_REQUIRE.md) — Proxmox API tokens & SSH keys for Terraform/Ansible (generic; now used for lab VMs).
 * [Network Diagnostic Trace](./CONTEXT.md) — benchmarks, bandwidth, latency, and DNS troubleshooting history.
 * [CouchDB Obsidian Sync](./COUCHDB_OBSIDIAN_SYNC.md) — deployment, client settings, and recovery notes for the vault sync backend.
@@ -24,8 +28,12 @@ timestamp: 2026-09-16T00:00:00+07:00
 * [GitLab Runbook](./services/gitlab.md) - Omnibus components, Pi5 DB/Redis, public SSH and temporary VPS HTTPS; includes agent-readable facts.
 * [GitLab Registry Trial](./deployments/gitlab-registry-trial-2026-09-16.md) - successful OCI smoke and local backup evidence; Pi5 registry still production.
 * [Backup and Restore Runbook](./runbooks/backup-restore.md) - native CLI/API backup rules, post-check verification, Mezon status reporting, Google Drive retention, and restore boundaries.
-* [Backup Control-Plane Plan](./superpowers/plans/2026-10-04-homelab-backup-control-plane.md) - Semaphore UI pilot and target Ansible/backup architecture.
-* [Semaphore Control Plane Pilot](./deployments/semaphore-backup-ui-2026-10-04.md) - private Pi5 UI/provisioner deployment, route, secret boundary, verification, and rollback.
+* [Database Provisioning Runbook](./runbooks/db-provisioning.md) - validated database/user creation contract, secret boundary, and staging workflow.
+* [Backup Runner](../automation/backup-runner/README.md) - serial export/upload/post-check flow, retention lock, and schedule contract.
+* [Backup Control-Plane Plan](./superpowers/plans/2026-10-04-homelab-backup-control-plane.md) - historical design record for the now-active Ansible/backup architecture.
+* [Homelab Automation Control Plane Plan](./superpowers/plans/2026-10-13-homelab-automation-control-plane.md) - staged plan for Semaphore, Ansible, OpenTofu, private execution, route generation, app deployment, drift audit, and removal of direct agent-to-host operations.
+* [Semaphore Control Plane](./deployments/semaphore-backup-ui-2026-10-04.md) - private Pi5 UI/provisioner deployment, route, secret boundary, verification, and rollback; current metadata recovery is recorded in the runtime inventory.
+* [Semaphore History and Metadata Recovery](./deployments/semaphore-recovery-2026-10-13.md) - restored task history, operator-facing fields, and current provisioning contract.
 * [Network Segmentation Proposal](./research/network-segmentation-2026-09-15.md) - broad shared overlay is deployed; narrower networks are not.
 * [Resource Limit Audit](./research/resource-limit-audit-2026-09-15.md) - dated measurements and limits, not blanket approval to resize services.
 

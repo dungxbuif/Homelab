@@ -4,8 +4,9 @@ This directory contains the backup policy, engine-specific automation, and
 post-check notification contract. Local and remote restore rehearsals are
 verified; the current evidence is recorded in
 [`docs/deployments/backup-restore-rehearsal-2026-10-05.md`](../docs/deployments/backup-restore-rehearsal-2026-10-05.md).
-The private Semaphore UI and internal provisioner are still a pilot and
-production schedules remain disabled. Semaphore is the operator surface; it
+The private Semaphore UI and internal provisioner are still a pilot. The
+production backup timers are enabled on VM100, with the first end-to-end
+scheduled window pending. Semaphore is the operator surface; it
 does not receive Docker credentials or execute arbitrary shell commands. The
 provisioner is the narrow internal boundary that owns Docker API access. The
 implementation plan is [here](../docs/superpowers/plans/2026-10-04-homelab-backup-control-plane.md).
@@ -98,10 +99,22 @@ For local validation without sending a message, add `--dry-run`.
 - Pi5 staging path: `/ssd-data/infra/backups/homelab`.
 - VM100 is the target for the durable runner and control metadata; the current
   Semaphore/provisioner pair is a private provisioning pilot on Pi5.
-- Restic repositories are isolated at `homelab-backups/databases`,
-  `homelab-backups/rustfs`, and `homelab-backups/gitlab`.
+- Restic repositories are isolated below the existing `homelab-backups/`
+  child of the pinned Google Drive folder: the runtime uses
+  `DRIVE_ROOT=homelab-backups` and the effective paths are
+  `homelab-backups/databases`, `homelab-backups/rustfs`, and
+  `homelab-backups/gitlab` on `homelab1`.
 - `restic-lib.sh` uses a writable per-process copy of `rclone.conf`, so OAuth
-  refreshes do not modify the source config or fail on a read-only mount.
+  refreshes do not modify the source config or fail on a read-only mount. The
+  runner refuses to implicitly initialize a repository after a failed
+  preflight; `RESTIC_ALLOW_INIT=true` is required for a controlled first setup.
+  The Drive transport defaults to 64 MiB chunks, one initial request per
+  pacing window, and bounded retries to avoid turning Google Drive rate limits
+  into an unbounded or silent backup failure.
+- The production Drive OAuth client belongs to Google Cloud project
+  `homelab-backup-488616`. Runtime configs on Pi5 and VM100 retain the pinned
+  `Homelab Backup` folder and the existing `homelab-backups/` repositories;
+  client secrets and tokens remain host-local and are never committed.
 - No production service is stopped by the online backup wrappers.
 
 ## Status contract

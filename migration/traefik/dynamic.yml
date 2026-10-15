@@ -34,6 +34,11 @@ http:
           - main: "*.dungxbuif.com"
             sans:
               - dungxbuif.com
+    stirling-pdf:
+      rule: Host(`stirling.dungxbuif.com`)
+      entryPoints: [websecure]
+      service: stirling-pdf
+      tls: *wildcard-tls
     cdn:
       rule: Host(`cdn.dungxbuif.com`)
       entryPoints: [websecure]
@@ -105,6 +110,11 @@ http:
       entryPoints: [websecure]
       service: gitlab
       tls: *wildcard-tls
+    gitlab-registry:
+      rule: Host(`registry-gitlab.dungxbuif.com`)
+      entryPoints: [websecure]
+      service: gitlab-registry
+      tls: *wildcard-tls
     relayhub:
       rule: Host(`relayhub.dungxbuif.com`)
       entryPoints: [websecure]
@@ -135,6 +145,11 @@ http:
         passHostHeader: true
         servers:
           - url: http://tasks.homepage:80
+    stirling-pdf:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: http://tasks.stirling-pdf:8080
     cdn:
       loadBalancer:
         servers:
@@ -172,7 +187,7 @@ http:
       loadBalancer:
         passHostHeader: true
         servers:
-          - url: http://tasks.mypocket-web:80
+          - url: http://tasks.mypocket-api:8080
     mezonhook:
       loadBalancer:
         passHostHeader: true
@@ -198,11 +213,16 @@ http:
         passHostHeader: true
         servers:
           - url: http://tasks.gitlab_gitlab:80
+    gitlab-registry:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: http://tasks.gitlab_gitlab:5005
     relayhub:
       loadBalancer:
         passHostHeader: true
         servers:
-          - url: http://tasks.relayhub:8080
+          - url: http://relayhub-api:8080
     netbird-server:
       loadBalancer:
         passHostHeader: true

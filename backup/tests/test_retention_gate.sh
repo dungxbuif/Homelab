@@ -16,6 +16,11 @@ cat > "$tmp/app/backup/scripts/verify-retention.sh" <<'EOF'
 printf '%s\n' "$1" >> "${RETENTION_CALL_LOG:?}"
 EOF
 chmod 0755 "$tmp/app/backup/scripts/verify-retention.sh"
+cat > "$tmp/app/backup/scripts/cleanup-local-runs.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$1" >> "${CLEANUP_CALL_LOG:?}"
+EOF
+chmod 0755 "$tmp/app/backup/scripts/cleanup-local-runs.sh"
 
 common_env=(
   BACKUP_APP_ROOT="$tmp/app"
@@ -28,6 +33,7 @@ common_env=(
   BACKUP_LOCK_FILE="$tmp/lock"
   PATH="$tmp/bin:$PATH"
   RETENTION_CALL_LOG="$tmp/calls"
+  CLEANUP_CALL_LOG="$tmp/cleanup-calls"
 )
 touch "$tmp/password" "$tmp/rclone.conf" "$tmp/rclone"
 
@@ -43,5 +49,6 @@ for class in databases rustfs gitlab; do
 done
 env "${common_env[@]}" bash "$root/../automation/backup-runner/run-retention.sh"
 test "$(sort "$tmp/calls")" = $'databases\ngitlab\nrustfs'
+test "$(sort "$tmp/cleanup-calls")" = $'databases\ngitlab\nrustfs'
 
 echo 'retention gate tests passed'

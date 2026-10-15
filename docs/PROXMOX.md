@@ -14,7 +14,7 @@ ephemeral. Current VM100 service/storage details are in [VM100.md](./VM100.md).
 | Guest persistent state | GitLab config/data/repositories/Registry trial, app bind mounts and runtime volumes |
 | Database placement | Pi5; never infer GitLab DB is on Proxmox from its application placement |
 | Retired VMs | `101/102` removed per migration record; no hypervisor-side confirmation in this audit |
-| Retired cluster | HA K8s, kube-vip, Longhorn and old workload topology; see archive |
+| Historical design | HA K8s, kube-vip, Longhorn and old workload topology; no such cluster or VM is active |
 
 Guest disk increased from 80 to 200 GiB on 2026-09-15. After restart,
 `discard=on` and guest `fstrim` returned thin-pool capacity in the recorded
@@ -24,8 +24,9 @@ status and `lvs` before another resize or allocation cleanup.
 
 ## Operations and Recovery
 
-- Protect VM100 from generic lab teardown and old Terraform state. Old
-  K8s state can still reference VM IDs now reused for production.
+- Protect VM100 from generic lab teardown and old Terraform state. Historical
+  K8s state can still reference VM IDs now reused for production and must never
+  be loaded by the active automation inventory.
 - Back up IaC state before reconciliation; do not run a generic
   `terraform destroy` against the historical workspace.
 - GitLab data lives on VM100 but its PostgreSQL DB is on Pi5. A VM snapshot
@@ -37,11 +38,26 @@ status and `lvs` before another resize or allocation cleanup.
 - [PRE_REQUIRE.md](./PRE_REQUIRE.md) covers generic API/SSH prerequisites;
   it does not authorize recreating the retired cluster.
 
+## Active OpenTofu Boundary
+
+The active module is
+[`automation/tofu/proxmox/`](../automation/tofu/proxmox/). It models only the
+existing VM ID `100` and uses an explicit import block. The module has
+`prevent_destroy = true`; it does not contain VM IDs `101`/`102`, Kubernetes
+nodes, kube-vip, or a cluster target. The first Semaphore plan must be
+import-only or a reviewed zero-destroy delta before any sizing change.
+
+The current import backend is a private local state path on the controlled
+runner. A RustFS state backend is a later change and requires bucket
+versioning, credentials, locking, and restore verification first. Proxmox API
+tokens are supplied by Semaphore variables and never stored in Git.
+
 ## Optional Practice Lab
 
-AWS/LocalStack/k3s experiments remain an optional separate use case. Use
-dedicated VM IDs, tags and isolated IaC state; do not share VM100's production
-lifecycle. No such practice VM inventory was verified in this audit.
+No Kubernetes or other practice VM is part of the current lab inventory. A
+future practice VM requires an explicit request, a dedicated VM ID, isolated
+OpenTofu state, and a separate automation inventory; it must not share VM100's
+production lifecycle.
 
 ## Historical Context
 

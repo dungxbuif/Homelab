@@ -1,4 +1,10 @@
-# Proxmox Kubernetes IaC Runbook
+# Historical Kubernetes IaC Runbook
+
+> **HISTORICAL ONLY: DO NOT RUN.** Kubernetes is not present in the current
+> homelab. This directory documents a retired design and is excluded from the
+> active automation inventory. It must not be used to create VMs, install
+> kubeadm/kube-vip, or modify VM100. The active automation plan is documented
+> in [`../docs/superpowers/plans/2026-10-13-homelab-automation-control-plane.md`](../docs/superpowers/plans/2026-10-13-homelab-automation-control-plane.md).
 
 This directory is the automation entrypoint for building a demo Kubernetes HA control-plane on Proxmox.
 

@@ -2,12 +2,14 @@
 type: Reference
 title: "Raspberry Pi 5 Datastore Specification"
 description: "Technical specification of the Pi5 manager/datastore node: PostgreSQL, Redis, object storage, and persistent services"
-timestamp: 2026-09-10T00:00:00Z
+timestamp: 2026-10-13T00:00:00+07:00
 ---
 
 # System Specification & Architectural Design: Pi5 Datastore Infrastructure
 
-> **Host Device:** Raspberry Pi 5 (ARM64 Architecture - Broadcom BCM2712) **Host Static LAN IP:** `<PI_IP>` (Local LAN Network) **Target Audience:** AI Coding & DevOps Agents **Root Directory:** `/ssd-data` (High-speed External SSD mounted on Raspberry Pi 5) **Role:** Docker Swarm manager and datastore/persistent-services host. Pi5 does not run the edge proxy.
+> **Host Device:** Raspberry Pi 5 (ARM64 Architecture - Broadcom BCM2712) **Host Static LAN IP:** `10.10.0.5` **Target Audience:** AI Coding & DevOps Agents **Root Directory:** `/ssd-data` (High-speed External SSD mounted on Raspberry Pi 5) **Role:** Docker Swarm manager, active Traefik/Rathole/AdGuard edge, datastore, and persistent-services host.
+
+> **Current runtime source:** [Runtime Inventory and Deployment Reconciliation](./deployments/runtime-inventory-2026-10-13.md). This file contains the Pi5 architecture and runbook; the linked audit contains current image IDs, replica state, and backup markers.
 
 This workspace houses the complete configuration, provisioning scripts, security policies, and orchestration definitions for the **Home Gateway Infrastructure** running as a self-hosted single-board server on a **Raspberry Pi 5**. The entire infrastructure state is stored on a high-speed external SSD mounted at `/ssd-data`.
 
@@ -40,11 +42,12 @@ This workspace houses the complete configuration, provisioning scripts, security
 
 ## 📐 System Architecture & Service Connections
 
-Pi5 supplies datastore and HTTP backend services to the Orange Pi over the
-attachable `homelab-net` Swarm overlay. The only current public path is VPS
-`gateway-traefik` -> Rathole -> Orange Pi `edge_traefik`. Orange Pi
-`edge_adguardhome` resolves active split-horizon names to `10.10.0.2` on the
-LAN. Pi5 neither terminates TLS nor runs an ingress proxy.
+Pi5 supplies datastore and HTTP backend services to VM100 over the attachable
+`homelab-net` Swarm overlay and is also the active home edge. The normal public
+path is VPS `gateway-traefik` -> shared Rathole -> Pi5 standalone
+`edge-traefik-pi5`. Pi5 `edge-adguardhome-pi5` resolves active split-horizon
+names to the Pi5 edge on the LAN. The old Orange Pi edge is down and the old
+Swarm edge services are scaled to zero.
 
 ---
 
@@ -60,7 +63,9 @@ private overlay endpoint `pgbouncer:6432`; GitLab alone uses direct
 `postgres:5432` because the current pooler is session-mode. The LAN mapping remains for clients
 that have not migrated.
 Redis-prod remains the other documented LAN datastore endpoint on `:16379`.
-The 2026-09-15 audit also found RelayHub development API `:8080` and
+RelayHub application compute was moved to VM100; the old Pi5 RelayHub
+API/worker/NATS containers are stopped and only the RelayHub PostgreSQL
+container remains healthy for datastore duty. The 2026-09-15 audit also found
 monitoring `alertmanager:9093`/`victoriametrics:8428` host binds; confirm
 their consumers before closing or changing them. See the
 [network audit](./research/network-segmentation-2026-09-15.md) and
@@ -73,7 +78,7 @@ their consumers before closing or changing them. See the
 
 ### 2. Edge Routing Boundary
 
-TLS and route ownership live on Orange Pi Traefik, not Pi5. The canonical
+TLS and route ownership live on the Pi5 standalone Traefik. The canonical
 router and service definitions are in [`../migration/traefik/dynamic.yml`](../migration/traefik/dynamic.yml).
 Pi5-backed routes currently include:
 
@@ -88,8 +93,10 @@ Pi5-backed routes currently include:
 n8n is no longer a Pi5-hosted edge route; it now runs on VM100 and uses Pi5
 PostgreSQL database `n8n` through the private `pgbouncer:6432` overlay
 endpoint (changed from the equivalent LAN PgBouncer mapping on 2026-09-15).
+RelayHub is likewise no longer a Pi5-hosted app; VM100 runs API/worker/NATS/Redis,
+while Pi5 keeps only PostgreSQL database `relayhub`.
 GitLab runs on VM100 and its public HTTPS/SSH routes are live through isolated
-VPS tunnels while the Orange Pi GitLab web route remains staged; Grafana
+VPS tunnels; no Orange Pi GitLab route is active. Grafana
 remains retired. See [GitLab service runbook](./services/gitlab.md) for the
 temporary route and rollback.
 PostgreSQL is not an edge route and must not be added to the Traefik dynamic
@@ -107,10 +114,10 @@ listed in the [resource audit](./research/resource-limit-audit-2026-09-15.md).
 
 |Service|Container Name|Docker Image & Version|Port Mapping (Host / Container)|Subdomain Routing / Ingress Target|Core Purpose & Technical Parameters|
 |---|---|---|---|---|---|
-|**RustFS Storage**|`rustfs`|`rustfs/rustfs:1.0.0-beta.3`|**Portless** on `proxy_net` and `homelab-net`|`storage.dungxbuif.com` (S3 API) <br>`cdn.dungxbuif.com` (Console)|ARM64 S3 storage; ports 9000/9001 internal.|
+|**RustFS Storage**|`rustfs`|`rustfs/rustfs:1.0.0-rc.1`|**Portless** on `proxy_net` and `homelab-net`|`storage.dungxbuif.com` (S3 API) <br>`cdn.dungxbuif.com` (Console)|ARM64 S3 storage; ports 9000/9001 internal.|
 |**Private Registry**|`docker-registry`|`registry:2`|**Portless** on `proxy_net` and `homelab-net`|`registry.dungxbuif.com`|Docker image registry on Pi5 SSD.|
 |**Librespeed**|`librespeed`|`lscr.io/linuxserver/librespeed`|**Portless** on `proxy_net` and `homelab-net`|`speed.dungxbuif.com`|LAN/WAN speedtest backend.|
-|**Centralized PostgreSQL**|`postgres`|`postgres:16`|**Portless** on `proxy_net` and `homelab-net`; PgBouncer maps LAN `:5432` to pooler `:6432`|Direct container DNS `postgres:5432` only for approved clients such as GitLab; LAN `10.10.0.5:5432` is PgBouncer, not raw PostgreSQL; no edge route|Pinned backend DB serving Pi5 apps and approved VM100 services.|
+|**Centralized PostgreSQL**|`postgres`|`pgvector/pgvector:pg16`|**Portless** on `proxy_net` and `homelab-net`; PgBouncer maps LAN `:5432` to pooler `:6432`|Direct container DNS `postgres:5432` only for approved clients such as GitLab; LAN `10.10.0.5:5432` is PgBouncer, not raw PostgreSQL; no edge route|Pinned backend DB serving Pi5 apps and approved VM100 services.|
 |**pgAdmin 4**|`pgadmin`|`dpage/pgadmin4:latest`|**Portless** on `proxy_net` and `homelab-net`|`pgadmin.dungxbuif.com`|PostgreSQL administration UI.|
 |**CouchDB**|`couchdb`|`couchdb:3.3.3`|**Portless** on `proxy_net` and `homelab-net`|`couchdb.dungxbuif.com` <br>`sync-db.dungxbuif.com`|Obsidian sync and document databases.|
 
@@ -121,7 +128,7 @@ does not replace this container or its Pi5 SSD storage; native lab
 Docker/Swarm pulls are not yet verified for the trial domain. See
 [GitLab Registry trial](./deployments/gitlab-registry-trial-2026-09-16.md).
 Public `dungxbuif.com` is served by VM100 Swarm `tasks.homepage:80` through
-Orange Pi Traefik; the old VM100 Compose `:18081` path is stopped rollback.
+the active Pi5 Traefik; the old VM100 Compose `:18081` path is stopped rollback.
 
 ---
 
@@ -174,15 +181,29 @@ The previous documentation claimed the following automated strategy:
     *   **PostgreSQL:** Automated daily `.sql` dumps prior to compression to ensure complete database transactional integrity.
     *   **Ingress & Application Data:** Backs up all critical configuration and persistent asset folders inside `/ssd-data/infra` (excluding temporary caches, runtime log files, and netdata profiles).
     *   **Frequency:** Every day at 01:00 AM local time.
-    *   **Retention Policy:** Retains backups locally for 7 days (stored under `/tmp/backups`) and remotely on Google Drive for 30 days (stored under `server-backups` directory).
+*   **Retention Policy:** Retains backups locally for 7 days (stored under `/tmp/backups`) and remotely on Google Drive for 30 days (stored under `server-backups` directory).
+
+### Current backup implementation (2026-10-13)
+
+The whole-directory upload description above is historical and is not the
+current recovery contract. The active implementation keeps Pi5 as the online
+datastore/RustFS host and exports PostgreSQL/CouchDB logically, RustFS through
+S3, and GitLab through its native VM100 workflow. A complete local database
+run and isolated restore rehearsal are recorded in
+[the 2026-10-05 evidence note](./deployments/backup-restore-rehearsal-2026-10-05.md).
+VM100 systemd timers now own the schedule and Pi5 remains the online
+datastore/object executor. The latest database, RustFS, and GitLab success
+markers plus remote snapshot IDs are in the [runtime inventory](./deployments/runtime-inventory-2026-10-13.md).
+Redis and NATS remain excluded. The health oneshot still has an ordering/start-time
+parse warning and is not yet a clean health-gate pass.
 
 ---
 
 ## 🪵 Key Troubleshooting Registry & Decisions
 
-1. **Historical AdGuard placement (2026-06-23):** Pi5 once hosted AdGuard Home.
-   DNS now runs as `edge_adguardhome` on Orange Pi `10.10.0.2`; the old Pi5
-   port-53 procedure is not a current runbook.
+1. **Current AdGuard placement (2026-10-13):** DNS runs as the standalone
+   `edge-adguardhome-pi5` container on Pi5 `10.10.0.5`. The old Orange Pi
+   `edge_adguardhome` service is `0/0` and must not be restored implicitly.
 
 ---
 
