@@ -63,7 +63,7 @@
           - automation/scripts/notify-homepage-release.py
           - --task-id
           - '{{ semaphore_vars.task_details.id }}'
-        chdir: '{{ playbook_dir }}/../..'
+        chdir: '{{ playbook_dir }}/../../..'
         stdin: '{{ homepage_release_report | to_json }}'
         stdin_add_newline: true
       delegate_to: localhost

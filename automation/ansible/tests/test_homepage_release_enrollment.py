@@ -51,6 +51,7 @@ class EnrollmentTests(unittest.TestCase):
         command = notify['ansible.builtin.command']
         self.assertEqual(command['argv'][:3], ['python3', 'automation/scripts/notify-homepage-release.py', '--task-id'])
         self.assertEqual(command['argv'][3], '{{ semaphore_vars.task_details.id }}')
+        self.assertEqual(command['chdir'], '{{ playbook_dir }}/../../..')
         self.assertEqual(command['stdin'], '{{ homepage_release_report | to_json }}')
         self.assertEqual(notify['delegate_to'], 'localhost')
         self.assertEqual(notify['connection'], 'local')
