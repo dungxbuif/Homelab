@@ -52,17 +52,20 @@ services:
     networks: [vps-private]
     public_ports: [443, 3478]
   - id: edge-traefik
+    runtime_container: edge-traefik-pi5
     host: pi5
     class: edge
     lifecycle: active
     networks: [homelab-net, edge-http-net, homelab-control-net]
     public_ports: [80, 443]
   - id: edge-rathole
+    runtime_container: edge-rathole-pi5
     host: pi5
     class: edge_tunnel_client
     lifecycle: active
     networks: [host]
   - id: adguardhome
+    runtime_container: edge-adguardhome-pi5
     host: pi5
     class: dns
     lifecycle: active
@@ -103,16 +106,19 @@ services:
     lifecycle: active
     networks: [homelab-net, edge-http-net, proxy_net]
   - id: semaphore
+    runtime_service: semaphore_semaphore
     host: pi5
     class: control_plane
     lifecycle: active
     networks: [homelab-control-net]
   - id: semaphore-executor
+    runtime_service: semaphore-executor_runner
     host: vm100
     class: control_plane
     lifecycle: active
     networks: [homelab-control-net]
   - id: provisioner
+    runtime_service: homelab-provisioner_provisioner
     host: pi5
     class: control_plane
     lifecycle: active
@@ -123,11 +129,13 @@ services:
     lifecycle: active
     networks: [edge-http-net]
   - id: relayhub
+    runtime_container: relayhub-api
     host: vm100
     class: application
     lifecycle: active
     networks: [relayhub-net, homelab-net]
   - id: gitlab
+    runtime_service: gitlab_gitlab
     host: vm100
     class: application
     lifecycle: active
