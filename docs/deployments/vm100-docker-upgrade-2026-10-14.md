@@ -1,9 +1,11 @@
 # VM100 controlled Docker upgrade
 
-User approved Docker upgrade and a controlled restart on 2026-10-14.
-Current Ubuntu Jammy docker.io is 29.1.3, with containerd 2.2.1 and runc 1.3.4.
-Pi is Docker CE 28.4.0. Encrypted overlay SPI incompatibility is confirmed in
-the control-network deployment note. Fix requires Docker >=29.2.1.
+User approved Docker upgrade and a controlled restart on 2026-10-14. The
+pre-upgrade Ubuntu Jammy baseline was docker.io 29.1.3, with containerd 2.2.1
+and runc 1.3.4. The live post-upgrade VM100 engine is Docker CE 29.8.2 with
+containerd 2.2.6, runc 1.3.4, and Compose 5.6.0. Pi remains on Docker CE
+28.4.0. Encrypted overlay SPI incompatibility was confirmed in the
+control-network deployment note; the upgrade passed its live post-check.
 
 ## Plan and gates
 
