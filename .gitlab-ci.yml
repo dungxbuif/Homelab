@@ -20,6 +20,9 @@ variables:
   services:
     - name: docker:27.5.1-dind-rootless
       alias: docker
+  variables:
+    DOCKER_CERT_PATH: '$DOCKER_TLS_CERTDIR/client'
+    DOCKER_TLS_VERIFY: '1'
   before_script:
     - docker info
 
@@ -109,6 +112,9 @@ validate:experimental-ee:
   services:
     - name: docker:27.5.1-dind-rootless
       alias: docker
+  variables:
+    DOCKER_CERT_PATH: '$DOCKER_TLS_CERTDIR/client'
+    DOCKER_TLS_VERIFY: '1'
   before_script:
     - docker info
   rules:

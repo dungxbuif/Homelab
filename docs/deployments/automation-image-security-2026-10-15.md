@@ -461,6 +461,17 @@ not the production adoption gate: registry pull credentials, native CI job,
 runner digest enrollment, full job boundary acceptance and reproducible
 source-to-image build are still required.
 
+Experimental pipeline95 pulled the exact digest on VM100 and reached the job
+container. Its first script failed because the custom image does not inherit
+the Docker CLI image entrypoint that exports TLS client variables for the
+rootless DinD service. Declare `DOCKER_CERT_PATH` and `DOCKER_TLS_VERIFY` in the
+experimental job; keep TLS enabled and do not fall back to plaintext port2375.
+
+The runner allow-list now admits this exact experimental digest alongside the
+existing Docker CLI images; it does not admit a wildcard. The Ansible runner
+install playbook restarts only the project runner when its rendered config
+changes, so the allow-list cannot remain stale in the running process.
+
 ## Explicit native runner gate
 
 Add a CI-only experimental job selected by `EXPERIMENTAL_EE_ONLY=true`. It uses
