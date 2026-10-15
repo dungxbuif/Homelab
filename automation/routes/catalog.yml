@@ -118,7 +118,7 @@ routes:
     backend:
       kind: service_dns
       url: http://tasks.mypocket-api:8080
-    health_path: /health
+    health_path: /api/v1/health
     rollback_version: current
   - id: mezonhook
     hostnames: [mezonhook.dungxbuif.com]
@@ -181,7 +181,7 @@ routes:
     backend:
       kind: service_dns
       url: http://relayhub-api:8080
-    health_path: /health
+    health_path: /readyz
     rollback_version: current
   - id: netbird-grpc
     hostnames: [netbird.dungxbuif.com]

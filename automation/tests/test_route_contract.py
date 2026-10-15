@@ -18,6 +18,11 @@ spec.loader.exec_module(render_routes)
 
 
 class RouteContractTest(unittest.TestCase):
+    def test_application_health_paths_match_verified_endpoints(self):
+        routes = {route['id']: route for route in render_routes.load_catalog(CATALOG)['routes']}
+        self.assertEqual(routes['relayhub']['health_path'], '/readyz')
+        self.assertEqual(routes['money']['health_path'], '/api/v1/health')
+
     def test_catalog_renders_without_forbidden_backends(self):
         catalog = render_routes.load_catalog(CATALOG)
         render_routes.validate_catalog(catalog)

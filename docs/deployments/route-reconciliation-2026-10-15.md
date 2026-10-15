@@ -58,3 +58,66 @@ failures and malformed allowlists. The full automation Python suite passes 59
 tests; `verify-routes.sh` validates all 24 rendered routes. Final focused review
 has no remaining blockers. Route publication still requires live topology and
 access-policy acceptance; passing generator tests is not deployment approval.
+
+## Path evidence and next verification contract
+
+Unauthenticated HTTPS probes on 2026-10-15, with certificate validation and
+explicit `--resolve`, from the LAN workstation:
+
+| Endpoint | VPS 103.82.21.202 | Pi LAN 10.10.0.5 |
+| --- | --- | --- |
+| CouchDB | 401 | 401 |
+| pgAdmin | 302 | 302 |
+| Semaphore | TLS verification failed (curl 60) | 200 |
+
+The VPS path reaches CouchDB/pgAdmin authentication; authentication is not a
+network access restriction. This is a LAN-to-public-gateway test, not an
+independent external-source test. Semaphore's TLS failure does not prove that
+its private access boundary works. The CouchDB sync runbook explicitly expects
+public clients, so its desired LAN-only catalog policy needs reconciliation
+with those consumers before any publish. Do not cut off sync implicitly.
+
+Implement a repeatable read-only `probe-route-paths.py`: validate the catalog,
+probe every declared hostname/health path against a selected explicit gateway,
+preserve TLS and SNI, disable curl config/proxies/redirects, send no credentials,
+discard bodies/headers, and output only sanitized JSON status evidence. Network
+errors, TLS failures and unknown HTTP results must remain incomplete, never
+become a successful access-policy verdict. Do not run live probes automatically
+from CI; CI covers request safety, alias coverage and failure classification.
+This is endpoint evidence, not gRPC/WebSocket/authenticated application testing
+or proof that a 403 came from the intended middleware. No public behavior changes.
+
+Full probe of 24 catalog entries (26 hostname/path requests per gateway) found
+incorrect health paths: RelayHub defines `/readyz` in
+`backend/internal/httpapi/router.go`; MyPocket registers `/api/v1/health` through
+`backend/internal/controller/http/router.go` and `routes_auth.go`. Correct those
+catalog paths only after confirming both gateways return 200. Do not change
+application code or redeploy these applications for a monitoring-path error.
+
+Verified both corrected endpoints return HTTPS 200 on both gateway paths;
+catalog paths are now corrected with regression coverage. Other observations
+remain unresolved: LLM returns 502 on both paths (Mac-native development
+exception, not restarted); Stirling returns 200 on LAN but curl 60 through VPS;
+Semaphore and KubeKosh also have curl 60 through VPS, not a verified denial.
+NetBird `/api` returns 404 and its gRPC catalog entry's `/` actually exercises
+the dashboard; neither is evidence of API/gRPC health. RustFS root requests
+return 403 without credentials; authenticated object operations were not tested.
+
+Usage from the pinned execution environment:
+
+```sh
+python automation/scripts/probe-route-paths.py --address 10.10.0.5
+python automation/scripts/probe-route-paths.py --address 103.82.21.202
+```
+
+Use repeated `--route ID` to narrow probes. JSONL is sanitized for a job
+artifact. Exit 0 means all selected requests received an HTTP response with
+valid TLS, including 4xx/5xx; it does NOT mean the services or access policy
+passed. Exit 1 means transport evidence is incomplete; 2 is invalid input.
+Every result explicitly carries `scope=endpoint_transport_only`.
+
+Verification: six probe tests and the endpoint regression passed, with 66 tests
+in the full automation Python suite and 24 rendered routes validated. The
+corrected probe returned 200 for both applications through VPS. Focused review
+found no blockers. No gateway files, services, credentials or public docs were
+changed; this work adds operator evidence and corrects monitoring metadata.
