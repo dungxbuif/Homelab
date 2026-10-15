@@ -31,12 +31,16 @@ class ToolchainSecurityTests(unittest.TestCase):
     def test_patched_binary_versions(self):
         source = (EE / 'Containerfile').read_text()
         self.assertIn('ARG TOFU_VERSION=1.13.1\n', source)
+        self.assertIn('ARG TOFU_COMMIT=233700b795b6d2372f1c56ed57a4abaec9d36475\n', source)
+        self.assertIn('git apply --check /tmp/opentofu-dependencies.patch', source)
+        self.assertIn('CGO_ENABLED=0 GOOS=linux go build -p=2 -mod=readonly', source)
         self.assertIn('ARG DOCKER_CLI_VERSION=29.9.0\n', source)
-        self.assertIn('sha256sum -c -', source)
+        self.assertIn('go mod verify', source)
 
     def test_base_images_have_immutable_pins(self):
         source = (EE / 'Containerfile').read_text()
-        self.assertRegex(source, r'FROM python:3\.13\.16-slim-trixie@sha256:[a-f0-9]{64}\n')
+        self.assertRegex(source, r'FROM golang:1\.27\.2-bookworm@sha256:[a-f0-9]{64} AS tofu-build\n')
+        self.assertRegex(source, r'FROM python:3\.13\.16-alpine3\.24@sha256:[a-f0-9]{64}\n')
         self.assertRegex(source, r'FROM docker:\$\{DOCKER_CLI_VERSION\}-cli@sha256:[a-f0-9]{64} AS docker-cli')
 
     def test_provisioner_cli_patched_and_build_only_pip_removed(self):

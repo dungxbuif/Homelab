@@ -491,6 +491,30 @@ existing Docker CLI images; it does not admit a wildcard. The Ansible runner
 install playbook restarts only the project runner when its rendered config
 changes, so the allow-list cannot remain stale in the running process.
 
+## Production recipe adoption checkpoint
+
+The current Debian-based main recipe is still rejected by the unchanged scan:
+the latest report contains 5 CRITICAL and 74 HIGH findings. A disposable
+Alpine/static OpenTofu candidate has already passed the same scan with zero
+HIGH/CRITICAL findings and passed the native VM100 candidate gate, but its
+OpenTofu binary was supplied from a separately prepared local artifact. That
+is evidence for the base choice, not a reproducible production build.
+
+The main recipe now makes that candidate reproducible: it compiles the patched
+OpenTofu source from the pinned upstream commit with the pinned Go builder,
+verifies the patch and module checksums, then copies the static binary into the
+digest-pinned Alpine image. The local ARM64 build produced
+`OpenTofu v1.13.1-homelab.1`; ShellCheck, Ansible lint on 62 files, and the
+full local suites passed (115 automation, 25 Ansible, 2 Semaphore, 98 backup
+with one opt-in skip, and 15 OpenTofu tests). The unchanged scanner exited 0
+with zero HIGH/CRITICAL findings; report SHA256 is
+`0a16321673649abea3aaa714c7a41363e6938d6aed507ffda1a0b8f0af166a77`.
+
+This is still a local pre-publish result. The normal GitLab pipeline must build
+the same source-to-image recipe, scan both executor images, and pass the
+native runner boundary before the new digest is enrolled. Until then the
+existing executor remains unchanged.
+
 ## Explicit native runner gate
 
 Add a CI-only experimental job selected by `EXPERIMENTAL_EE_ONLY=true`. It uses
