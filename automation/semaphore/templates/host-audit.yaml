@@ -1,6 +1,7 @@
 ---
 name: host-audit
 description: Read-only inventory, resource, Docker, Swarm, network, disk, swap, and SSH audit.
+availability: design_only
 repository: homelab-automation
 revision: main
 execution_image:

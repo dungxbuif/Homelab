@@ -77,6 +77,15 @@ class SemaphoreTemplateContractTest < Minitest::Test
     end
   end
 
+  def test_generic_host_audit_is_design_only_until_dynamic_inventory_is_reconciled
+    template = YAML.load_file(File.join(TEMPLATE_DIR, 'host-audit.yaml'))
+    assert_equal 'design_only', template.fetch('availability')
+    resources = YAML.load_file(File.join(ROOT, 'project-resources.yaml'))
+    resources.fetch('roles').each do |role|
+      refute_includes role.fetch('allowed_templates'), 'host-audit'
+    end
+  end
+
   def test_provisioning_change_summary_matches_http_creation
     play = YAML.load_file(File.join(ROOT, 'playbooks/db-provision.yml')).first
     task = play.fetch('tasks').find { |entry| entry['register'] == 'provision_response' }

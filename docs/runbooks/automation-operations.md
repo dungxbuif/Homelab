@@ -46,6 +46,13 @@ Rootless CI,
 VPS and Mac are not included by those host observers. A failed audit must be
 investigated rather than rerun until a green result conceals missing coverage.
 
+The generic source template `host-audit` is intentionally `design_only`: it
+uses the production transport inventory, while the restricted observer
+playbook requires a per-host dynamic inventory and a forced `host-audit`
+command. The enrolled VM100/Pi5 observer templates created by
+`bootstrap-host-audit.mjs` are the authoritative audit path; do not re-enable
+the generic template without reconciling that inventory and evidence contract.
+
 Backup schedules remain systemd timers on VM100. Adding a DB through template
 1 enrolls it for the next database run; it does not start an immediate upload.
 The guarded retention scheduler is installed. The newly enrolled dedicated

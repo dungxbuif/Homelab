@@ -13,20 +13,17 @@ execution_image:
 roles:
   - name: Viewer
     allowed_templates:
-      - host-audit
       - ansible-check
       - tofu-plan
       - backup-audit
   - name: Task Runner
     allowed_templates:
-      - host-audit
       - ansible-check
       - tofu-plan
       - backup-audit
       - route-publish
   - name: Manager
     allowed_templates:
-      - host-audit
       - ansible-check
       - ansible-apply
       - tofu-plan
