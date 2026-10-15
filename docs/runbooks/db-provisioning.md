@@ -121,7 +121,7 @@ playbook's HTTP operation is skipped in check mode and it has no dedicated
 validation-only API flow. Use the local validator above for request validation;
 normal template execution is the mutating create operation. A successful job
 prints the engine, resource name and changed flag, not the generated password
-or a full connection string. The project currently has six templates and one
+or a full connection string. The project currently has seven templates and one
 owner membership; see the [automation UI guide](automation-operations.md).
 Old task history remains for audit. Fine-grained operator RBAC and a supported
 UI preview are still required before the full control-plane rollout is complete.

@@ -121,15 +121,18 @@ This supplement supersedes dated facts above, not the remaining acceptance gates
 - Homepage installed helper hash matches the scoped registry-auth correction.
   No reinstall was needed; rollback rehearsal still has not been performed.
 - GitLab validation213 exposed an AMD64 provider-lock checksum failure. Native
-  signed platform lock generation adds package hashes without changing provider
-  version or bypassing verification. ARM readonly init/validate passes; exact
-  AMD64 validation job221 is still running at this checkpoint.
-- Standalone Mezon release sender is implemented, with8 focused tests and111
-  passing local automation Python tests. It is NOT wired into live release
-  jobs; secret enrollment and actual notification acceptance remain pending.
-- Latest published source is private branch codex/automation-bootstrap at
-  47619269b. This does not imply main-branch adoption or complete automation.
-  Restore async job j186891193321.3128007 remains live; do not restart.
+  signed platform lock generation added package hashes without changing
+  provider version or bypassing verification; AMD64 validation job221 later
+  passed. The separate OpenTofu import prerequisites remain open.
+- Standalone Mezon release sender is implemented, with focused tests and the
+  Homepage task 56 acceptance of its dedicated secret Variable Group. The
+  notification path is scoped to the Homepage release; it is not a generic
+  notification guarantee for every future template.
+- Subsequent source publication is on the private
+  `codex/relayhub-source-foundation` branch; commits `cab8081` and `7bede70`
+  record the backup-client release acceptance and documentation reconciliation.
+  The earlier restore async job is no longer live: targeted PostgreSQL restore
+  passed, while full remote all-class restore acceptance remains open.
 
 Evidence: [Family repair](../../deployments/family-tree-private-data-2026-10-15.md),
 [network audit](../../deployments/network-membership-audit-2026-10-15.md),
