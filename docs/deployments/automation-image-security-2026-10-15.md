@@ -376,3 +376,37 @@ Recipe preserved under experiments/Containerfile.alpine, with local-only source
 image dependency documented. No runtime image, CI recipe or production service
 changed. These tests do not prove AMD64, runner integration or full upstream
 OpenTofu behavior. Public application docs are unaffected by this internal trial.
+
+## Static OpenTofu follow-up
+
+Upstream v1.13.1 `.goreleaser.yaml` explicitly builds with `CGO_ENABLED=0`.
+Rebuild the existing dependency-patched disposable checkout with that setting,
+the same pinned Go1.27.2 builder and distinguishable homelab version. Preserve
+the earlier glibc binary, write a separate static output, and verify its ELF
+linkage/build metadata before combining it with the Alpine candidate. Require
+toolchain, encrypted-state, signed provider init/validate and unchanged security
+scan evidence. This remains a local experiment, not runner replacement approval.
+
+Static ARM64 build completed successfully. `file` confirms a statically linked
+ELF; Go metadata confirms Go1.27.2, CGO_ENABLED=0, upstream revision
+233700b795b6d2372f1c56ed57a4abaec9d36475 and vcs.modified=true. Binary SHA256:
+`581fb3f55f7351a13e32d72ba211b27f79658e8f1d68de915da22730ead32884`.
+The original glibc output was not overwritten.
+
+Combined local image `homelab-automation-ee:alpine-static-experiment-20261015`
+has ID `sha256:9e85076e9e5d34fa5f68f321b7ccf8360d1bd5e4773fee998f56edfbca118a02`.
+Toolchain smoke passes. All248 Python tests run:247 pass and one opt-in skip,
+including actual state/plan encryption with correct, wrong and missing keys.
+Readonly provider init installs signed bpg/proxmox0.116.0, key0B3405B36193A495;
+actual module validate passes without live Proxmox credentials or state.
+
+Unchanged Trivy scan exits0: zero HIGH/CRITICAL in Alpine, Python, Docker CLI
+and OpenTofu. Report SHA256:
+`8ddc28d6ac0c94dcc3a1b5139b102b19cf513ad958bb8331855a608b1d6fbb16`.
+Report path: `/tmp/homelab-alpine-static.fHkNv7el/security-reports/automation-ee-alpine-static.json`.
+No ignore rules, severity downgrade, metadata stripping or scanner change was
+used. This is point-in-time ARM64 candidate evidence, not a guarantee of absence
+of all vulnerabilities. The base Alpine candidate also passed full Ansible lint
+(62 files), ShellCheck error gate, nine Ruby tests and upload/Restic shell tests.
+AMD64 build, broader upstream tests, portable CI recipe, runner integration and
+operator adoption remain outstanding. Production has not changed.

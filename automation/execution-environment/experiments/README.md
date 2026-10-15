@@ -60,3 +60,24 @@ on seven original OpenTofu HIGH findings, with zero HIGH/CRITICAL in Alpine,
 Python and Docker CLI. The glibc-linked patched binary above is NOT compatible
 with this musl base. Static/musl remediation, AMD64 execution, full CI and runner
 integration remain required; this is not an approved executor replacement.
+
+## Static combination follow-up
+
+Upstream `.goreleaser.yaml` sets CGO_ENABLED=0. Repeating the patched build above
+with `CGO_ENABLED=0` and output `tofu-homelab-static` produces a native static
+ARM64 binary compatible with Alpine, without a glibc compatibility layer.
+Use the same pinned builder and source patch; keep the homelab version suffix.
+In a disposable context, copy that output as `tofu` and build:
+
+```dockerfile
+FROM homelab-automation-ee:alpine-experiment-20261015
+COPY tofu /usr/local/bin/tofu
+LABEL org.homelab.experimental="true"
+```
+
+This combination passes the248 Python test run (247 pass, one skip), native
+signed provider readonly init/validate and the unchanged HIGH/CRITICAL scanner
+(exit0, zero findings in all four targets). Exact binary/image/report hashes
+are in the security record. These local tags and architecture-specific outputs
+are experimental inputs, not immutable published release references. Do not
+deploy them to the AMD64 runner or infer full upstream test coverage.
