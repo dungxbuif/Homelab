@@ -39,6 +39,14 @@ class PayloadVerificationTests(unittest.TestCase):
         self.assertEqual(report['bytes_verified'], 14)
         self.assertEqual(report['scope'], 'database_payload_integrity_only')
 
+    def test_valid_additional_instance_payload(self):
+        self.manifest['kind'] = 'database-instances'
+        self.manifest['run_id'] = 'database-instances-test'
+        self.save()
+        (self.root / 'COMPLETE').write_text('database-instances-test\n')
+        report = self.module.verify(self.root, 'database-instances-test')
+        self.assertEqual(report['run_id'], 'database-instances-test')
+
     def test_corruption_and_missing_file(self):
         self.dump.write_bytes(b'corrupt')
         with self.assertRaises(ValueError): self.verify()

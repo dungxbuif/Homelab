@@ -59,7 +59,7 @@ def verify(root, expected_run):
             os.close(directory)
             directory = child
         manifest = json.loads(read_metadata(directory, 'manifest.json'))
-        require(manifest.get('schema_version') == 1 and manifest.get('kind') == 'databases'
+        require(manifest.get('schema_version') == 1 and manifest.get('kind') in {'databases', 'database-instances'}
                 and manifest.get('status') == 'complete' and manifest.get('run_id') == expected_run)
         require(read_metadata(directory, 'COMPLETE') == expected_run + '\n')
         entries = manifest.get('artifacts')
