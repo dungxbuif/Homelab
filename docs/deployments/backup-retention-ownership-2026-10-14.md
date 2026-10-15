@@ -62,3 +62,47 @@ gates. Do not reset-failed without executing those checks or delete staging by
 hand. Record terminal outcome before claiming retention recovered. Separately,
 implement a bounded prerequisite-aware retry so late GitLab completion does not
 require manual intervention each night; do not simply disable the marker gate.
+
+## Prerequisite-aware retention gate
+
+Before forwarding retention to Pi, inspect the three fixed VM100 backup units
+(databases, GitLab, RustFS). Wait up to six hours only while an actual unit is
+active/activating/deactivating; poll every minute, logging state changes only.
+Missing units, failed terminal results, never-run units, query failures and
+timeout fail closed. A completed successful prerequisite does not replace the
+existing fresh-marker, remote snapshot/integrity and lock checks on Pi.
+Do not retry a destructive retention operation after it fails: the wait occurs
+before the first remote retention request, so archive deletion is never retried
+blindly. Invalidate GitLab's local marker before native export, so an export
+failure cannot leave a previous run looking like current success.
+
+Test running-to-success, actual failure, absent/never-run units, timeout and
+query error without wall-clock waiting. Add a wrapper regression proving failed
+native GitLab export removes the previous marker. Deploy the new gate and
+wrapper atomically after the current retention operation finishes; do not
+restart or overlap the operation already inspecting remote packs.
+
+Review refinement: an idle-state snapshot cannot prevent a timer starting one
+instant later. Install wrapper + gate into a content-addressed immutable release
+directory, verify their hashes, then atomically replace the stable entrypoint
+with a launcher referencing that exact release and the existing app root.
+Known active jobs still defer enrollment; a start racing publication keeps a
+complete old or new generation, never mixed dependencies. Do not stop timers or
+jobs to simulate mutual exclusion. Retain old releases for rollback.
+Remove scheduler writes from the health-only repair playbook; scheduler changes
+must go through the explicitly approved retention deployment workflow.
+
+Verification checkpoint: nine prerequisite tests, two scheduler-generation
+tests and five existing health-reporting tests pass in the automation EE.
+ShellCheck and both deployment playbook lints pass. Fresh review found no
+remaining blocker after the deadline and immutable-generation corrections.
+The final gate also ran read-only on VM100 and reported ready for the three
+completed backup units. An actual check-mode deployment stopped at the active
+retention preflight with changed=0, as intended.
+
+The new scheduler is **not installed yet**. Retention PID 1133089 is still live
+and has progressed to remote pack checking. Continue observing that same unit;
+once terminal, record its result, run check-mode then apply the guarded release
+playbook, verify idempotence, and exercise the installed gate. No timer or job
+was stopped or restarted during development. Public application behavior and
+public docs are unaffected.

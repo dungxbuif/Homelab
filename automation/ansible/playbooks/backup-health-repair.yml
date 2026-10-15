@@ -29,14 +29,6 @@
       loop: [pi-executor.sh, pi-ssh-guard.sh]
       when: inventory_hostname == 'pi5'
 
-    - name: Install VM wrapper with rollback copy
-      ansible.builtin.copy:
-        src: '{{ playbook_dir }}/../../backup-runner/run-vm100-scheduled.sh'
-        dest: '{{ health_app_root }}/automation/backup-runner/run-vm100-scheduled.sh'
-        mode: '0755'
-        backup: true
-      when: inventory_hostname == 'vm100'
-
     - name: Install only the corrected health service
       vars:
         ansible_become: true

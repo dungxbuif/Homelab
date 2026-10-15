@@ -41,6 +41,7 @@ case "$class" in
     run_pi "$class"
     ;;
   gitlab)
+    rm -f "$status_root/gitlab.success"
     run_id="gitlab-$(date -u +%Y%m%d-%H%M%S)"
     run_root="$staging_root/$run_id"
     native_script=${GITLAB_BACKUP_SCRIPT:-$app_root/automation/gitlab-backup/run-gitlab-backup.sh}
@@ -56,6 +57,7 @@ case "$class" in
       bash "$app_root/automation/backup-runner/run-class.sh" gitlab "$run_id" "$complete_dir"
     ;;
   retention)
+    python3 "$script_dir/wait-retention-prerequisites.py"
     marker="$status_root/gitlab.success"
     [[ -f "$marker" ]] || {
       echo 'GitLab success marker is missing before retention' >&2
