@@ -46,6 +46,13 @@ Evidence index:
 - [Locked backup client deployment](../../deployments/backup-client-release-2026-10-15.md)
 - [Exact-snapshot remote recovery acceptance](../../deployments/backup-remote-restore-2026-10-15.md)
 
+Latest image-security evidence: the patched static OpenTofu/Alpine candidate has
+passed local ARM64, local AMD64 emulation, and native VM100 smoke/provider/
+encryption checks, with zero HIGH/CRITICAL in the unchanged scanner. This is
+candidate evidence only; the main Debian Containerfile, CI default image and
+live runner remain unchanged until reproducible CI build, provenance, runner
+enrollment and full boundary acceptance are complete.
+
 Publication checkpoint: implementation commits are on private GitLab branch
 `codex/automation-bootstrap`, not merged to main. Pipeline 72 validators and
 provisioner job 179 succeeded; EE job 178 failed the unchanged vulnerability

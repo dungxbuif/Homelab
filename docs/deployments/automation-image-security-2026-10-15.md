@@ -439,3 +439,24 @@ Report: `/tmp/homelab-alpine-amd64.IQ0ggfSp/security-reports/automation-ee-alpin
 Recipe retained as experiments/Containerfile.alpine-static. No main CI recipe
 or production runner changed. Native CI, complete runner boundary checks,
 broader upstream tests and provenance-enforcing build remain acceptance gates.
+
+## Native VM100 candidate check
+
+The AMD64 candidate was pushed only under the immutable experimental registry
+tag `alpine-static-amd64-experiment-20261015`, digest
+`sha256:835cce544bde8fba8a381929d2e59dd8a95019c83c83f7ebb84e090cdd76c0a6`.
+VM100 could not pull it through its rootful daemon because that daemon has no
+registry credential; no credential was copied to the host. For the controlled
+read-only check, the exact image archive was transferred to a mode-0600 `/tmp`
+file, loaded, and tagged locally. The archive, local image, and all temporary
+module/test directories were removed after verification; the registry artifact
+remains for traceability.
+
+On native VM100, toolchain smoke passed, and OpenTofu initialized the Proxmox
+module with signed `bpg/proxmox` 0.116.0 (key `0B3405B36193A495`) and validated
+the configuration. The one-test encryption suite passed with correct, wrong and
+missing passphrases. No live Proxmox API, state backend, Docker socket or
+production mount was used. This closes candidate host-architecture evidence,
+not the production adoption gate: registry pull credentials, native CI job,
+runner digest enrollment, full job boundary acceptance and reproducible
+source-to-image build are still required.
