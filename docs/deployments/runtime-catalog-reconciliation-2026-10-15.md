@@ -264,6 +264,35 @@ restarted and no production inventory entry was added. Preserve this candidate
 until the active retention operation ends; do not repeatedly retry activation.
 This is successful staging and lock-safety verification, not completed rollout.
 
+After retention completed on October 15 at 02:26 UTC, enrollment reached code
+publication but catalog registration failed: `.inventory.yaml.lock` is root:root
+0600, while the catalog and backup account are UID/GID 1004. A direct read/write
+open as that account reproduces PermissionError. New code links point to
+`postgres-instances-0a7c3cy0`; no new coverage can be claimed yet. Preserve its
+rollback metadata. Repair only the existing regular catalog lock ownership to
+1004:1004, retaining mode 0600 and its inode; root provisioner writers retain
+access. Never delete/recreate the lock, which could split mutual exclusion.
+Add an activation preflight that opens the catalog lock before publishing code,
+and regress inaccessible-lock nonmutation. Verify ownership and registration
+before requesting a fresh native/remote database backup.
+
+Repair execution: the first chown attempt did not escalate because the inventory
+sets `ansible_become=false`, which overrides the task keyword. Explicit task-local
+connection variables now enable root only for that exact file operation. Repair
+then changed one task and verified UID/GID 1004, mode 0600, same device/inode.
+No lock deletion, container restart or DB mutation was performed. A second
+enrollment attempted before this repair failed at the new preflight without
+republishing code; its candidate remains available for diagnosis.
+
+Successful enrollment activated `postgres-instances-laoz924s` and added only
+`relayhub-dedicated`, containing databases `relayhub` and `postgres`. Repeating
+the catalog registration returned changed=false. The new permission regression
+failed before the preflight fix; all 70 Python backup tests now pass, both
+playbooks pass Ansible lint, and focused review found no blockers. A fresh
+database-class systemd run is being requested through the normal scheduler;
+native exports, remote post-check and restore of this new coverage must still
+be verified before declaring the extra instance protected remotely.
+
 ## Auxiliary service identification
 
 Selected manager inspection on 2026-10-15 identified `vigorous_napier`

@@ -59,6 +59,26 @@ class InstanceEnrollmentTests(unittest.TestCase):
             self.assertEqual(json.loads((live / 'inventory.yaml').read_text())['postgresql_instances'][0]['id'], 'relayhub')
             self.assertTrue(json.loads(result.stdout)['catalog']['changed'])
 
+    def test_inaccessible_catalog_lock_prevents_code_publication(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            generation, live, lock, command = self.prepare(Path(tmp))
+            before = (live / 'inventory.yaml').read_bytes()
+            prefix = '''
+from pathlib import Path
+original_open = Path.open
+def deny_catalog_lock(self, *args, **kwargs):
+    if self.name == '.inventory.yaml.lock':
+        raise PermissionError('catalog lock inaccessible')
+    return original_open(self, *args, **kwargs)
+Path.open = deny_catalog_lock
+'''
+            command[7] = prefix + command[7]
+            result = subprocess.run(command, capture_output=True, timeout=10)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual((live / 'inventory.yaml').read_bytes(), before)
+            self.assertFalse((live / 'scripts/run-database-backup.py').is_symlink())
+            self.assertFalse((generation / 'rollback.json').exists())
+
     def test_code_publication_is_durable_before_catalog_registration(self):
         with tempfile.TemporaryDirectory() as tmp:
             generation, live, lock, command = self.prepare(Path(tmp))

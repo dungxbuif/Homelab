@@ -108,6 +108,10 @@
                 sys.path.insert(0, str(generation))
                 from common import write_json
                 from register_resource import register_instance_file
+                catalog_lock = root / '.inventory.yaml.lock'
+                catalog_lock.touch(mode=0o600, exist_ok=True)
+                with catalog_lock.open('r+'):
+                    pass
                 def sync_directory(path):
                     fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
                     try:

@@ -106,3 +106,23 @@ once terminal, record its result, run check-mode then apply the guarded release
 playbook, verify idempotence, and exercise the installed gate. No timer or job
 was stopped or restarted during development. Public application behavior and
 public docs are unaffected.
+
+## Terminal result, 2026-10-15 02:26 UTC
+
+The observed retention process finished naturally at 02:26:29 UTC:
+MainPID=0, ActiveState=inactive, Result=success, ExecMainStatus=0. The last
+repository sampled 18/18 packs with no errors. VM100 cleanup reported 12
+completed GitLab staging runs, retained two and removed ten; incomplete runs
+were preserved. This proves this retention run, not full payload restore or
+future schedule success. Proceed with the reviewed scheduler check/apply and
+idempotence gates now that the operation is terminal. Do not rerun retention
+merely to validate launcher installation.
+
+Scheduler deployment then passed check mode and apply (three changed tasks).
+A second apply returned changed=0. Installed release directory:
+`/opt/apps/homelab-backup/scheduler-releases/4d8ac71fb450f0693e25fbd2e1bcc16b64355158f92b9a606d3b23bef94f53f8`.
+The installed prerequisite script returned ready against the three completed
+backup units; all five timers retained their previous schedules. The stable
+launcher references this exact immutable release and retains its Ansible rollback
+copy. This supersedes the earlier "not installed" checkpoint. The next naturally
+scheduled overlap remains a separate acceptance check.
