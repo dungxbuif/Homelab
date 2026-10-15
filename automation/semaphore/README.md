@@ -51,7 +51,9 @@ Homepage template; this prevents a form from implying that arbitrary Swarm or
 Compose services can already be deployed safely.
 
 The private GitLab project `dungxbuif/homelab-automation` now exists and CI runs
-on VM100. Image publication and runner integration are still in progress.
+on VM100. The production runner and restricted observer/backup templates are
+active. Homepage template 6 is the only enrolled application release path; its
+dedicated Mezon notification Variable Group was accepted by live task 56.
 These files are versioned contracts, not native Semaphore API import payloads.
 The installed Community version has no per-template Docker executor: an
 `execution_image` field here does not select a runtime image in the live UI.
@@ -79,9 +81,9 @@ current vendor runner candidate is blocked by unresolved HIGH findings; the
 existing production runner remains unchanged until a patched vendor build or
 an approved executor redesign is available.
 
-Semaphore currently keeps only the existing `db-provision` template for database/user
-provisioning; the operator catalog above has not been deployed. Backup scheduling is not
-owned by this UI. The canonical serial runner is in
+Semaphore currently keeps the existing `db-provision`, observer, backup-health
+and Homepage release templates; the generic app catalog above has not been
+deployed. Backup scheduling is not owned by this UI. The canonical serial runner is in
 [`../backup-runner/`](../backup-runner/) and its schedules are defined by the
 runner/systemd deployment, so there is no second schedule template to import
 or maintain here.

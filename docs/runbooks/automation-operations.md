@@ -11,8 +11,9 @@ timestamp: 2026-10-15T00:00:00+07:00
 
 The full flow below is still a target, but six live Semaphore templates now
 exist. GitLab CI/registry publication, restricted Pi5/VM100 observers, backup
-health, and a fixed-digest Homepage release are installed. VM100 OpenTofu import,
-general route/app apply, full RBAC and deploy notifications remain incomplete.
+health, a fixed-digest Homepage release, and the Homepage Mezon deployment
+notification boundary are installed. VM100 OpenTofu import, general route/app
+apply and full RBAC remain incomplete.
 Do not execute arbitrary declarative apply templates as though they were enrolled.
 The project currently has one owner membership; separate Viewer/Task Runner/
 Manager permissions have not been proven. Backup health reports state and
@@ -56,8 +57,10 @@ the generic template without reconciling that inventory and evidence contract.
 Backup schedules remain systemd timers on VM100. Adding a DB through template
 1 enrolls it for the next database run; it does not start an immediate upload.
 The guarded retention scheduler is installed. The newly enrolled dedicated
-RelayHub instance still awaits remote backup/restore acceptance in the current
-run. Per-deploy Mezon notifications have not yet been enrolled.
+RelayHub instance has a successful native VM100 backup and remote snapshot
+post-check; remote Drive restore acceptance remains a separate bounded gate.
+Homepage template 6 sends its validated receipt through a dedicated secret
+Variable Group; task 56 is the live notification acceptance record.
 
 The target normal change path is GitLab change -> Semaphore check/plan -> approved
 apply -> post-check -> sanitized Mezon notice. An agent does not open a host
