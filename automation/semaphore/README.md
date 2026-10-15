@@ -63,6 +63,14 @@ secrets/access_key_encryption
 The access-key value must be a 32-byte base64 value. The admin password is
 generated outside Git and is not printed by the deployment procedure.
 
+The Semaphore runner candidate is intentionally not part of the default
+production image pipeline. It is built only by the explicit
+`BUILD_SEMAPHORE_RUNNER_CANDIDATE=true` CI variable and must pass the same
+non-bypassable vulnerability gate before publication or enrollment. The
+current vendor runner candidate is blocked by unresolved HIGH findings; the
+existing production runner remains unchanged until a patched vendor build or
+an approved executor redesign is available.
+
 Semaphore currently keeps only the existing `db-provision` template for database/user
 provisioning; the operator catalog above has not been deployed. Backup scheduling is not
 owned by this UI. The canonical serial runner is in

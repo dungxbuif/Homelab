@@ -543,3 +543,25 @@ mode. The job must run toolchain smoke, the repository Python suites, Ansible
 lint, ShellCheck and Proxmox module validation; it must not apply infrastructure,
 mount production data or enroll the candidate as the default executor. Trigger
 the pipeline explicitly after publication and record its job/pipeline result.
+
+## Pipeline 117 separation decision
+
+Pipeline 117 at commit `f6fa1f861d793420e6df5be7463b990cdd5eca22` reached the
+intended evidence point: validation jobs passed, the provisioner build and
+unchanged Trivy gate passed, and the published arm64 image was
+`registry-gitlab.dungxbuif.com/dungxbuif/homelab-automation/provisioner@sha256:010cb5a13d0c1240b56c933c7f202c4179d030724b35134c5da3b9d0ef3e05c1`.
+
+The automation EE was also published after its scan. The combined job still
+failed because the Semaphore runner candidate contains three HIGH findings in
+the vendor binary (`github.com/docker/docker` CVE-2026-41567 and
+CVE-2026-42306 with no fixed version reported, plus `golang.org/x/net`
+CVE-2026-78669). This is a candidate failure, not a production rollout.
+
+The CI contract now keeps `build:automation-ee` focused on the production EE
+image and moves the Semaphore runner candidate to
+`build:semaphore-runner-candidate`. That job is created only when the explicit
+`BUILD_SEMAPHORE_RUNNER_CANDIDATE=true` variable is supplied; when run, it
+retains the same scan-before-push gate and fails on the same policy. This lets
+the safe EE/provisioner release path complete without publishing or enrolling
+the unremediated runner. No active Semaphore runner or production service was
+changed by this separation.

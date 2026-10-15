@@ -160,6 +160,23 @@ build:automation-ee:
     - sh automation/scripts/scan-image.sh "$EE_IMAGE:$EE_TAG" automation-ee
     - docker push "$EE_IMAGE:$EE_TAG"
     - docker image inspect "$EE_IMAGE:$EE_TAG" --format 'published={{index .RepoDigests 0}}'
+
+build:semaphore-runner-candidate:
+  extends: .docker-job
+  stage: build
+  artifacts:
+    when: always
+    expire_in: 14 days
+    paths:
+      - security-reports/
+  needs:
+    - validate:automation-ee
+    - validate:semaphore-bootstrap
+  rules:
+    - if: '$BUILD_SEMAPHORE_RUNNER_CANDIDATE == "true"'
+    - when: never
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" --username "$CI_REGISTRY_USER" --password-stdin
     - docker build --build-arg AUTOMATION_EE_IMAGE="$EE_IMAGE:$EE_TAG" --file automation/semaphore/runner/Containerfile --tag "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG" automation/semaphore/runner
     - sh automation/semaphore/tests/test-runner-image.sh "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG"
     - sh automation/scripts/scan-image.sh "$SEMAPHORE_RUNNER_IMAGE:$EE_TAG" semaphore-runner

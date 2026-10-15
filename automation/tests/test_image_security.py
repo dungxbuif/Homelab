@@ -115,6 +115,20 @@ else: sys.exit(99)
             self.assertIn('security-reports/', job['artifacts']['paths'])
             self.assertFalse(job.get('allow_failure', False))
 
+    def test_semaphore_runner_candidate_is_explicit_and_gated(self):
+        ci = yaml.safe_load((ROOT / '.gitlab-ci.yml').read_text())
+        job = ci['build:semaphore-runner-candidate']
+        self.assertEqual(job['rules'][0]['if'], '$BUILD_SEMAPHORE_RUNNER_CANDIDATE == "true"')
+        scripts = job['script']
+        scan = '"$SEMAPHORE_RUNNER_IMAGE:$EE_TAG" semaphore-runner'
+        self.assertTrue(any('scan-image.sh ' + scan in line for line in scripts))
+        push_index = next(i for i, line in enumerate(scripts) if line.startswith('docker push '))
+        scan_index = next(i for i, line in enumerate(scripts) if 'scan-image.sh ' in line)
+        self.assertLess(scan_index, push_index)
+        self.assertEqual(job['artifacts']['when'], 'always')
+        self.assertFalse(job.get('allow_failure', False))
+        self.assertFalse(any('semaphore/runner/Containerfile' in line for line in ci['build:automation-ee']['script']))
+
 
 if __name__ == '__main__':
     unittest.main()
