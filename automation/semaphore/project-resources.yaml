@@ -30,6 +30,7 @@ roles:
       - tofu-apply-approved
       - backup-audit
       - route-publish
+      - backup-client-release
 operator_policy:
   private_ui_only: true
   provisioner_public_route: false

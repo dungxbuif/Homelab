@@ -41,6 +41,12 @@ start a task and inspect its output. Keep the task ID when reporting an issue.
 | [6: Release approved Homepage](https://semaphore.dungxbuif.com/project/1/templates/6) | Applies only the exact root-approved Homepage digest. It is not a generic deploy form or arbitrary-image input. |
 | [7: Release backup client (Pi5)](https://semaphore.dungxbuif.com/project/1/templates/7) | Installs the reviewed five-file backup runtime bundle under the Pi5 backup lock. It is Pi5-only, requires explicit release approval, and is not an application deployer. |
 
+The source control-plane contract for template 7 is
+`automation/semaphore/templates/backup-client-release.yaml`. It deliberately
+accepts no service name, image digest, route, or arbitrary path: the only
+mutation is the reviewed five-file backup-client release on Pi5, and the live
+job remains Manager/approval-gated.
+
 Templates 3/4/5 require no application passwords or survey values. A successful
 host audit means its declared collection completed, not that every application
 works. Tasks 49/50 are the latest successful VM100/Pi5 collection checkpoint.

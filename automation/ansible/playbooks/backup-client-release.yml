@@ -77,6 +77,22 @@
         - name: Report sanitized release evidence
           ansible.builtin.debug:
             msg: '{{ client_release_result.stdout | from_json }}'
+
+        - name: Create the controller-side release artifact directory
+          ansible.builtin.file:
+            path: artifacts
+            state: directory
+            mode: '0700'
+          delegate_to: localhost
+          run_once: true
+
+        - name: Write sanitized release evidence for the Semaphore post-check
+          ansible.builtin.copy:
+            content: "{{ client_release_result.stdout | trim }}\n"
+            dest: artifacts/backup-client-release.json
+            mode: '0600'
+          delegate_to: localhost
+          run_once: true
       always:
         - name: Remove only this candidate directory
           ansible.builtin.file:

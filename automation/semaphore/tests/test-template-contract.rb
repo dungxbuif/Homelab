@@ -14,6 +14,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
     tofu-plan
     tofu-apply-approved
     route-publish
+    backup-client-release
     app-deploy
     rollback
   ].freeze
@@ -48,11 +49,32 @@ class SemaphoreTemplateContractTest < Minitest::Test
     assert_equal false, YAML.load_file(File.join(TEMPLATE_DIR, 'ansible-check.yaml')).fetch('approval').fetch('required')
     assert_equal false, YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-plan.yaml')).fetch('approval').fetch('required')
 
-    %w[ansible-apply tofu-apply-approved route-publish app-deploy rollback].each do |name|
+    %w[ansible-apply tofu-apply-approved route-publish backup-client-release app-deploy rollback].each do |name|
       data = YAML.load_file(File.join(TEMPLATE_DIR, "#{name}.yaml"))
       assert_equal true, data.fetch('approval').fetch('required'), "#{name} must require approval"
       assert_includes data.fetch('approval').fetch('roles'), 'Manager'
     end
+  end
+
+  def test_backup_client_release_is_fixed_scope
+    data = YAML.load_file(File.join(TEMPLATE_DIR, 'backup-client-release.yaml'))
+    refute data.key?('availability')
+    assert_equal 'Semaphore inventory 6 (Pi5 backup client release)', data.fetch('inventory')
+    assert_equal ['Manager'], data.fetch('approval').fetch('roles')
+    names = data.fetch('variables').map { |variable| variable.fetch('name') }
+    assert_equal %w[backup_client_release_approved change_message], names
+    refute_match(/service_id|image_digest|route_set|target_environment/, data.to_yaml)
+    assert_match(/--limit pi5/, data.fetch('command'))
+  end
+
+  def test_backup_client_release_is_manager_only
+    resources = YAML.load_file(File.join(ROOT, 'project-resources.yaml'))
+    viewer = resources.fetch('roles').find { |role| role.fetch('name') == 'Viewer' }
+    runner = resources.fetch('roles').find { |role| role.fetch('name') == 'Task Runner' }
+    manager = resources.fetch('roles').find { |role| role.fetch('name') == 'Manager' }
+    refute_includes viewer.fetch('allowed_templates'), 'backup-client-release'
+    refute_includes runner.fetch('allowed_templates'), 'backup-client-release'
+    assert_includes manager.fetch('allowed_templates'), 'backup-client-release'
   end
 
   def test_project_roles_and_execution_image_are_pinned
