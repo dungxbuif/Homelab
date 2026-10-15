@@ -66,3 +66,59 @@ SHA-256: `249a0d8da47fbc4224afbfacea1468fbba0134f135d2f9e84364e01ebe029222`.
 The report is a local diagnostic, not a durable recovery artifact. No temporary
 archive or scanner container remained after the run. No production image,
 service, backup process or runner was changed by this local acceptance.
+
+## Dependency remediation candidate
+
+Before editing the toolchain, registry/PyPI/GitHub metadata was checked on
+2026-10-15. Candidate versions: Python 3.13.16 on Debian trixie, Docker CLI
+29.9.0, OpenTofu 1.13.1, and ansible-core 2.18.19. Keep Ansible on its existing
+2.18 minor line; the report identifies 2.18.18rc1 or later as the fix for
+CVE-2026-11332. Do not change unrelated Python dependencies or server Docker.
+Pin Python and Docker source images by observed multi-platform digest. OpenTofu
+retains the release checksum verification during build.
+
+This is a local candidate until build, toolchain checks, policy/Ansible/Tofu
+tests and a new vulnerability scan pass. Updating OpenTofu CLI does not import,
+refresh or apply any production state. Keep the previous local image tag and
+all live runner digests unchanged. New builds must still fail the same security
+gate if any HIGH/CRITICAL findings remain; there is no blanket exception.
+
+Sources: [official Python image tags](https://github.com/docker-library/official-images/blob/master/library/python),
+[official Docker image tags](https://github.com/docker-library/official-images/blob/master/library/docker),
+[OpenTofu 1.13.1](https://github.com/opentofu/opentofu/releases/tag/v1.13.1),
+[ansible-core 2.18.19](https://pypi.org/project/ansible-core/2.18.19/).
+
+### Candidate results
+
+Local arm64 build `homelab-automation-ee:security-20261015` completed, image ID
+`sha256:76b816a9523e0683255ede05b92bf4bd21737d5b8406bedc92c8e7b1e8ff736b`.
+Runtime versions were independently read from the binaries: Python 3.13.16,
+Ansible 2.18.19, Docker CLI 29.9.0 and OpenTofu 1.13.1. The original local
+image and all production image references remain unchanged.
+
+Verified with this candidate: toolchain smoke, 78 automation tests, 21 Ansible
+tests, 70 backup tests, 14 OpenTofu tests (including native encrypted state/plan
+fixtures), and Ansible lint on 59 files. Lint had no rule failures; read-only
+cache and upstream Python deprecation warnings were emitted. No production
+Proxmox state or VM was touched.
+
+The real rescan still exits 1: 85 HIGH and 5 CRITICAL package/advisory records,
+38 distinct advisory IDs. Debian has 79 records with no fixed version reported;
+the Docker CLI has none; OpenTofu's official release has 7 Go dependency/runtime
+records. Four Python records are from pip's vendored msgpack/setuptools/urllib3,
+not the separately installed urllib3 2.8.0. `pip._vendor/vendor.txt` confirms
+those old versions even though pip 26.2.1 is the latest published release at
+this observation. Do not falsely claim upgrading the top-level urllib3 fixes
+pip's bundled copy, or claim that no reported fix means a vulnerability is safe.
+
+Local candidate report:
+`/tmp/homelab-image-security.SwmOrT/security-reports/automation-ee-patched.json`.
+SHA-256 `66e8efb13fc1063a505ec098aaf7f94ed74fd5b8b4a99ec3b8a6cf7a2439137a`.
+The candidate is still blocked for publication by the unchanged gate; remediation
+or individually reviewed, scoped risk decisions remain open. CI amd64 and real
+rootless DinD scanning are separate pending acceptance gates.
+
+Prior pipeline 69/job 165 failed before reaching the scanner during Galaxy
+installation (`KeyError: results`, old ansible-core 2.18.6). The candidate's
+Galaxy install succeeded locally, but this does not prove the CI failure cannot
+recur. No running job was canceled or restarted to work around that failure.

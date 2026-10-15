@@ -8,7 +8,8 @@ production executor reference.
 The image contains:
 
 - pinned `ansible-core`, `ansible-lint`, `yamllint`, and required collections;
-- OpenTofu and Docker CLI binaries from pinned image tags;
+- OpenTofu from a pinned release with checksum verification and Docker CLI
+  from a digest-pinned source image;
 - ShellCheck, Ruby, `jq`, and SSH client for policy and route validation.
 
 Build locally when Docker is available:
@@ -20,6 +21,14 @@ docker build \
   automation/execution-environment
 docker run --rm homelab-automation-ee:local
 ```
+
+Security remediation currently targets Python 3.13.16 (Debian trixie),
+ansible-core 2.18.19, OpenTofu 1.13.1 and Docker CLI 29.9.0. These source pins do
+not change any enrolled runner until a separately approved digest rollout.
+Build candidate images with a separate tag to preserve the previous local image.
+Before publication, CI scans each image and retains `security-reports/` even
+when a vulnerability blocks the push. See the
+[security gate and remediation evidence](../../docs/deployments/automation-image-security-2026-10-15.md).
 
 The default container command runs `test-toolchain --run`, checking the installed
 tools without needing a repository mount. Run the script without `--run` from

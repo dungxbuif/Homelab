@@ -1,5 +1,5 @@
-ARG TOFU_VERSION=1.9.0
-ARG DOCKER_CLI_VERSION=27.5.1
+ARG TOFU_VERSION=1.13.1
+ARG DOCKER_CLI_VERSION=29.9.0
 ARG SHELLCHECK_VERSION=0.10.0
 
 FROM alpine:3.21.3 AS tofu
@@ -23,12 +23,12 @@ RUN apk add --no-cache ca-certificates curl unzip \
     && unzip -p "/tmp/${tofu_zip}" tofu > /usr/local/bin/tofu \
     && chmod 0755 /usr/local/bin/tofu \
     && rm -rf /tmp/*
-FROM docker:${DOCKER_CLI_VERSION}-cli AS docker-cli
+FROM docker:${DOCKER_CLI_VERSION}-cli@sha256:1a4c7cb63513f349bdad01fcc6e0f3f2f67d37b9da86f14dc0d4a0942eecda00 AS docker-cli
 FROM koalaman/shellcheck:v${SHELLCHECK_VERSION} AS shellcheck
 
-FROM python:3.13.7-slim-bookworm
+FROM python:3.13.16-slim-trixie@sha256:70729b46c69b4f1e97c4822c1af3df53a1476cf5ddc6c087c0c10bc3a5678c2f
 
-ARG ANSIBLE_CORE_VERSION=2.18.6
+ARG ANSIBLE_CORE_VERSION=2.18.19
 ARG ANSIBLE_LINT_VERSION=25.5.0
 ARG YAMLLINT_VERSION=1.37.1
 
