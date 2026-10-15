@@ -18,6 +18,12 @@ The project currently has one owner membership; separate Viewer/Task Runner/
 Manager permissions have not been proven. Backup health reports state and
 markers; it does not independently restore Drive payloads.
 
+Do not grant `task_runner` in this mixed project merely to allow audits: that
+built-in role can run its mutating templates too. The proposed separate audit
+project and its denial-test requirements are recorded in the
+[RBAC boundary review](../research/semaphore-rbac-boundary-2026-10-15.md), pending
+operator choice. No fine-grained authorization has been enabled by this document.
+
 ## What you can run in the UI
 
 Open [Semaphore project 1](https://semaphore.dungxbuif.com/project/1/templates)
