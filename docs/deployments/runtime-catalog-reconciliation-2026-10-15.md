@@ -99,3 +99,39 @@ database-class inventory does not enumerate the two extra PostgreSQL instances.
 Do not extend the existing green database-class result into a claim that every
 PostgreSQL instance in the lab is protected; separate export/migration evidence
 for those instances is still required.
+
+## Uncovered PostgreSQL instance safety checkpoint
+
+Read-only native SQL on 2026-10-15 confirmed VM100 `couchloom-postgres`
+contains `couchloom` (48,789,171 bytes) and `postgres` (7,657,139 bytes).
+The application database has 13 pgboss tables and two public tables. Pi's
+`relayhub-relayhub-postgres-1` contains `relayhub` (8,435,379 bytes) and
+`postgres` (7,698,099 bytes). Database size is allocated logical storage,
+not expected compressed dump size, and does not establish active consumers.
+
+Before migration or retirement decisions, create a separate timestamped,
+mode-0700 checkpoint directory on each source host. Use the matching container's
+native `pg_dumpall --globals-only` and `pg_dump --format=custom` for each
+non-template database, with restrictive umask, and validate every dump using
+that container's `pg_restore --list`. Record checksums only after all commands
+succeed. Never overwrite a previous checkpoint or print globals/password hashes.
+No DB writes, app restart, network exposure, or production restore is involved.
+These local checkpoints do not count as remote backup, restore rehearsal, or
+automatic ongoing coverage; those gates remain outstanding. Public docs do not
+change because this is internal data protection with no user-facing API change.
+
+Checkpoint execution completed without production DB mutations:
+- VM100: `/home/ubuntu/backup-checkpoints/couchloom-20261015T005416Z`,
+  approximately 27 MiB, globals and custom dumps of couchloom/postgres.
+- Pi5: `/home/dungxbuif/backup-checkpoints/relayhub-20261015T005426Z`,
+  approximately 68 KiB, globals and custom dumps of relayhub/postgres.
+- Both native `pg_restore --list` checks and SHA256SUMS verification passed.
+  Additional `pg_restore --file=/dev/null` decoded both complete dump payloads
+  per host successfully; this is stronger than catalog listing but still not
+  a restore into a running isolated PostgreSQL instance.
+- Source parents/checkpoint directories are private (0700, umask 077). Dumps,
+  globals, and lists stay on source hosts, not in Git. No secrets were printed.
+- Ongoing multi-instance discovery, remote upload and independent restore
+  verification remain required. Retain these checkpoints until replacement
+  remote protection is verified; do not let ordinary successful shared-PG
+  backups imply permission to remove them.
