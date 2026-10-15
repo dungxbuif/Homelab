@@ -1,6 +1,7 @@
 ---
 name: app-deploy
 description: Deploy one allow-listed application image through its declared private networks.
+availability: design_only
 repository: homelab-automation
 revision: main
 execution_image:

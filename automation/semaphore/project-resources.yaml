@@ -24,8 +24,6 @@ roles:
       - tofu-plan
       - backup-audit
       - route-publish
-      - app-deploy
-      - rollback
   - name: Manager
     allowed_templates:
       - host-audit
@@ -35,8 +33,6 @@ roles:
       - tofu-apply-approved
       - backup-audit
       - route-publish
-      - app-deploy
-      - rollback
 operator_policy:
   private_ui_only: true
   provisioner_public_route: false

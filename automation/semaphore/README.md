@@ -42,6 +42,14 @@ execution image is resolved from `AUTOMATION_EE_IMAGE_DIGEST`; mutable tags are
 rejected by the contract tests. The intended apply workflow requires a reviewed
 plan artifact and `Manager` approval; those tests do not enforce live UI access.
 
+`app-deploy` and `rollback` are currently design-only contracts. Their generic
+executor scripts are intentionally absent, so they are not exposed through any
+operator role and must not be imported as runnable Semaphore templates. A
+service-specific adapter must be implemented and reviewed before either
+workflow is enrolled. The live application release boundary is the dedicated
+Homepage template; this prevents a form from implying that arbitrary Swarm or
+Compose services can already be deployed safely.
+
 The private GitLab project `dungxbuif/homelab-automation` now exists and CI runs
 on VM100. Image publication and runner integration are still in progress.
 These files are versioned contracts, not native Semaphore API import payloads.

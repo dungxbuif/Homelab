@@ -1,6 +1,7 @@
 ---
 name: rollback
 description: Roll one allow-listed application back to a recorded immutable image digest.
+availability: design_only
 repository: homelab-automation
 revision: main
 execution_image:

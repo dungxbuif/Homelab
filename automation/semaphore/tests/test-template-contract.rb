@@ -63,6 +63,20 @@ class SemaphoreTemplateContractTest < Minitest::Test
     refute_match(/latest/, data.to_yaml)
   end
 
+  def test_design_only_templates_are_not_exposed_to_operator_roles
+    resources = YAML.load_file(File.join(ROOT, 'project-resources.yaml'))
+    design_only = TEMPLATE_NAMES.select do |name|
+      YAML.load_file(File.join(TEMPLATE_DIR, "#{name}.yaml"))['availability'] == 'design_only'
+    end
+    refute_empty design_only
+    resources.fetch('roles').each do |role|
+      design_only.each do |name|
+        refute_includes role.fetch('allowed_templates'), name,
+                        "#{name} is design-only and cannot be exposed to #{role.fetch('name')}"
+      end
+    end
+  end
+
   def test_provisioning_change_summary_matches_http_creation
     play = YAML.load_file(File.join(ROOT, 'playbooks/db-provision.yml')).first
     task = play.fetch('tasks').find { |entry| entry['register'] == 'provision_response' }

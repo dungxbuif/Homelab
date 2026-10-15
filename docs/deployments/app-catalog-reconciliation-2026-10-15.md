@@ -38,6 +38,22 @@ path is enrolled. This does not disable or stop their running containers.
 The verifier is preflight only, not approval authorization or proof of runtime
 health. Actual release authorization remains in the forced-command helper.
 
+## Control-plane enrollment reconciliation
+
+The Semaphore repository contains design contracts for generic `app-deploy` and
+`rollback`, but the corresponding executor scripts are not present in this
+repository. They are therefore **design-only** and must not be exposed through
+an operator role or imported as runnable templates. A service-specific release
+adapter needs an immutable image boundary, declared networks/secrets/volumes,
+CAS update or compose-lock semantics, bounded health checks, private receipts,
+and a tested rollback path before enrollment.
+
+This reconciliation removes the misleading role exposure and adds a contract
+test that rejects any design-only template listed in `project-resources.yaml`.
+It does not stop or alter running applications. Homepage remains the only
+application release path enrolled in Semaphore; database provisioning and
+read-only audit workflows remain available through their existing paths.
+
 Verification: regress missing release boundary and non-boolean readiness;
 assert corrected health paths, runtime mode/networks/resources, and keep the
 Homepage exact approved digest acceptance passing. Run the automation suite
