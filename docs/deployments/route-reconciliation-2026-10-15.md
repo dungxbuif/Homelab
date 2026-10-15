@@ -121,3 +121,31 @@ in the full automation Python suite and 24 rendered routes validated. The
 corrected probe returned 200 for both applications through VPS. Focused review
 found no blockers. No gateway files, services, credentials or public docs were
 changed; this work adds operator evidence and corrects monitoring metadata.
+
+## 2026-10-15 VPS certificate evidence
+
+The full read-only route probe was repeated after the latest runtime changes.
+The Pi5 LAN path completed transport for all 26 selected hostname/path requests.
+The VPS path completed 23/26; the incomplete requests were:
+
+| Hostname | Exposure in catalog | VPS result |
+| --- | --- | --- |
+| `stirling.dungxbuif.com` | public | TLS verification failed (curl 60) |
+| `semaphore.dungxbuif.com` | LAN-only | TLS verification failed (curl 60) |
+| `kubekosh.dungxbuif.com` | LAN-only | TLS verification failed (curl 60) |
+
+An SNI-only OpenSSL check against `103.82.21.202:443` returned the Traefik
+default certificate for all three names (`CN=TRAEFIK DEFAULT CERT`, verify
+code 21). This is evidence that the VPS gateway does not currently select a
+trusted certificate/route for these names; it is not evidence that the Pi5
+backends are down. The LAN-only entries are expected to remain unavailable
+from the public boundary. `stirling` is cataloged public and needs a controlled
+VPS gateway certificate/HostSNI repair before it can be called healthy.
+
+The VPS gateway is not editable through the current approved SSH credentials:
+the pinned-key attempt for the documented `automation` route was rejected, and
+no alternate credential was used. No VPS configuration or certificate was
+changed. The next action is to repair the VPS `/root/gateway` certificate and
+HostSNI entry through the approved VPS access path, then rerun the same probe.
+Until then, do not mark `stirling` public TLS as verified and do not publish
+the LAN-only routes at the public boundary.
