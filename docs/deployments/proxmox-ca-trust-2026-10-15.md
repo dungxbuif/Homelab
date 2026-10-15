@@ -83,7 +83,8 @@ CI gate runs this plus its failure/cleanup regression. Network access to the
 provider registry is needed; registry failure must fail the gate rather than
 skip real schema validation. This does not resolve the separate live import
 prerequisites listed above. Public application docs remain unchanged.
-# Provider lock follow-up, 2026-10-15
+
+## Provider lock follow-up, 2026-10-15
 
 GitLab job213 failed real `tofu validate` on linux_amd64 after signed provider
 installation: cached bpg/proxmox0.116.0 did not match the lock's package checksum.
@@ -99,4 +100,3 @@ platform. The diff only adds 12 `h1` package hashes; pinned version, constraints
 and existing archive hashes are unchanged. Fresh linux_arm64 readonly init and
 validate now pass without the previous lock-update warning. Actual linux_amd64
 CI validation remains the acceptance gate; do not infer it from ARM success.
-
