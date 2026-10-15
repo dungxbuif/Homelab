@@ -58,3 +58,28 @@ curl --disable --noproxy '*' --connect-timeout 5 --max-time 15 \
   --resolve pve:8006:10.10.0.20 --output /dev/null --write-out '%{http_code}\n' \
   https://pve:8006/api2/json/version
 ```
+
+## Credential-free module validation gate
+
+Add an isolated CI validation script that copies only module `.tf` files and
+the tracked dependency lock into a new private temporary directory. Run
+`tofu init -backend=false -lockfile=readonly -input=false`, followed by
+`tofu validate`; never run plan/import/apply or load operator tfvars/state.
+Delete only that temporary directory on exit. This exercises the actual pinned
+provider schema, not Proxmox API authorization, TLS or state recovery. Tests
+verify the fixed commands, exclusion of local state/tfvars, cleanup and failure
+propagation. Existing CI security gates stay unchanged.
+
+Local execution evidence: OpenTofu 1.13.1 on linux_arm64, fresh provider cache,
+bpg/proxmox 0.116.0 installed with verified developer signature, initialization
+and provider-backed validation both exit 0. The existing lock contains signed
+archive hashes; init reported that additional lock metadata was not saved in
+readonly mode. No source lock/version was changed. All 15 OpenTofu Python tests
+and ShellCheck passed. The disposable preflight container was removed by its
+captured ID. No production backend, API credential or VM operation was used.
+
+Run `bash automation/scripts/validate-proxmox-module.sh` in the pinned EE. The
+CI gate runs this plus its failure/cleanup regression. Network access to the
+provider registry is needed; registry failure must fail the gate rather than
+skip real schema validation. This does not resolve the separate live import
+prerequisites listed above. Public application docs remain unchanged.
