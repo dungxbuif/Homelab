@@ -26,7 +26,7 @@ linked above is the dated baseline, superseded by newer observation records.
 | 5: Host baseline | VM100 Docker CE 29.8.2, encrypted overlay restored, restricted accounts enrolled on Pi/VM | VPS enrollment, all-host idempotent baseline, durable standalone overlay boot ordering |
 | 6: Routes | 24 catalog routes, schema/private-gate tests, both-gateway endpoint probes | Generated live Pi/VPS publish/rollback, Stirling public ingress, private-policy/consumer reconciliation, protocol-specific checks |
 | 7: Apps | Homepage digest deploy via template 6, receipt and idempotent repeat; catalog corrections | Real rollback rehearsal, other apps' build/apply boundaries, private networks, peak-resource policies, registry-pull acceptance |
-| 8: DB/backup | UI provisioner, remote class snapshots, restricted health job, native local restores for uncovered PG instances | Retention terminal result/new scheduler activation, dedicated RelayHub instance enrollment, CouchLoom DB placement/coverage, remote payload restore acceptance |
+| 8: DB/backup | UI provisioner, remote class snapshots, restricted health job, native local restores, successful retention and scheduler activation, dedicated RelayHub instance enrollment | New instance remote backup/restore acceptance, CouchLoom DB placement/coverage, complete remote payload restore acceptance |
 | 9: Gates/drift | Policy tests, source CI, resource/route evidence and bounded release receipt | Complete automated drift/security scan, per-apply Mezon notices, full rollback artifacts |
 | 10: Lockdown | Restricted pilot transport exists | Two complete Git-to-apply-to-notification acceptances, break-glass escrow and removal of general agent SSH |
 
@@ -54,13 +54,15 @@ Historical dirty worktree files are
 not automatically included in publication; preserve and reconcile them rather
 than silently discarding or treating them as shipped.
 
-Operational wait: retention unit PID 1133089 remains live, with successful
-sampled pack reads logged through 01:46:48 UTC and the next repository check
-progressing through snapshots/trees/blobs at 02:16:41 UTC. The systemd start
-timeout is 12 hours; the 69 backup Python tests passed again during observation.
-Neither fact proves the live remote check complete. Do not restart it because it is slow or install the new
-scheduler/instance runner over the live operation. The wait is specific to that
-process, not a global blocker for unrelated work.
+Operational checkpoint: retention finished successfully at 02:26:29 UTC.
+The immutable prerequisite-aware scheduler was installed and a repeat apply
+returned changed=0. RelayHub dedicated PostgreSQL was enrolled after repairing
+the shared catalog lock ownership in place; registration repeat returned
+changed=false. The backup suite now has 70 passing tests. Fresh database run
+`databases-20261015-023158` is live as VM100 unit PID 1659814, currently exporting
+the native database payload. Do not restart or overlap it. The new instance is
+not yet certified remotely; wait for its native manifest, remote post-check,
+and independent restore evidence. This wait does not block unrelated work.
 
 Webhook storage for deploy notifications is being clarified with the operator;
 the candidate is a separate encrypted Semaphore Secret Variable Group scoped

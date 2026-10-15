@@ -10,12 +10,12 @@ SCRIPT = ROOT / "automation/scripts/check-secrets.sh"
 
 
 class SecretScanTest(unittest.TestCase):
-    def scan(self, content=None, initialize=True):
+    def scan(self, content=None, initialize=True, filename="settings.txt"):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             if initialize:
                 subprocess.run(["git", "init", "-q", directory], check=True)
-                (root / "settings.txt").write_text(content or "public setting\n")
+                (root / filename).write_text(content or "public setting\n")
                 subprocess.run(["git", "-C", directory, "add", "."], check=True)
             return subprocess.run(["bash", str(SCRIPT), directory], capture_output=True, text=True)
 
@@ -31,6 +31,13 @@ class SecretScanTest(unittest.TestCase):
 
     def test_invalid_repository_fails_closed(self):
         self.assertGreater(self.scan(initialize=False).returncode, 1)
+
+    def test_markdown_secrets_are_not_excluded(self):
+        secret = "github_pat_" + "a" * 30
+        result = self.scan(secret, filename="RUNBOOK.md")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("RUNBOOK.md", result.stdout)
+        self.assertNotIn(secret, result.stdout + result.stderr)
 
     def test_git_execution_failure_is_not_success(self):
         with tempfile.TemporaryDirectory() as directory:
