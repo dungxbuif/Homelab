@@ -70,5 +70,11 @@ present, and the active generation symlinks resolve to their retained private
 generation. Enrollment now repeats that resolution and catalog validation as a
 post-check.
 
+The first VM100 runtime publication stopped before systemd because the
+playbook's global `become: false` also applied to the lock-protected publish
+task. The systemd tasks already elevated correctly. The publish task now
+elevates explicitly, so `/run/lock/homelab-backup.lock` and the root-owned live
+runtime are updated atomically without changing application containers.
+
 This is an internal backup/operations change. No public API or public user
 documentation changes are required.

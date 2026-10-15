@@ -110,6 +110,7 @@
       changed_when: false
 
     - name: Publish the candidate atomically under the backup lock
+      become: true
       ansible.builtin.command:
         argv:
           - flock
