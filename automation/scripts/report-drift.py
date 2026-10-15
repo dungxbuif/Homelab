@@ -11,8 +11,36 @@ from pathlib import Path
 import yaml
 
 
+class PolicyLoader(yaml.SafeLoader):
+    def construct_mapping(self, node, deep=False):
+        self.flatten_mapping(node)
+        seen = set()
+        for key_node, _ in node.value:
+            key = self.construct_object(key_node, deep=deep)
+            if not isinstance(key, str) or key in seen:
+                raise ValueError("policy mapping keys must be unique strings")
+            seen.add(key)
+        return super().construct_mapping(node, deep=deep)
+
+
 def ids(document: dict, key: str) -> set[str]:
-    return {item["id"] for item in document.get(key, []) if item.get("id")}
+    return {item["id"] for item in document[key]}
+
+
+def validate_policy(active: object) -> None:
+    if not isinstance(active, dict):
+        raise ValueError("active policy must be an object")
+    for key in ("hosts", "services", "routes"):
+        values = active.get(key)
+        if not isinstance(values, list):
+            raise ValueError("active policy collections must be explicit lists")
+        seen = set()
+        for item in values:
+            value = item.get("id") if isinstance(item, dict) else None
+            if (not isinstance(value, str) or not value or value != value.strip()
+                    or value in seen):
+                raise ValueError("active policy IDs must be unique nonempty strings")
+            seen.add(value)
 
 
 def validate_evidence(observed: object) -> None:
@@ -43,7 +71,12 @@ def main() -> int:
     parser.add_argument("--active", type=Path, required=True)
     parser.add_argument("--observed", type=Path, required=True)
     args = parser.parse_args()
-    active = yaml.safe_load(args.active.read_text(encoding="utf-8"))
+    try:
+        active = yaml.load(args.active.read_text(encoding="utf-8"), Loader=PolicyLoader)
+        validate_policy(active)
+    except (OSError, ValueError, yaml.YAMLError):
+        print(json.dumps({"status": "not_verified", "reason": "invalid or unreadable active policy"}))
+        return 2
     try:
         observed = json.loads(args.observed.read_text(encoding="utf-8"))
         validate_evidence(observed)

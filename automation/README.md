@@ -70,6 +70,13 @@ The read-only runtime and drift contracts are in
 [`policies/approvals.yml`](./policies/approvals.yml). The operator workflow is
 documented in [automation operations](../docs/runbooks/automation-operations.md).
 
+The drift comparator requires explicit `hosts`, `services`, and `routes` lists
+in its active policy, each containing unique nonempty string IDs. Missing or
+malformed policy input returns JSON `status: not_verified` and exit 2 rather
+than treating missing configuration as an empty inventory. Exit 0 means matching
+inventory IDs only; exit 1 means ID drift. Neither result certifies network,
+resource, or application health. See the [validation record](../docs/deployments/drift-policy-validation-2026-10-15.md).
+
 ## Validation
 
 ```bash
