@@ -9,13 +9,15 @@ services:
   - id: homepage
     target: {host: vm100, mode: swarm}
     image:
-      repository: homelab/homepage
-      digest: sha256:c357a8dd6e27d07b6c51ffb9c90793e82617519370dffedf8a5ce7e46ea86c4f
-      observed_tag: vm100-20261007-stirling
-    networks: [homelab-net]
+      repository: registry-gitlab.dungxbuif.com/dungxbuif/homepage
+      digest: sha256:c128afca4e026cfc4f33d4cf1c77adc8cb08f01215a3f2bde76a1ecca12b79fd
+      source_commit: 01299fe7da4bb18aa3350b2fe39769da1bfea69e
+    networks: [edge-http-net]
     routes: [homepage]
     health: {path: /, expected_status: [200]}
-    resources: {cpus: '0.50', memory_mb: 512}
+    resources: {}
+    proposed_resources: {cpus: '0.50', memory_mb: 512}
+    release_template_id: 6
     rollback_image: homelab/homepage:vm100-20261007-stirling
     deployable: true
   - id: relayhub

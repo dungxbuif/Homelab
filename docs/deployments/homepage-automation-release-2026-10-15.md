@@ -171,3 +171,42 @@ the first assertion with changed=0, before the raw SSH command. Task status is
 `error` as expected for this negative test, not a failed production rollout.
 No positive release task has run. CI pipeline 43 validates this integration
 commit; inspect its current status before the first real release.
+
+## Production release acceptance
+
+Pipelines 41-43 completed successfully. Task 28 on runner 1 checked out dfc0aaf5
+and released the approved candidate successfully: six tasks, changed=1,
+failed=0. Receipt `homepage-release-tr02tjtu` on Pi records the prior service
+spec and approval; candidate app commit remains 01299fe7/job 83. The helper
+reported success at 2026-10-15T00:36:54Z. An independent HTTPS fetch returned
+200 with approved content SHA256
+`f121c1b37ce0174e1e995293be4a579673e95d07fe7636b658304536c81be4bc`.
+Task 29 is the same-digest no-op acceptance and must be checked to completion.
+
+Reconcile the old stack catalog: its homelab-net network, local image digest and
+claimed resource limits were stale. Record edge-http-net and the published
+registry digest. Keep observed resource limits empty and the proposed 0.5 CPU /
+512 MiB separately; this release intentionally did not apply resource changes.
+The generic deploy contract checker must reject a digest different from the
+catalog's approved digest, not merely check that the input looks like SHA256.
+This does not replace the root-managed approval or grant arbitrary deployment.
+Add positive/negative contract tests before changing the checker.
+
+Task 29 completed successfully with status `unchanged`, six tasks and changed=0;
+receipt `homepage-release-o1s5ryzr`. Live rollback rehearsal and Mezon deployment
+notification are still outstanding; do not count deploy + no-op as two complete
+Git-to-notification acceptances.
+
+Before rollback rehearsal, scope registry auth to the approved Homepage registry
+repository. A rollback to the legacy local image must explicitly send empty auth,
+not reuse the new registry credential. Docker's service-update API inherits auth
+from the current spec when the header is omitted, so omission is insufficient:
+https://docs.docker.com/reference/api/engine/version/v1.51/ . Add transport-level
+tests for both scoped auth and explicit empty rollback auth, then update the
+installed helper without restarting or changing the running service.
+
+The scoped-auth fix passed all 18 helper tests in the automation EE and fresh
+review found no blocker. Two deploy-catalog tests and ShellCheck also passed.
+This improves the rollback boundary but is not a substitute for a live recovery
+rehearsal. No public UI/API changed; internal operational docs are the affected
+documentation surface.

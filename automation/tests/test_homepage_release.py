@@ -6,6 +6,8 @@ import unittest
 from unittest.mock import patch
 import os
 import stat
+import base64
+import json
 
 PATH = Path(__file__).resolve().parents[1] / 'scripts/homepage-release.py'
 DIGEST = 'sha256:' + 'a' * 64
@@ -220,6 +222,24 @@ class ReleaseTests(unittest.TestCase):
                 engine.request('POST', '/services/fixed/update?version=10', {})
             self.assertNotIsInstance(raised.exception, self.module.APIRejected)
             self.assertEqual(connection.return_value.close.call_count, 2)
+
+    def test_registry_auth_never_follows_a_rollback_to_another_repository(self):
+        engine = object.__new__(self.module.Engine)
+        engine.prefix = '/v1.51'
+        engine.credential = {'username': 'fixture-user', 'token': 'fixture-private-token'}
+        with patch.object(self.module, 'UnixConnection') as connection:
+            response = connection.return_value.getresponse.return_value
+            response.read.return_value = b'{}'
+            response.status = 200
+            old = self.engine.get_service()['Spec']
+            engine.update_service('fixed-homepage', 10, old)
+            header = connection.return_value.request.call_args.kwargs['headers']['X-Registry-Auth']
+            self.assertEqual(json.loads(base64.urlsafe_b64decode(header)), {})
+            new = copy.deepcopy(old)
+            new['TaskTemplate']['ContainerSpec']['Image'] = self.module.REPOSITORY + '@' + DIGEST
+            engine.update_service('fixed-homepage', 11, new)
+            header = connection.return_value.request.call_args.kwargs['headers']['X-Registry-Auth']
+            self.assertEqual(json.loads(base64.urlsafe_b64decode(header))['password'], 'fixture-private-token')
 
 
 if __name__ == '__main__':

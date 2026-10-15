@@ -44,6 +44,8 @@ if service_id not in services:
 service = services[service_id]
 if not service.get("deployable"):
     raise SystemExit(f"deploy verification failed: {service_id} is not digest-ready")
+if service.get("image", {}).get("digest") != os.environ["IMAGE"]:
+    raise SystemExit(f"deploy verification failed: {service_id} does not match the approved catalog digest")
 if not service.get("networks"):
     raise SystemExit(f"deploy verification failed: {service_id} has no private network")
 if service.get("published_ports", []):

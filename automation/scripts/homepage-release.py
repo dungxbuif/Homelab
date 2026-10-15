@@ -47,11 +47,11 @@ class Engine:
             raise ValueError('Unsupported Docker API version')
         self.prefix = '/v' + version
 
-    def request(self, method, path, body=None, authenticate=False):
+    def request(self, method, path, body=None, authenticate=None):
         headers = {'Content-Type': 'application/json'}
-        if authenticate:
+        if authenticate is not None:
             auth = {'username': self.credential['username'], 'password': self.credential['token'],
-                    'serveraddress': 'registry-gitlab.dungxbuif.com'}
+                    'serveraddress': 'registry-gitlab.dungxbuif.com'} if authenticate else {}
             headers['X-Registry-Auth'] = base64.urlsafe_b64encode(json.dumps(auth).encode()).decode()
         connection = UnixConnection('localhost', timeout=10)
         try:
@@ -74,7 +74,9 @@ class Engine:
 
     def update_service(self, service_id, version, spec):
         path = self.prefix + '/services/' + urllib.parse.quote(service_id, safe='')
-        return self.request('POST', path + '/update?version=' + str(int(version)), spec, True)
+        image = spec['TaskTemplate']['ContainerSpec']['Image']
+        scoped_auth = re.fullmatch(re.escape(REPOSITORY) + r'@sha256:[a-f0-9]{64}', image) is not None
+        return self.request('POST', path + '/update?version=' + str(int(version)), spec, scoped_auth)
 
     def converged(self, service_id, image):
         filters = json.dumps({'service': [service_id]})
