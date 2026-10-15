@@ -461,6 +461,19 @@ not the production adoption gate: registry pull credentials, native CI job,
 runner digest enrollment, full job boundary acceptance and reproducible
 source-to-image build are still required.
 
+The explicit native gate then passed as GitLab pipeline99, job235, using the
+VM100 project runner and candidate digest
+`835cce544bde8fba8a381929d2e59dd8a95019c83c83f7ebb84e090cdd76c0a6`.
+Evidence from the job: toolchain smoke; ShellCheck; Ansible lint with zero
+failures on62 files; Python suites 111,24,2,97 and15 tests (97 includes one
+opt-in skip); Ruby inventory/template contracts; backup upload/Restic contracts;
+signed bpg/proxmox0.116.0 init/validate; and tracked-file secret scan. The
+runner pulled the private digest with GitLab job credentials, used rootless
+Docker27.5.1 DinD over TLS, and reported x86_64/6 CPU/15.61 GiB in the isolated
+job daemon. No production mounts or Proxmox apply were used. This closes native
+candidate execution evidence, but not promotion of the experimental image to
+the default executor or the remaining full end-to-end control-plane gates.
+
 Pipeline97 then reached the native suite but `ansible-lint` could not resolve
 role `base` because the candidate job did not set `ANSIBLE_CONFIG`; local
 validation had supplied it explicitly. Set the job variable to the checkout's

@@ -31,6 +31,11 @@ class RunnerBoundaryTest(unittest.TestCase):
         self.assertEqual(docker['allowed_services'], docker['allowed_privileged_services'])
         self.assertTrue(all(x.endswith(':27.5.1-dind-rootless') for x in docker['allowed_services']))
         self.assertNotIn('*', ''.join(docker['allowed_images']))
+        self.assertIn(
+            'registry-gitlab.dungxbuif.com/dungxbuif/homelab-automation/automation-ee@sha256:'
+            + '835cce544bde8fba8a381929d2e59dd8a95019c83c83f7ebb84e090cdd76c0a6',
+            docker['allowed_images'],
+        )
 
 
 if __name__ == '__main__':

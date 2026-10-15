@@ -37,6 +37,7 @@
       vars:
         runner_credential: '{{ lookup("file", runner_credential_path) | from_json }}'
       no_log: true
+      notify: Restart project runner
 
     - name: Start runner using only the rootless socket
       become: true
@@ -56,3 +57,12 @@
         log_options:
           max-size: 10m
           max-file: '3'
+
+  handlers:
+    - name: Restart project runner
+      become: true
+      community.docker.docker_container:
+        name: homelab-gitlab-runner
+        docker_host: 'unix:///run/user/{{ ansible_facts.getent_passwd[ci_user][1] }}/docker.sock'
+        state: started
+        restart: true

@@ -20,7 +20,7 @@ linked above is the dated baseline, superseded by newer observation records.
 | Task | Verified progress | Required work still open |
 | --- | --- | --- |
 | 1: Catalog | Active/retired policies, no K8s infrastructure targets, bounded Pi/VM runtime audits | Full VPS/Mac/rootless coverage, unknown service ownership, complete cross-catalog reconciliation |
-| 2: Execution image | Pinned toolchain, isolated rootless CI, working pre-push image scan; provisioner security image published and deployed | EE blocked on HIGH/CRITICAL findings; actual runner digest adoption and complete scan remediation |
+| 2: Execution image | Pinned toolchain, isolated rootless CI, provisioner security image published/deployed, and experimental static Alpine/OpenTofu candidate passed native VM100 pipeline 99 | Default EE still uses the Debian Containerfile; promotion requires reproducible source-to-image CI provenance, operator approval, and the remaining control-plane acceptance |
 | 3: Semaphore | Source-backed templates, restricted Pi/VM observers, backup health and exact Homepage release | Viewer/Task Runner/Manager isolation, general approved plan/apply flows and notification acceptance |
 | 4: OpenTofu | Observed VM baseline, import/no-destroy tests, enforced state encryption, pinned public CA and named curl/Go TLS probes | Runner mapping/trust and provider acceptance, Python strict-CA compatibility, scoped token, recoverable key escrow/backend, actual VM100 import and no-op plan |
 | 5: Host baseline | VM100 Docker CE 29.8.2, encrypted overlay restored, restricted accounts enrolled on Pi/VM | VPS enrollment, all-host idempotent baseline, durable standalone overlay boot ordering |
@@ -52,6 +52,14 @@ encryption checks, with zero HIGH/CRITICAL in the unchanged scanner. This is
 candidate evidence only; the main Debian Containerfile, CI default image and
 live runner remain unchanged until reproducible CI build, provenance, runner
 enrollment and full boundary acceptance are complete.
+
+The candidate's explicit native CI gate is now pipeline99/job235 on the VM100
+project runner: it pulled the immutable digest, used rootless DinD with TLS,
+passed toolchain/lint/contract/automation/backup/OpenTofu tests and signed
+provider validation, then completed successfully. The runner allow-list and
+restart handler are source-backed and applied on VM100. The candidate remains
+an experimental image; the default Debian EE and live Semaphore executor were
+not switched.
 
 Publication checkpoint: implementation commits are on private GitLab branch
 `codex/automation-bootstrap`, not merged to main. Pipeline 72 validators and
