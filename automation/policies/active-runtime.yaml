@@ -68,6 +68,8 @@ services:
     lifecycle: active
     networks: [bridge]
     public_ports: [53]
+    observed_host_ports: [53, 81]
+    port_review_required: true
   - id: postgres
     host: pi5
     class: database
@@ -160,6 +162,189 @@ services:
     class: learning_app
     lifecycle: active
     networks: [homelab-net]
+  - id: family-tree
+    host: vm100
+    class: application
+    lifecycle: active
+    networks: [edge-http-net]
+    observed_image: oven/bun:1-slim
+  - id: mypocket-api
+    host: vm100
+    class: application
+    lifecycle: active
+    networks: [data-net, homelab-net, mypocket-net, mypocket-redis-net]
+    observed_image: registry.dungxbuif.com/mypocket-api:auth-12572c87
+  - id: mypocket-worker
+    host: vm100
+    class: worker
+    lifecycle: active
+    networks: [data-net, homelab-net, mypocket-net, mypocket-redis-net]
+    observed_image: registry.dungxbuif.com/mypocket-api:release-73c4c37
+  - id: netbird-server
+    host: vm100
+    class: private_transport
+    lifecycle: active
+    runtime_service: netbird_netbird-server
+    networks: [homelab-net, netbird-net, edge-http-net]
+    observed_image: netbirdio/netbird-server:latest
+  - id: netbird-dashboard
+    host: vm100
+    class: private_transport_ui
+    lifecycle: active
+    runtime_service: netbird_netbird-dashboard
+    networks: [homelab-net, netbird-net, edge-http-net]
+    observed_image: netbirdio/dashboard:latest
+  - id: macocr-proxy
+    host: vm100
+    class: application
+    lifecycle: active
+    networks: [edge-http-net, homelab-net]
+    observed_image: homelab/macocr-proxy:scan-api-20261008
+  - id: gitlab-https-tunnel
+    host: vm100
+    class: tunnel_client
+    lifecycle: active
+    runtime_service: gitlab-https-tunnel_client
+    networks: [gitlab-net, homelab-net]
+  - id: gitlab-registry-tunnel
+    host: vm100
+    class: tunnel_client
+    lifecycle: active
+    runtime_service: gitlab-registry-trial_client
+    networks: [gitlab-net, homelab-net]
+  - id: gitlab-ssh-tunnel
+    host: vm100
+    class: tunnel_client
+    lifecycle: active
+    runtime_service: gitlab-ssh-tunnel_client
+    networks: [gitlab-net, homelab-net]
+  - id: n8n
+    host: vm100
+    class: application
+    lifecycle: active
+    networks: [data-net, edge-http-net]
+    observed_image: docker.n8n.io/n8nio/n8n:stable
+  - id: openclaw
+    host: vm100
+    class: application
+    lifecycle: active
+    networks: [homelab-net]
+    observed_image: homelab/openclaw:vm100-20260912
+  - id: mezonhook
+    host: vm100
+    class: application
+    lifecycle: active
+    networks: [edge-http-net]
+    observed_image: homelab/mezonhook:vm100-20260911
+  - id: k8s-syntax
+    host: vm100
+    class: learning_app
+    lifecycle: active
+    networks: [homelab-net]
+    observed_image: homelab/k8s-syntax:af8481e
+  - id: stirling-pdf
+    host: vm100
+    class: application
+    lifecycle: active
+    networks: [homelab-net]
+    observed_image: docker.stirlingpdf.com/stirlingtools/stirling-pdf:3.1.0
+  - id: couchloom-ollama
+    host: vm100
+    class: model_runtime
+    lifecycle: active
+    networks: [couchloom-internal]
+    observed_image: ollama/ollama:0.34.0
+  - id: couchloom-postgres
+    host: vm100
+    class: database
+    lifecycle: active
+    networks: [couchloom-internal]
+    observed_image: pgvector/pgvector:0.8.6-pg17-bookworm
+    placement_review_required: true
+  - id: relayhub-worker
+    host: vm100
+    class: worker
+    lifecycle: active
+    networks: [relayhub-net]
+    observed_image: homelab/relayhub:prod-eee9e7c
+  - id: relayhub-nats
+    host: vm100
+    class: message_broker
+    lifecycle: active
+    networks: [relayhub-net]
+    observed_image: nats:2.14.5-alpine
+  - id: relayhub-redis
+    host: vm100
+    class: cache
+    lifecycle: active
+    networks: [relayhub-net]
+    observed_image: redis:7.4-alpine
+  - id: relayhub-dedicated-postgres
+    host: pi5
+    class: database
+    lifecycle: active
+    runtime_container: relayhub-relayhub-postgres-1
+    networks: [relayhub_relayhub]
+    observed_image: postgres:17-alpine
+    ownership_review_required: true
+  - id: blackbox-exporter
+    host: pi5
+    class: monitoring
+    lifecycle: active
+    networks: [proxy_net]
+    observed_image: prom/blackbox-exporter:latest
+  - id: node-exporter
+    host: pi5
+    class: monitoring
+    lifecycle: active
+    networks: [proxy_net]
+    observed_image: prom/node-exporter:latest
+  - id: snmp-exporter
+    host: pi5
+    class: monitoring
+    lifecycle: active
+    networks: [proxy_net]
+    observed_image: prom/snmp-exporter:latest
+  - id: alertmanager
+    host: pi5
+    class: monitoring
+    lifecycle: active
+    networks: [proxy_net]
+    observed_image: prom/alertmanager:v0.27.0
+    observed_host_ports: [9093]
+    port_review_required: true
+  - id: victoriametrics
+    host: pi5
+    class: monitoring
+    lifecycle: active
+    networks: [proxy_net]
+    observed_image: victoriametrics/victoria-metrics:v1.102.0
+    observed_host_ports: [8428]
+    port_review_required: true
+  - id: cadvisor
+    host: pi5
+    class: monitoring
+    lifecycle: active
+    networks: [proxy_net]
+    observed_image: gcr.io/cadvisor/cadvisor:v0.49.1
+  - id: postgres-exporter
+    host: pi5
+    class: monitoring
+    lifecycle: active
+    networks: [proxy_net]
+    observed_image: prometheuscommunity/postgres-exporter:latest
+  - id: pgadmin
+    host: pi5
+    class: database_admin_ui
+    lifecycle: active
+    networks: [edge-http-net, homelab-net, proxy_net]
+    observed_image: dpage/pgadmin4:latest
+  - id: librespeed
+    host: pi5
+    class: diagnostic_app
+    lifecycle: active
+    networks: [edge-http-net, homelab-net, proxy_net]
+    observed_image: lscr.io/linuxserver/librespeed:latest
 
 routes:
   - id: homepage

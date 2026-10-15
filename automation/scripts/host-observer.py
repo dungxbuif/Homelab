@@ -22,6 +22,11 @@ PROBES = {
     'listeners': ('/usr/bin/ss', '-H', '-lntu'),
     'containers': ('/usr/bin/docker', 'ps', '-a', '--format',
                    '{{.ID}}\t{{.Names}}\t{{.State}}\t{{.Status}}'),
+    'container_inventory': ('/usr/bin/docker', 'ps', '-a', '--format',
+                            '{"id":{{json .ID}},"name":{{json .Names}},"image":{{json .Image}},'
+                            '"state":{{json .State}},"networks":{{json .Networks}},"ports":{{json .Ports}},'
+                            '"service":{{json (.Label "com.docker.swarm.service.name")}},'
+                            '"project":{{json (.Label "com.docker.compose.project")}}}'),
     'networks': ('/usr/bin/docker', 'network', 'ls', '--format',
                  '{{.ID}}\t{{.Name}}\t{{.Driver}}\t{{.Scope}}'),
     'resources': ('/usr/bin/docker', 'stats', '--no-stream', '--format',

@@ -62,6 +62,18 @@ class HostObserverTests(unittest.TestCase):
         self.assertNotIn('private-path', str(result))
         self.assertTrue(all(x['error'] == 'command_unavailable' for x in result['probes'].values()))
 
+    def test_inventory_probe_selects_metadata_without_secrets(self):
+        module = self.module()
+        probe = module.PROBES['container_inventory']
+        self.assertEqual(probe[:4], ('/usr/bin/docker', 'ps', '-a', '--format'))
+        template = probe[4]
+        for field in ['.ID', '.Names', '.Image', '.State', '.Networks', '.Ports']:
+            self.assertIn('{{json ' + field + '}}', template)
+        for label in ['com.docker.swarm.service.name', 'com.docker.compose.project']:
+            self.assertIn(label, template)
+        for forbidden in ['.Command', '.Env', '.Labels', '.Mounts', '{{json .}}']:
+            self.assertNotIn(forbidden, template)
+
 
 if __name__ == '__main__':
     unittest.main()

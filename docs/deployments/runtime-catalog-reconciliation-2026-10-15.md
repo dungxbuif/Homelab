@@ -45,3 +45,49 @@ This remains a partial catalog: additional VM100 apps and Pi monitoring/data
 components observed during the audit still require individual ownership,
 component and route reconciliation. Do not delete omitted resources or use
 this file as a complete replacement deployment manifest.
+
+## Expanded read-only inventory collection
+
+Add a fixed `container_inventory` probe to the restricted host observer using
+`docker ps -a --format` with explicitly selected ID, name, image, state, network,
+port, Swarm service name and Compose project fields. Preserve existing probes.
+Do not collect full inspect output, command arguments, environment, arbitrary
+labels or secrets. JSON-lines formatting preserves exact string boundaries.
+Deploy only the collector update through the existing enrollment playbook,
+then gather Pi5/VM100 observations via Semaphore before reconciling missing
+catalog entries. This remains metadata collection, not health certification or
+permission to remove unowned containers. Test the selected field boundary and
+run the existing observer suite before installation. No public docs change.
+
+Collector rollout succeeded: Pi5 changed one helper task; VM100 changed the
+helper and reconciled its existing exact observer sudo rule. Both playbooks
+completed with zero failures. Semaphore tasks 26 (VM100) and 27 (Pi5), runner 1,
+completed successfully and returned the new JSON-lines probe. Their playbook
+checkout was dfc0aaf5; the separately enrolled collector update is recorded in
+this change, not implied to be part of that earlier checkout.
+
+The policy now contains 53 logical services/components, adding omitted VM100
+apps, their private worker/datastore components, GitLab tunnel clients, and Pi
+monitoring/admin components. Six observer tests and five policy tests pass;
+the validator still reports zero Kubernetes infrastructure targets. The
+`k8s-syntax` learning application is not a Kubernetes cluster: tests now check
+host/class boundaries rather than excluding any app whose name contains k8s.
+
+Observed image tags are evidence only, not approved deployment digests. Ports
+shown as `80/tcp` by Docker are exposed container ports, not host publication.
+AdGuard binds host 53 and 81; Alertmanager binds 9093; VictoriaMetrics binds
+8428. The latter observations are marked for review, not added as approved
+public ingress. No ports were closed or routes changed in this audit.
+
+Outstanding data/ownership checks:
+- CouchLoom PostgreSQL is on VM100, contrary to the intended Pi datastore role;
+  assess a backed-up migration rather than silently accepting the placement.
+- Pi `relayhub-relayhub-postgres-1` is running on `relayhub_relayhub`; establish
+  current consumers before calling it retired or deleting it.
+- Local backup inventory declares the shared Pi `postgres` only. Coverage of
+  those two separate PostgreSQL instances is not proven; inspect live runner
+  inventory and native exports before claiming all database instances backed up.
+- VM100 `vigorous_napier` continues cycling Alpine tasks; owner/purpose is
+  unknown. Stopped legacy containers and this service were not removed.
+- Rootless CI daemon inventory, VPS/Mac observations, routes, owners and resource
+  limits remain incomplete. Keep `inventory_complete: false`.

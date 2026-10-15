@@ -34,14 +34,37 @@ class PolicyContractTest(unittest.TestCase):
         active_ids = {item["id"] for key in ("hosts", "services", "routes") for item in active[key]}
         retired_ids = {item["id"] for key in ("hosts", "services", "routes") for item in retired[key]}
         self.assertFalse(active_ids & retired_ids)
-        self.assertFalse(
-            any(
-                "k8s" in item.lower()
-                or "kubernetes" in item.lower()
-                or "kube-vip" in item.lower()
-                for item in active_ids
-            )
-        )
+        self.assertFalse(any("k8s" in item['id'].lower() or "kube" in item['id'].lower()
+                             for item in active['hosts']))
+        self.assertFalse(any(item['class'] in ['kubernetes', 'kube-vip', 'kubernetes_node']
+                             for item in active['services']))
+
+    def test_observed_application_and_monitoring_components_are_not_omitted(self):
+        active = yaml.safe_load((ROOT / 'automation/policies/active-runtime.yaml').read_text())
+        services = {item['id']: item for item in active['services']}
+        expected = {
+            'family-tree': ('vm100', {'edge-http-net'}),
+            'mypocket-api': ('vm100', {'data-net', 'homelab-net', 'mypocket-net', 'mypocket-redis-net'}),
+            'mypocket-worker': ('vm100', {'data-net', 'homelab-net', 'mypocket-net', 'mypocket-redis-net'}),
+            'macocr-proxy': ('vm100', {'edge-http-net', 'homelab-net'}),
+            'n8n': ('vm100', {'data-net', 'edge-http-net'}),
+            'k8s-syntax': ('vm100', {'homelab-net'}),
+            'relayhub-worker': ('vm100', {'relayhub-net'}),
+            'relayhub-nats': ('vm100', {'relayhub-net'}),
+            'relayhub-redis': ('vm100', {'relayhub-net'}),
+            'couchloom-postgres': ('vm100', {'couchloom-internal'}),
+            'relayhub-dedicated-postgres': ('pi5', {'relayhub_relayhub'}),
+            'alertmanager': ('pi5', {'proxy_net'}),
+            'victoriametrics': ('pi5', {'proxy_net'}),
+            'pgadmin': ('pi5', {'edge-http-net', 'homelab-net', 'proxy_net'}),
+        }
+        for name, (host, networks) in expected.items():
+            self.assertEqual(services[name]['host'], host)
+            self.assertEqual(set(services[name]['networks']), networks)
+        self.assertEqual(services['k8s-syntax']['class'], 'learning_app')
+        self.assertTrue(services['relayhub-dedicated-postgres']['ownership_review_required'])
+        self.assertEqual(services['adguardhome']['observed_host_ports'], [53, 81])
+        self.assertFalse(active['inventory_complete'])
 
     def test_approvals_require_manager_for_mutations(self):
         approvals = yaml.safe_load((ROOT / "automation/policies/approvals.yml").read_text())
