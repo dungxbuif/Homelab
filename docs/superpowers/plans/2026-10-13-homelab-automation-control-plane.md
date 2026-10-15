@@ -21,12 +21,12 @@ linked above is the dated baseline, superseded by newer observation records.
 | --- | --- | --- |
 | 1: Catalog | Active/retired policies, no K8s infrastructure targets, bounded Pi/VM runtime audits | Full VPS/Mac/rootless coverage, unknown service ownership, complete cross-catalog reconciliation |
 | 2: Execution image | Pinned toolchain, isolated rootless CI, provisioner security image published/deployed, and experimental static Alpine/OpenTofu candidate passed native VM100 pipeline 99 | Default EE still uses the Debian Containerfile; promotion requires reproducible source-to-image CI provenance, operator approval, and the remaining control-plane acceptance |
-| 3: Semaphore | Source-backed templates, restricted Pi/VM observers, backup health and exact Homepage release | Viewer/Task Runner/Manager isolation, general approved plan/apply flows and notification acceptance |
+| 3: Semaphore | Source-backed templates, restricted Pi/VM observers, backup health, exact Homepage release, and the Pi5-only backup-client release | Viewer/Task Runner/Manager isolation, general approved plan/apply flows and broader notification coverage |
 | 4: OpenTofu | Observed VM baseline, import/no-destroy tests, enforced state encryption, pinned public CA and named curl/Go TLS probes | Runner mapping/trust and provider acceptance, Python strict-CA compatibility, scoped token, recoverable key escrow/backend, actual VM100 import and no-op plan |
 | 5: Host baseline | VM100 Docker CE 29.8.2, encrypted overlay restored, restricted accounts enrolled on Pi/VM | VPS enrollment, all-host idempotent baseline, durable standalone overlay boot ordering |
 | 6: Routes | 24 catalog routes, schema/private-gate tests, both-gateway endpoint probes | Generated live Pi/VPS publish/rollback, Stirling public ingress, private-policy/consumer reconciliation, protocol-specific checks |
 | 7: Apps | Homepage digest deploy via template 6, receipt and idempotent repeat; catalog corrections | Real rollback rehearsal, other apps' build/apply boundaries, private networks, peak-resource policies, registry-pull acceptance |
-| 8: DB/backup | UI provisioner, remote class snapshots, restricted health, local native restores, retention/scheduler activation, dedicated RelayHub remote snapshot; locked client release and private OAuth roots installed | Remote restore rehearsal in progress, new-client full-upload acceptance, CouchLoom DB placement/coverage, complete remote payload/application restore acceptance |
+| 8: DB/backup | UI provisioner, remote class snapshots, restricted health, local native restores, retention/scheduler activation, dedicated RelayHub remote snapshot, locked Pi5 client release, and canonical payload verification | Full remote restore rehearsal, new-client full-upload acceptance, CouchLoom DB placement/coverage, complete remote payload/application restore acceptance |
 | 9: Gates/drift | Policy tests, source CI, resource/route evidence and bounded release receipt | Complete automated drift/security scan, per-apply Mezon notices, full rollback artifacts |
 | 10: Lockdown | Restricted pilot transport exists | Two complete Git-to-apply-to-notification acceptances, break-glass escrow and removal of general agent SSH |
 
@@ -100,10 +100,9 @@ ancestry. Full remote retrieval now runs as Pi async job
 overlap or restart it. Native restoration of the downloaded payload remains
 unverified. See the linked execution records for precise evidence boundaries.
 
-Webhook storage for deploy notifications is being clarified with the operator;
-the candidate is a separate encrypted Semaphore Secret Variable Group scoped
-to release jobs. No notification secret has been enrolled or live deploy
-notification claimed yet. Public application behavior is unchanged.
+Webhook storage is a separate encrypted Semaphore Secret Variable Group scoped
+to release jobs. Homepage task 56 accepted the live Mezon notification path;
+public application behavior is unchanged.
 
 ## Global Constraints
 
@@ -147,6 +146,16 @@ read-only observer path and task-history persistence only. It does not promote
 the contract-only role matrix into live multi-user RBAC, and it does not claim
 backup-health, app-deploy, route-publish, OpenTofu import, rollback, or Mezon
 notification acceptance.
+
+#### Current correction after backup-client release
+
+The readback above predates the Pi5 backup-client enrollment. Project 1 now has
+seven templates: template 7, `Release backup client (Pi5)`, uses a dedicated
+Pi5 key and completed live task 65 successfully. Its canonical verifier passed
+the full local source run for 29 artifacts and 6,915,289,967 bytes. The
+dedicated Mezon Secret Variable Group and Homepage notification acceptance are
+recorded by task 56. These updates do not change the still-open RBAC, full
+remote restore, VM100 OpenTofu import, or generic application deployment gates.
 
 ### Invariants
 
