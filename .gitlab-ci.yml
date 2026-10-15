@@ -26,12 +26,22 @@ variables:
 validate:semaphore-bootstrap:
   extends: .docker-job
   stage: validate
+  rules:
+    - if: '$EXPERIMENTAL_EE_ONLY == "true"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH'
+    - if: '$CI_COMMIT_TAG'
   script:
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --workdir /workspace node:24.0.2-alpine sh -c 'node --test automation/semaphore/tests/*.test.mjs'
 
 validate:automation-ee:
   extends: .docker-job
   stage: validate
+  rules:
+    - if: '$EXPERIMENTAL_EE_ONLY == "true"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH'
+    - if: '$CI_COMMIT_TAG'
   script:
     - docker build --file automation/execution-environment/Containerfile --tag "$EE_IMAGE:$EE_TAG" automation/execution-environment
     - docker run --rm "$EE_IMAGE:$EE_TAG"
@@ -91,6 +101,35 @@ validate:automation-ee:
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint bash "$EE_IMAGE:$EE_TAG" /workspace/automation/scripts/validate-proxmox-module.sh
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint bash "$EE_IMAGE:$EE_TAG" /workspace/automation/scripts/check-secrets.sh /workspace
 
+validate:experimental-ee:
+  stage: validate
+  image:
+    name: registry-gitlab.dungxbuif.com/dungxbuif/homelab-automation/automation-ee@sha256:835cce544bde8fba8a381929d2e59dd8a95019c83c83f7ebb84e090cdd76c0a6
+    entrypoint: [""]
+  services:
+    - name: docker:27.5.1-dind-rootless
+      alias: docker
+  before_script:
+    - docker info
+  rules:
+    - if: '$EXPERIMENTAL_EE_ONLY == "true"'
+    - when: never
+  script:
+    - test-toolchain --run
+    - find automation backup -name '*.sh' -type f -print0 | xargs -0 -r shellcheck --severity=error
+    - ansible-lint automation/ansible automation/semaphore/playbooks
+    - python -m unittest discover -s automation/tests -p 'test_*.py'
+    - python -m unittest discover -s automation/ansible/tests -p 'test_*.py'
+    - python -m unittest discover -s automation/semaphore/tests -p 'test_*.py'
+    - python -m unittest discover -s backup/tests -p 'test_*.py'
+    - python -m unittest discover -s automation/tofu/proxmox/tests -p 'test_*.py'
+    - ruby automation/ansible/tests/test-inventory-contract.rb
+    - ruby automation/semaphore/tests/test-template-contract.rb
+    - bash backup/tests/test_upload_manifest.sh
+    - bash backup/tests/test_restic_contract.sh
+    - bash automation/scripts/validate-proxmox-module.sh
+    - bash automation/scripts/check-secrets.sh .
+
 build:automation-ee:
   extends: .docker-job
   stage: build
@@ -103,6 +142,8 @@ build:automation-ee:
     - validate:automation-ee
     - validate:semaphore-bootstrap
   rules:
+    - if: '$EXPERIMENTAL_EE_ONLY == "true"'
+      when: never
     - if: '$CI_COMMIT_BRANCH'
     - if: '$CI_COMMIT_TAG'
   script:
@@ -128,6 +169,11 @@ build:provisioner:
   needs:
     - validate:automation-ee
     - validate:semaphore-bootstrap
+  rules:
+    - if: '$EXPERIMENTAL_EE_ONLY == "true"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH'
+    - if: '$CI_COMMIT_TAG'
   script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" --username "$CI_REGISTRY_USER" --password-stdin
     - docker build --platform linux/amd64 --file automation/provisioner/Dockerfile --tag "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-amd64" .

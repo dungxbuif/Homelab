@@ -460,3 +460,13 @@ production mount was used. This closes candidate host-architecture evidence,
 not the production adoption gate: registry pull credentials, native CI job,
 runner digest enrollment, full job boundary acceptance and reproducible
 source-to-image build are still required.
+
+## Explicit native runner gate
+
+Add a CI-only experimental job selected by `EXPERIMENTAL_EE_ONLY=true`. It uses
+the immutable candidate digest, the existing project rootless DinD service, and
+the VM100 project runner. All normal validation/build jobs are skipped in this
+mode. The job must run toolchain smoke, the repository Python suites, Ansible
+lint, ShellCheck and Proxmox module validation; it must not apply infrastructure,
+mount production data or enroll the candidate as the default executor. Trigger
+the pipeline explicitly after publication and record its job/pipeline result.
