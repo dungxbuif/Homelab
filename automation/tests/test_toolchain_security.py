@@ -10,9 +10,14 @@ class ToolchainSecurityTests(unittest.TestCase):
         source = (EE / 'Containerfile').read_text()
         removal = 'RUN python -m pip uninstall --yes pip'
         self.assertIn(removal, source)
-        self.assertGreater(source.index(removal), source.index('RUN ansible-galaxy collection install'))
+        self.assertGreater(source.index(removal), source.index('RUN timeout 10m ansible-galaxy collection install'))
         smoke = (EE / 'tests/test-toolchain.sh').read_text()
         self.assertIn('find_spec("pip") is None', smoke)
+
+    def test_galaxy_install_has_bounded_network_wait(self):
+        source = (EE / 'Containerfile').read_text()
+        self.assertIn('RUN timeout 10m ansible-galaxy collection install', source)
+        self.assertIn('--timeout 60', source)
 
     def test_ansible_patch_pin_is_consistent(self):
         self.assertIn('ARG ANSIBLE_CORE_VERSION=2.18.19\n', (EE / 'Containerfile').read_text())

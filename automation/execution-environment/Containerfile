@@ -55,8 +55,9 @@ RUN python -m pip install --no-cache-dir \
     && rm /tmp/requirements.txt
 
 COPY requirements.yml /tmp/requirements.yml
-RUN ansible-galaxy collection install \
+RUN timeout 10m ansible-galaxy collection install \
       --collections-path /usr/share/ansible/collections \
+      --timeout 60 \
       -r /tmp/requirements.yml \
     && rm /tmp/requirements.yml
 

@@ -41,6 +41,9 @@ volume so the EE and runner scans in one job reuse the same download. A hard
 20-minute start timeout prevents an unreachable vulnerability mirror from
 holding a CI runner indefinitely; the scan still fails closed and produces no
 publishable image.
+The image build also bounds Ansible Galaxy collection resolution to ten minutes
+with a 60-second per-operation timeout; a registry/network failure therefore
+fails the build instead of occupying the runner indefinitely.
 
 The default container command runs `test-toolchain --run`, checking the installed
 tools without needing a repository mount. Run the script without `--run` from
