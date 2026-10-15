@@ -81,3 +81,23 @@ signed provider readonly init/validate and the unchanged HIGH/CRITICAL scanner
 are in the security record. These local tags and architecture-specific outputs
 are experimental inputs, not immutable published release references. Do not
 deploy them to the AMD64 runner or infer full upstream test coverage.
+
+## AMD64 emulation evidence
+
+`Containerfile.alpine-static` replaces the local source-image dependency with
+the official digest-pinned Docker CLI image and accepts a prebuilt `tofu` in
+the disposable context. Supply the same requirements and test-toolchain files
+as above. Cross-build the patched source with GOOS=linux, GOARCH=amd64 and
+CGO_ENABLED=0 using the pinned native Go builder. Verify ELF architecture and
+build metadata before copying the binary into the context. Build explicitly
+with `docker build --platform linux/amd64`; do not reuse the ARM64 binary.
+
+The tested AMD64 static binary SHA256 is
+`d8f583e3a4e5781d07dc790e2c94315579bbc6486225ff0028fd78286bf44026`.
+Local AMD64 emulation passes247 Python tests (one additional opt-in skip),
+toolchain, signed provider readonly init/validate, nine Ruby tests, two backup
+shell contracts and Ansible lint on62 files. The unchanged scanner exits0 with
+zero HIGH/CRITICAL findings. This does not yet prove native VM100 CI execution,
+runner integration or reproducible source-to-image supply-chain automation.
+The recipe is experimental and does not itself authenticate the supplied binary;
+do not promote it as a production build without the remaining provenance gate.

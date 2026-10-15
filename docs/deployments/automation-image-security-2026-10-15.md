@@ -410,3 +410,32 @@ of all vulnerabilities. The base Alpine candidate also passed full Ansible lint
 (62 files), ShellCheck error gate, nine Ruby tests and upload/Restic shell tests.
 AMD64 build, broader upstream tests, portable CI recipe, runner integration and
 operator adoption remain outstanding. Production has not changed.
+
+## AMD64 candidate validation plan
+
+Cross-build the same patched source with the pinned native Go builder,
+CGO_ENABLED=0, GOOS=linux and GOARCH=amd64 into a separate output. Inspect
+ELF/build metadata, then construct a separate AMD64 Alpine image using the
+official pinned multi-platform Docker CLI image rather than copying the ARM64
+binary. Run toolchain, encryption/provider and compatibility tests and the same
+scanner under local AMD64 emulation. Emulation evidence is not native VM100
+runner acceptance; no deployment or CI runner replacement is included here.
+
+Cross-build completed: ELF x86-64, statically linked; Go metadata confirms
+Go1.27.2, CGO_ENABLED=0, GOARCH=amd64, exact upstream revision and modified=true.
+Binary SHA256: `d8f583e3a4e5781d07dc790e2c94315579bbc6486225ff0028fd78286bf44026`.
+Candidate `homelab-automation-ee:alpine-static-amd64-experiment-20261015` image ID:
+`sha256:d051a656cc464b973de652023bd39da883a3cadb2197eb25eb10ec3490995040`.
+
+Under local AMD64 emulation: toolchain passes, Python suites run248 tests with
+247 passes/one skip, including the native CLI encryption test. Actual provider
+init uses readonly lock and signed bpg/proxmox0.116.0; module validate succeeds.
+Base image passes nine Ruby tests, upload manifest and Restic shell contracts,
+and Ansible lint on62 files. No production credentials or Proxmox state used.
+
+Unchanged Trivy scanner exits0; all four targets have zero HIGH/CRITICAL.
+Report SHA256: `e908db68237f8d14d0ff3cba3613692dc60279046887d4d8520da321743f51c9`.
+Report: `/tmp/homelab-alpine-amd64.IQ0ggfSp/security-reports/automation-ee-alpine-static-amd64.json`.
+Recipe retained as experiments/Containerfile.alpine-static. No main CI recipe
+or production runner changed. Native CI, complete runner boundary checks,
+broader upstream tests and provenance-enforcing build remain acceptance gates.
