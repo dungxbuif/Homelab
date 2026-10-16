@@ -24,10 +24,13 @@ class ObservedBaselineTests(unittest.TestCase):
                              ('iothread', 'false'), ('replicate', 'false'),
                              ('floating', '0'), ('mac_address', '"8E:8D:DC:BD:7F:72"')]:
             self.assertRegex(source, rf'\b{field}\s*=\s*{re.escape(value)}')
-        self.assertRegex(source, r'operating_system\s*\{\s*type\s*=\s*"other"')
         self.assertRegex(source, r'initialization\s*\{[^}]*interface\s*=\s*"ide2"')
-        self.assertNotIn('Managed import-only baseline', source)
-        self.assertNotIn('ignore_changes', source)
+        self.assertRegex(source, r'upgrade\s*=\s*false')
+        self.assertRegex(source, r'servers\s*=\s*\["10\.10\.0\.5",\s*"1\.1\.1\.1"\]')
+        self.assertRegex(source, r'address\s*=\s*"10\.10\.0\.31/24"')
+        self.assertRegex(source, r'gateway\s*=\s*"10\.10\.0\.1"')
+        self.assertRegex(source, r'username\s*=\s*"ubuntu"')
+        self.assertRegex(source, r'ignore_changes\s*=\s*\[initialization\[0\]\.user_account\[0\]\.password\]')
         self.assertRegex(source, r'prevent_destroy\s*=\s*true')
 
 

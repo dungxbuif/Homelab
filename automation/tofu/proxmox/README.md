@@ -1,9 +1,9 @@
 # VM100 OpenTofu import boundary
 
 This module is an unimported scaffold for VM100, not an approved live baseline.
-Do not apply it: known hardware fields are now reconciled with read-only API
-observations, but a live provider-generated no-op plan has not been verified. See the
-[verified preflight](../../../docs/deployments/vm100-import-preflight-2026-10-14.md).
+Do not apply it: a read-only provider preflight now proves the plan is import-only,
+but no production state has been created and no import/apply has been approved.
+See the [verified preflight](../../../docs/deployments/vm100-import-preflight-2026-10-14.md).
 The table below contains observed values, not a completed import:
 
 | Field | Value |

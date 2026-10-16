@@ -21,10 +21,6 @@ resource "proxmox_virtual_environment_vm" "vm100" {
     enabled = true
   }
 
-  operating_system {
-    type = "other"
-  }
-
   disk {
     datastore_id = var.disk_datastore
     interface    = "scsi0"
@@ -37,6 +33,25 @@ resource "proxmox_virtual_environment_vm" "vm100" {
   initialization {
     datastore_id = "local-lvm"
     interface    = "ide2"
+    upgrade      = false
+
+    dns {
+      servers = ["10.10.0.5", "1.1.1.1"]
+    }
+
+    ip_config {
+      ipv4 {
+        address = "10.10.0.31/24"
+        gateway = "10.10.0.1"
+      }
+    }
+
+    user_account {
+      username = "ubuntu"
+      keys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJrm7NEwiBT2A6gSbt+hiUBq4gRHWE94dxsAwFiz5eIp homelab-k8s-iac",
+      ]
+    }
   }
 
   network_device {
@@ -47,5 +62,7 @@ resource "proxmox_virtual_environment_vm" "vm100" {
 
   lifecycle {
     prevent_destroy = true
+    # Proxmox masks the existing cloud-init password; never rotate it during import.
+    ignore_changes = [initialization[0].user_account[0].password]
   }
 }

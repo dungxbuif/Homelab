@@ -42,6 +42,26 @@ call Proxmox, create state, or authorize an import/apply. Local contract tests
 use a fake `tofu` executable and the checked-in JSON gate; the real provider
 and production credentials are deliberately not involved.
 
+## Live read-only provider preflight on 2026-10-16
+
+Using the pinned `homelab-automation-ee:local` image, the pinned Proxmox CA,
+the existing scoped API token from the local credential store, and a disposable
+preflight encryption passphrase, the provider successfully connected to
+`https://pve:8006/` mapped to `10.10.0.20`. `tofu validate` passed and the live
+provider plan reported exactly:
+
+```text
+Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.
+```
+
+The plan was written only inside the disposable container and was not applied.
+No Proxmox state, VM configuration, disk, network, or cloud-init value was
+changed. The certificate was verified with `SSL_CERT_FILE`; TLS bypass remained
+false. This proves the provider/import baseline, not production state recovery.
+The next gate is to inject a separately escrowed recoverable state key into the
+controlled Semaphore executor, bind the reviewed plan artifact, and obtain the
+required Manager approval before the first import/apply.
+
 API read used the existing private endpoint and legacy token without mutation;
 the current endpoint uses a self-signed certificate and TLS verification was
 disabled for that bootstrap read. A trusted CA and scoped controller credential
@@ -79,17 +99,25 @@ the invented description, and match observed protection=false, OS=other,
 scsi controller, disk replication/iothread flags, MAC and attached cloud-init
 interface. Keep prevent_destroy. Do not rename the VM or enable protection during
 import; those are separate reviewed changes after an import-only/no-op plan.
-Provider schema validation is not proof of a no-op live plan; cloud-init content,
-legacy boot mapping, trusted TLS, scoped API credential and state key escrow
-still need completion before import/apply. No ignore_changes escape hatch.
+Provider schema validation is not proof of a no-op live plan; legacy boot mapping,
+trusted TLS, scoped API credential and state key escrow still need completion
+before import/apply. The observed cloud-init DNS, static IP, Ubuntu account and
+SSH key are now declared explicitly. Proxmox reports `ostype=other`, but provider
+0.116.0 does not round-trip that imported field into resource state, so the OS
+block remains intentionally unmanaged during import. Proxmox masks the existing
+`cipassword` on read, so the module ignores only that single sensitive nested
+attribute; it never ignores the full initialization block or any
+hardware/network field. A password rotation remains a separate, explicit
+operation.
 Use the pinned provider's documented field names:
 https://github.com/bpg/terraform-provider-proxmox/blob/v0.116.0/docs/resources/virtual_environment_vm.md
 
 The reconciled module passes `tofu fmt`, `tofu validate` with the initialized
 pinned provider, the VM100 contract test, two observed-baseline regression tests,
-and all eight strict import-plan tests. The regression tests failed against the
-old guessed name/protection fields before implementation. No API mutation,
-provider import, production state, saved live plan or apply was performed.
+and all eight strict import-plan tests. The next live preflight must prove the
+provider plan is import-only; an in-place update or any destroy/replacement still
+blocks approval. No API mutation, provider import, production state, saved live
+plan or apply was performed.
 The operator was asked where the independent state encryption recovery key
 should be escrowed; bootstrap can continue elsewhere while that is decided.
 
