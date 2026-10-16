@@ -43,8 +43,10 @@ Internet -> VPS gateway-traefik -> Rathole -> Pi5 edge-traefik-pi5
   -> VPS :18123 -> Mac Rathole client -> host.docker.internal:1234 LM Studio
 ```
 
-`money.dungxbuif.com` now routes to VM100 `tasks.mypocket-web:80`.
-MyPocket production API/worker use Pi5 PgBouncer and Redis DB1 via Docker DNS.
+`money.dungxbuif.com` now routes to VM100 `tasks.mypocket-api:8080`.
+MyPocket is currently API-only: `/` intentionally returns 404 while
+`/api/v1/health` and the API documentation are served by the API service.
+The production API/worker use Pi5 PgBouncer and Redis DB1 via Docker DNS.
 Keeping its dev checkout outside the Homelab infrastructure repo does not mean its
 production runtime stayed on the Mac.
 
