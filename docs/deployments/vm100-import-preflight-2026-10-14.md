@@ -16,6 +16,32 @@ resources. Empty or malformed input must fail. Never print full plan contents,
 which can include secrets. Test every rejection path. This does not replace
 matching the actual provider schema, encrypting state, or reviewing a live plan.
 
+## Semaphore plan artifact contract, 2026-10-16
+
+The Semaphore template contract now treats a plan as an artifact bundle rather
+than only a saved binary. `tofu-plan` requires a caller-selected
+`plan_artifact_id`, writes the binary `artifacts/vm100.tfplan`, the human review
+text `artifacts/vm100.plan.txt`, the private raw JSON
+`artifacts/vm100.plan.json`, its SHA-256 value, and
+`artifacts/vm100.plan.manifest.json`. The post-check requires every member of
+the bundle and runs `check-vm100-plan.py --mode import` against the JSON. Raw
+plan JSON can contain secrets and must remain a private Semaphore artifact.
+
+`tofu-apply-approved` accepts `approved_plan_id` and
+`approved_plan_hash`. Before invoking `tofu apply`, it verifies that the
+approved ID and hash match the plan manifest and the binary SHA-256, verifies
+that the saved text/JSON views still describe the binary, and reruns the
+import-only JSON gate. A mismatch exits before `apply` and creates no binding
+receipt. A matching approval creates the private
+`artifacts/vm100-approved-plan.json` receipt containing the approved ID and
+hash; the post-check also records the detailed-exitcode plan output in
+`artifacts/vm100-post-apply.txt`.
+
+This is a source contract only. It does not enroll a live Semaphore template,
+call Proxmox, create state, or authorize an import/apply. Local contract tests
+use a fake `tofu` executable and the checked-in JSON gate; the real provider
+and production credentials are deliberately not involved.
+
 API read used the existing private endpoint and legacy token without mutation;
 the current endpoint uses a self-signed certificate and TLS verification was
 disabled for that bootstrap read. A trusted CA and scoped controller credential

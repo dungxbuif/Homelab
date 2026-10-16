@@ -14,13 +14,44 @@ variables:
     type: enum
     required: true
     values: [vm100]
+  - name: plan_artifact_id
+    type: artifact_id
+    required: true
   - name: change_message
     type: string
     required: true
 approval:
   required: false
   roles: [Viewer, Task Runner, Manager]
-command: tofu -chdir=automation/tofu/proxmox plan -out=artifacts/vm100.tfplan
+command: |
+  set -eu
+  case "$plan_artifact_id" in
+    ''|*[!A-Za-z0-9._:-]*) echo 'invalid plan_artifact_id' >&2; exit 1 ;;
+  esac
+  mkdir -p artifacts
+  plan="$PWD/artifacts/vm100.tfplan"
+  tofu -chdir=automation/tofu/proxmox plan -out="$plan"
+  tofu -chdir=automation/tofu/proxmox show -no-color "$plan" > artifacts/vm100.plan.txt
+  tofu -chdir=automation/tofu/proxmox show -json "$plan" > artifacts/vm100.plan.json
+  plan_hash="$(sha256sum "$plan" | awk '{print $1}')"
+  printf '%s\n' "$plan_hash" > artifacts/vm100.plan.sha256
+  printf '{"plan_id":"%s","plan_sha256":"%s","binary_artifact":"artifacts/vm100.tfplan","text_artifact":"artifacts/vm100.plan.txt","json_artifact":"artifacts/vm100.plan.json"}\n' \
+    "$plan_artifact_id" "$plan_hash" > artifacts/vm100.plan.manifest.json
 post_check:
-  command: test -s artifacts/vm100.tfplan && ! grep -Eq 'destroy|replace' artifacts/vm100.plan.txt
-  artifact: artifacts/vm100.plan.txt
+  command: |
+    set -eu
+    for artifact in \
+      artifacts/vm100.tfplan \
+      artifacts/vm100.plan.txt \
+      artifacts/vm100.plan.json \
+      artifacts/vm100.plan.sha256 \
+      artifacts/vm100.plan.manifest.json; do
+      test -s "$artifact"
+    done
+    python3 automation/scripts/check-vm100-plan.py --mode import < artifacts/vm100.plan.json
+  artifacts:
+    - artifacts/vm100.tfplan
+    - artifacts/vm100.plan.txt
+    - artifacts/vm100.plan.json
+    - artifacts/vm100.plan.sha256
+    - artifacts/vm100.plan.manifest.json

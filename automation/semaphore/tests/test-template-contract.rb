@@ -2,6 +2,11 @@
 # frozen_string_literal: true
 
 require 'minitest/autorun'
+require 'digest'
+require 'json'
+require 'fileutils'
+require 'open3'
+require 'tmpdir'
 require 'yaml'
 
 class SemaphoreTemplateContractTest < Minitest::Test
@@ -114,5 +119,235 @@ class SemaphoreTemplateContractTest < Minitest::Test
     assert_equal 'provision_response.status == 201', task['changed_when']
     assert_equal true, task['no_log']
     assert_equal [200, 201], task.fetch('ansible.builtin.uri').fetch('status_code')
+  end
+
+  def test_tofu_plan_writes_the_binary_and_review_artifacts_used_by_post_check
+    template = YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-plan.yaml'))
+    names = template.fetch('variables').map { |variable| variable.fetch('name') }
+    assert_equal %w[target plan_artifact_id change_message], names
+
+    artifacts = template.fetch('post_check').fetch('artifacts', [])
+    assert_equal %w[
+      artifacts/vm100.tfplan
+      artifacts/vm100.plan.txt
+      artifacts/vm100.plan.json
+      artifacts/vm100.plan.sha256
+      artifacts/vm100.plan.manifest.json
+    ], artifacts
+
+    Dir.mktmpdir('tofu-plan-contract') do |dir|
+      install_fake_tofu(dir)
+      stdout, stderr, status = run_command(template.fetch('command'), dir,
+                                            'plan_artifact_id' => 'plan-42')
+
+      assert status.success?, "plan command failed: #{stdout}\n#{stderr}"
+      artifacts.each { |path| assert_path_with_content(dir, path) }
+      manifest = JSON.parse(File.read(File.join(dir, 'artifacts/vm100.plan.manifest.json')))
+      assert_equal 'plan-42', manifest.fetch('plan_id')
+      assert_equal File.read(File.join(dir, 'artifacts/vm100.plan.sha256')).strip,
+                   manifest.fetch('plan_sha256')
+    end
+  end
+
+  def test_tofu_plan_post_check_validates_the_json_plan_gate
+    template = YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-plan.yaml'))
+
+    Dir.mktmpdir('tofu-plan-post-check') do |dir|
+      install_fake_tofu(dir)
+      install_plan_guard(dir)
+      _, stderr, status = run_command(template.fetch('command'), dir,
+                                       'plan_artifact_id' => 'plan-42')
+      assert status.success?, stderr
+
+      stdout, stderr, status = run_command(template.fetch('post_check').fetch('command'), dir)
+      assert status.success?, "post-check failed: #{stdout}\n#{stderr}"
+
+      json_path = File.join(dir, 'artifacts/vm100.plan.json')
+      assert File.file?(json_path), 'plan command missing JSON artifact'
+      if File.file?(json_path)
+        FileUtils.rm(json_path)
+        _, stderr, status = run_command(template.fetch('post_check').fetch('command'), dir)
+        refute status.success?, "post-check unexpectedly passed: #{stderr}"
+      end
+    end
+  end
+
+  def test_tofu_apply_requires_the_approved_plan_hash_and_binding_artifacts
+    template = YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-apply-approved.yaml'))
+    names = template.fetch('variables').map { |variable| variable.fetch('name') }
+
+    assert_equal %w[target approved_plan_id approved_plan_hash change_message], names
+    assert_equal %w[
+      artifacts/vm100-approved-plan.json
+      artifacts/vm100-post-apply.txt
+    ], template.fetch('post_check').fetch('artifacts')
+  end
+
+  def test_tofu_apply_rejects_a_mismatched_approved_plan_id_before_apply
+    template = YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-apply-approved.yaml'))
+
+    Dir.mktmpdir('tofu-apply-id-mismatch') do |dir|
+      install_fake_tofu(dir)
+      install_plan_guard(dir)
+      write_plan_bundle(dir, plan_id: 'plan-42')
+      _, stderr, status = run_command(template.fetch('command'), dir,
+                                       'approved_plan_id' => 'plan-99',
+                                       'approved_plan_hash' => plan_hash(dir))
+
+      refute status.success?
+      assert_match(/approved plan/i, stderr)
+      refute File.exist?(File.join(dir, 'apply.called'))
+    end
+  end
+
+  def test_tofu_apply_rejects_a_mismatched_approved_plan_hash_before_apply
+    template = YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-apply-approved.yaml'))
+
+    Dir.mktmpdir('tofu-apply-hash-mismatch') do |dir|
+      install_fake_tofu(dir)
+      install_plan_guard(dir)
+      write_plan_bundle(dir, plan_id: 'plan-42')
+      _, stderr, status = run_command(template.fetch('command'), dir,
+                                       'approved_plan_id' => 'plan-42',
+                                       'approved_plan_hash' => ('0' * 64))
+
+      refute status.success?
+      assert_match(/approved plan/i, stderr)
+      refute File.exist?(File.join(dir, 'apply.called'))
+    end
+  end
+
+  def test_tofu_apply_binds_the_approved_id_and_hash_before_apply
+    template = YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-apply-approved.yaml'))
+
+    Dir.mktmpdir('tofu-apply-success') do |dir|
+      install_fake_tofu(dir)
+      install_plan_guard(dir)
+      write_plan_bundle(dir, plan_id: 'plan-42')
+      hash = plan_hash(dir)
+      stdout, stderr, status = run_command(template.fetch('command'), dir,
+                                            'approved_plan_id' => 'plan-42',
+                                            'approved_plan_hash' => hash)
+
+      assert status.success?, "apply command failed: #{stdout}\n#{stderr}"
+      assert File.exist?(File.join(dir, 'apply.called'))
+      binding_path = File.join(dir, 'artifacts/vm100-approved-plan.json')
+      assert File.exist?(binding_path), 'missing approved-plan binding artifact'
+      if File.exist?(binding_path)
+        binding = JSON.parse(File.read(binding_path))
+        assert_equal 'plan-42', binding.fetch('approved_plan_id')
+        assert_equal hash, binding.fetch('approved_plan_hash')
+      end
+
+      stdout, stderr, status = run_command(template.fetch('post_check').fetch('command'), dir)
+      assert status.success?, "post-check failed: #{stdout}\n#{stderr}"
+      assert_path_with_content(dir, 'artifacts/vm100-post-apply.txt')
+    end
+  end
+
+  private
+
+  PLAN_JSON = {
+    'format_version' => '1.2',
+    'resource_changes' => [{
+      'address' => 'proxmox_virtual_environment_vm.vm100',
+      'mode' => 'managed',
+      'change' => {
+        'actions' => ['no-op'],
+        'after' => {'vm_id' => 100, 'node_name' => 'pve'},
+        'importing' => {'id' => 'pve/100'}
+      }
+    }]
+  }.freeze
+
+  def install_fake_tofu(dir)
+    bin = File.join(dir, 'bin')
+    FileUtils.mkdir_p(bin)
+    path = File.join(bin, 'tofu')
+    File.write(path, <<~'SH')
+      #!/bin/sh
+      set -eu
+      mode=
+      output=
+      json=false
+      detailed=false
+      for argument in "$@"; do
+        case "$argument" in
+          plan) mode=plan ;;
+          show) mode=show ;;
+          apply) mode=apply ;;
+          -out=*) output=${argument#-out=} ;;
+          -json) json=true ;;
+          -detailed-exitcode) detailed=true ;;
+        esac
+      done
+      case "$mode" in
+        plan)
+          if [ "$detailed" = true ]; then
+            printf '%s\n' "${TOFU_POST_PLAN_TEXT:-No changes after apply}"
+            exit "${TOFU_POST_PLAN_EXIT:-0}"
+          fi
+          mkdir -p "$(dirname "$output")"
+          printf '%s' 'binary-plan' > "$output"
+          ;;
+        show)
+          if [ "$json" = true ]; then
+            printf '%s\n' "$TOFU_PLAN_JSON"
+          else
+            printf '%s\n' "$TOFU_PLAN_TEXT"
+          fi
+          ;;
+        apply)
+          : > "$TOFU_APPLY_LOG"
+          ;;
+        *)
+          exit 99
+          ;;
+      esac
+    SH
+    FileUtils.chmod(0o755, path)
+  end
+
+  def install_plan_guard(dir)
+    destination = File.join(dir, 'automation/scripts/check-vm100-plan.py')
+    FileUtils.mkdir_p(File.dirname(destination))
+    FileUtils.cp(File.join(ROOT, '..', 'scripts/check-vm100-plan.py'), destination)
+  end
+
+  def write_plan_bundle(dir, plan_id:)
+    artifacts = File.join(dir, 'artifacts')
+    FileUtils.mkdir_p(artifacts)
+    File.binwrite(File.join(artifacts, 'vm100.tfplan'), 'binary-plan')
+    File.write(File.join(artifacts, 'vm100.plan.txt'), "No changes\n")
+    File.write(File.join(artifacts, 'vm100.plan.json'), JSON.generate(PLAN_JSON) + "\n")
+    hash = plan_hash(dir)
+    File.write(File.join(artifacts, 'vm100.plan.sha256'), "#{hash}\n")
+    File.write(File.join(artifacts, 'vm100.plan.manifest.json'), JSON.generate(
+      'plan_id' => plan_id,
+      'plan_sha256' => hash,
+      'binary_artifact' => 'artifacts/vm100.tfplan',
+      'text_artifact' => 'artifacts/vm100.plan.txt',
+      'json_artifact' => 'artifacts/vm100.plan.json'
+    ) + "\n")
+  end
+
+  def plan_hash(dir)
+    Digest::SHA256.file(File.join(dir, 'artifacts/vm100.tfplan')).hexdigest
+  end
+
+  def run_command(command, dir, extra_env = {})
+    env = {
+      'PATH' => "#{File.join(dir, 'bin')}:#{ENV.fetch('PATH')}",
+      'TOFU_PLAN_JSON' => JSON.generate(PLAN_JSON),
+      'TOFU_PLAN_TEXT' => 'No changes',
+      'TOFU_APPLY_LOG' => File.join(dir, 'apply.called')
+    }.merge(extra_env)
+    Open3.capture3(env, 'sh', '-c', command, chdir: dir)
+  end
+
+  def assert_path_with_content(dir, relative_path)
+    path = File.join(dir, relative_path)
+    assert File.file?(path), "missing artifact #{relative_path}"
+    assert_operator File.size(path), :>, 0, "empty artifact #{relative_path}"
   end
 end

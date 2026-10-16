@@ -17,13 +17,64 @@ variables:
   - name: approved_plan_id
     type: artifact_id
     required: true
+  - name: approved_plan_hash
+    type: string
+    required: true
   - name: change_message
     type: string
     required: true
 approval:
   required: true
   roles: [Manager]
-command: tofu -chdir=automation/tofu/proxmox apply artifacts/vm100.tfplan
+command: |
+  set -eu
+  plan="$PWD/artifacts/vm100.tfplan"
+  manifest="$PWD/artifacts/vm100.plan.manifest.json"
+  binding="$PWD/artifacts/vm100-approved-plan.json"
+  test -s "$plan"
+  test -s "$manifest"
+  test -s "$PWD/artifacts/vm100.plan.txt"
+  test -s "$PWD/artifacts/vm100.plan.json"
+  : "${approved_plan_id:?approved_plan_id is required}"
+  : "${approved_plan_hash:?approved_plan_hash is required}"
+  python3 - "$manifest" "$plan" "$approved_plan_id" "$approved_plan_hash" <<'PY'
+  import hashlib
+  import json
+  import re
+  import sys
+
+  manifest_path, plan_path, approved_id, approved_hash = sys.argv[1:]
+  if not re.fullmatch(r'[A-Za-z0-9._:-]+', approved_id):
+      raise SystemExit('approved plan id is invalid')
+  if not re.fullmatch(r'[0-9a-f]{64}', approved_hash):
+      raise SystemExit('approved plan hash is invalid')
+  try:
+      with open(manifest_path, encoding='utf-8') as handle:
+          manifest = json.load(handle)
+      with open(plan_path, 'rb') as handle:
+          actual_hash = hashlib.sha256(handle.read()).hexdigest()
+  except (OSError, ValueError):
+      raise SystemExit('approved plan manifest is unreadable')
+  if manifest.get('plan_id') != approved_id:
+      raise SystemExit('approved plan id does not match artifact')
+  if manifest.get('plan_sha256') != approved_hash or actual_hash != approved_hash:
+      raise SystemExit('approved plan hash does not match artifact')
+  if manifest.get('binary_artifact') != 'artifacts/vm100.tfplan':
+      raise SystemExit('approved plan binary artifact is unexpected')
+  PY
+  python3 automation/scripts/check-vm100-plan.py --mode import < "$PWD/artifacts/vm100.plan.json"
+  tofu -chdir=automation/tofu/proxmox show -no-color "$plan" | cmp -s - artifacts/vm100.plan.txt
+  tofu -chdir=automation/tofu/proxmox show -json "$plan" | cmp -s - artifacts/vm100.plan.json
+  printf '{"approved_plan_id":"%s","approved_plan_hash":"%s","plan_sha256":"%s","binary_artifact":"artifacts/vm100.tfplan"}\n' \
+    "$approved_plan_id" "$approved_plan_hash" "$approved_plan_hash" > "$binding.tmp"
+  mv "$binding.tmp" "$binding"
+  tofu -chdir=automation/tofu/proxmox apply "$plan"
 post_check:
-  command: tofu -chdir=automation/tofu/proxmox plan -detailed-exitcode
-  artifact: artifacts/vm100-post-apply.txt
+  command: |
+    set -eu
+    test -s artifacts/vm100-approved-plan.json
+    tofu -chdir=automation/tofu/proxmox plan -detailed-exitcode > artifacts/vm100-post-apply.txt
+    test -s artifacts/vm100-post-apply.txt
+  artifacts:
+    - artifacts/vm100-approved-plan.json
+    - artifacts/vm100-post-apply.txt

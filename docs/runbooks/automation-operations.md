@@ -120,8 +120,11 @@ idempotent and must abort on resource drift rather than delete or repair it.
 
 1. Edit the catalog or playbook in Git and run CI lint/policy tests.
 2. Run `host-audit`, then `ansible-check` or `tofu-plan`.
-3. Review the plan artifact. OpenTofu VM100 plans must be import-only or
-   zero-destroy; application changes must use an immutable image digest.
+3. Review the private OpenTofu plan bundle: binary `vm100.tfplan`, human text,
+   raw JSON, SHA-256, and manifest. VM100 plans must be import-only or
+   zero-destroy; carry the plan ID and binary hash into the approval. The
+   approved apply refuses to run when either value or any saved plan view does
+   not match the bundle. Application changes must use an immutable image digest.
 4. The target policy requires a Manager to approve mutating templates; that
    separated role flow is not deployed yet. Route publication needs LAN and
    public smoke checks; application changes need a health check and rollback
