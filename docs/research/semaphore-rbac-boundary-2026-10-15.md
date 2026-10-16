@@ -51,3 +51,16 @@ identities: audit execution allowed, production execution denied, template/key/
 inventory modification denied, and guest execution denied. Passing with the
 global admin is not proof. Export metadata and record rollback before mutation;
 never export plaintext keys. Public application behavior is unchanged.
+
+## Versioned acceptance harness
+
+The repository now contains
+[`automation/semaphore/rbac-live-check.mjs`](../../automation/semaphore/rbac-live-check.mjs).
+It requires `SEMAPHORE_RBAC_USERNAME` and `SEMAPHORE_RBAC_PASSWORD` from an
+external secret store, rejects an administrator identity, verifies audit-project
+read access, and checks that production keys, inventory and template access are
+denied with the Community API's 401/403/404 boundary. It is read-only by
+default. The explicit `--execute` flag starts one audit template task; it must
+only be used with a disposable non-admin acceptance account. The focused unit
+tests run in CI, but live acceptance remains pending until the operator creates
+and authorizes the test identities.
