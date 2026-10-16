@@ -45,3 +45,19 @@ Root cause was stale container network metadata after the Swarm overlay was
 recreated. The durable Compose override and Redis endpoint remain unchanged;
 future network recreation must recreate this standalone container as part of
 the network recovery runbook.
+
+## Follow-up discovered during recovery
+
+The shared Redis outage also exposed a stale MyPocket service setting: both
+`mypocket-api` and `mypocket-worker` still had `REDIS_URL` pointed at the old
+`redis-mypocket` hostname. The active Redis container is named and aliased
+`redis-prod` on the MyPocket Redis network. The follow-up changes only the
+hostname in those two service environment values, preserving the existing
+password and database `/1`; it does not recreate or flush Redis data.
+
+Completed 2026-10-16. `mypocket-api` and `mypocket-worker` were updated with a
+rolling service update to use `redis-prod`; both converged at `1/1`. The API
+container returned `{"data":{"status":"ok"},"meta":null}` from
+`/api/v1/health` and reported a healthy Docker state. The intentional
+`mypocket-web=0/0` API-only deployment was left unchanged; its public root
+therefore remains HTTP 404 by design.
