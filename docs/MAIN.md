@@ -250,8 +250,8 @@ The Rathole client on the **Pi5** opens an **outbound** TCP tunnel to the
 VPS (`103.82.21.202:7000`). Any inbound `*.dungxbuif.com` request reaching the
 VPS `gateway-traefik` is tunneled through Rathole to `edge-traefik-pi5`.
 Pi5 Traefik terminates TLS (Cloudflare DNS-01 wildcard) and
-routes to Pi5 HTTP services over the Swarm
-overlay (`homelab-net`, 172.30.0.0/16) to portless VM100 services including
+routes to Pi5 HTTP services over the declared Swarm edge overlay and to
+portless VM100 services including
 Homepage (`tasks.homepage:80`), macocr-proxy (`tasks.macocr-proxy:8080`),
 OpenClaw, and n8n. No VM100 HTTP host port remains in this cutover.
 The Mac mini remains a dependency host for LM Studio and native OCR through
@@ -288,9 +288,9 @@ production Pi5 HTTPS tunnel on `7000`. Self-registration is disabled.
 GitLab's bundled Container Registry is trial-active at
 `registry-gitlab.dungxbuif.com` through its own VPS `7003` control tunnel;
 the Pi5 Docker Registry at `registry.dungxbuif.com` remains production.
-The trial's ARM64 push/pull, AMD64 push, and backup-archive inclusion passed,
-but internal split DNS still targets Pi5 (route not live), so native
-Docker/Swarm pull from lab nodes is not yet verified. See
+The trial's ARM64 push/pull, AMD64 push, and backup-archive inclusion passed.
+The Pi5 Registry route is live and returns the expected HTTPS authentication
+challenge, but native Docker/Swarm pull from lab nodes is not yet verified. See
 [Registry trial evidence](./deployments/gitlab-registry-trial-2026-09-16.md).
 
 ---

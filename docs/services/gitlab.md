@@ -1,9 +1,10 @@
 # GitLab on VM100
 
-## Current status (2026-10-13; route history retained below)
+## Current status (2026-10-16; route history retained below)
 
 GitLab CE 18.11.11 is installed as one Docker Swarm service on VM100. The
-container and internal web/SSH endpoints are healthy. **Public HTTPS now
+container and internal web/SSH endpoints are healthy after the shared Redis
+network recovery on 2026-10-16. **Public HTTPS now
 returns 200 with a valid Let's Encrypt certificate, and Git-over-SSH on VPS
 port 2222 reaches GitLab.** HTTPS temporarily terminates on VPS Traefik and
 uses an isolated VM100 Rathole tunnel; direct Orange Pi GitLab HTTPS still
@@ -180,8 +181,8 @@ Separate before/after VM100 config snapshots and a prechange Pi5 DB dump
  were created (paths in the trial report). The current online GitLab backup
 wrapper has been verified locally and restored into an isolated PostgreSQL 17
 target after loading Pi5 globals; see [the rehearsal evidence](../deployments/backup-restore-rehearsal-2026-10-05.md).
-The three off-host encrypted repositories and scheduled runner are not enabled
-yet. VM100 data
+The off-host encrypted snapshot and scheduled runner are active; restore
+acceptance remains a separate pending drill. VM100 data
 bind mounts include Gitaly repositories, uploads, and configuration; the
 Pi5 PostgreSQL database is separate. A recoverable backup must include both
 plus secret references and a restore drill. To restore public Git SSH,

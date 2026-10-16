@@ -7,7 +7,7 @@ timestamp: 2026-10-13T00:00:00+07:00
 
 # Homelab Core Infrastructure (v3.4)
 
-* [Runtime Inventory and Deployment Reconciliation](./deployments/runtime-inventory-2026-10-13.md) — authoritative 2026-10-13 host, service, image-version, network, backup, and Semaphore snapshot; use this when older deployment notes disagree with runtime.
+* [Runtime Inventory and Deployment Reconciliation](./deployments/runtime-inventory-2026-10-13.md) — historical 2026-10-13 baseline; use the later 2026-10-15/16 reconciliation notes for current runtime state.
 * [Current Stack Catalog](./STACK.md) - current workloads, tunnel exceptions, DB endpoints, backup boundaries, and proposed work; Markdown for people and agents.
 * [Documentation Audit](./research/docs-stack-audit-2026-09-16.md) - corrected drift and runtime verification coverage.
 * [System Context & Playbook](./MAIN.md) — current VPS `gateway-traefik` -> Rathole -> Pi5 `edge-traefik-pi5` topology, Pi5 split DNS, service-export playbook, and bug registry.
@@ -34,7 +34,7 @@ timestamp: 2026-10-13T00:00:00+07:00
 * [Homelab Automation Control Plane Plan](./superpowers/plans/2026-10-13-homelab-automation-control-plane.md) - staged plan for Semaphore, Ansible, OpenTofu, private execution, route generation, app deployment, drift audit, and removal of direct agent-to-host operations.
 * [Semaphore Control Plane](./deployments/semaphore-backup-ui-2026-10-04.md) - private Pi5 UI/provisioner deployment, route, secret boundary, verification, and rollback; current metadata recovery is recorded in the runtime inventory.
 * [Semaphore History and Metadata Recovery](./deployments/semaphore-recovery-2026-10-13.md) - restored task history, operator-facing fields, and current provisioning contract.
-* [Network Segmentation Proposal](./research/network-segmentation-2026-09-15.md) - broad shared overlay is deployed; narrower networks are not.
+* [Network Segmentation Proposal](./research/network-segmentation-2026-09-15.md) - selected narrower overlays are active; the rollout is not yet complete.
 * [Resource Limit Audit](./research/resource-limit-audit-2026-09-15.md) - dated measurements and limits, not blanket approval to resize services.
 
 # Standards & Guidelines
