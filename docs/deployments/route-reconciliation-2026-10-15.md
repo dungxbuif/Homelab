@@ -149,3 +149,27 @@ changed. The next action is to repair the VPS `/root/gateway` certificate and
 HostSNI entry through the approved VPS access path, then rerun the same probe.
 Until then, do not mark `stirling` public TLS as verified and do not publish
 the LAN-only routes at the public boundary.
+
+## Bounded route-publish contract: implemented staging behavior
+
+The route-publish template is a local staging contract only. It requires one
+of the declared `route_set` values (`public`, `lan`, or `netbird`), validates
+the active and retired runtime policy, filters the declarative catalog to that
+exposure, and renders the selected catalog to
+`artifacts/routes-${route_set}.yml`. An empty selected set fails before a
+receipt is written.
+
+After policy validation and rendering succeed, the template creates
+`artifacts/routes-post-check.json` with the selected route set, rendered route
+count, runtime-policy validation status, and explicit `published: false` and
+`production_contacted: false` fields. Its post-check parses that receipt,
+requires the rendered route artifact to be present and non-empty, and fails
+closed if either artifact is missing or inconsistent. The template performs no
+SSH, remote copy, Traefik reload, production API call, OpenTofu operation,
+application deployment, RBAC change, or credential operation.
+
+The direct contract test executes the template command against a copied local
+fixture, verifies route-set filtering and receipt contents, and proves that
+the post-check fails when the rendered artifact or receipt is absent. The
+route contract, renderer verification, and full Semaphore template contract
+remain the verification gates. No live route or production command was run.

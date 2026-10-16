@@ -82,6 +82,71 @@ class SemaphoreTemplateContractTest < Minitest::Test
     assert_includes manager.fetch('allowed_templates'), 'backup-client-release'
   end
 
+  def test_route_publish_stages_selected_route_set_and_fails_closed
+    template = YAML.load_file(File.join(TEMPLATE_DIR, 'route-publish.yaml'))
+    names = template.fetch('variables').map { |variable| variable.fetch('name') }
+    assert_equal %w[route_set change_message], names
+    route_set = template.fetch('variables').find { |variable| variable.fetch('name') == 'route_set' }
+    assert_equal %w[public lan netbird], route_set.fetch('values')
+    refute_match(/\b(ssh|scp|curl|docker|kubectl|tofu)\b/, template.fetch('command'))
+
+    post_check = template.fetch('post_check')
+    assert_equal 'artifacts/routes-post-check.json', post_check.fetch('artifact')
+    assert_match(/routes-post-check\.json/, post_check.fetch('command'))
+    assert_match(/rendered_artifact/, post_check.fetch('command'))
+
+    Dir.mktmpdir('route-publish-contract') do |dir|
+      install_route_publish_fixture(dir)
+      stdout, stderr, status = run_command(template.fetch('command'), dir,
+                                            'route_set' => 'public')
+      assert status.success?, "route staging failed: #{stdout}\n#{stderr}"
+
+      rendered_path = File.join(dir, 'artifacts/routes-public.yml')
+      receipt_path = File.join(dir, 'artifacts/routes-post-check.json')
+      assert_path_with_content(dir, 'artifacts/routes-public.yml')
+      assert_path_with_content(dir, 'artifacts/routes-post-check.json')
+
+      catalog = YAML.load_file(File.join(dir, 'automation/routes/catalog.yml'))
+      expected_ids = catalog.fetch('routes').select { |route| route.fetch('exposure') == 'public' }
+        .map { |route| route.fetch('id') }.sort
+      rendered = YAML.safe_load(File.read(rendered_path), aliases: true)
+      assert_equal expected_ids, rendered.fetch('http').fetch('routers').keys.sort
+
+      receipt = JSON.parse(File.read(receipt_path))
+      assert_equal 'staged', receipt.fetch('status')
+      assert_equal 'public', receipt.fetch('route_set')
+      assert_equal 'validated', receipt.fetch('runtime_policy')
+      assert_equal false, receipt.fetch('published')
+      assert_equal false, receipt.fetch('production_contacted')
+      assert_equal 'artifacts/routes-public.yml', receipt.fetch('rendered_artifact')
+      assert_equal expected_ids.length, receipt.fetch('route_count')
+
+      stdout, stderr, status = run_command(post_check.fetch('command'), dir)
+      assert status.success?, "route post-check failed: #{stdout}\n#{stderr}"
+
+      FileUtils.rm(rendered_path)
+      _, stderr, status = run_command(post_check.fetch('command'), dir)
+      refute status.success?, "post-check passed without rendered artifact: #{stderr}"
+
+      FileUtils.rm(receipt_path)
+      _, stderr, status = run_command(post_check.fetch('command'), dir)
+      refute status.success?, "post-check passed without receipt: #{stderr}"
+    end
+  end
+
+  def test_route_publish_rejects_an_unsupported_route_set_before_writing_artifacts
+    template = YAML.load_file(File.join(TEMPLATE_DIR, 'route-publish.yaml'))
+
+    Dir.mktmpdir('route-publish-invalid-set') do |dir|
+      install_route_publish_fixture(dir)
+      _, stderr, status = run_command(template.fetch('command'), dir,
+                                       'route_set' => 'production')
+      refute status.success?, 'unsupported route_set unexpectedly succeeded'
+      assert_match(/route_set/, stderr)
+      refute File.exist?(File.join(dir, 'artifacts/routes-post-check.json'))
+    end
+  end
+
   def test_project_roles_and_execution_image_are_pinned
     data = YAML.load_file(File.join(ROOT, 'project-resources.yaml'))
     assert_equal ['Manager', 'Task Runner', 'Viewer'], data.fetch('roles').map { |role| role.fetch('name') }.sort
@@ -312,6 +377,22 @@ class SemaphoreTemplateContractTest < Minitest::Test
     destination = File.join(dir, 'automation/scripts/check-vm100-plan.py')
     FileUtils.mkdir_p(File.dirname(destination))
     FileUtils.cp(File.join(ROOT, '..', 'scripts/check-vm100-plan.py'), destination)
+  end
+
+  def install_route_publish_fixture(dir)
+    %w[
+      automation/routes/catalog.yml
+      automation/routes/schemas/route.schema.json
+      automation/scripts/render-routes.py
+      automation/scripts/validate-runtime-policy.rb
+      automation/policies/active-runtime.yaml
+      automation/policies/retired-runtime.yaml
+    ].each do |relative_path|
+      source = File.join(File.expand_path('../..', ROOT), relative_path)
+      destination = File.join(dir, relative_path)
+      FileUtils.mkdir_p(File.dirname(destination))
+      FileUtils.cp(source, destination)
+    end
   end
 
   def write_plan_bundle(dir, plan_id:)

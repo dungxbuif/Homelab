@@ -1,6 +1,6 @@
 ---
 name: route-publish
-description: Validate and publish the selected structured route set through the private edge path.
+description: Validate and stage the selected structured route set without publishing production.
 repository: homelab-automation
 revision: main
 execution_image:
@@ -20,7 +20,107 @@ variables:
 approval:
   required: true
   roles: [Manager]
-command: ruby automation/scripts/validate-runtime-policy.rb --active automation/policies/active-runtime.yaml --retired automation/policies/retired-runtime.yaml
+command: |
+  set -eu
+  case "${route_set:-}" in
+    public|lan|netbird) ;;
+    *)
+      printf '%s\n' 'route_set must be public, lan, or netbird' >&2
+      exit 2
+      ;;
+  esac
+
+  catalog=automation/routes/catalog.yml
+  rendered_artifact="artifacts/routes-${route_set}.yml"
+  post_check_artifact=artifacts/routes-post-check.json
+  mkdir -p artifacts
+  rm -f "$rendered_artifact" "$post_check_artifact"
+
+  ruby automation/scripts/validate-runtime-policy.rb \
+    --active automation/policies/active-runtime.yaml \
+    --retired automation/policies/retired-runtime.yaml >/dev/null
+
+  selected_catalog="$(mktemp)"
+  cleanup() { rm -f "$selected_catalog"; }
+  trap cleanup EXIT
+  python3 - "$catalog" "$selected_catalog" "$route_set" <<'PY'
+  import sys
+  from pathlib import Path
+
+  import yaml
+
+  source, destination, route_set = sys.argv[1:]
+  catalog = yaml.safe_load(Path(source).read_text(encoding='utf-8'))
+  routes = [route for route in catalog.get('routes', []) if route.get('exposure') == route_set]
+  if not routes:
+      raise SystemExit(f'route_set has no catalog routes: {route_set}')
+  catalog['routes'] = routes
+  Path(destination).write_text(
+      yaml.safe_dump(catalog, sort_keys=False, allow_unicode=False),
+      encoding='utf-8',
+  )
+  PY
+
+  python3 automation/scripts/render-routes.py \
+    --catalog "$selected_catalog" \
+    --output "$rendered_artifact"
+  test -s "$rendered_artifact"
+
+  python3 - "$route_set" "$rendered_artifact" "$post_check_artifact" <<'PY'
+  import json
+  import sys
+  from pathlib import Path
+
+  import yaml
+
+  route_set, rendered_path, receipt_path = sys.argv[1:]
+  rendered = Path(rendered_path)
+  if not rendered.is_file() or rendered.stat().st_size == 0:
+      raise SystemExit('rendered route artifact is missing or empty')
+  document = yaml.safe_load(rendered.read_text(encoding='utf-8'))
+  route_count = len(document.get('http', {}).get('routers', {}))
+  if route_count < 1:
+      raise SystemExit('rendered route artifact contains no routers')
+  Path(receipt_path).write_text(json.dumps({
+      'status': 'staged',
+      'route_set': route_set,
+      'catalog': 'automation/routes/catalog.yml',
+      'rendered_artifact': rendered_path,
+      'route_count': route_count,
+      'runtime_policy': 'validated',
+      'published': False,
+      'production_contacted': False,
+  }, sort_keys=True) + '\n', encoding='utf-8')
+  PY
+  test -s "$post_check_artifact"
 post_check:
-  command: test -s artifacts/routes-post-check.json
+  command: |
+    set -eu
+    test -s artifacts/routes-post-check.json
+    python3 - <<'PY'
+    import json
+    from pathlib import Path
+
+    receipt_path = Path('artifacts/routes-post-check.json')
+    receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
+    route_set = receipt.get('route_set')
+    if route_set not in {'public', 'lan', 'netbird'}:
+        raise SystemExit('post-check receipt has an invalid route_set')
+    expected_artifact = f'artifacts/routes-{route_set}.yml'
+    if receipt.get('status') != 'staged':
+        raise SystemExit('post-check receipt is not staged')
+    if receipt.get('runtime_policy') != 'validated':
+        raise SystemExit('post-check receipt lacks runtime policy validation')
+    if receipt.get('published') is not False or receipt.get('production_contacted') is not False:
+        raise SystemExit('route-publish receipt claims a production operation')
+    if receipt.get('rendered_artifact') != expected_artifact:
+        raise SystemExit('post-check receipt points at an unexpected rendered artifact')
+    rendered = Path(expected_artifact)
+    if not rendered.is_file() or rendered.stat().st_size == 0:
+        raise SystemExit('rendered route artifact is missing or empty')
+    if not isinstance(receipt.get('route_count'), int) or receipt['route_count'] < 1:
+        raise SystemExit('post-check receipt has no rendered routes')
+    PY
   artifact: artifacts/routes-post-check.json
+  artifacts:
+    - artifacts/routes-${route_set}.yml
