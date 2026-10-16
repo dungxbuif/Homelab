@@ -14,6 +14,9 @@ variables:
     type: enum
     required: true
     values: [vm100]
+  - name: vm_name
+    type: string
+    required: true
   - name: plan_artifact_id
     type: artifact_id
     required: true
@@ -25,12 +28,17 @@ approval:
   roles: [Viewer, Task Runner, Manager]
 command: |
   set -eu
+  : "${TF_VAR_proxmox_api_token:?Semaphore environment must inject TF_VAR_proxmox_api_token}"
+  : "${TF_VAR_state_encryption_passphrase:?Semaphore environment must inject TF_VAR_state_encryption_passphrase}"
+  export SSL_CERT_FILE="${SSL_CERT_FILE:-$PWD/automation/tofu/proxmox/pki/pve-root-ca.pem}"
+  test -r "$SSL_CERT_FILE"
   case "$plan_artifact_id" in
     ''|*[!A-Za-z0-9._:-]*) echo 'invalid plan_artifact_id' >&2; exit 1 ;;
   esac
   mkdir -p artifacts
   plan="$PWD/artifacts/vm100.tfplan"
-  tofu -chdir=automation/tofu/proxmox plan -out="$plan"
+  tofu -chdir=automation/tofu/proxmox init -input=false
+  tofu -chdir=automation/tofu/proxmox plan -input=false -var="vm_name=$vm_name" -out="$plan"
   tofu -chdir=automation/tofu/proxmox show -no-color "$plan" > artifacts/vm100.plan.txt
   tofu -chdir=automation/tofu/proxmox show -json "$plan" > artifacts/vm100.plan.json
   plan_hash="$(sha256sum "$plan" | awk '{print $1}')"

@@ -13,7 +13,9 @@ The full flow below is still a target, but seven live production templates and
 three isolated audit templates now exist. GitLab CI/registry publication,
 restricted Pi5/VM100 observers, backup health, a fixed-digest Homepage release,
 and the Homepage Mezon deployment notification boundary are installed. VM100
-OpenTofu import, general route/app apply and full RBAC remain incomplete.
+OpenTofu has a tested, read-only provider preflight and a versioned Semaphore
+source contract, but no live state import/apply environment is enrolled yet.
+General route/app apply and full RBAC remain incomplete.
 Do not execute arbitrary declarative apply templates as though they were enrolled.
 The production project still has one owner membership. Project 2
 (`Homelab Audit`) is owner-only and read-only; it proves a project boundary,
@@ -120,8 +122,10 @@ idempotent and must abort on resource drift rather than delete or repair it.
 
 1. Edit the catalog or playbook in Git and run CI lint/policy tests.
 2. Run `host-audit`, then `ansible-check` or `tofu-plan`.
-3. Review the private OpenTofu plan bundle: binary `vm100.tfplan`, human text,
-   raw JSON, SHA-256, and manifest. VM100 plans must be import-only or
+3. For OpenTofu, use the controlled environment contract: `vm_name` is an
+   explicit input and the executor must inject the Proxmox token, state
+   encryption passphrase and trusted CA file. Review the private plan bundle:
+   binary `vm100.tfplan`, human text, raw JSON, SHA-256, and manifest. VM100 plans must be import-only or
    zero-destroy; carry the plan ID and binary hash into the approval. The
    approved apply refuses to run when either value or any saved plan view does
    not match the bundle. Application changes must use an immutable image digest.

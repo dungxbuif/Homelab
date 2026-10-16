@@ -14,6 +14,9 @@ variables:
     type: enum
     required: true
     values: [vm100]
+  - name: vm_name
+    type: string
+    required: true
   - name: approved_plan_id
     type: artifact_id
     required: true
@@ -28,6 +31,10 @@ approval:
   roles: [Manager]
 command: |
   set -eu
+  : "${TF_VAR_proxmox_api_token:?Semaphore environment must inject TF_VAR_proxmox_api_token}"
+  : "${TF_VAR_state_encryption_passphrase:?Semaphore environment must inject TF_VAR_state_encryption_passphrase}"
+  export SSL_CERT_FILE="${SSL_CERT_FILE:-$PWD/automation/tofu/proxmox/pki/pve-root-ca.pem}"
+  test -r "$SSL_CERT_FILE"
   plan="$PWD/artifacts/vm100.tfplan"
   manifest="$PWD/artifacts/vm100.plan.manifest.json"
   binding="$PWD/artifacts/vm100-approved-plan.json"
@@ -68,12 +75,13 @@ command: |
   printf '{"approved_plan_id":"%s","approved_plan_hash":"%s","plan_sha256":"%s","binary_artifact":"artifacts/vm100.tfplan"}\n' \
     "$approved_plan_id" "$approved_plan_hash" "$approved_plan_hash" > "$binding.tmp"
   mv "$binding.tmp" "$binding"
-  tofu -chdir=automation/tofu/proxmox apply "$plan"
+  tofu -chdir=automation/tofu/proxmox init -input=false
+  tofu -chdir=automation/tofu/proxmox apply -input=false "$plan"
 post_check:
   command: |
     set -eu
     test -s artifacts/vm100-approved-plan.json
-    tofu -chdir=automation/tofu/proxmox plan -detailed-exitcode > artifacts/vm100-post-apply.txt
+    tofu -chdir=automation/tofu/proxmox plan -input=false -var="vm_name=$vm_name" -detailed-exitcode > artifacts/vm100-post-apply.txt
     test -s artifacts/vm100-post-apply.txt
   artifacts:
     - artifacts/vm100-approved-plan.json

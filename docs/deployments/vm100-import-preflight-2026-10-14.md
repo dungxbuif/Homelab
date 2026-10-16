@@ -62,6 +62,15 @@ The next gate is to inject a separately escrowed recoverable state key into the
 controlled Semaphore executor, bind the reviewed plan artifact, and obtain the
 required Manager approval before the first import/apply.
 
+The Semaphore source contract now requires `vm_name` explicitly and fails before
+provider execution unless the controlled environment injects
+`TF_VAR_proxmox_api_token`, `TF_VAR_state_encryption_passphrase`, and the pinned
+`SSL_CERT_FILE`. The executor must also map `pve` to `10.10.0.20`; these
+requirements are declared in `automation/semaphore/project-resources.yaml`.
+This prevents the UI template from silently falling back to interactive prompts
+or insecure TLS. The contract is versioned in Git but is not yet enrolled as a
+live Semaphore environment or template.
+
 API read used the existing private endpoint and legacy token without mutation;
 the current endpoint uses a self-signed certificate and TLS verification was
 disabled for that bootstrap read. A trusted CA and scoped controller credential

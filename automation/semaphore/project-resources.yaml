@@ -10,6 +10,15 @@ execution_image:
   digest_variable: AUTOMATION_EE_IMAGE_DIGEST
   immutable: true
   allow_mutable_tags: false
+environments:
+  - name: OpenTofu VM100 controlled credentials
+    required_secret_env:
+      - TF_VAR_proxmox_api_token
+      - TF_VAR_state_encryption_passphrase
+    required_file_env:
+      - SSL_CERT_FILE
+    host_mapping:
+      pve: 10.10.0.20
 roles:
   - name: Viewer
     allowed_templates:

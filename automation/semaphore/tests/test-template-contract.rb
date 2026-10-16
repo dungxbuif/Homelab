@@ -189,7 +189,10 @@ class SemaphoreTemplateContractTest < Minitest::Test
   def test_tofu_plan_writes_the_binary_and_review_artifacts_used_by_post_check
     template = YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-plan.yaml'))
     names = template.fetch('variables').map { |variable| variable.fetch('name') }
-    assert_equal %w[target plan_artifact_id change_message], names
+    assert_equal %w[target vm_name plan_artifact_id change_message], names
+    assert_match(/TF_VAR_proxmox_api_token/, template.fetch('command'))
+    assert_match(/TF_VAR_state_encryption_passphrase/, template.fetch('command'))
+    assert_match(/tofu .* init -input=false/, template.fetch('command'))
 
     artifacts = template.fetch('post_check').fetch('artifacts', [])
     assert_equal %w[
@@ -203,6 +206,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
     Dir.mktmpdir('tofu-plan-contract') do |dir|
       install_fake_tofu(dir)
       stdout, stderr, status = run_command(template.fetch('command'), dir,
+                                            'vm_name' => 'k8s-cp-1',
                                             'plan_artifact_id' => 'plan-42')
 
       assert status.success?, "plan command failed: #{stdout}\n#{stderr}"
@@ -221,6 +225,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
       install_fake_tofu(dir)
       install_plan_guard(dir)
       _, stderr, status = run_command(template.fetch('command'), dir,
+                                       'vm_name' => 'k8s-cp-1',
                                        'plan_artifact_id' => 'plan-42')
       assert status.success?, stderr
 
@@ -241,7 +246,10 @@ class SemaphoreTemplateContractTest < Minitest::Test
     template = YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-apply-approved.yaml'))
     names = template.fetch('variables').map { |variable| variable.fetch('name') }
 
-    assert_equal %w[target approved_plan_id approved_plan_hash change_message], names
+    assert_equal %w[target vm_name approved_plan_id approved_plan_hash change_message], names
+    assert_match(/TF_VAR_proxmox_api_token/, template.fetch('command'))
+    assert_match(/TF_VAR_state_encryption_passphrase/, template.fetch('command'))
+    assert_match(/tofu .* init -input=false/, template.fetch('command'))
     assert_equal %w[
       artifacts/vm100-approved-plan.json
       artifacts/vm100-post-apply.txt
@@ -256,6 +264,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
       install_plan_guard(dir)
       write_plan_bundle(dir, plan_id: 'plan-42')
       _, stderr, status = run_command(template.fetch('command'), dir,
+                                       'vm_name' => 'k8s-cp-1',
                                        'approved_plan_id' => 'plan-99',
                                        'approved_plan_hash' => plan_hash(dir))
 
@@ -273,6 +282,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
       install_plan_guard(dir)
       write_plan_bundle(dir, plan_id: 'plan-42')
       _, stderr, status = run_command(template.fetch('command'), dir,
+                                       'vm_name' => 'k8s-cp-1',
                                        'approved_plan_id' => 'plan-42',
                                        'approved_plan_hash' => ('0' * 64))
 
@@ -291,6 +301,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
       write_plan_bundle(dir, plan_id: 'plan-42')
       hash = plan_hash(dir)
       stdout, stderr, status = run_command(template.fetch('command'), dir,
+                                            'vm_name' => 'k8s-cp-1',
                                             'approved_plan_id' => 'plan-42',
                                             'approved_plan_hash' => hash)
 
@@ -338,6 +349,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
       detailed=false
       for argument in "$@"; do
         case "$argument" in
+          init) mode=init ;;
           plan) mode=plan ;;
           show) mode=show ;;
           apply) mode=apply ;;
@@ -347,6 +359,9 @@ class SemaphoreTemplateContractTest < Minitest::Test
         esac
       done
       case "$mode" in
+        init)
+          :
+          ;;
         plan)
           if [ "$detailed" = true ]; then
             printf '%s\n' "${TOFU_POST_PLAN_TEXT:-No changes after apply}"
@@ -421,7 +436,11 @@ class SemaphoreTemplateContractTest < Minitest::Test
       'PATH' => "#{File.join(dir, 'bin')}:#{ENV.fetch('PATH')}",
       'TOFU_PLAN_JSON' => JSON.generate(PLAN_JSON),
       'TOFU_PLAN_TEXT' => 'No changes',
-      'TOFU_APPLY_LOG' => File.join(dir, 'apply.called')
+      'TOFU_APPLY_LOG' => File.join(dir, 'apply.called'),
+      'TF_VAR_proxmox_api_token' => 'test-user!tofu=test-secret',
+      'TF_VAR_state_encryption_passphrase' => 'test-state-key-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+      'SSL_CERT_FILE' => '/dev/null',
+      'vm_name' => 'k8s-cp-1'
     }.merge(extra_env)
     Open3.capture3(env, 'sh', '-c', command, chdir: dir)
   end

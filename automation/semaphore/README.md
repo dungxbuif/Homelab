@@ -20,6 +20,15 @@ internal provisioner API; it still does not mount the Docker socket. Google
 Drive credentials, restic passwords, and production backup schedules remain
 outside the UI pilot.
 
+OpenTofu VM100 templates have an explicit source-level runtime contract in
+[`project-resources.yaml`](./project-resources.yaml). A controlled Semaphore
+environment must inject `TF_VAR_proxmox_api_token`,
+`TF_VAR_state_encryption_passphrase`, and a readable pinned `SSL_CERT_FILE`,
+and provide the `pve` host mapping to `10.10.0.20`. These are environment
+secrets/files, not survey variables. The templates also require the observed
+VM name and initialize OpenTofu non-interactively. This contract is tested in
+Git; it is not evidence that a live Semaphore environment has been enrolled.
+
 ## Automation control plane
 
 Semaphore is intended to become the operator entry point for host audits, Ansible checks and
