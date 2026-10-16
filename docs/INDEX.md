@@ -2,10 +2,10 @@
 type: Dashboard
 title: "Homelab Core Documentation Index"
 description: "Centralized table of contents for Homelab core files, workloads, and services (v3.4 — Pi5 edge, VM100 production worker, and Mac service tunnel)"
-timestamp: 2026-10-13T00:00:00+07:00
+timestamp: 2026-10-17T00:00:00+07:00
 ---
 
-# Homelab Core Infrastructure (v3.4)
+# Homelab Core Infrastructure (v3.5)
 
 * [Runtime Inventory and Deployment Reconciliation](./deployments/runtime-inventory-2026-10-13.md) — historical 2026-10-13 baseline; use the later 2026-10-15/16 reconciliation notes for current runtime state.
 * [Current Stack Catalog](./STACK.md) - current workloads, tunnel exceptions, DB endpoints, backup boundaries, and proposed work; Markdown for people and agents.

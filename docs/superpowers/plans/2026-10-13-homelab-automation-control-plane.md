@@ -12,6 +12,39 @@
 
 ## Implementation Checkpoint: 2026-10-15
 
+## Implementation Checkpoint: 2026-10-17
+
+The automation source is now reconciled on the private GitLab `main` branch at
+commit `9ab809d70dd1420721f7a4ea80ece9e58f7a5fd1`. Main pipeline `267` passed
+all four jobs: Semaphore-source validation, execution-environment validation,
+automation-ee publication, and provisioner publication. The OpenTofu Semaphore
+source contract now requires the observed VM name and fails closed unless the
+controlled environment injects the Proxmox token, state encryption passphrase,
+trusted CA file, and `pve -> 10.10.0.20` mapping. Its local contract suite passed
+16 tests and 283 assertions; the real provider preflight remains read-only and
+reported exactly one import with no add/change/destroy.
+
+This checkpoint does not promote the plan to complete. The live Semaphore
+environment for OpenTofu has not been enrolled because state-key recovery and
+secret escrow are not yet accepted. The production project still has only the
+admin identity, route publication is staging-only, generic app deploy/rollback
+remain design-only, and full remote restore/RBAC acceptance are still open.
+The rootless GitLab runner intentionally rejects non-rootless `docker:27.5.1-dind`
+services from unrelated branches; the supported CI path uses the pinned
+`docker:27.5.1-dind-rootless` service and remains green on `main`.
+
+## Evidence Map
+
+| Area | Current evidence | Remaining gate |
+| --- | --- | --- |
+| Git source and CI | Private `main` at `9ab809d`; pipeline `267` is green | Keep future changes behind the same pipeline |
+| Semaphore contracts | Source templates, project catalog, audit project and backup releases are versioned; pipeline `267` validates them | Enroll controlled OpenTofu environment; prove non-admin denial matrix |
+| OpenTofu | Real provider read-only preflight: `1 import, 0 add, 0 change, 0 destroy` | Escrow recoverable state key, enroll environment, import VM100, rerun no-op plan |
+| Routes | Catalog/schema/render/post-check tests pass; route publish is fail-closed staging | Publish through controlled executor and run LAN/public smoke checks |
+| Applications | Homepage release path and receipts are live | Service-specific deploy/rollback adapters and peak-resource checks |
+| Data/backup | Native scheduled classes and restricted health path are active | Full remote restore/application restore acceptance |
+| Lockdown | Rootless CI and restricted observers are live | Two complete Git-to-apply-to-notification runs, then remove general agent SSH |
+
 This preserves the complete approved scope. No whole-task completion is inferred
 from source files, a passing unit suite, or one pilot deployment. The design and
 original task checklist below remain the acceptance contract. The inventory

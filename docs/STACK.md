@@ -8,7 +8,17 @@ The point-in-time runtime and image-version source of truth is the
 [2026-10-13 runtime inventory](./deployments/runtime-inventory-2026-10-13.md)
 plus [runtime/catalog reconciliation](./deployments/runtime-catalog-reconciliation-2026-10-15.md).
 
-## Current corrections, 2026-10-15
+## Current corrections, 2026-10-17
+
+- Automation source is now reconciled on private GitLab `main` at commit
+  `9ab809d`; main pipeline 267 passed Semaphore validation, execution-environment
+  validation, automation-ee publication, and provisioner publication. This
+  proves the source/CI boundary, not live OpenTofu import or broad app/route
+  apply.
+- The rootless GitLab runner intentionally permits only the pinned
+  `docker:27.5.1-dind-rootless` service. Jobs using ordinary `docker:dind` are
+  rejected as an unsafe, unrelated-branch configuration; do not weaken this
+  allow-list to make those jobs pass.
 
 - VM100 backup timers and the multi-instance PostgreSQL class are active; the
   combined health template passed task 57 with both locks free. Remote Drive
