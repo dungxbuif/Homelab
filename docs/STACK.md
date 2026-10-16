@@ -20,6 +20,11 @@ plus [runtime/catalog reconciliation](./deployments/runtime-catalog-reconciliati
   project 2 (`Homelab Audit`) now provides a separate owner-only read-only
   boundary for host and backup audits. OpenTofu VM100 import, broad route/app
   apply and fine-grained non-admin RBAC remain unverified or unenrolled.
+- On 2026-10-16, the shared Pi5 Redis container was recreated after a stale
+  overlay-network ID caused GitLab HTTP 500 and MyPocket Redis DNS failures.
+  Redis data/AOF were retained; GitLab recovered to sign-in 200 and runner
+  job-request 204. MyPocket API and worker now use the live `redis-prod` alias
+  and are 1/1; its intentionally stopped web service remains 0/0.
 - Older sections below remain useful topology history; when a dated deployment
   record conflicts with them, the newer record is authoritative.
 
