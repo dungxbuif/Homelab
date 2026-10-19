@@ -15,7 +15,7 @@ Skill hướng dẫn AI Agent **truy vấn PromQL, kiểm tra sức khỏe hệ 
 ## 🔒 1. Security Policy & Connection Rules
 
 * **Domain duy nhất:** `https://grafana.dungxbuif.com` — SSL Let's Encrypt `*.dungxbuif.com` hợp lệ 100%, KHÔNG cần `-k`.
-* **Auth:** `admin` / `D8tkeMG3k4A8Nq2` (Basic Auth header: `Authorization: Basic YWRtaW46RDh0a2VNRzNrNEE4TnEy`)
+* **Auth:** Bearer service-account token trong biến môi trường `$GRAFANA_TOKEN` (Viewer role, tạo ở Grafana > Administration > Service accounts). Nạp từ file bí mật ngoài repo, ví dụ `export GRAFANA_TOKEN="$(cat ~/.config/homelab/grafana_token)"` hoặc từ Semaphore/Bitwarden secret store. KHÔNG commit token, KHÔNG dùng Basic Auth admin.
 * **Datasource Proxy Base URL:**
   ```
   https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query
@@ -36,7 +36,7 @@ Skill hướng dẫn AI Agent **truy vấn PromQL, kiểm tra sức khỏe hệ 
 
 > **Template chung:** Thay `QUERY` bằng PromQL query cần chạy:
 > ```bash
-> curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=QUERY"
+> curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=QUERY"
 > ```
 
 ---
@@ -45,7 +45,7 @@ Skill hướng dẫn AI Agent **truy vấn PromQL, kiểm tra sức khỏe hệ 
 
 #### 1. Scrape Targets Online/Offline:
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=up" | jq '.data.result[] | {job: .metric.job, instance: .metric.instance, status: .value[1]}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=up" | jq '.data.result[] | {job: .metric.job, instance: .metric.instance, status: .value[1]}'
 ```
 
 ---
@@ -54,12 +54,12 @@ curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/
 
 #### 2. CPU Usage % per Host (irate 5m):
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=100-(avg+by(job)(irate(node_cpu_seconds_total%7Bmode%3D%22idle%22%7D%5B5m%5D))*100)" | jq '.data.result[] | {job: .metric.job, cpu_used_percent: (.value[1] | tonumber | round)}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=100-(avg+by(job)(irate(node_cpu_seconds_total%7Bmode%3D%22idle%22%7D%5B5m%5D))*100)" | jq '.data.result[] | {job: .metric.job, cpu_used_percent: (.value[1] | tonumber | round)}'
 ```
 
 #### 3. Docker CPU % per Container (rate 5m):
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=sum+by(name)(rate(container_cpu_usage_seconds_total%7Bname!%3D%22%22%7D%5B5m%5D))*100" | jq '.data.result[] | select(.metric.name != null) | {container: .metric.name, cpu_percent: (.value[1] | tonumber * 100 | round / 100)}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=sum+by(name)(rate(container_cpu_usage_seconds_total%7Bname!%3D%22%22%7D%5B5m%5D))*100" | jq '.data.result[] | select(.metric.name != null) | {container: .metric.name, cpu_percent: (.value[1] | tonumber * 100 | round / 100)}'
 ```
 
 ---
@@ -68,12 +68,12 @@ curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/
 
 #### 4. RAM Usage % per Host:
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=100*(1-(node_memory_MemAvailable_bytes/node_memory_MemTotal_bytes))" | jq '.data.result[] | {job: .metric.job, ram_used_percent: (.value[1] | tonumber | round)}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=100*(1-(node_memory_MemAvailable_bytes/node_memory_MemTotal_bytes))" | jq '.data.result[] | {job: .metric.job, ram_used_percent: (.value[1] | tonumber | round)}'
 ```
 
 #### 5. Swap Usage % per Host:
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=100*(1-(node_memory_SwapFree_bytes/node_memory_SwapTotal_bytes))" | jq '.data.result[] | select((.value[1] | tonumber) > 0) | {job: .metric.job, swap_used_percent: (.value[1] | tonumber | round)}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=100*(1-(node_memory_SwapFree_bytes/node_memory_SwapTotal_bytes))" | jq '.data.result[] | select((.value[1] | tonumber) > 0) | {job: .metric.job, swap_used_percent: (.value[1] | tonumber | round)}'
 ```
 
 ---
@@ -82,17 +82,17 @@ curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/
 
 #### 6. Disk I/O Read Speed MB/s (rate 5m):
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=rate(node_disk_read_bytes_total%5B5m%5D)/1048576" | jq '.data.result[] | {job: .metric.job, device: .metric.device, read_mbs: (.value[1] | tonumber * 100 | round / 100)}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=rate(node_disk_read_bytes_total%5B5m%5D)/1048576" | jq '.data.result[] | {job: .metric.job, device: .metric.device, read_mbs: (.value[1] | tonumber * 100 | round / 100)}'
 ```
 
 #### 7. Disk I/O Write Speed MB/s (rate 5m):
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=rate(node_disk_written_bytes_total%5B5m%5D)/1048576" | jq '.data.result[] | {job: .metric.job, device: .metric.device, write_mbs: (.value[1] | tonumber * 100 | round / 100)}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=rate(node_disk_written_bytes_total%5B5m%5D)/1048576" | jq '.data.result[] | {job: .metric.job, device: .metric.device, write_mbs: (.value[1] | tonumber * 100 | round / 100)}'
 ```
 
 #### 8. Disk Free Space GB:
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=node_filesystem_avail_bytes%7Bfstype!%3D%22tmpfs%22%7D" | jq '.data.result[] | {instance: .metric.instance, mountpoint: .metric.mountpoint, avail_gb: (.value[1] | tonumber / 1073741824 | round)}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=node_filesystem_avail_bytes%7Bfstype!%3D%22tmpfs%22%7D" | jq '.data.result[] | {instance: .metric.instance, mountpoint: .metric.mountpoint, avail_gb: (.value[1] | tonumber / 1073741824 | round)}'
 ```
 
 ---
@@ -101,12 +101,12 @@ curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/
 
 #### 9. Network RX Mbps per Host (rate 5m):
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=rate(node_network_receive_bytes_total%7Bdevice!%3D%22lo%22%7D%5B5m%5D)*8/1048576" | jq '.data.result[] | {job: .metric.job, device: .metric.device, rx_mbps: (.value[1] | tonumber * 100 | round / 100)}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=rate(node_network_receive_bytes_total%7Bdevice!%3D%22lo%22%7D%5B5m%5D)*8/1048576" | jq '.data.result[] | {job: .metric.job, device: .metric.device, rx_mbps: (.value[1] | tonumber * 100 | round / 100)}'
 ```
 
 #### 10. Network TX Mbps per Host (rate 5m):
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=rate(node_network_transmit_bytes_total%7Bdevice!%3D%22lo%22%7D%5B5m%5D)*8/1048576" | jq '.data.result[] | {job: .metric.job, device: .metric.device, tx_mbps: (.value[1] | tonumber * 100 | round / 100)}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=rate(node_network_transmit_bytes_total%7Bdevice!%3D%22lo%22%7D%5B5m%5D)*8/1048576" | jq '.data.result[] | {job: .metric.job, device: .metric.device, tx_mbps: (.value[1] | tonumber * 100 | round / 100)}'
 ```
 
 ---
@@ -115,12 +115,12 @@ curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/
 
 #### 11. Proxmox VM CPU % per VM:
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=pve_cpu_usage_ratio*100" | jq '.data.result[] | {vm: .metric.id, cpu_percent: (.value[1] | tonumber * 100 | round / 100)}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=pve_cpu_usage_ratio*100" | jq '.data.result[] | {vm: .metric.id, cpu_percent: (.value[1] | tonumber * 100 | round / 100)}'
 ```
 
 #### 12. Proxmox VM Memory Usage MB per VM:
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=pve_memory_usage_bytes/1048576" | jq '.data.result[] | {vm: .metric.id, mem_used_mb: (.value[1] | tonumber | round)}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=pve_memory_usage_bytes/1048576" | jq '.data.result[] | {vm: .metric.id, mem_used_mb: (.value[1] | tonumber | round)}'
 ```
 
 ---
@@ -129,12 +129,12 @@ curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/
 
 #### 13. HTTP/TCP Service Health (probe_success = 1 = OK):
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=probe_success" | jq '.data.result[] | {service: .metric.instance, healthy: (if .value[1] == "1" then "UP" else "DOWN" end)}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=probe_success" | jq '.data.result[] | {service: .metric.instance, healthy: (if .value[1] == "1" then "UP" else "DOWN" end)}'
 ```
 
 #### 14. HTTP Response Time ms per Service:
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=probe_duration_seconds*1000" | jq '.data.result[] | {service: .metric.instance, response_ms: (.value[1] | tonumber | round)}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=probe_duration_seconds*1000" | jq '.data.result[] | {service: .metric.instance, response_ms: (.value[1] | tonumber | round)}'
 ```
 
 ---
@@ -143,24 +143,24 @@ curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/
 
 #### 15. K8s Pod Status (Running/Pending/Failed):
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=sum(kube_pod_status_phase)by(phase)" | jq '.data.result[] | {phase: .metric.phase, count: .value[1]}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=sum(kube_pod_status_phase)by(phase)" | jq '.data.result[] | {phase: .metric.phase, count: .value[1]}'
 ```
 
 #### 16. K8s Nodes Ready:
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=kube_node_status_condition%7Bcondition%3D%27Ready%27%2Cstatus%3D%27true%27%7D" | jq '.data.result[] | {node: .metric.node, ready: .value[1]}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=kube_node_status_condition%7Bcondition%3D%27Ready%27%2Cstatus%3D%27true%27%7D" | jq '.data.result[] | {node: .metric.node, ready: .value[1]}'
 ```
 
 #### 17. CPU Temp per Host (°C):
 ```bash
-curl -s -u admin:D8tkeMG3k4A8Nq2 "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=node_hwmon_temp_celsius" | jq '.data.result[] | {job: .metric.job, chip: .metric.chip, temp_celsius: .value[1]}'
+curl -s -H "Authorization: Bearer $GRAFANA_TOKEN" "https://grafana.dungxbuif.com/api/datasources/proxy/uid/P4169E866C3094E38/api/v1/query?query=node_hwmon_temp_celsius" | jq '.data.result[] | {job: .metric.job, chip: .metric.chip, temp_celsius: .value[1]}'
 ```
 
 ---
 
 ## 🔗 4. Grafana Dashboard URLs
 
-* **Login:** `https://grafana.dungxbuif.com` → `admin` / `D8tkeMG3k4A8Nq2`
+* **Login:** `https://grafana.dungxbuif.com` (đăng nhập bằng tài khoản cá nhân; mật khẩu lấy từ password manager, không lưu trong repo)
 
 | Thành Phần | Dashboard Link |
 | :--- | :--- |

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shlex
 import ssl
 import subprocess
 import sys
@@ -43,25 +44,19 @@ def run(cmd: list[str], *, dry_run: bool = False, quiet: bool = False) -> subpro
     return subprocess.run(cmd, check=True, text=True, capture_output=quiet)
 
 
-def fetch_token(remote: str, compose_path: str) -> str:
+def fetch_token(token_file: Path | None) -> str:
+    """Read the gateway token from GOCLAW_TOKEN or a local file (never over ssh)."""
     env_token = os.environ.get("GOCLAW_TOKEN", "").strip()
     if env_token:
         return env_token
-
-    cmd = [
-        "ssh",
-        remote,
-        f"awk -F= '/GOCLAW_GATEWAY_TOKEN=/{{print $2; exit}}' {compose_path}",
-    ]
-    proc = run(cmd, quiet=True)
-    assert proc is not None
-    token = proc.stdout.strip()
-    if not token:
-        raise RuntimeError("GOCLAW_TOKEN is not set and remote compose did not contain GOCLAW_GATEWAY_TOKEN")
-    return token
+    if token_file is not None:
+        token = token_file.expanduser().read_text(encoding="utf-8").strip()
+        if token:
+            return token
+    raise RuntimeError("set GOCLAW_TOKEN or pass --token-file pointing at a file containing the gateway token")
 
 
-def call_rescan(api_url: str, token: str, user_id: str, *, insecure: bool) -> dict:
+def call_rescan(api_url: str, token: str, user_id: str, *, ca_bundle: str | None = None) -> dict:
     url = api_url.rstrip("/") + "/v1/vault/rescan"
     req = urllib.request.Request(
         url,
@@ -74,7 +69,7 @@ def call_rescan(api_url: str, token: str, user_id: str, *, insecure: bool) -> di
             "Accept": "application/json",
         },
     )
-    context = ssl._create_unverified_context() if insecure else None
+    context = ssl.create_default_context(cafile=ca_bundle) if ca_bundle else None
     try:
         with urllib.request.urlopen(req, context=context, timeout=120) as resp:
             body = resp.read().decode("utf-8", errors="replace")
@@ -86,7 +81,8 @@ def call_rescan(api_url: str, token: str, user_id: str, *, insecure: bool) -> di
 
 def build_rsync_cmd(args: argparse.Namespace) -> list[str]:
     source = str(args.vault_root.resolve()) + "/"
-    dest = args.remote.rstrip(":") + ":" + args.remote_path
+    # rsync hands the remote path to a remote shell, so quote it.
+    dest = args.remote.rstrip(":") + ":" + shlex.quote(args.remote_path)
     cmd = ["rsync", "-az", "--delete"]
     if args.dry_run:
         cmd.append("--dry-run")
@@ -103,12 +99,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--remote-path", default=DEFAULT_REMOTE_PATH)
     parser.add_argument("--api-url", default=DEFAULT_API_URL)
     parser.add_argument("--user-id", default=DEFAULT_USER_ID)
-    parser.add_argument("--compose-path", default="/ssd-data/infra/docker-compose.yml")
+    parser.add_argument("--token-file", type=Path, help="File containing the GoClaw gateway token (alternative to GOCLAW_TOKEN)")
     parser.add_argument("--exclude", action="append", default=list(DEFAULT_EXCLUDES))
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--skip-rsync", action="store_true")
     parser.add_argument("--skip-rescan", action="store_true")
-    parser.add_argument("--insecure", action="store_true", help="Disable TLS certificate verification for GoClaw API call")
+    parser.add_argument("--ca-bundle", help="Custom CA bundle for the GoClaw API TLS check (verification is never disabled)")
     return parser.parse_args()
 
 
@@ -129,8 +125,8 @@ def main() -> int:
         print("dry run: rescan skipped")
         return 0
 
-    token = fetch_token(args.remote, args.compose_path)
-    result = call_rescan(args.api_url, token, args.user_id, insecure=args.insecure)
+    token = fetch_token(args.token_file)
+    result = call_rescan(args.api_url, token, args.user_id, ca_bundle=args.ca_bundle)
     print(json.dumps({"rescan": result}, indent=2, ensure_ascii=False))
     return 0
 

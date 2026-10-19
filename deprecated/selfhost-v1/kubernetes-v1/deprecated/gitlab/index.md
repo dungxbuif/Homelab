@@ -25,7 +25,7 @@ stringData:
     s3:
       bucket: gitlab-registry-storage
       accesskey: gitlab
-      secretkey: rdh-FRN3qjh4pwv_ztp
+      secretkey: REDACTED
       region: us-east-1
       regionendpoint: "http://minio-service.minio-system.svc:9000"
       v4auth: true
@@ -1053,8 +1053,8 @@ postgresql:
   auth:
     ## These need to be set, for the sake of bitnami/postgresql upgrade patterns.
     ## They are overridden by use of `existingSecret`
-    password: bogus-satisfy-upgrade
-    postgresPassword: bogus-satisfy-upgrade
+    password: REDACTED
+    postgresPassword: REDACTED
     ##
     usePasswordFiles: false
     existingSecret: '{{ include "gitlab.psql.password.secret" . }}'

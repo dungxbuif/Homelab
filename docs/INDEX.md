@@ -28,6 +28,7 @@ timestamp: 2026-10-17T00:00:00+07:00
 * [GitLab Runbook](./services/gitlab.md) - Omnibus components, Pi5 DB/Redis, public SSH and temporary VPS HTTPS; includes agent-readable facts.
 * [GitLab Registry Trial](./deployments/gitlab-registry-trial-2026-09-16.md) - successful OCI smoke and local backup evidence; Pi5 registry still production.
 * [Backup and Restore Runbook](./runbooks/backup-restore.md) - native CLI/API backup rules, post-check verification, Mezon status reporting, Google Drive retention, and restore boundaries.
+* [Secret Rotation and History Purge Runbook](./runbooks/secret-rotation-and-history-purge.md) - ordered credential rotation, verification, and history-purge plan for the public mirror (commands documented, not executed).
 * [Database Provisioning Runbook](./runbooks/db-provisioning.md) - validated database/user creation contract, secret boundary, and staging workflow.
 * [Backup Runner](../automation/backup-runner/README.md) - serial export/upload/post-check flow, retention lock, and schedule contract.
 * [Backup Control-Plane Plan](./superpowers/plans/2026-10-04-homelab-backup-control-plane.md) - historical design record for the now-active Ansible/backup architecture.

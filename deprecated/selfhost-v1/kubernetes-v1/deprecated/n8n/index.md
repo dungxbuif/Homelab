@@ -207,7 +207,7 @@ metadata:
   namespace: n8n
 type: Opaque
 stringData:
-  N8N_ENCRYPTION_KEY: "6bbb07de1c192274755eede1fbbc21df722c5f67a3174371f15d9f55662afb02"
+  N8N_ENCRYPTION_KEY: "REDACTED"
 ```
 
 ---
@@ -622,10 +622,10 @@ metadata:
 type: Opaque
 stringData:
   POSTGRES_USER: changeUser
-  POSTGRES_PASSWORD: changePassword
+  POSTGRES_PASSWORD: REDACTED
   POSTGRES_DB: n8n
   POSTGRES_NON_ROOT_USER: changeUser
-  POSTGRES_NON_ROOT_PASSWORD: changePassword
+  POSTGRES_NON_ROOT_PASSWORD: REDACTED
 ```
 
 ---
@@ -709,7 +709,7 @@ metadata:
   namespace: n8n
 type: Opaque
 stringData:
-    REDIS_PASSWORD: "p8Tr5K2q@Jz7XvN9!Lm3yBs6"
+    REDIS_PASSWORD: "REDACTED"
 
 ```
 
