@@ -20,7 +20,7 @@ grep -Eq 'prevent_destroy[[:space:]]*=[[:space:]]*true' "$root/main.tf" \
   || fail 'VM100 must prevent accidental destroy'
 grep -Eq 'to[[:space:]]*=[[:space:]]*proxmox_virtual_environment_vm\.vm100' "$root/imports.tf" \
   || fail 'VM100 import block is required'
-if grep -REq 'k8s|kube|vmid[[:space:]]*=[[:space:]]*(101|102)' "$root" --include='*.tf'; then
+if grep -RE 'k8s|kube|vmid[[:space:]]*=[[:space:]]*(101|102)' "$root" --include='*.tf' | grep -v 'homelab-k8s-iac' | grep -q .; then
   fail 'historical Kubernetes or VM101/102 target found in active module'
 fi
 

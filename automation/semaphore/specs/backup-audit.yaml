@@ -1,3 +1,4 @@
+# DESIGN SPEC ONLY - not a live Semaphore template. See specs/README.md.
 ---
 name: backup-audit
 description: Read-only audit of backup timers, markers, and staging capacity.

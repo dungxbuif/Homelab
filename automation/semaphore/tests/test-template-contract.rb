@@ -12,6 +12,8 @@ require 'yaml'
 class SemaphoreTemplateContractTest < Minitest::Test
   ROOT = File.expand_path('..', __dir__)
   TEMPLATE_DIR = File.join(ROOT, 'templates')
+  # Design-only contracts live in specs/; they are not live Semaphore templates.
+  SPEC_DIR = File.join(ROOT, 'specs')
   TEMPLATE_NAMES = %w[
     host-audit
     ansible-check
@@ -38,7 +40,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
 
   def test_every_operator_template_has_the_shared_contract
     TEMPLATE_NAMES.each do |name|
-      path = File.join(TEMPLATE_DIR, "#{name}.yaml")
+      path = template_path("#{name}.yaml")
       assert File.file?(path), "missing template #{name}"
       data = YAML.load_file(path)
       REQUIRED_KEYS.each { |key| assert data.key?(key), "#{name} missing #{key}" }
@@ -50,19 +52,19 @@ class SemaphoreTemplateContractTest < Minitest::Test
   end
 
   def test_mutation_and_approval_boundaries_are_explicit
-    assert_equal false, YAML.load_file(File.join(TEMPLATE_DIR, 'host-audit.yaml')).fetch('approval').fetch('required')
-    assert_equal false, YAML.load_file(File.join(TEMPLATE_DIR, 'ansible-check.yaml')).fetch('approval').fetch('required')
-    assert_equal false, YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-plan.yaml')).fetch('approval').fetch('required')
+    assert_equal false, YAML.load_file(template_path('host-audit.yaml')).fetch('approval').fetch('required')
+    assert_equal false, YAML.load_file(template_path('ansible-check.yaml')).fetch('approval').fetch('required')
+    assert_equal false, YAML.load_file(template_path('tofu-plan.yaml')).fetch('approval').fetch('required')
 
     %w[ansible-apply tofu-apply-approved route-publish backup-client-release app-deploy rollback].each do |name|
-      data = YAML.load_file(File.join(TEMPLATE_DIR, "#{name}.yaml"))
+      data = YAML.load_file(template_path("#{name}.yaml"))
       assert_equal true, data.fetch('approval').fetch('required'), "#{name} must require approval"
       assert_includes data.fetch('approval').fetch('roles'), 'Manager'
     end
   end
 
   def test_backup_client_release_is_fixed_scope
-    data = YAML.load_file(File.join(TEMPLATE_DIR, 'backup-client-release.yaml'))
+    data = YAML.load_file(template_path('backup-client-release.yaml'))
     refute data.key?('availability')
     assert_equal 'Semaphore inventory 6 (Pi5 backup client release)', data.fetch('inventory')
     assert_equal ['Manager'], data.fetch('approval').fetch('roles')
@@ -83,7 +85,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
   end
 
   def test_route_publish_stages_selected_route_set_and_fails_closed
-    template = YAML.load_file(File.join(TEMPLATE_DIR, 'route-publish.yaml'))
+    template = YAML.load_file(template_path('route-publish.yaml'))
     names = template.fetch('variables').map { |variable| variable.fetch('name') }
     assert_equal %w[route_set change_message], names
     route_set = template.fetch('variables').find { |variable| variable.fetch('name') == 'route_set' }
@@ -135,7 +137,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
   end
 
   def test_route_publish_rejects_an_unsupported_route_set_before_writing_artifacts
-    template = YAML.load_file(File.join(TEMPLATE_DIR, 'route-publish.yaml'))
+    template = YAML.load_file(template_path('route-publish.yaml'))
 
     Dir.mktmpdir('route-publish-invalid-set') do |dir|
       install_route_publish_fixture(dir)
@@ -158,7 +160,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
   def test_design_only_templates_are_not_exposed_to_operator_roles
     resources = YAML.load_file(File.join(ROOT, 'project-resources.yaml'))
     design_only = TEMPLATE_NAMES.select do |name|
-      YAML.load_file(File.join(TEMPLATE_DIR, "#{name}.yaml"))['availability'] == 'design_only'
+      YAML.load_file(template_path("#{name}.yaml"))['availability'] == 'design_only'
     end
     refute_empty design_only
     resources.fetch('roles').each do |role|
@@ -170,7 +172,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
   end
 
   def test_generic_host_audit_is_design_only_until_dynamic_inventory_is_reconciled
-    template = YAML.load_file(File.join(TEMPLATE_DIR, 'host-audit.yaml'))
+    template = YAML.load_file(template_path('host-audit.yaml'))
     assert_equal 'design_only', template.fetch('availability')
     resources = YAML.load_file(File.join(ROOT, 'project-resources.yaml'))
     resources.fetch('roles').each do |role|
@@ -187,7 +189,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
   end
 
   def test_tofu_plan_writes_the_binary_and_review_artifacts_used_by_post_check
-    template = YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-plan.yaml'))
+    template = YAML.load_file(template_path('tofu-plan.yaml'))
     names = template.fetch('variables').map { |variable| variable.fetch('name') }
     assert_equal %w[target vm_name plan_artifact_id change_message], names
     assert_match(/TF_VAR_proxmox_api_token/, template.fetch('command'))
@@ -219,7 +221,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
   end
 
   def test_tofu_plan_post_check_validates_the_json_plan_gate
-    template = YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-plan.yaml'))
+    template = YAML.load_file(template_path('tofu-plan.yaml'))
 
     Dir.mktmpdir('tofu-plan-post-check') do |dir|
       install_fake_tofu(dir)
@@ -243,7 +245,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
   end
 
   def test_tofu_apply_requires_the_approved_plan_hash_and_binding_artifacts
-    template = YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-apply-approved.yaml'))
+    template = YAML.load_file(template_path('tofu-apply-approved.yaml'))
     names = template.fetch('variables').map { |variable| variable.fetch('name') }
 
     assert_equal %w[target vm_name approved_plan_id approved_plan_hash change_message], names
@@ -257,7 +259,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
   end
 
   def test_tofu_apply_rejects_a_mismatched_approved_plan_id_before_apply
-    template = YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-apply-approved.yaml'))
+    template = YAML.load_file(template_path('tofu-apply-approved.yaml'))
 
     Dir.mktmpdir('tofu-apply-id-mismatch') do |dir|
       install_fake_tofu(dir)
@@ -275,7 +277,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
   end
 
   def test_tofu_apply_rejects_a_mismatched_approved_plan_hash_before_apply
-    template = YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-apply-approved.yaml'))
+    template = YAML.load_file(template_path('tofu-apply-approved.yaml'))
 
     Dir.mktmpdir('tofu-apply-hash-mismatch') do |dir|
       install_fake_tofu(dir)
@@ -293,7 +295,7 @@ class SemaphoreTemplateContractTest < Minitest::Test
   end
 
   def test_tofu_apply_binds_the_approved_id_and_hash_before_apply
-    template = YAML.load_file(File.join(TEMPLATE_DIR, 'tofu-apply-approved.yaml'))
+    template = YAML.load_file(template_path('tofu-apply-approved.yaml'))
 
     Dir.mktmpdir('tofu-apply-success') do |dir|
       install_fake_tofu(dir)
@@ -322,6 +324,11 @@ class SemaphoreTemplateContractTest < Minitest::Test
   end
 
   private
+
+  def template_path(file)
+    live = File.join(TEMPLATE_DIR, file)
+    File.file?(live) ? live : File.join(SPEC_DIR, file)
+  end
 
   PLAN_JSON = {
     'format_version' => '1.2',

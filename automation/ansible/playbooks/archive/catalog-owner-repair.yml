@@ -18,7 +18,7 @@
 
     - name: Install metadata-preserving catalog writers with rollback copies
       ansible.builtin.copy:
-        src: '{{ playbook_dir }}/../../../backup/scripts/{{ item }}'
+        src: '{{ playbook_dir }}/../../../../backup/scripts/{{ item }}'
         dest: '/ssd-data/infra/backup-runner/app/backup/scripts/{{ item }}'
         mode: '0644'
         backup: true
