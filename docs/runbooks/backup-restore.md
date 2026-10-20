@@ -136,8 +136,9 @@ selected files are mode `0600`, and the collector refuses a missing required
 source or an unsafe archive member.
 
 The class is accepted only after Restic upload, remote post-check, and a
-scratch restore. Its timer is installed but currently disabled while the first
-manual snapshot gate is pending.
+scratch restore. Its timer is enabled on VM100 after the first snapshot and
+scratch restore passed; the latest acceptance is recorded in
+`docs/deployments/backup-configs-readiness-2026-10-20.md`.
 
 ## Schedule
 
@@ -146,12 +147,12 @@ Jobs run serially behind one global lock:
 | Local time | Job | Service interruption |
 |---|---|---|
 | 01:00 | PostgreSQL + CouchDB | None |
-| 01:30 | Additional PostgreSQL instances | None |
-| 02:00 | RustFS object export | None |
-| 02:30 | GitLab native backup + config/secrets | None |
-| 06:30 | Verify repositories and apply retention | None |
-| 08:00 | Read-only health check | None |
-| 09:00 | Host configurations | Disabled until first manual acceptance |
+| 03:00 | Additional PostgreSQL instances | None |
+| 04:00 | RustFS object export | None |
+| 05:00 | GitLab native backup | None |
+| 10:00 | Verify repositories and apply retention | None |
+| 12:00 | Read-only health check | None |
+| 13:00 | Host configurations | None |
 
 If a prior job is still running, a VM100 scheduled class waits up to one hour
 for the shared lock and then reports a missed window; it must not overlap
@@ -258,10 +259,10 @@ tests are mandatory before claiming operational recovery.
 
 ## Current Limitations
 
-- The adapters have been exercised against current Pi5/VM100 data and local
-  restore targets. The latest database, RustFS, and GitLab runs have verified
-  remote snapshot IDs and success markers; see the [runtime inventory](../deployments/runtime-inventory-2026-10-13.md)
-  and [rehearsal evidence](../deployments/backup-restore-rehearsal-2026-10-05.md).
+- The adapters have been exercised against current Pi5/VM100 data and isolated
+  restore targets. Current restore evidence covers the latest database,
+  database-instance, GitLab and RustFS snapshots; see the dated acceptance
+  reports in `docs/deployments/` and the [rehearsal evidence](../deployments/backup-restore-rehearsal-2026-10-05.md).
 - Semaphore and the internal provisioner are an active private provisioning
   control plane on Pi5. They are intentionally separate from the VM100 backup
   scheduler. Task 57 is the current read-only health acceptance; it does not
@@ -273,7 +274,7 @@ tests are mandatory before claiming operational recovery.
   repository with rclone before restoring locally; this avoids making a large
   restore depend on a long-lived rclone stdio session.
 - A successful database backup does not restore application files or RustFS
-  objects.
+  objects; those are covered by their separate native restore drills.
 - GitLab recovery requires PostgreSQL globals, the exact GitLab version and
   edition, the config/secrets artifact, and a compatible PostgreSQL major. The
   current dump is from PostgreSQL 16.14 using a PostgreSQL 17.10 client; a
