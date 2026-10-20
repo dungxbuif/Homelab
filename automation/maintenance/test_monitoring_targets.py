@@ -31,6 +31,13 @@ def opener(payload):
 
 
 class MonitoringTargetAuditTest(unittest.TestCase):
+    def test_active_targets_uses_targets_endpoint_not_historical_series(self):
+        payload = {"status": "success", "data": {"activeTargets": [
+            {"labels": {"job": "blackbox-http", "instance": "https://example.invalid"}},
+        ]}}
+        result = MODULE.active_targets("http://example", opener(payload))
+        self.assertEqual(result, payload["data"]["activeTargets"])
+
     def test_retires_known_targets(self):
         payload = {"status": "success", "data": {"result": [
             {"metric": {"job": "k8s-kube-state-metrics", "instance": "10.10.0.30:30080"}},
@@ -42,12 +49,14 @@ class MonitoringTargetAuditTest(unittest.TestCase):
             {"metric": {"job": "vps-node", "instance": "103.82.21.202:9100"}},
         ]}}
         with redirect_stdout(io.StringIO()) as output:
-            original = MODULE.query
-            MODULE.query = lambda *_args, **_kwargs: payload["data"]["result"]
+            original = MODULE.active_targets
+            MODULE.active_targets = lambda *_args, **_kwargs: [
+                {"labels": row["metric"]} for row in payload["data"]["result"]
+            ]
             try:
                 self.assertEqual(MODULE.main(), 1)
             finally:
-                MODULE.query = original
+                MODULE.active_targets = original
         self.assertIn("retired monitoring targets", output.getvalue())
 
     def test_cli_passes_when_only_active_targets_are_down(self):
@@ -55,12 +64,14 @@ class MonitoringTargetAuditTest(unittest.TestCase):
             {"metric": {"job": "blackbox-http", "instance": "https://example.invalid"}},
         ]}}
         with redirect_stdout(io.StringIO()):
-            original = MODULE.query
-            MODULE.query = lambda *_args, **_kwargs: payload["data"]["result"]
+            original = MODULE.active_targets
+            MODULE.active_targets = lambda *_args, **_kwargs: [
+                {"labels": row["metric"]} for row in payload["data"]["result"]
+            ]
             try:
                 self.assertEqual(MODULE.main(), 0)
             finally:
-                MODULE.query = original
+                MODULE.active_targets = original
 
 
 if __name__ == "__main__":

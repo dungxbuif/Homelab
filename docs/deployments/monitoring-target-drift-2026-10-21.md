@@ -22,11 +22,17 @@ existing blackbox checks and active service exporters. The change must be made
 through the Pi5 manager maintenance path and should include a timestamped
 configuration backup and a rollback copy.
 
-The source file and reload mechanism are not exposed by the current read-only
-host-audit contract, so no live configuration was changed in this audit.
+The cleanup was applied through the approved Pi5 manager release path on
+2026-10-21. The live source is `/ssd-data/infra/monitoring/prometheus.yml`;
+the previous file is retained as
+`prometheus.yml.bak-retired-targets-20261021`. Compose validation passed and
+VictoriaMetrics was restarted in isolation. Its ready endpoint returned
+`VictoriaMetrics is Ready.` and `/api/v1/targets` now reports 14 active
+targets with none of the three retired jobs. Historical `up=0` samples remain
+queryable by design and are not active scrape targets.
 
 The repository now contains the bounded read-only gate
 `automation/maintenance/audit-monitoring-targets.py`. It queries
-`up == 0`, fails only for the three known retired job/instance pairs, and is
-ready to be called by the manager-side drift/maintenance job once that job has
-the approved Pi5 execution path.
+`up == 0`, fails only for the three known retired job/instance pairs, and
+should now be used against the active-target endpoint as well so historical
+series are not mistaken for live configuration drift.

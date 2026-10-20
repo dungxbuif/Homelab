@@ -26,16 +26,25 @@ def query(base_url, opener=urllib.request.urlopen):
     return payload.get("data", {}).get("result", [])
 
 
+def active_targets(base_url, opener=urllib.request.urlopen):
+    targets_url = base_url.rstrip("/") + "/api/v1/targets"
+    with opener(targets_url, timeout=10) as response:
+        payload = json.load(response)
+    if payload.get("status") != "success":
+        raise RuntimeError("VictoriaMetrics active-target query did not succeed")
+    return payload.get("data", {}).get("activeTargets", [])
+
+
 def main():
     base_url = os.environ.get("VICTORIAMETRICS_URL", "http://10.10.0.5:8428")
     try:
-        rows = query(base_url)
+        rows = active_targets(base_url)
     except Exception as exc:  # noqa: BLE001 - CLI must expose a bounded failure
         print(f"FAIL monitoring query error={exc}", file=sys.stderr)
         return 2
 
     found = sorted(
-        (row.get("metric", {}).get("job"), row.get("metric", {}).get("instance"))
+        (row.get("labels", {}).get("job"), row.get("labels", {}).get("instance"))
         for row in rows
     )
     stale = sorted(RETIRED.intersection(found))
