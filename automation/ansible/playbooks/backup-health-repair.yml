@@ -37,6 +37,14 @@
         backup: true
       when: inventory_hostname == 'pi5'
 
+    - name: Install the bounded Pi backup runner with rollback copy
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../backup-runner/run-pi-capped.sh'
+        dest: '{{ health_app_root }}/automation/backup-runner/run-pi-capped.sh'
+        mode: '0755'
+        backup: true
+      when: inventory_hostname == 'pi5'
+
     - name: Install only the corrected health service
       vars:
         ansible_become: true

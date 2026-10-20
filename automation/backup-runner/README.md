@@ -39,6 +39,15 @@ should retry later without overlapping it. VM100 scheduled classes wait up to
 one hour for the lock (`BACKUP_SCHEDULE_LOCK_WAIT_SECONDS`) and retry every 30
 seconds; direct Pi executor calls remain non-blocking.
 
+Pi5 backup classes are launched through `run-pi-capped.sh`. The default
+`BACKUP_PI_RESOURCE_MODE=portable` uses `nice` and `ionice -c 3`, which is
+compatible with the restricted backup user. A privileged release may select
+`BACKUP_PI_RESOURCE_MODE=systemd` to enforce the stronger transient-scope
+limits `CPUQuota=100%`, `MemoryMax=1G`, and `IOWeight=50`. The executor refuses
+to run if this launcher is missing, and strict systemd mode refuses to run when
+`systemd-run` is unavailable. This is a temporary guard while Pi5 still does
+backup work; the long-term target remains VM100-owned upload, check and prune.
+
 Restic integrity checks are split by cadence. Every upload confirms remote
 snapshot metadata and defers the full structural `restic check` to retention
 and deep-verify. Set `RESTIC_POST_UPLOAD_CHECK=structural` only for an explicit

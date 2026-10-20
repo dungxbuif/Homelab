@@ -18,6 +18,13 @@ set -a
 source "$env_file"
 set +a
 app_root=${BACKUP_APP_ROOT:-/ssd-data/infra/backup-runner/app}
+resource_runner="$app_root/automation/backup-runner/run-pi-capped.sh"
+[[ -x "$resource_runner" ]] || { echo "bounded Pi runner is missing: $resource_runner" >&2; exit 1; }
+
+run_bounded() {
+  exec "$resource_runner" "$@"
+}
+
 case "$class" in
   health)
     export BACKUP_HEALTH_EXPECTED_CLASSES='databases rustfs'
@@ -27,19 +34,21 @@ case "$class" in
     ;;
   databases|rustfs)
     run_id="${class}-$(date -u +%Y%m%d-%H%M%S)"
-    exec bash "$app_root/automation/backup-runner/run-class.sh" "$class" "$run_id"
+    run_bounded bash "$app_root/automation/backup-runner/run-class.sh" "$class" "$run_id"
     ;;
   configs)
-    exec bash "$app_root/automation/backup-runner/export-configs-pi.sh"
+    run_bounded bash "$app_root/automation/backup-runner/export-configs-pi.sh"
     ;;
   retention)
-    exec bash "$app_root/automation/backup-runner/run-retention.sh"
+    run_bounded bash "$app_root/automation/backup-runner/run-retention.sh"
     ;;
   deep-verify)
     exec 9>"${BACKUP_LOCK_FILE:-/ssd-data/infra/backups/homelab/.homelab-backup.lock}"
     flock -n 9 || { echo 'another homelab backup job holds the global lock' >&2; exit 75; }
-    for deep_class in databases rustfs; do
-      bash "$app_root/backup/scripts/run-integrity-check.sh" "$deep_class"
-    done
+    run_bounded bash -c '
+      for deep_class in databases rustfs; do
+        bash "$1/backup/scripts/run-integrity-check.sh" "$deep_class"
+      done
+    ' -- "$app_root"
     ;;
 esac
