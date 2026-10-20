@@ -20,6 +20,21 @@ timestamp: 2026-07-03T15:14:00Z
 > Every significant change appends to this log; the current version marker also
 > lives in [`index.md`](../index.md) and [`MAIN.md`](./MAIN.md).
 
+## 2026-10-19 - Audit and network hardening (in progress)
+
+- **Audit:** full security, backup and automation audit plus a network and
+  workload review; see
+  [network-workload-automation-audit-2026-10-19.md](./research/network-workload-automation-audit-2026-10-19.md).
+- **Live changes:** VPS legacy tunnel ports blocked, SSH key-only, coturn
+  restricted, `pg-net` and `s3-net` overlays created, whiteboard moved onto
+  `pg-net`, VM100 cache pruned, RelayHub and Stirling PDF restored. Details,
+  verification and rollback in
+  [network-hardening-2026-10-19.md](./deployments/network-hardening-2026-10-19.md).
+- **Exposure (2026-10-20):** `pgadmin` and `couchdb` host are LAN-only on Pi5; `sync-db` is the only public CouchDB name and is path-restricted to the vault DB.
+- **Open:** public GitHub repo with exposed credentials (rotation deferred),
+  remaining consumers to move off `homelab-net`, backup gaps (configs, VM100
+  vzdump, dead-man's switch, Drive restore acceptance).
+
 ## 2026-10-15 - Automation and runtime reconciliation
 
 - **Backup health gate:** Semaphore task 57 passed the combined read-only

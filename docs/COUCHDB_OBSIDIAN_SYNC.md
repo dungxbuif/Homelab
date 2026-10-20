@@ -107,12 +107,16 @@ docker ps --filter name=couchdb
 docker logs --tail 80 couchdb
 ```
 
+Since 2026-10-20 `couchdb.dungxbuif.com` is LAN-only (`lan-only` middleware) and
+`sync-db.dungxbuif.com` is the Internet endpoint for LiveSync, limited to `/`,
+`/_session` and `/obsidian_vault…`. Configure the plugin with the `sync-db` host.
+
 Test public path through the VPS gateway:
 
 ```bash
-curl -k --resolve couchdb.dungxbuif.com:443:103.82.21.202 \
+curl -k --resolve sync-db.dungxbuif.com:443:103.82.21.202 \
   -u "$COUCHDB_SYNC_USER:$COUCHDB_SYNC_PASSWORD" \
-  https://couchdb.dungxbuif.com/obsidian_vault
+  https://sync-db.dungxbuif.com/obsidian_vault
 ```
 
 Expected:
