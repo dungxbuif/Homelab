@@ -43,6 +43,10 @@ first verify that a narrowly scoped root-owned wrapper is available, then
 enable it through a separate reviewed release and inspect the next backup
 class from `journalctl`.
 
+The direct Pi5 probe confirmed `systemd-run` exists but a user scope returns
+`Access denied` because it requires interactive authentication. Portable mode
+must therefore remain the active default until a root-owned wrapper is enrolled.
+
 ## Verification
 
 `backup/tests/test_pi_resource_cap.sh` proves portable execution, all systemd
