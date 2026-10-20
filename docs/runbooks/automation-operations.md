@@ -84,6 +84,40 @@ apply -> post-check -> sanitized Mezon notice. An agent does not open a host
 shell, receive a general host key, mount the Docker socket, or receive a
 database credential.
 
+## Break-glass workstation recovery
+
+Use this only when Semaphore and the approved automation path cannot operate.
+It is an operator recovery path, not a replacement for the read-only observer
+or a general agent SSH channel. Never put a private key, password, setup key or
+API token in this runbook, Git, a command line, or a remote URL.
+
+1. Unlock the 1Password desktop app and approve the SSH signing prompt for the
+   specific host key. Do not approve every identity or disable host-key checks.
+2. Confirm the agent is responding without printing secret material:
+
+   ```bash
+   ssh-add -L
+   ssh -G pi | grep -E '^(hostname|user|identityagent|identityfile|identitiesonly) '
+   ```
+
+   An empty `ssh-add -L`, a signing timeout, or repeated authentication
+   failures means the operator must repair/unlock 1Password; do not retry in a
+   loop and do not substitute an untracked key.
+3. Verify the pinned host key before any write. Use `ssh-keygen -F 10.10.0.5`
+   for Pi5, `ssh-keygen -F 10.10.0.31` for VM100, and the existing `gateway`
+   alias for the VPS. A changed key is a stop condition until reconciled by an
+   operator.
+4. Start with an identity-only, read-only command through the configured
+   aliases (`pi`, `vm100`, or `gateway`). Record the host, UTC time, reason,
+   command, and output in a private incident note. Do not open a shell if a
+   fixed observer or Semaphore task can answer the question.
+5. For an approved mutation, take the relevant backup/config snapshot first,
+   execute one bounded command, and run the application, route and backup
+   post-checks. Keep the rollback path and evidence with the incident note.
+6. Revoke or close the temporary operator access and return to the normal
+   GitLab -> Semaphore workflow. A break-glass session is not evidence that
+   general agent SSH should be enabled.
+
 ## Read-only checks
 
 Run these in the pinned execution environment:
