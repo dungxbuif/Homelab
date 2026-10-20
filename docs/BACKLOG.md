@@ -42,6 +42,9 @@ Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`
 | B6 | VM100 disk pressure | On 2026-10-18 only 105 MB was free: GitLab backup and retention failed | Alert at 85 percent, schedule `docker image prune`, size the disk | open |
 | B7 | Second off-site target | Google Drive is the only remote copy | Add a second restic repo (B2, Hetzner box or LAN NAS) for 3-2-1 | decision |
 | B8 | Monthly automated restore test | Replaces manual checks | CI or systemd job restoring latest snapshot and running a query | open |
+| B9 | Make Pi5 passive for backups | Pi5 runs export, restic upload, check and prune and holds restic and Drive secrets | Phase 2.5 then Phase 7: check and prune on VM100, then pull-model dumps from VM100 over `pg-net`/`s3-net`; remove secrets from Pi5 | open |
+| B10 | Cap any remaining Pi5 backup job | Protect the data server's latency | `systemd-run --scope -p CPUQuota -p MemoryMax -p IOWeight`, `nice`, `ionice` | open |
+| B11 | CouchDB about 80 percent CPU, 1.2 M requests in 72 h from two LiveSync clients | Data server should be quiet | Fix client polling or rate-limit; compare before and after | open |
 
 ## P2 Exposure and routing
 
@@ -60,14 +63,14 @@ Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`
 | A3 | Image updates | No pinned digests | Renovate or Diun (notify only), `order: start-first`, healthchecks | open |
 | A4 | Break-glass path | GitLab runs on the infrastructure it deploys | Document workstation SSH recovery | open |
 | A5 | Trim Semaphore | Stop expanding it | Keep only read-only host-audit and backup-health templates | open |
-| A6 | Move monitoring and control plane off Pi5 | Failure domains overlap | Place on VM100 or a separate node | open |
+| A6 | Make Pi5 data-only | Pi5 still runs AdGuard, edge Traefik, Rathole, Semaphore, provisioner, monitoring, registry, pgAdmin, LibreSpeed | Move in order of risk (see plan Phase 8); decide DNS and ingress separately | open |
 
 ## P3 Later
 
 | ID | Item | Status |
 |---|---|---|
 | L1 | Decide on a data VM after measuring Proxmox capacity | decision |
-| L2 | pgBackRest only if PITR is required | decision |
+| L2 | pgBackRest with WAL archiving to a VM100 repo host (PITR) | decision, P2 now that Pi5 is a data server with a 24 h RPO |
 | L3 | Postgres collation-version warning (`ALTER DATABASE ... REFRESH COLLATION VERSION`, then reindex) | open |
 | L4 | Decommission legacy Pi `/ssd-data/backup/simple-backup.sh` after B1 passes | open |
 

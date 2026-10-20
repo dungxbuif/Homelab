@@ -32,6 +32,25 @@ free space, not overlap; the overlap problem is separate (section 3). (2) Yes, r
 configured and ran successfully, but its effect is **unproven**: no snapshot count per repo has been compared with the policy
 (Phase 1.4). (3) This document is that plan.
 
+## Design principle (revised): Pi5 is a data server only
+
+Pi5 (7.7 GB RAM, load 0.4, 39 percent disk) must only serve data: PostgreSQL, PgBouncer, CouchDB, RustFS, Redis. Backup,
+verification, secrets and control services should live on VM100, which has 15 GB RAM and runs every application. Pi5 stays passive.
+
+Current state against that principle:
+
+| Concern | Today | Target |
+|---|---|---|
+| Backup compute | Pi5 runs exports, **restic upload, `restic check`, `forget --prune` and `check --read-data-subset`** for the `databases` and `rustfs` repos (`pi-executor.sh retention` runs `run-retention.sh` on Pi5) | VM100 runs upload, check and prune; Pi5 only answers queries |
+| Backup secrets | restic password and rclone Drive token in `/ssd-data/infra/backup/runner.env` on Pi5 | Only on VM100 |
+| Scheduler | VM100 timers call Pi5 through a forced-command SSH guard (good, already pull-style) | Keep; shrink what the guard allows |
+| Non-data services on Pi5 | AdGuard, edge Traefik, Rathole, Semaphore and provisioner (swarm node `rpivn`), VictoriaMetrics, Alertmanager, blackbox, SNMP and cAdvisor exporters, registry, pgAdmin, LibreSpeed | Out of scope here; tracked as A6 and Phase 8. No new non-data service is added to Pi5 by this plan |
+| Anomaly | CouchDB at about 80 percent CPU during the check; about 1.2 million requests in 72 h from two LiveSync client IPs | Investigate (Phase 1.6) |
+
+Rules for every phase: add nothing to Pi5 except read-only paths and, temporarily, one resource-capped export; do not run Kuma,
+restore drills or verification on Pi5; wrap any unavoidable Pi5 job in `systemd-run --scope -p CPUQuota=100% -p MemoryMax=1G
+-p IOWeight=50` plus `nice -n 10 ionice -c3`.
+
 ## Execution constraints
 
 - All VM100 and Pi5 writes need `ssh` write access; the auto-mode classifier blocks them even with allow rules, so each phase
@@ -72,6 +91,10 @@ sizes here. If counts exceed policy, inspect `backup/scripts/verify-retention.sh
 1.5 **Alert on disk.** Extend `backup/scripts/check-backup-health.sh`: warn at 85 percent used on `/`, fail at 92 percent, keep the
 existing low-free-space byte threshold. Message to Mezon via `notify-mezon.sh`.
 
+1.6 **Pi5 load check (read-only).** `docker stats` for CouchDB, `docker logs --since 1h couchdb | grep -c '_changes'`, client IPs
+from the access log. If LiveSync clients poll in a tight loop, fix the client (Obsidian LiveSync sync interval, `Use longpoll`)
+and consider a CouchDB `max_dbs_open`/rate limit at Traefik. Record request rate before and after.
+
 Acceptance: top consumers documented; `docker system df` works; `/` below 70 percent after cleanup; snapshot counts match policy;
 health reports the new thresholds. Rollback: remove the drop-ins and timer; no data deleted except pruned images and journals.
 
@@ -95,17 +118,26 @@ retention 90 min, deep verify 8 h). Only stale markers (older than 26 h) and fai
 2.4 **GitLab wall time.** Investigate why the native backup takes 3 h 20 min for 8.2 GB (compression, `STRATEGY=copy`, skipped
 content `SKIP=builds,artifacts` if acceptable). Record before changing.
 
+2.5 **Move check, prune and verification for the Pi repos to VM100.** Restic works on the remote Drive repo from any host, so
+`databases` and `rustfs` retention does not need Pi5. Steps: (a) copy the restic password and rclone config for those two repos to
+VM100's existing private backup env (root-owned, mode 600), never into git; (b) copy the two success markers to VM100
+(`run_pi` already streams the GitLab marker the other way; invert it: Pi writes markers, VM100 reads them over the forced-command
+guard with a new read-only `markers` command); (c) change `run-vm100-scheduled.sh retention` to run `verify-retention.sh databases` and
+`rustfs` locally instead of `run_pi retention`; (d) remove `retention` from `pi-executor.sh` and `pi-ssh-guard.sh`. Keep one global
+lock on VM100 only. Verify with `journalctl` that no `restic check` runs on Pi5 (`ssh pi 'pgrep -a restic'` is empty during retention).
+
 Acceptance: three consecutive nights with health exit 0 and no overlap in `journalctl`; a forced stale marker still turns it red.
 Rollback: restore the previous timer files from git and reload systemd.
 
 ## Phase 3: Dead-man's switch (B4). Effort 3 h. Risk low.
 
-3.1 Use the Uptime Kuma instance already on Pi5 (`/ssd-data/infra/kuma-data`): create one **push monitor** per class
+3.1 Run Uptime Kuma on **VM100** (a small compose service, not on Pi5; the instance in `/ssd-data/infra/kuma-data` on Pi5 can be retired
+later under A6): create one **push monitor** per class
 (databases, database-instances, gitlab, rustfs, retention) with a 26 h heartbeat (retention 8 days for the weekly deep verify) and
 a Mezon notification channel. Each class pings its push URL at the end of `run-class.sh` only after the success marker is written;
 URLs live in the existing secret env file, never in git.
 
-3.2 Because Kuma runs on Pi5 (the thing being protected), add one external heartbeat: a single daily `curl` from VM100 to a
+3.2 Kuma on VM100 also watches Pi5 from outside (TCP 5432 via PgBouncer, HTTP to CouchDB and RustFS, ping), so Pi5 needs no agent. Add one external heartbeat: a single daily `curl` from VM100 to a
 free external check service after health passes, with its own email or push channel. This covers Pi5 or LAN loss.
 
 3.3 Add a Mezon message on **every** failed class (exists) and a daily one-line success summary from health.
@@ -114,7 +146,7 @@ Acceptance: disable one timer for a day in a test window; both Kuma and the exte
 
 ## Phase 4: Restore drill, then automate (B1, B8). Effort 4 h first run, 2 h to automate. Risk low (scratch only).
 
-4.1 Scratch target: a throwaway Postgres 16 (pgvector image used in prod) and CouchDB container on VM100 with no published ports
+4.1 Scratch target on VM100 only (never on Pi5, never restoring over production, and read from Drive at a capped rate): a throwaway Postgres 16 (pgvector image used in prod) and CouchDB container on VM100 with no published ports
 and a dedicated network, data under `/opt/apps/restore-drill/` with 20 GB free check first.
 
 4.2 Restore with existing tools: `backup/scripts/restore-staging.sh`, `restore-database.py` for the latest snapshot of each repo
@@ -131,14 +163,13 @@ Acceptance: written report in `docs/deployments/` with RTO and RPO; marker age u
 
 ## Phase 5: Configuration backup class (B2). Effort 3 h. Risk low.
 
-5.1 Inventory to cover (encrypted by restic, so secrets are acceptable): Pi5 `/ssd-data/infra/docker-compose.yml`, `Caddyfile`,
-`traefik/dynamic.yml`, `couchdb/local.d`, `adguard`, `/etc/wireguard`, `/etc/ssh`, `crontab`, systemd units; VM100 `/opt/apps/*`
+5.1 Inventory to cover (encrypted by restic, so secrets are acceptable). Pi5 data-stack paths only: `/ssd-data/infra/docker-compose.yml`, `couchdb/local.d`, `postgres` and `pgbouncer` config (not data), `rustfs` config, `/etc/ssh`, `crontab`, systemd units; Pi5 non-data configs (`Caddyfile`, `traefik/dynamic.yml`, `adguard`, `/etc/wireguard`) are included until A6 moves them, then dropped; VM100 `/opt/apps/*`
 compose files and env files, `/etc/systemd/system/homelab-backup*`; VPS `/root/gateway`, `/root/coturn`, `/root/firewall-backup`.
 Exclude data volumes and caches.
 
 5.2 Add class `configs` to `schedule.yaml`, `inventory.yaml`, `policies.yaml` (14/8/12), a new restic repo `homelab-backups/configs`,
-and a runner that tars each host's list through the existing forced-command SSH guard (`automation/backup-runner/pi-ssh-guard.sh`).
-VPS pull uses a separate read-only key. 
+and a runner **on VM100** that pulls each host's list (read-only, `tar` or `rsync --server --sender` through the forced-command guard
+`automation/backup-runner/pi-ssh-guard.sh`), so Pi5 runs no restic and holds no new secret. VPS pull uses a separate read-only key. 
 
 5.3 Post-check: restore one file from the snapshot and compare checksum.
 
@@ -151,12 +182,40 @@ Acceptance: first snapshot listed; test restore passes; Mezon success summary. R
 - B3: vzdump of VM 100 to a **different** disk or host than the Proxmox VM storage. A Proxmox Backup Server on the same host is
   not a backup. Weekly, keep 3.
 
+## Phase 7: Pull model, Pi5 exports nothing it does not have to (B9). Effort 1 to 2 days. Risk medium.
+
+Goal: VM100 is the backup server; Pi5 only serves queries.
+
+7.1 PostgreSQL: create a dedicated read-only role `backup_ro` (`pg_read_all_data`, `CONNECT`, no `SUPERUSER`, no `REPLICATION`) per instance;
+add its password to VM100's backup env and to PgBouncer's `auth_file`/direct pg_hba for `10.0.30.0/24` only. Run `pg_dump -Fc` from VM100 over `pg-net`
+(`postgres-pg`). `pg_dumpall --globals-only` needs elevated rights: use `--no-role-passwords` or keep a single narrow forced command on Pi5 for globals.
+Compare dump sizes and `pg_restore --list` with the current Pi-side export for one week before cutover.
+
+7.2 RustFS: VM100 already sees `rustfs` on `s3-net`; read objects with a read-only RustFS access key through the S3 API (rclone or `mc mirror` to
+staging, then restic), instead of exporting on Pi5.
+
+7.3 CouchDB: attach CouchDB to a dedicated `couch-net` visible to VM100 (same anchor pattern as `pg-net-anchor`); replicate or `_all_docs` export from VM100 with
+a read-only `_security` member, not the admin account.
+
+7.4 After a week of matching output, disable the Pi5 `databases` and `rustfs` classes and remove `pi-executor.sh`; delete `runner.env` and the rclone token from Pi5.
+
+Acceptance: `ssh pi 'pgrep -a "restic|rclone|pg_dump"'` empty at backup time; Pi5 load during backup under 1; restore drill (Phase 4) still passes from the new snapshots.
+Rollback: re-enable the Pi classes (kept disabled, not deleted, for two weeks).
+
+## Phase 8: Align Pi5 role (A6, informational, no change in this plan)
+
+Candidates to leave Pi5 for VM100 or another node, in order of risk: monitoring stack and Kuma, registry, pgAdmin, LibreSpeed, Semaphore and provisioner;
+AdGuard, edge Traefik and Rathole are network roles and need a separate decision (DNS and ingress must survive VM100 maintenance).
+Data-server hardening to decide: NVMe SMART and temperature alerts (probe from VM100), UPS, and PITR. Nightly dumps give a 24 h RPO; for a pure data
+server consider pgBackRest with WAL archiving to a VM100 repo host over `pg-net` (decision L2, now P2).
+
 ## Order and dependencies
 
-Phase 1 then 2 then 3 (alerts need stable schedule) then 4 (needs working retention proof) then 5; Phase 6 after a decision.
-Total first pass about 14 hours of work, spread over a week. Re-run `check-backup-health.sh` after each phase.
+Phase 1 then 2 (including 2.5, which takes check and prune off Pi5) then 3 (alerts need a stable schedule) then 4 (needs the retention proof) then 5; Phase 7 after the restore drill has passed once, so the new pull path can be validated against a proven restore; Phase 6 and 8 after decisions.
+First pass (Phases 1 to 5) about 16 hours of work, spread over a week; Phase 7 one to two further days. Re-run `check-backup-health.sh` after each phase.
 
 ## Open questions
 
+0. Confirm Pi5 should hold no restic credentials at all after Phase 7.
 1. Which external heartbeat service (or none)? 2. Accept `SKIP=builds,artifacts` for GitLab backups? 3. Where can vzdump land
 (NAS, USB disk, second Proxmox node)? 4. Cause of the 2026-10-19 reboot.
