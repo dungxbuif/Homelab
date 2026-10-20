@@ -8,6 +8,7 @@ lock_file=${BACKUP_LOCK_FILE:-/run/lock/homelab-backup.lock}
 expected_classes=${BACKUP_HEALTH_EXPECTED_CLASSES:-gitlab}
 incomplete_age=${BACKUP_INCOMPLETE_MAX_AGE_SECONDS:-604800}
 marker_max_age=${BACKUP_RETENTION_MAX_AGE_SECONDS:-93600}
+restore_drill_max_age=${BACKUP_HEALTH_RESTORE_DRILL_MAX_AGE_SECONDS:-2678400}
 active_max_age=${BACKUP_HEALTH_ACTIVE_MAX_AGE_SECONDS:-21600}
 min_free_bytes=${BACKUP_HEALTH_MIN_FREE_BYTES:-10737418240}
 disk_warn_percent=${BACKUP_HEALTH_DISK_WARN_PERCENT:-85}
@@ -162,6 +163,23 @@ for class in $expected_classes; do
     fi
   fi
 done
+
+restore_drill_marker="$status_root/restore-drill.success"
+if [[ ! -f "$restore_drill_marker" ]]; then
+  warnings+=("missing success marker: restore-drill")
+else
+  completed_at=$(sed -n 's/^completed_at=//p' "$restore_drill_marker")
+  if [[ "$completed_at" =~ ^[0-9]+$ ]]; then
+    age=$((now - completed_at))
+    if ((age < 0 || age > restore_drill_max_age)); then
+      warnings+=("stale success marker: restore-drill age=${age}s")
+    else
+      details+=("restore-drill.success_age=${age}s")
+    fi
+  else
+    problems+=("invalid success marker: $restore_drill_marker")
+  fi
+fi
 
 if [[ "${BACKUP_HEALTH_REMOTE_PI:-false}" == true ]]; then
   remote_script=${BACKUP_HEALTH_REMOTE_SCRIPT:-$script_dir/../../automation/backup-runner/run-vm100-scheduled.sh}

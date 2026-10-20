@@ -21,6 +21,7 @@
       - backup/scripts/verify-retention.sh
       - backup/scripts/restore-staging.sh
       - backup/scripts/check-backup-health.sh
+      - automation/backup-runner/run-restore-drill.sh
       - backup/scripts/run-configs-backup.py
       - backup/scripts/validate-config-sources.py
       - automation/backup-runner/run-class.sh
@@ -109,6 +110,7 @@
             {{ backup_candidate.path }}/automation/backup-runner/run-vm100-scheduled.sh
             {{ backup_candidate.path }}/automation/backup-runner/run-instance-retention.sh
             {{ backup_candidate.path }}/automation/backup-runner/run-config-retention.sh
+            {{ backup_candidate.path }}/automation/backup-runner/run-restore-drill.sh
             {{ backup_candidate.path }}/backup/scripts/cleanup-local-runs.sh
             {{ backup_candidate.path }}/backup/scripts/restic-lib.sh
             {{ backup_candidate.path }}/backup/scripts/upload-restic.sh
@@ -196,6 +198,8 @@
         - homelab-backup-configs.timer
         - homelab-backup-verify-weekly.service
         - homelab-backup-verify-weekly.timer
+        - homelab-backup-restore-drill.service
+        - homelab-backup-restore-drill.timer
       notify: Reload systemd definitions
 
     - name: Enable the VM100 database-instance timer without starting a backup yet
@@ -218,6 +222,8 @@
           started: '{{ backup_configs_timer_started }}'
         - name: homelab-backup-verify-weekly.timer
           started: '{{ backup_weekly_verify_timer_started }}'
+        - name: homelab-backup-restore-drill.timer
+          started: true
 
     - name: Report sanitized runtime publication
       ansible.builtin.debug:

@@ -1,0 +1,10 @@
+[Unit]
+Description=Monthly Homelab restore drill schedule
+
+[Timer]
+OnCalendar=*-*-01 14:00:00 Asia/Ho_Chi_Minh
+Persistent=true
+Unit=homelab-backup-restore-drill.service
+
+[Install]
+WantedBy=timers.target

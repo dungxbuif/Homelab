@@ -56,6 +56,9 @@ restic_run() {
   if [[ -n "${RESTIC_RESTORE_DIR:-}" ]]; then
     volumes+=(--volume "${RESTIC_RESTORE_DIR}:/restore-target")
   fi
+  if [[ -n "${RESTIC_CONTAINER_USER:-}" ]]; then
+    volumes+=(--user "$RESTIC_CONTAINER_USER")
+  fi
   python3 "$(dirname -- "$rclone_prepare_script")/run_restic_container.py" \
     --timeout "$restic_command_timeout" -- \
     -e RCLONE_CONFIG=/config/rclone.conf \
