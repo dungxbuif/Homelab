@@ -46,3 +46,16 @@ docker volume ls -qf dangling=true
 ```
 
 The Swarm service inventory was not changed by this cleanup.
+
+## Follow-up image review
+
+The VM100 image inventory was checked after the volume cleanup. One old
+NetBird server image (`sha256:308653...`, about 303 MiB) had no container
+reference; the active NetBird server uses a different digest. The old image was
+removed. Images for the active `kubekosh`, `k8s-syntax`, Ollama, n8n runner,
+NetBird and Semaphore services were retained. The post-removal Docker report
+showed 116 images and 43.99 GiB logical image size.
+
+The filesystem sample fluctuated to 29 GiB free / 86% used after this change,
+so the disk-pressure item remains open. This small image removal is not a
+substitute for the separate GitLab backup retention and rollback-image review.
