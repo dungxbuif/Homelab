@@ -20,13 +20,21 @@
         mode: '0755'
         backup: true
 
-    - name: Install restricted Pi command handlers with rollback copies
+    - name: Install restricted Pi command handlers and compatibility aliases
       ansible.builtin.copy:
         src: '{{ playbook_dir }}/../../backup-runner/{{ item }}'
-        dest: '/home/dungxbuif/.local/sbin/{{ item }}'
+        dest: '{{ item.dest }}'
         mode: '0755'
         backup: true
-      loop: [pi-executor.sh, pi-ssh-guard.sh]
+      loop:
+        - src: pi-executor.sh
+          dest: /home/dungxbuif/.local/sbin/pi-executor.sh
+        - src: pi-executor.sh
+          dest: /home/dungxbuif/.local/sbin/homelab-backup-executor
+        - src: pi-ssh-guard.sh
+          dest: /home/dungxbuif/.local/sbin/pi-ssh-guard.sh
+        - src: pi-ssh-guard.sh
+          dest: /home/dungxbuif/.local/sbin/homelab-backup-ssh-guard
       when: inventory_hostname == 'pi5'
 
     - name: Install the Pi configuration exporter with rollback copy

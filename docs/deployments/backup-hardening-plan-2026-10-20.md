@@ -112,7 +112,7 @@ Current state against that principle:
 
 | Concern | Today | Target |
 |---|---|---|
-| Backup compute | Pi5 runs exports, **restic upload, `restic check`, `forget --prune` and `check --read-data-subset`** for the `databases` and `rustfs` repos (`pi-executor.sh retention` runs `run-retention.sh` on Pi5) | VM100 runs upload, check and prune; Pi5 only answers queries |
+| Backup compute | Pi5 runs data exports/uploads; VM100 now runs `restic check`, `forget --prune` and `check --read-data-subset` for `databases` and `rustfs` | VM100 runs upload, check and prune; Pi5 only exports/uploads and answers marker queries |
 | Backup secrets | restic password and rclone Drive token in `/ssd-data/infra/backup/runner.env` on Pi5 | Only on VM100 |
 | Scheduler | VM100 timers call Pi5 through a forced-command SSH guard (good, already pull-style) | Keep; shrink what the guard allows |
 | Non-data services on Pi5 | AdGuard, edge Traefik, Rathole, Semaphore and provisioner (swarm node `rpivn`), VictoriaMetrics, Alertmanager, blackbox, SNMP and cAdvisor exporters, registry, pgAdmin, LibreSpeed | Out of scope here; tracked as A6 and Phase 8. No new non-data service is added to Pi5 by this plan |
@@ -191,13 +191,14 @@ retention 90 min, deep verify 8 h). Only stale markers (older than 26 h) and fai
 2.4 **GitLab wall time.** Investigate why the native backup takes 3 h 20 min for 8.2 GB (compression, `STRATEGY=copy`, skipped
 content `SKIP=builds,artifacts` if acceptable). Record before changing.
 
-2.5 **Move check, prune and verification for the Pi repos to VM100.** Restic works on the remote Drive repo from any host, so
+2.5 **Move check, prune and verification for the Pi repos to VM100.** **Deployed 2026-10-21.** Restic works on the remote Drive repo from any host, so
 `databases` and `rustfs` retention does not need Pi5. Steps: (a) copy the restic password and rclone config for those two repos to
 VM100's existing private backup env (root-owned, mode 600), never into git; (b) copy the two success markers to VM100
 (`run_pi` already streams the GitLab marker the other way; invert it: Pi writes markers, VM100 reads them over the forced-command
 guard with a new read-only `markers` command); (c) change `run-vm100-scheduled.sh retention` to run `verify-retention.sh databases` and
-`rustfs` locally instead of `run_pi retention`; (d) remove `retention` from `pi-executor.sh` and `pi-ssh-guard.sh`. Keep one global
-lock on VM100 only. Verify with `journalctl` that no `restic check` runs on Pi5 (`ssh pi 'pgrep -a restic'` is empty during retention).
+`rustfs` locally instead of `run_pi retention`; (d) add the read-only `markers` command to the Pi guard and publish both current and
+historical guard/executor aliases. Keep one global lock on VM100 only. The live marker path and SHA checks passed; the first scheduled
+destructive retention run remains the next acceptance gate. Verify with `journalctl` that no `restic check` runs on Pi5.
 
 Acceptance: three consecutive nights with health exit 0 and no overlap in `journalctl`; a forced stale marker still turns it red.
 Rollback: restore the previous timer files from git and reload systemd.

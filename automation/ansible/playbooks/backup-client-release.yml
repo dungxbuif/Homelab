@@ -105,8 +105,12 @@
               dest: /ssd-data/infra/backup-runner/app/automation/backup-runner/run-pi-capped.sh
             - src: pi-executor.sh
               dest: /home/dungxbuif/.local/sbin/pi-executor.sh
+            - src: pi-executor.sh
+              dest: /home/dungxbuif/.local/sbin/homelab-backup-executor
             - src: pi-ssh-guard.sh
               dest: /home/dungxbuif/.local/sbin/pi-ssh-guard.sh
+            - src: pi-ssh-guard.sh
+              dest: /home/dungxbuif/.local/sbin/homelab-backup-ssh-guard
           when: inventory_hostname == 'pi5'
       always:
         - name: Remove only this candidate directory

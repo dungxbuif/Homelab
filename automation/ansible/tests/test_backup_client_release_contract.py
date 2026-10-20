@@ -27,6 +27,8 @@ class BackupClientReleaseContractTests(unittest.TestCase):
         source = PLAY.read_text()
         for filename in ("run-pi-capped.sh", "pi-executor.sh", "pi-ssh-guard.sh"):
             self.assertIn(f"src: {filename}", source)
+        self.assertIn("dest: /home/dungxbuif/.local/sbin/homelab-backup-executor", source)
+        self.assertIn("dest: /home/dungxbuif/.local/sbin/homelab-backup-ssh-guard", source)
         self.assertIn("inventory_hostname == 'pi5'", source)
         self.assertIn("/ssd-data/infra/backup-runner/app/automation/backup-runner/run-pi-capped.sh", source)
 
