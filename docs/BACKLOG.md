@@ -71,6 +71,8 @@ Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`
 | L3 | Postgres collation-version warning (`ALTER DATABASE ... REFRESH COLLATION VERSION`, then reindex) | open |
 | L4 | Decommission legacy Pi `/ssd-data/backup/simple-backup.sh` after B1 passes | open |
 
+Detailed phased plan for B1 to B8: [backup-hardening-plan-2026-10-20.md](./deployments/backup-hardening-plan-2026-10-20.md).
+
 ## Backup assessment, 2026-10-20
 
 Works today: five timer-driven classes on VM100 (databases, database-instances, GitLab, RustFS,
