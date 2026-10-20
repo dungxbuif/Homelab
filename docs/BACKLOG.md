@@ -61,7 +61,7 @@ Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`
 | ID | Item | Why | How / verify | Status |
 |---|---|---|---|---|
 | A1 | GitLab CI deploy job with manual approval | Approval enforced by GitLab, not by Semaphore Community | Forced-command SSH key, job per stack | open |
-| A2 | Nightly drift job | Catch live-vs-repo drift | Comparator and evidence contracts are present, and the test runtime is now pinned/portable. A full scheduled report still requires manager-side `docker service ls` evidence and Mezon wiring. | open (manager evidence pending) |
+| A2 | Nightly drift job | Catch live-vs-repo drift | Comparator and evidence contracts are present, and the test runtime is now pinned/portable. A full scheduled report still requires manager-side `docker service ls` evidence and Mezon wiring. The 2026-10-21 VictoriaMetrics query also found three retired scrape targets (`k8s-kube-state-metrics`, Pi5 node-exporter and VPS node-exporter) that need removal through the manager maintenance path. Evidence: [monitoring target drift](./deployments/monitoring-target-drift-2026-10-21.md). | open (manager evidence and stale target cleanup pending) |
 | A3 | Image updates | No pinned digests | Renovate or Diun (notify only), `order: start-first`, healthchecks | open |
 | A4 | Break-glass path | GitLab runs on the infrastructure it deploys | Documented workstation/1Password SSH recovery, host-key verification, bounded operator command and return-to-automation procedure in `docs/runbooks/automation-operations.md` | done (operator procedure documented; credentials remain external) |
 | A5 | Trim Semaphore | Stop expanding it | Keep only read-only host-audit and backup-health templates | open |
