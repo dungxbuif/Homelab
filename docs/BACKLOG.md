@@ -65,7 +65,7 @@ Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`
 | A3 | Image updates | No pinned digests | Renovate or Diun (notify only), `order: start-first`, healthchecks | open |
 | A4 | Break-glass path | GitLab runs on the infrastructure it deploys | Documented workstation/1Password SSH recovery, host-key verification, bounded operator command and return-to-automation procedure in `docs/runbooks/automation-operations.md` | done (operator procedure documented; credentials remain external) |
 | A5 | Trim Semaphore | Stop expanding it | Keep only read-only host-audit and backup-health templates | open |
-| A6 | Reduce non-data workloads on Pi5 | Semaphore, provisioner, monitoring, registry, pgAdmin, LibreSpeed share data-host resources | Move in order of risk (see plan Phase 8). AdGuard, edge Traefik and Rathole stay on Pi5 by operator decision; Orange Pi excluded | open |
+| A6 | Reduce non-data workloads on Pi5 | Semaphore, provisioner, monitoring, registry, pgAdmin, LibreSpeed share data-host resources | Move in order of risk (see plan Phase 8). AdGuard, edge Traefik and Rathole stay on Pi5 by operator decision; Orange Pi excluded. VM100 resource audit 2026-10-21 also found uncapped OpenClaw, n8n, MyPocket, OCR, RelayHub and NetBird workloads; cap changes require manager-side measured canaries | open (baseline recorded; manager apply pending) |
 | A7 | Remove retired VM100 host alias | `/etc/hosts` still named the VM `k8s-cp-1`, causing `sudo` resolution warnings after Kubernetes retirement | Done 2026-10-21: replaced it with `127.0.1.1 vm100-prod`; preserved a timestamped host-file backup and verified systemd/container health | done |
 
 ## P3 Later
