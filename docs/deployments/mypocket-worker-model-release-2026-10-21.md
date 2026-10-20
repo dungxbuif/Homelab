@@ -15,13 +15,15 @@ command for the stale production `mypocket-worker` selector. It:
    order.
 5. Requires a running replacement task and verifies its `AI_MODEL` value.
 
-The service name and target model are fixed by default. The current model audit
-shows the worker still uses `qwen/qwen3.6-35b-a3b`; no live update has been
-claimed yet because VM100 is a Swarm worker and Pi5 manager mutation access is
-not available.
+The service name and target model are fixed by default. The manager-side update
+was applied on Pi5 through the approved release identity. Docker reported
+`update completed`; the replacement `mypocket-worker.1` task is running with
+`AI_MODEL=DeepSeek-V4.1-Flash`.
 
 ## Verification
 
-The contract test passes locally. Running the release command on VM100 is
-expected to fail closed with `requires a Swarm manager`; it must only be run
-through the approved Pi5 manager release identity.
+The contract test passes locally. The live model audit on VM100 now reports
+all five selectors as `OK`, including `mypocket-worker`, and
+`https://money.dungxbuif.com/api/v1/health` returned HTTP `200` after the
+rollout. Running the release command on VM100 still fails closed with
+`requires a Swarm manager`, as intended.
