@@ -58,7 +58,7 @@ maintenance window with the Traefik log open. `pgadmin` stays on the VPS
 allow-list but is blocked at the Pi5 layer.
 
 Decision recorded: Obsidian LiveSync is used from outside the LAN, so
-`sync-db.dungxbuif.com` must remain reachable from the Internet. Done (see table):
+`sync-db.dungxbuif.com` must remain reachable from the Internet. Checked every database on 2026-10-20 (only `obsidian_vault` has remote traffic; `homelab` is admin-only and stays LAN-side, see the CouchDB runbook). Done (see table):
 restricted it to the vault database path (block `/_utils`, `/_all_dbs`, `/_node`,
 `/_config`) after checking the plugin's required paths, and make
 `couchdb.dungxbuif.com` (admin name) LAN-only.
