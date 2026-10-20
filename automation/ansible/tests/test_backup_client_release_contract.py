@@ -23,6 +23,13 @@ class BackupClientReleaseContractTests(unittest.TestCase):
         self.assertIn("delegate_to: localhost", source)
         self.assertIn("inventory_hostname == ansible_play_hosts_all[0]", source)
 
+    def test_pi_release_publishes_bounded_executor_bundle(self):
+        source = PLAY.read_text()
+        for filename in ("run-pi-capped.sh", "pi-executor.sh", "pi-ssh-guard.sh"):
+            self.assertIn(f"src: {filename}", source)
+        self.assertIn("inventory_hostname == 'pi5'", source)
+        self.assertIn("/ssd-data/infra/backup-runner/app/automation/backup-runner/run-pi-capped.sh", source)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -93,6 +93,21 @@
             mode: '0600'
           delegate_to: localhost
           when: inventory_hostname == ansible_play_hosts_all[0]
+
+        - name: Publish the bounded Pi executor and launcher
+          ansible.builtin.copy:
+            src: '{{ playbook_dir }}/../../backup-runner/{{ item.src }}'
+            dest: '{{ item.dest }}'
+            mode: '0755'
+            backup: true
+          loop:
+            - src: run-pi-capped.sh
+              dest: /ssd-data/infra/backup-runner/app/automation/backup-runner/run-pi-capped.sh
+            - src: pi-executor.sh
+              dest: /home/dungxbuif/.local/sbin/pi-executor.sh
+            - src: pi-ssh-guard.sh
+              dest: /home/dungxbuif/.local/sbin/pi-ssh-guard.sh
+          when: inventory_hostname == 'pi5'
       always:
         - name: Remove only this candidate directory
           ansible.builtin.file:
