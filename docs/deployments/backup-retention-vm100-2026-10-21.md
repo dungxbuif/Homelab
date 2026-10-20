@@ -1,7 +1,7 @@
 # VM100-owned backup retention
 
 Date: 2026-10-21
-Status: deployed, first scheduled retention run pending
+Status: deployed and verified
 
 ## Change
 
@@ -27,6 +27,16 @@ The weekly integrity runner on VM100 covers `databases`, `rustfs`,
   `run-integrity-check.sh` `019d6cda...`.
 - All backup units were inactive during publication; the global lock was free.
 - VM100 has about 31 GB free (85% used).
+- `databases` was rerun successfully as systemd run
+  `databases-20261020-231247`, snapshot
+  `8f1d38f77edf34e66f0991dd0482c28028fdd0b7c3faff93a4a3e2a02dd7a670`.
+- Retention completed for `databases`, `rustfs`, and GitLab. It removed two
+  duplicate/obsolete database snapshots and one old database-instance
+  snapshot while preserving the configured daily/weekly/monthly policy.
+- A stale lock from an interrupted `database-instances` run was detected only
+  after confirming no Restic/rclone process was alive, unlocked, and then
+  rechecked/pruned successfully. The health service passed afterward with a
+  free global lock.
 
 ## Compatibility repair
 
@@ -38,8 +48,10 @@ aliases were repaired.
 
 ## Verification and rollback
 
-The first destructive retention run must be observed through its systemd
-journal and success marker; no manual `restic forget` or `prune` was run.
+The first destructive retention run was observed through its systemd journal
+and success markers. The one missing repository class was completed with the
+existing `run-instance-retention.sh` wrapper after stale-lock cleanup; no
+standalone `restic forget` or `prune` command was run.
 The previous VM100 runtime is preserved at the timestamped rollback directory
 created during publication. Pi5 handler files also retain the release-tool
 rollback copies.

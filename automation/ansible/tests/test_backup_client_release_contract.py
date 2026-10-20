@@ -32,6 +32,13 @@ class BackupClientReleaseContractTests(unittest.TestCase):
         self.assertIn("inventory_hostname == 'pi5'", source)
         self.assertIn("/ssd-data/infra/backup-runner/app/automation/backup-runner/run-pi-capped.sh", source)
 
+    def test_retention_handles_only_stale_locks(self):
+        source = (ROOT / "backup/scripts/verify-retention.sh").read_text()
+        self.assertIn("stale Restic lock detected with no local Restic/rclone process", source)
+        self.assertIn("restic_run unlock", source)
+        self.assertIn("pgrep -x restic", source)
+        self.assertIn("pgrep -x rclone", source)
+
 
 if __name__ == "__main__":
     unittest.main()

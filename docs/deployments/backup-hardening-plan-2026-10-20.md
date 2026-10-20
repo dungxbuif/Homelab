@@ -197,8 +197,9 @@ VM100's existing private backup env (root-owned, mode 600), never into git; (b) 
 (`run_pi` already streams the GitLab marker the other way; invert it: Pi writes markers, VM100 reads them over the forced-command
 guard with a new read-only `markers` command); (c) change `run-vm100-scheduled.sh retention` to run `verify-retention.sh databases` and
 `rustfs` locally instead of `run_pi retention`; (d) add the read-only `markers` command to the Pi guard and publish both current and
-historical guard/executor aliases. Keep one global lock on VM100 only. The live marker path and SHA checks passed; the first scheduled
-destructive retention run remains the next acceptance gate. Verify with `journalctl` that no `restic check` runs on Pi5.
+historical guard/executor aliases. Keep one global lock on VM100 only. The live marker path and SHA checks passed; retention was then
+verified for all four repositories after a stale `database-instances` lock was safely removed. Verify with `journalctl` that no
+`restic check` runs on Pi5.
 
 Acceptance: three consecutive nights with health exit 0 and no overlap in `journalctl`; a forced stale marker still turns it red.
 Rollback: restore the previous timer files from git and reload systemd.
