@@ -31,6 +31,7 @@ timestamp: 2026-07-03T15:14:00Z
   verification and rollback in
   [network-hardening-2026-10-19.md](./deployments/network-hardening-2026-10-19.md).
 - **Exposure (2026-10-20):** `pgadmin` and `couchdb` host are LAN-only on Pi5; `sync-db` is the only public CouchDB name and is path-restricted to the vault DB.
+- **Backlog (2026-10-20):** all open items moved to [BACKLOG.md](./BACKLOG.md), including the backup assessment (health failed 2026-10-18/19, restore drill and second target still open).
 - **Open:** public GitHub repo with exposed credentials (rotation deferred),
   remaining consumers to move off `homelab-net`, backup gaps (configs, VM100
   vzdump, dead-man's switch, Drive restore acceptance).

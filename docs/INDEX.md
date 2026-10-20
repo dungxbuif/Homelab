@@ -8,6 +8,7 @@ timestamp: 2026-10-17T00:00:00+07:00
 # Homelab Core Infrastructure (v3.5)
 
 * [Runtime Inventory and Deployment Reconciliation](./deployments/runtime-inventory-2026-10-13.md) — historical 2026-10-13 baseline; use the later 2026-10-15/16 reconciliation notes for current runtime state.
+* [Homelab Backlog](./BACKLOG.md) — consolidated open work (security, network, backup, exposure, automation) with the 2026-10-20 backup assessment.
 * [Network Hardening Rollout, 2026-10-19](./deployments/network-hardening-2026-10-19.md) — live changes, verification, rollback, and pending steps; paired with the [network, workload and automation audit](./research/network-workload-automation-audit-2026-10-19.md).
 * [Current Stack Catalog](./STACK.md) - current workloads, tunnel exceptions, DB endpoints, backup boundaries, and proposed work; Markdown for people and agents.
 * [Documentation Audit](./research/docs-stack-audit-2026-09-16.md) - corrected drift and runtime verification coverage.
