@@ -30,8 +30,10 @@ The project now contains only these seven operational templates:
 ## Verification
 
 - Live template listing returned exactly the seven retained templates.
-- Project task history still contains 68 records; deletion was limited to
-  templates and did not purge task history.
+- Project task history currently contains 68 records, all associated with the
+  seven retained templates. Entries associated with the retired templates no
+  longer appear in the project history after the API deletion, so the old
+  Knowledge Hub failure burst is no longer mixed into the operator view.
 - The separate `Homelab Audit` project remains available for read-only audits.
 
 Future one-off experiments must use a temporary branch and be removed from the
