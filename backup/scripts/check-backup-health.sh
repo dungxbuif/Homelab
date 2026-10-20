@@ -184,7 +184,12 @@ fi
 if [[ "${BACKUP_HEALTH_REMOTE_PI:-false}" == true ]]; then
   remote_script=${BACKUP_HEALTH_REMOTE_SCRIPT:-$script_dir/../../automation/backup-runner/run-vm100-scheduled.sh}
   if remote_output=$(bash "$remote_script" health 2>&1); then
-    details+=("Pi backup health check passed" "$remote_output")
+    if grep -Eq 'missing success marker|stale success marker|invalid success marker|backup health check found failures' <<<"$remote_output"; then
+      problems+=("Pi backup health reported a dead-man marker problem")
+      details+=("$remote_output")
+    else
+      details+=("Pi backup health check passed" "$remote_output")
+    fi
   else
     problems+=("Pi backup health check failed" "$remote_output")
   fi
