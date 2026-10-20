@@ -59,3 +59,12 @@ showed 116 images and 43.99 GiB logical image size.
 The filesystem sample fluctuated to 29 GiB free / 86% used after this change,
 so the disk-pressure item remains open. This small image removal is not a
 substitute for the separate GitLab backup retention and rollback-image review.
+
+## Maintenance recheck
+
+On 2026-10-21 the constrained maintenance action was run again with
+`docker builder prune --filter until=168h`. It reclaimed `0B`: the reported
+7.437 GiB of logical BuildKit reclaimable space is still recent or referenced
+and must not be removed by an age-blind prune. VM100 remained at 30 GiB free
+and 85% used. No image, container, volume or service was changed by this
+recheck.
