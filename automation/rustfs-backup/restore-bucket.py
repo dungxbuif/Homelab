@@ -10,7 +10,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parents[2] / "backup" / "scripts"
+_source_root = Path(__file__).resolve().parents[2]
+_deployed_root = Path(__file__).resolve().parents[1]
+SCRIPT_DIR = next(
+    candidate / "backup" / "scripts"
+    for candidate in (_source_root, _deployed_root)
+    if (candidate / "backup" / "scripts" / "common.py").is_file()
+)
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from common import load_document, validate_name, write_json  # noqa: E402
