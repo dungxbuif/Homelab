@@ -30,7 +30,7 @@ Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`
 | N5 | Keep `homelab-net` only where `redis-prod` is needed | The shared network is still a broad lateral-access boundary | Completed 2026-10-20. Production apps and GitLab tunnels were migrated one at a time. Documented exceptions are CouchLoom for Pi5 CouchDB DNS, plus Pi5 edge/data/control-plane services: Traefik, PgBouncer, RustFS, registry, Redis, pgAdmin and provisioner. | done (documented exceptions) |
 | N6 | Compose drift on Pi5 | Live RustFS/CouchDB endpoints had networks missing from the source Compose file | Done 2026-10-20: declared live RustFS and CouchDB edge/data networks; `docker compose config` passed; no service recreate. Backup: `/ssd-data/infra/docker-compose.yml.bak-compose-reconcile-20261020-155327` | done |
 
-| A1 | Complete AI model rollout verification | Selector rollout is complete; real business inference quality is not yet measured | Run approved real receipt/advisor UAT against `DeepSeek-V4.1-Flash`; keep credentials backend-only and record latency/errors without payloads | open (UAT) |
+| A1 | Complete AI model rollout verification | Selector rollout is complete; real business inference quality is not yet measured | OpenClaw, Whiteboard and MyPocket API pass; `mypocket-worker` remains on Qwen. The fixed manager-only release command is prepared and contract-tested; apply it through the approved Pi5 release identity, then rerun the audit and UAT. Evidence: [worker model release](./deployments/mypocket-worker-model-release-2026-10-21.md) | open (manager apply and UAT) |
 
 ## P1 Backup (see assessment below)
 
