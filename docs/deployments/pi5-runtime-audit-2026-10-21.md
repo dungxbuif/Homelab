@@ -25,6 +25,18 @@ not a broken Semaphore application.
 - RustFS sample: 0.02% CPU, 411.6 MiB resident memory.
 - cAdvisor sample: 3.71% CPU, 84.1 MiB resident memory.
 
+A 24-hour VictoriaMetrics range query completed after the point-in-time audit:
+
+- CouchDB CPU: average `0.094` core, P95 `0.086` core, maximum `0.682` core
+  across 289 five-minute samples.
+- CouchDB working-set memory: average `140.2 MiB`, P95 `144.9 MiB`, maximum
+  `145.9 MiB` across the same window.
+
+The historical 80% CPU spike is therefore not recurring in this observation
+window. cAdvisor does not expose CouchDB request-source counts; a separate
+access-log/LiveSync client audit is still required before changing client
+polling or rate limits.
+
 ## Findings
 
 Most Pi5 containers currently have no Docker CPU or memory limit. This includes
