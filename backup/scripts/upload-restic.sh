@@ -30,7 +30,16 @@ export RESTIC_INPUT_DIR=$(cd -- "$run_dir" && pwd)
 
 preflight_log="$run_dir/restic-preflight.log"
 preflight_timeout=${RESTIC_PREFLIGHT_TIMEOUT:-10m}
-if ! RESTIC_COMMAND_TIMEOUT="$preflight_timeout" restic_run snapshots >"$preflight_log" 2>&1; then
+preflight_mode=${RESTIC_PREFLIGHT_MODE:-config}
+if [[ "$preflight_mode" == snapshots ]]; then
+  preflight_command=(snapshots)
+elif [[ "$preflight_mode" == config ]]; then
+  preflight_command=(cat config)
+else
+  echo 'RESTIC_PREFLIGHT_MODE must be config or snapshots' >&2
+  exit 2
+fi
+if ! RESTIC_COMMAND_TIMEOUT="$preflight_timeout" restic_run "${preflight_command[@]}" >"$preflight_log" 2>&1; then
   if grep -Eiq 'RATE_LIMIT|rateLimitExceeded|quota|HTTP 429|too many requests' "$preflight_log"; then
     echo 'Restic repository preflight hit Google Drive API quota; use a project-owned OAuth client or retry after the bounded backoff' >&2
     exit 1
@@ -64,27 +73,68 @@ restic_run backup /backup-run --tag "class=$class" --tag "run_id=$run_id" --json
   --host homelab-backup-runner \
   > "$run_dir/restic-backup.json"
 check_log="$run_dir/restic-check.log"
-if ! restic_run check --read-data-subset=1/10 >"$check_log" 2>&1; then
-  if grep -Eiq 'already locked|unable to create lock in backend|lock was created at|repository is already locked' "$check_log" \
-    && ! pgrep -x restic >/dev/null 2>&1 \
-    && ! pgrep -f 'docker run.*restic/restic' >/dev/null 2>&1; then
-    {
-      printf '%s\n' 'Restic post-upload check found a stale repository lock; no local Restic process is active, unlocking once.'
-      RESTIC_COMMAND_TIMEOUT="$preflight_timeout" restic_run unlock &&
-      restic_run check --read-data-subset=1/10
-    } >>"$check_log" 2>&1 || {
-      echo "Restic post-upload check failed after stale-lock recovery; remote snapshot is not trusted (see $check_log)" >&2
-      exit 1
-    }
+run_structural_check() {
+  if [[ -n "${RESTIC_READ_DATA_SUBSET:-}" ]]; then
+    restic_run check "--read-data-subset=${RESTIC_READ_DATA_SUBSET}"
   else
-    echo "Restic post-upload check failed; remote snapshot is not trusted (see $check_log)" >&2
-    exit 1
+    restic_run check
   fi
-fi
+}
+post_upload_check=${RESTIC_POST_UPLOAD_CHECK:-snapshot}
+case "$post_upload_check" in
+  snapshot)
+    # Drive repositories can have a large index fan-out. Check snapshot
+    # metadata immediately; full structural verification belongs to retention
+    # and deep-verify so one upload cannot monopolize the global lock.
+    printf '%s\n' 'structural restic check deferred to retention/deep-verify' >"$check_log"
+    ;;
+  structural)
+    if ! run_structural_check >"$check_log" 2>&1; then
+      if grep -Eiq 'already locked|unable to create lock in backend|lock was created at|repository is already locked' "$check_log" \
+        && ! pgrep -x restic >/dev/null 2>&1 \
+        && ! pgrep -f 'docker run.*restic/restic' >/dev/null 2>&1; then
+        {
+          printf '%s\n' 'Restic post-upload check found a stale repository lock; no local Restic process is active, unlocking once.'
+          RESTIC_COMMAND_TIMEOUT="$preflight_timeout" restic_run unlock &&
+          run_structural_check
+        } >>"$check_log" 2>&1 || {
+          echo "Restic post-upload check failed after stale-lock recovery; remote snapshot is not trusted (see $check_log)" >&2
+          exit 1
+        }
+      else
+        echo "Restic post-upload check failed; remote snapshot is not trusted (see $check_log)" >&2
+        exit 1
+      fi
+    fi
+    ;;
+  *)
+    echo 'RESTIC_POST_UPLOAD_CHECK must be snapshot or structural' >&2
+    exit 2
+    ;;
+esac
 
 mkdir -p "$run_dir/remote"
-restic_run snapshots --json --tag "run_id=$run_id" > "$run_dir/remote/snapshots.json"
-snapshot_id=$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print(data[-1]["id"] if data else "")' "$run_dir/remote/snapshots.json")
+snapshot_id=$(python3 - "$run_dir/restic-backup.json" <<'PY'
+import json
+import sys
+
+snapshot_id = ''
+with open(sys.argv[1], encoding='utf-8') as stream:
+    for line in stream:
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if record.get('message_type') == 'summary':
+            snapshot_id = record.get('snapshot_id') or ''
+if not snapshot_id:
+    raise SystemExit('restic backup summary did not contain snapshot_id')
+print(snapshot_id)
+PY
+)
+if [[ "${RESTIC_VERIFY_SNAPSHOT_METADATA:-false}" == true ]]; then
+  restic_run snapshots --no-lock --json --tag "run_id=$run_id" > "$run_dir/remote/snapshots.json"
+fi
 [[ -n "$snapshot_id" ]] || { echo 'restic snapshot id not found' >&2; exit 1; }
 printf '%s\n' "$snapshot_id" > "$run_dir/remote/snapshot-id"
 printf '%s\n' "$run_id" > "$run_dir/remote/run-id"

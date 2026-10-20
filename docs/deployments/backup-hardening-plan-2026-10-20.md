@@ -8,7 +8,77 @@ timestamp: 2026-10-20T00:00:00+07:00
 # Backup Hardening Plan, 2026-10-20
 
 Backlog items: B1 to B8 in [BACKLOG.md](../BACKLOG.md). Runbook: [backup-restore.md](../runbooks/backup-restore.md).
-Runner code: `automation/backup-runner/`, `backup/scripts/`. Status: **plan, nothing applied**.
+Runner code: `automation/backup-runner/`, `backup/scripts/`. Status: **implementation started; see execution record below**.
+
+## Execution record, 2026-10-20
+
+Review overview and corrections: [homelab-refactor-overview-2026-10-20.md](homelab-refactor-overview-2026-10-20.md).
+
+- Applied: removed 46 Dead Swarm tasks; 32 running IDs unchanged. Docker
+  accounting now works; root 76 percent used with about 48 GB available.
+- Daily maintenance installed and enabled. First run exited 0; next run is
+  2026-10-21 around 12:00 local time. Remaining rollout paused for review.
+
+- Verification rerun 2026-10-20: `homelab-docker-maintenance.service` exited 0;
+  no eligible Dead tasks were found, Docker accounting succeeded, and VM100 had
+  52 GB free (74% used). The earlier lock-permission failure is historical; the
+  current script opens the shared lock read-only before flocking it.
+- Repository checks rerun after the maintenance/config reconciliation:
+  `test_health_reporting.py`, scheduler contract, runner contract and retention
+  gate tests all passed. These validate the local backup control flow; they do
+  not replace a real Drive restore drill.
+
+- Live follow-up 2026-10-20 20:02 UTC: the scheduled GitLab run
+  `gitlab-20261020-190208` completed its 8.74 GB native archive export and
+  Restic upload, then entered the mandatory structural repository check. The
+  unit remained `activating` with no failed result and no success marker yet;
+  cleanup was deliberately deferred until the check and post-check marker
+  complete. VM100 was at 87% used with about 26 GB free. The image review found
+  tagged rollback images and a stopped family-tree container reference; no
+  image was removed during an active backup. This is evidence for B6, not a
+  completed cleanup acceptance.
+
+- Implementation prepared and verified locally: `upload-restic.sh` now defaults
+  to `RESTIC_PREFLIGHT_MODE=config` and `RESTIC_POST_UPLOAD_CHECK=snapshot`.
+  It verifies repository config and takes the snapshot ID from Restic's backup
+  summary, avoiding repeated remote index enumeration. The previous inline
+  structural path remains opt-in as `RESTIC_POST_UPLOAD_CHECK=structural`, and
+  `RESTIC_PREFLIGHT_MODE=snapshots` is available for an explicit metadata
+  preflight. Bash 3.2 compatibility was covered because the check helper no
+  longer expands an empty array under `set -u`; upload immutability and Restic
+  contract tests pass.
+
+- Transport acceptance completed 2026-10-21: the database-instances retry
+  succeeded with snapshot `164f85eb25e03f936a9cba0c29185d00712bf4cfbc155d1818726224ea3e72c7`.
+  `restic-lib.sh` is deployed to VM100 and Pi5 with a `100ms` Drive pacer and
+  burst `1`; the historical `10s` default remains an explicit override only.
+  GitLab run `gitlab-20261020-190208` passed native archive checksums 4/4 and
+  remote snapshot metadata verification (`a0cbb341f856d2ef324cb57b4ddb29dc4eab23f22c6909e9c0d131531cac26fb`).
+  The success marker and Mezon notification were restored, one old completed
+  staging run was removed, and VM100 ended at 83% used / 34GB free. The next
+  scheduled cycles remain the observation gate for B5.
+
+- Operator approved implementation. AdGuard, edge Traefik and Rathole stay on Pi5;
+  they are explicit exceptions to the data-server rule. Orange Pi is excluded.
+- First operation: remove only stopped, Dead Swarm task containers on VM100 using
+  `automation/maintenance/cleanup-dead-tasks.py`. Preview records selected IDs,
+  mounts and writable-layer change counts; apply saves metadata without environment
+  secrets and refuses candidates with changed writable files or inspection errors
+  other than the known missing-layer error. Volumes and images are not removed.
+- Verification: compare running container IDs, inspect remaining Dead tasks, run
+  `docker system df` and measure free space. Container records cannot be undeleted;
+  Swarm recreates tasks from service definitions and persistent mounts remain.
+- Baseline: root 79 percent used, 43 GB available; Docker accounting fails on task
+  `1711725e6d25` with `rw layer snapshot not found`.
+- Later phases remain pending. Public docs do not change: this is an internal
+  maintenance workflow with no public API or application behavior change.
+- Recurring cleanup approved: `homelab-docker-maintenance.timer`, daily 12:00
+  Asia/Ho_Chi_Minh. Uses the backup flock; busy backup means skip until the next
+  day. Remove eligible Dead tasks, dangling images older than seven days, and
+  old build cache while retaining 5 GB. Keep tagged rollback images and volumes.
+  Service limits: one CPU, 512 MB, low IO priority, 30-minute timeout. Verify a
+  manual first run and timer next-run time. Rollback: disable timer and remove
+  its unit/script files; cache is rebuildable, removed container records are not.
 
 ## 0. Facts established on 2026-10-20 (read-only checks)
 
@@ -32,10 +102,11 @@ free space, not overlap; the overlap problem is separate (section 3). (2) Yes, r
 configured and ran successfully, but its effect is **unproven**: no snapshot count per repo has been compared with the policy
 (Phase 1.4). (3) This document is that plan.
 
-## Design principle (revised): Pi5 is a data server only
+## Design principle (revised): Pi5 serves data and retained edge services
 
 Pi5 (7.7 GB RAM, load 0.4, 39 percent disk) must only serve data: PostgreSQL, PgBouncer, CouchDB, RustFS, Redis. Backup,
-verification, secrets and control services should live on VM100, which has 15 GB RAM and runs every application. Pi5 stays passive.
+verification, backup secrets and control services should live on VM100, which has 15 GB RAM and runs every application.
+AdGuard, edge Traefik and Rathole remain on Pi5 by operator decision. No Orange Pi migration is planned.
 
 Current state against that principle:
 
@@ -69,7 +140,7 @@ Docker image layers and build cache, `/var/log` (3.9 GB seen), GitLab data volum
 1.1b **Remove stale Docker objects (largest expected win, tens of GB).** List: `docker ps -a --filter status=dead --format '{{.ID}} {{.Names}}'`;
 remove each Dead container (`docker rm -f <id>`; the rw-layer error container `1711725e6d25` is one of them) and `tmpfs-repro-repro-1`.
 Then `docker images -a` against running containers: for every image with no container, record it, and remove after review
-(`docker rmi`), starting with `ollama`, `educates-base-environment`, `node:24-bookworm`. Do not use `docker system prune -a --volumes`.
+(`docker rmi`), starting with `ollama`, `educates-base-environment`, `node:24-bookworm`, and verified stopped Compose-era containers. Do not use `docker system prune -a --volumes`.
 After removal measure `/var/lib/containerd` and `/var/lib/docker/rootfs` again (the `rootfs` 28 GB may be nested k3s containerd
 data, see the `.../var/lib/rancher/k3s/...` paths in the `du` error); identify which container owns it with
 `sudo ls -la /var/lib/docker/rootfs/overlayfs/` and `docker inspect`.
@@ -103,15 +174,17 @@ health reports the new thresholds. Rollback: remove the drop-ins and timer; no d
 Problem: the nightly lock chain is serial and long, and health runs inside it.
 
 2.1 **Retention cadence.** Replace the nightly 4.5 h full check with: nightly `restic check` (structure only, minutes) plus
-`forget --prune` after a successful night; a weekly (Sunday 08:00) `restic check --read-data-subset=10%`.
+`forget --prune` after a successful night; a weekly (Sunday 09:00 local) `restic check --read-data-subset=10%`. The upload and retention
+scripts now default to the structure-only check; `RESTIC_READ_DATA_SUBSET=1/10` is an explicit opt-in for the deep window. The
+`homelab-backup-verify-weekly.timer` runs the explicit deep check across Pi5 and VM100 repositories under the global lock.
 Files: `automation/backup-runner/run-retention.sh`, `backup/scripts/verify-retention.sh`, `systemd/homelab-backup-retention.timer`,
 new `homelab-backup-verify-weekly.timer`.
 
-2.2 **New order (local time).** 01:00 databases, 01:30 database-instances, 02:00 RustFS (40 min), 02:30 GitLab (3 h 20 min, ends
-about 06:00), 06:30 retention light (about 20 min), 08:00 health, Sunday 09:00 deep verify. Update `schedule.yaml` and the four timers
-(`homelab-backup-*.timer`), then `systemctl daemon-reload`.
+2.2 **New order (local time).** 01:00 databases, 03:00 database-instances, 04:00 RustFS, 05:00 GitLab, 10:00 retention light,
+12:00 health, 13:00 configs, and Sunday 09:00 deep verify. The spacing reflects the observed 90-105 minute database runtime and
+prevents a long GitLab export from colliding with retention or health.
 
-2.3 **Lock-aware health.** In `check-backup-health.sh`, if the global lock is held or a backup unit is `activating`, print
+2.3 **Lock-aware health.** **Done 2026-10-20.** In `check-backup-health.sh`, if the global lock is held or a backup unit is `activating`, print
 `state=running runtime=Ns` and exit 0 unless runtime exceeds a class limit (databases 30 min, GitLab 5 h, RustFS 90 min,
 retention 90 min, deep verify 8 h). Only stale markers (older than 26 h) and failed units fail.
 
@@ -140,7 +213,7 @@ URLs live in the existing secret env file, never in git.
 3.2 Kuma on VM100 also watches Pi5 from outside (TCP 5432 via PgBouncer, HTTP to CouchDB and RustFS, ping), so Pi5 needs no agent. Add one external heartbeat: a single daily `curl` from VM100 to a
 free external check service after health passes, with its own email or push channel. This covers Pi5 or LAN loss.
 
-3.3 Add a Mezon message on **every** failed class (exists) and a daily one-line success summary from health.
+3.3 Add a Mezon message on **every** failed class (exists) and a daily one-line success summary from health. **Implemented 2026-10-21:** the scheduled health service sets `BACKUP_HEALTH_NOTIFY_SUCCESS=true`; ad-hoc checks stay quiet by default.
 
 Acceptance: disable one timer for a day in a test window; both Kuma and the external check alert. Rollback: remove the `curl` lines.
 
@@ -205,7 +278,7 @@ Rollback: re-enable the Pi classes (kept disabled, not deleted, for two weeks).
 ## Phase 8: Align Pi5 role (A6, informational, no change in this plan)
 
 Candidates to leave Pi5 for VM100 or another node, in order of risk: monitoring stack and Kuma, registry, pgAdmin, LibreSpeed, Semaphore and provisioner;
-AdGuard, edge Traefik and Rathole are network roles and need a separate decision (DNS and ingress must survive VM100 maintenance).
+AdGuard, edge Traefik and Rathole remain on Pi5 by operator decision; exclude them from migrations.
 Data-server hardening to decide: NVMe SMART and temperature alerts (probe from VM100), UPS, and PITR. Nightly dumps give a 24 h RPO; for a pure data
 server consider pgBackRest with WAL archiving to a VM100 repo host over `pg-net` (decision L2, now P2).
 

@@ -8,6 +8,7 @@
     backup_app_root: /opt/apps/homelab-backup/app
     backup_runtime_files:
       - backup/inventory.yaml
+      - backup/configs-sources.json
       - backup/policies.yaml
       - backup/scripts/common.py
       - backup/scripts/backup-postgres.py
@@ -20,13 +21,18 @@
       - backup/scripts/verify-retention.sh
       - backup/scripts/restore-staging.sh
       - backup/scripts/check-backup-health.sh
+      - backup/scripts/run-configs-backup.py
+      - backup/scripts/validate-config-sources.py
       - automation/backup-runner/run-class.sh
       - automation/backup-runner/run-vm100-scheduled.sh
       - automation/backup-runner/run-instance-retention.sh
+      - automation/backup-runner/run-config-retention.sh
       - automation/backup-runner/wait-retention-prerequisites.py
       - automation/backup-runner/schedule.yaml
       - automation/scripts/backup-health-helper.sh
     backup_instance_timer_started: false
+    backup_configs_timer_started: true
+    backup_weekly_verify_timer_started: true
   tasks:
     - name: Require explicit runtime deployment approval and fixed VM100 identity
       ansible.builtin.assert:
@@ -44,7 +50,9 @@
           - homelab-backup@database-instances.service
           - homelab-backup@gitlab.service
           - homelab-backup@rustfs.service
+          - homelab-backup@configs.service
           - homelab-backup@retention.service
+          - homelab-backup-verify-weekly.service
       register: active_backup_units
       changed_when: false
       failed_when: false
@@ -94,10 +102,13 @@
             {{ backup_candidate.path }}/backup/scripts/run-database-backup.py
             {{ backup_candidate.path }}/backup/scripts/run-instance-backup.py
             {{ backup_candidate.path }}/backup/scripts/validate_inventory.py
+            {{ backup_candidate.path }}/backup/scripts/run-configs-backup.py
+            {{ backup_candidate.path }}/backup/scripts/validate-config-sources.py
             {{ backup_candidate.path }}/automation/backup-runner/wait-retention-prerequisites.py
             && bash -n {{ backup_candidate.path }}/automation/backup-runner/run-class.sh
             {{ backup_candidate.path }}/automation/backup-runner/run-vm100-scheduled.sh
             {{ backup_candidate.path }}/automation/backup-runner/run-instance-retention.sh
+            {{ backup_candidate.path }}/automation/backup-runner/run-config-retention.sh
             {{ backup_candidate.path }}/backup/scripts/cleanup-local-runs.sh
             {{ backup_candidate.path }}/backup/scripts/restic-lib.sh
             {{ backup_candidate.path }}/backup/scripts/upload-restic.sh
@@ -174,6 +185,19 @@
         backup: true
       notify: Reload systemd definitions
 
+    - name: Install configuration and weekly verification units
+      become: true
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../backup-runner/systemd/{{ item }}'
+        dest: '/etc/systemd/system/{{ item }}'
+        mode: '0644'
+        backup: true
+      loop:
+        - homelab-backup-configs.timer
+        - homelab-backup-verify-weekly.service
+        - homelab-backup-verify-weekly.timer
+      notify: Reload systemd definitions
+
     - name: Enable the VM100 database-instance timer without starting a backup yet
       become: true
       ansible.builtin.systemd_service:
@@ -181,6 +205,19 @@
         enabled: true
         state: '{{ "started" if backup_instance_timer_started | bool else "stopped" }}'
         daemon_reload: true
+
+    - name: Keep configuration and weekly verification timers enabled
+      become: true
+      ansible.builtin.systemd_service:
+        name: '{{ item.name }}'
+        enabled: true
+        state: '{{ "started" if item.started | bool else "stopped" }}'
+        daemon_reload: true
+      loop:
+        - name: homelab-backup-configs.timer
+          started: '{{ backup_configs_timer_started }}'
+        - name: homelab-backup-verify-weekly.timer
+          started: '{{ backup_weekly_verify_timer_started }}'
 
     - name: Report sanitized runtime publication
       ansible.builtin.debug:

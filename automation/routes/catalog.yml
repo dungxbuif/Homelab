@@ -85,7 +85,21 @@ routes:
     health_path: /
     rollback_version: current
   - id: couchdb
-    hostnames: [couchdb.dungxbuif.com, sync-db.dungxbuif.com]
+    hostnames: [couchdb.dungxbuif.com]
+    exposure: lan
+    owner: platform
+    backend:
+      kind: service_dns
+      url: http://couchdb:5984
+    health_path: /
+    rollback_version: current
+  - id: sync-db
+    hostnames: [sync-db.dungxbuif.com]
+    rule: >-
+      Host(`sync-db.dungxbuif.com`) && (Path(`/`) || Path(`/_session`)
+      || PathPrefix(`/obsidian_vault`))
+    priority: 100
+    service_name: couchdb
     exposure: lan
     owner: platform
     backend:
@@ -136,6 +150,15 @@ routes:
     backend:
       kind: service_dns
       url: http://tasks.family-tree:3000
+    health_path: /
+    rollback_version: current
+  - id: whiteboard
+    hostnames: [whiteboard.dungxbuif.com]
+    exposure: public
+    owner: platform
+    backend:
+      kind: service_dns
+      url: http://whiteboard-frontend:80
     health_path: /
     rollback_version: current
   - id: openclaw
@@ -189,11 +212,12 @@ routes:
       Host(`netbird.dungxbuif.com`) && (PathPrefix(`/signalexchange.SignalExchange/`)
       || PathPrefix(`/management.ManagementService/`) || PathPrefix(`/management.ProxyService/`))
     priority: 100
+    service_name: netbird-server-h2c
     exposure: public
     owner: netbird
     backend:
       kind: service_dns
-      url: h2c://tasks.netbird-server:80
+      url: h2c://tasks.netbird_netbird-server:80
     health_path: /
     rollback_version: current
   - id: netbird-backend
@@ -202,11 +226,12 @@ routes:
       Host(`netbird.dungxbuif.com`) && (PathPrefix(`/relay`) || PathPrefix(`/ws-proxy/`)
       || PathPrefix(`/api`) || PathPrefix(`/oauth2`))
     priority: 100
+    service_name: netbird-server
     exposure: public
     owner: netbird
     backend:
       kind: service_dns
-      url: http://tasks.netbird-server:80
+      url: http://tasks.netbird_netbird-server:80
     health_path: /api
     rollback_version: current
   - id: netbird-dashboard
@@ -217,7 +242,7 @@ routes:
     owner: netbird
     backend:
       kind: service_dns
-      url: http://tasks.netbird-dashboard:80
+      url: http://tasks.netbird_netbird-dashboard:80
     health_path: /
     rollback_version: current
   - id: semaphore

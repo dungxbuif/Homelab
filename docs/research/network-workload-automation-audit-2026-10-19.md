@@ -45,15 +45,18 @@ Findings:
    container can open a TCP connection to `postgres:5432`, `redis-prod:6379`
    and RustFS. Only passwords protect the data.
 2. Segmentation has started but is not finished: `data-net`, `family-data-net`
-   and `mypocket-redis-net` exist, yet `postgres` itself is still on
-   `homelab-net`.
-3. `openclaw` and `k8s-syntax` sit only on `homelab-net`; their real needs are
-   undocumented.
+   and `mypocket-redis-net` exist. PostgreSQL is now off `homelab-net`, and
+   MyPocket API/worker are now off it as well; other legacy memberships remain.
+3. OpenClaw and K8s Syntax have now moved to `edge-http-net`; OpenClaw also
+   retains its state volume and a narrowly scoped trusted-proxy configuration.
+   The remaining legacy app memberships are tracked in the backlog.
 4. Control plane: `homelab-control-net` is correctly limited to Traefik,
    provisioner, Semaphore and the runner. The provisioner also joins
    `homelab-net` and mounts `docker.sock` read-write.
-5. Host-published datastore ports on Pi5: 5432 (PgBouncer), 16379 (Redis), 8428
-   (VictoriaMetrics), 9093 (Alertmanager), all on `0.0.0.0`.
+5. Host-published Pi5 ports are now LAN-bound for PgBouncer `10.10.0.5:5432`,
+   Redis `10.10.0.5:16379`, VictoriaMetrics `10.10.0.5:8428`, and Alertmanager
+   `10.10.0.5:9093`. This replaces the earlier `0.0.0.0` finding; N4 was
+   verified on 2026-10-20.
 6. Legacy Pi5 bridges still carry live traffic (`proxy_net` hosts monitoring and
    several datastores). Retire them after moving those services to overlays.
 

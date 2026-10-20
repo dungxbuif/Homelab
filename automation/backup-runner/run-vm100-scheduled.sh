@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-class=${1:?usage: run-vm100-scheduled.sh databases|database-instances|gitlab|rustfs|retention|health}
+class=${1:?usage: run-vm100-scheduled.sh databases|database-instances|gitlab|rustfs|configs|retention|weekly-integrity|health}
 case "$class" in
-  databases|database-instances|gitlab|rustfs|retention|health) ;;
+  databases|database-instances|gitlab|rustfs|configs|retention|weekly-integrity|health) ;;
   *) echo "unsupported backup class: $class" >&2; exit 2 ;;
 esac
 
@@ -24,13 +24,20 @@ ssh_options=(
   -o ServerAliveInterval=30
   -o ServerAliveCountMax=10
 )
+pi_command_timeout=${PI_BACKUP_COMMAND_TIMEOUT_SECONDS:-14400}
+[[ "$pi_command_timeout" =~ ^[1-9][0-9]*$ ]] || {
+  echo 'PI_BACKUP_COMMAND_TIMEOUT_SECONDS must be a positive integer' >&2
+  exit 2
+}
 
 [[ "$class" == health ]] || mkdir -p "$staging_root" "$status_root"
+export BACKUP_LOCK_WAIT_SECONDS="${BACKUP_SCHEDULE_LOCK_WAIT_SECONDS:-3600}"
 
 run_pi() {
   # The remote forced-command guard matches this exact client-built command.
   # shellcheck disable=SC2029
-  ssh "${ssh_options[@]}" "$pi_target" "$pi_executor $1"
+  timeout --signal=TERM --kill-after=60s "${pi_command_timeout}s" \
+    ssh "${ssh_options[@]}" "$pi_target" "$pi_executor $1"
 }
 
 case "$class" in
@@ -39,6 +46,18 @@ case "$class" in
     ;;
   databases|rustfs)
     run_pi "$class"
+    ;;
+  configs)
+    run_id="configs-$(date -u +%Y%m%d-%H%M%S)"
+    umask 077
+    pi_archive=$(mktemp "$staging_root/.${run_id}.pi-configs.tar.XXXXXX")
+    trap 'rm -f -- "$pi_archive"' EXIT
+    run_pi configs > "$pi_archive"
+    BACKUP_APP_ROOT="$app_root" \
+      BACKUP_STAGING_ROOT="$staging_root" \
+      BACKUP_STATUS_ROOT="$status_root" \
+      BACKUP_CONFIGS_PI_ARCHIVE="$pi_archive" \
+      bash "$app_root/automation/backup-runner/run-class.sh" configs "$run_id"
     ;;
   database-instances)
     rm -f "$status_root/database-instances.success"
@@ -79,5 +98,24 @@ case "$class" in
       bash "$script_dir/run-instance-retention.sh"
     BACKUP_STAGING_ROOT="$staging_root" \
       bash "$backup_scripts/cleanup-local-runs.sh" gitlab
+    if [[ -f "$status_root/configs.success" ]]; then
+      BACKUP_APP_ROOT="$app_root" \
+        BACKUP_STAGING_ROOT="$staging_root" \
+        BACKUP_STATUS_ROOT="$status_root" \
+        bash "$script_dir/run-config-retention.sh"
+    else
+      echo 'configs retention skipped: no successful configs run yet'
+    fi
+    ;;
+  weekly-integrity)
+    exec 9>"${BACKUP_LOCK_FILE:-/run/lock/homelab-backup.lock}"
+    flock -n 9 || { echo 'another homelab backup job holds the global lock' >&2; exit 75; }
+    RESTIC_READ_DATA_SUBSET=1/10 run_pi deep-verify
+    for deep_class in database-instances gitlab; do
+      RESTIC_READ_DATA_SUBSET=1/10 \
+        BACKUP_APP_ROOT="$app_root" \
+        BACKUP_STAGING_ROOT="$staging_root" \
+        bash "$app_root/backup/scripts/run-integrity-check.sh" "$deep_class"
+    done
     ;;
 esac

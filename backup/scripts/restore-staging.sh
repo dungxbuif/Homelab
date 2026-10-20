@@ -10,7 +10,7 @@ target=${3:?usage: restore-staging.sh CLASS SNAPSHOT_ID TARGET_DIR}
   exit 2
 }
 case "$class" in
-  databases|database-instances|rustfs|gitlab) ;;
+  databases|database-instances|rustfs|gitlab|configs) ;;
   *) echo 'unsupported backup class' >&2; exit 2 ;;
 esac
 [[ ! -e "$target" && ! -L "$target" ]] || {
@@ -26,4 +26,4 @@ umask 077
 mkdir -- "$target"
 RESTIC_RESTORE_DIR=$(cd -- "$target" && pwd)
 export RESTIC_RESTORE_DIR
-restic_run restore "$snapshot_id" --target /restore-target
+restic_run restore "$snapshot_id" --no-lock --target /restore-target

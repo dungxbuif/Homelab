@@ -35,7 +35,10 @@ restic_run() {
   # Drive uses a project quota measured in API units, not only file bytes.
   # Keep requests deliberately serialized so a large repository cannot burst
   # into the shared/default project quota.
-  local drive_pacer_min_sleep=${RCLONE_DRIVE_PACER_MIN_SLEEP:-10s}
+  # Drive's default 10s pacer made even small uploads hold the global lock for
+  # minutes. Keep requests serialized, but use a short delay and allow an
+  # explicit override for quota-sensitive operations.
+  local drive_pacer_min_sleep=${RCLONE_DRIVE_PACER_MIN_SLEEP:-100ms}
   local drive_pacer_burst=${RCLONE_DRIVE_PACER_BURST:-1}
   local drive_chunk_size=${RCLONE_DRIVE_CHUNK_SIZE:-64Mi}
   local low_level_retries=${RCLONE_LOW_LEVEL_RETRIES:-10}
@@ -64,6 +67,8 @@ restic_run() {
     -e RCLONE_RETRIES_SLEEP="$retries_sleep" \
     -e RCLONE_TIMEOUT="$rclone_timeout" \
     -e RCLONE_CONNECT_TIMEOUT="$rclone_connect_timeout" \
+    -e HOME=/tmp \
+    -e RESTIC_CACHE_DIR=/tmp/restic-cache \
     -e RESTIC_PASSWORD_FILE=/run/secrets/restic-password \
     -e RESTIC_REPOSITORY="${RESTIC_REPOSITORY:?RESTIC_REPOSITORY is required}" \
     -v "$RESTIC_PASSWORD_FILE:/run/secrets/restic-password:ro" \
@@ -77,7 +82,7 @@ restic_run() {
 restic_repo_for() {
   local class=${1:?}
   case "$class" in
-    databases|database-instances|rustfs|gitlab) printf 'rclone:%s:%s/%s' "${RCLONE_REMOTE:?}" "${DRIVE_ROOT:?}" "$class" ;;
+    databases|database-instances|rustfs|gitlab|configs) printf 'rclone:%s:%s/%s' "${RCLONE_REMOTE:?}" "${DRIVE_ROOT:?}" "$class" ;;
     *) echo "unsupported backup class: $class" >&2; return 2 ;;
   esac
 }

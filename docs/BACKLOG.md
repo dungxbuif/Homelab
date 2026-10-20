@@ -23,23 +23,25 @@ Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`
 
 | ID | Item | Why | How / verify | Status |
 |---|---|---|---|---|
-| N1 | Detach `homelab-net` from `postgres` | Shared flat network exposes Postgres to every service on it | Script `pgnet-step-d-detach.sh` (backup compose, `docker network disconnect`, verify clients are `10.0.30.x`, five sites 200). pgbouncer, whiteboard and gitlab already use `pg-net` | ready |
-| N2 | Flush old pgbouncer server connections | About 12 connections (mypocket, netbird, relayhub) still ride `homelab-net` | Recreate pgbouncer from compose, or let N1 drop them once | open |
-| N3 | relayhub reaches PgBouncer via LAN `10.10.0.5:5432` | Host port stays published only for this client | Put relayhub on an overlay (or `pg-net`), then stop publishing 5432 | open |
-| N4 | Bind remaining host-published datastore ports | Datastores should not listen on all interfaces | `127.0.0.1` or LAN-only binds in compose; verify from outside | open |
-| N5 | Keep `homelab-net` only where `redis-prod` is needed | GitLab still needs it for Redis | Dedicated `redis-net`, then retire `homelab-net` | open |
-| N6 | Compose drift on Pi5 | Live `postgres` was attached to networks the compose file did not list | Reconcile `/ssd-data/infra/docker-compose.yml` against live; make Ansible/CI the only writer | open |
+| N1 | Detach `homelab-net` from `postgres` | Shared flat network exposes Postgres to every service on it | Applied 2026-10-20: backed up compose, removed the source declaration, detached the endpoint, terminated one legacy PgBouncer backend session, verified all DB clients on `10.0.30.x`, Postgres healthy and four production routes 200. Backup: `/ssd-data/infra/docker-compose.yml.bak-pg-detach-20261020-214540` | done |
+| N2 | Flush old pgbouncer server connections | App clients can retain PgBouncer connections on `homelab-net` during migration | Done 2026-10-20: NetBird and macOCR migrated to `pg-net`; legacy `172.30.0.91/.92` sockets are gone and DB sessions use `10.0.30.4` | done |
+| N3 | relayhub reaches PgBouncer via LAN `10.10.0.5:5432` | Host port stays published only for this client | Done 2026-10-20: API and worker use `pgbouncer:6432` on `pg-net`; API also uses `edge-http-net`; both healthy and public `/readyz` 200 | done |
+| N4 | Bind remaining host-published datastore ports | Datastores and monitoring APIs should not listen on all interfaces | Done 2026-10-20: PgBouncer `5432`, Redis `16379`, VictoriaMetrics `8428`, and Alertmanager `9093` bind only to `10.10.0.5`. Health/API probes passed and production route smoke checks remained healthy. | done |
+| N5 | Keep `homelab-net` only where `redis-prod` is needed | The shared network is still a broad lateral-access boundary | Completed 2026-10-20. Production apps and GitLab tunnels were migrated one at a time. Documented exceptions are CouchLoom for Pi5 CouchDB DNS, plus Pi5 edge/data/control-plane services: Traefik, PgBouncer, RustFS, registry, Redis, pgAdmin and provisioner. | done (documented exceptions) |
+| N6 | Compose drift on Pi5 | Live RustFS/CouchDB endpoints had networks missing from the source Compose file | Done 2026-10-20: declared live RustFS and CouchDB edge/data networks; `docker compose config` passed; no service recreate. Backup: `/ssd-data/infra/docker-compose.yml.bak-compose-reconcile-20261020-155327` | done |
+
+| A1 | Complete AI model rollout verification | Selector rollout is complete; real business inference quality is not yet measured | Run approved real receipt/advisor UAT against `DeepSeek-V4.1-Flash`; keep credentials backend-only and record latency/errors without payloads | open (UAT) |
 
 ## P1 Backup (see assessment below)
 
 | ID | Item | Why | How / verify | Status |
 |---|---|---|---|---|
-| B1 | Remote Drive restore acceptance | Backups are unproven until a full restore works | Quarterly drill: restore Postgres, CouchDB, GitLab, RustFS to scratch and compare | open |
-| B2 | Backup of host configs | Compose files, Traefik, Caddy, `/etc`, secrets are not a backup class | Add `configs` class (encrypted) | open |
-| B3 | VM100 vzdump | VM-level recovery has no image | vzdump to a second target; or Proxmox Backup Server | open |
-| B4 | Dead-man's switch and alerts | A silent scheduler failure goes unnoticed | Healthchecks-style ping per class plus Mezon alert | open |
-| B5 | Health check false negatives | 2026-10-19 health failed only because retention held the lock for 45 minutes | Make health lock-aware; move retention away from the GitLab window | open |
-| B6 | VM100 disk pressure | On 2026-10-18 only 105 MB was free: GitLab backup and retention failed | Alert at 85 percent, schedule `docker image prune`, size the disk | open |
+| B1 | Remote Drive restore acceptance | Backups are unproven until a full restore works | `database-instances` drill passed on 2026-10-21: 7 files and checksums verified; remaining quarterly drill coverage is PostgreSQL/CouchDB, GitLab and RustFS | open (partial) |
+| B2 | Backup of host configs | Compose files, Traefik, Caddy, `/etc`, secrets are not a backup class | Done 2026-10-21: encrypted `configs` snapshot uploaded to Drive, Restic integrity check passed, and local-mirror scratch restore checksum passed. Timer enabled after acceptance. | done |
+| B3 | VM100 vzdump | VM-level recovery has no image | Read-only audit 2026-10-21: VM100 has only the `pre-docker-ce-20261014` snapshot; no `vzdump` exists. Same-storage `local` has 89.8 GB free versus the 200 GB guest disk, so use a separate NAS/PBS/attached target before creating the first VM backup. | open (target required) |
+| B4 | Dead-man's switch and alerts | A silent scheduler failure goes unnoticed | Daily successful health summary is now sent to Mezon; health now covers `configs` as well as the application backup classes. Remaining work is per-class dead-man/Uptime Kuma and external heartbeat | open (success summary and configs coverage done; dead-man pending) |
+| B5 | Health check false negatives | 2026-10-19 health failed only because retention held the lock for 45 minutes | Lock-aware health deployed to VM100 and Pi5; upload confirms snapshot metadata immediately, while structural checks run in retention and Sunday deep-verify reads 10% of packs; schedules are spaced after observed DB runtime. Live health recheck passed with all timers enabled/active and the lock free. | done (continue observing weekly verify) |
+| B6 | VM100 disk pressure | On 2026-10-18 only 105 MB was free: GitLab backup and retention failed | Maintenance policy is active; health warns at 85% and fails at 92%; after GitLab verification, the old staging run, retired 5.28 GB Educates image, stopped Compose-era Family Tree container, 252 MB dangling image, two unreferenced Node build images, 17 empty anonymous volumes and one additional empty Docker metadata volume were removed. VM100 now has 42 GB free / 79% used. Remaining dangling volumes are PostgreSQL data, `workshop-files` registry data, and the MyPocket backup dump, so they are explicitly retained. Docker accounting has a 30-second non-fatal timeout and the maintenance service exits successfully. | open (partial; broader retired-image review remains) |
 | B7 | Second off-site target | Google Drive is the only remote copy | Add a second restic repo (B2, Hetzner box or LAN NAS) for 3-2-1 | decision |
 | B8 | Monthly automated restore test | Replaces manual checks | CI or systemd job restoring latest snapshot and running a query | open |
 | B9 | Make Pi5 passive for backups | Pi5 runs export, restic upload, check and prune and holds restic and Drive secrets | Phase 2.5 then Phase 7: check and prune on VM100, then pull-model dumps from VM100 over `pg-net`/`s3-net`; remove secrets from Pi5 | open |
@@ -51,19 +53,20 @@ Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`
 | ID | Item | Why | How / verify | Status |
 |---|---|---|---|---|
 | E1 | `homelab` CouchDB (5.9 GB, admin-only) | LiveSync copy of this repo; not exposed on `sync-db` | If remote sync is needed, create a non-admin `_security` member and add `PathPrefix(/homelab)` to the `sync-db` rule; review size or compact | decision |
-| E2 | Catalog vs live drift | `catalog.yml` marked `couchdb`/`pgadmin` as `exposure: lan`; live file did not | Generate Pi5 `dynamic.yml` from `automation/routes/catalog.yml` | open |
-| E3 | `couchdb.` and `sync-db.` share a backend with split routers | Hand edit lives only on Pi5 | Move the router split into the catalog | open |
+| E2 | Catalog vs live drift | `catalog.yml` marked `couchdb`/`pgadmin` as `exposure: lan`; live file did not | Catalog regenerated and atomically published to Pi5; route smoke checks passed | done |
+| E3 | `couchdb.` and `sync-db.` share a backend with split routers | Hand edit lives only on Pi5 | Split is now declared in the catalog with path restriction and shared service name; `sync-db/` 401 and `/_utils/` 404 verified | done |
 
 ## P2 Automation
 
 | ID | Item | Why | How / verify | Status |
 |---|---|---|---|---|
 | A1 | GitLab CI deploy job with manual approval | Approval enforced by GitLab, not by Semaphore Community | Forced-command SSH key, job per stack | open |
-| A2 | Nightly drift job | Catch live-vs-repo drift | Compare `docker service ls` and published ports with the repo, report to Mezon | open |
+| A2 | Nightly drift job | Catch live-vs-repo drift | Comparator and evidence contracts are present, and the test runtime is now pinned/portable. A full scheduled report still requires manager-side `docker service ls` evidence and Mezon wiring. | open (manager evidence pending) |
 | A3 | Image updates | No pinned digests | Renovate or Diun (notify only), `order: start-first`, healthchecks | open |
 | A4 | Break-glass path | GitLab runs on the infrastructure it deploys | Document workstation SSH recovery | open |
 | A5 | Trim Semaphore | Stop expanding it | Keep only read-only host-audit and backup-health templates | open |
-| A6 | Make Pi5 data-only | Pi5 still runs AdGuard, edge Traefik, Rathole, Semaphore, provisioner, monitoring, registry, pgAdmin, LibreSpeed | Move in order of risk (see plan Phase 8); decide DNS and ingress separately | open |
+| A6 | Reduce non-data workloads on Pi5 | Semaphore, provisioner, monitoring, registry, pgAdmin, LibreSpeed share data-host resources | Move in order of risk (see plan Phase 8). AdGuard, edge Traefik and Rathole stay on Pi5 by operator decision; Orange Pi excluded | open |
+| A7 | Remove retired VM100 host alias | `/etc/hosts` still named the VM `k8s-cp-1`, causing `sudo` resolution warnings after Kubernetes retirement | Done 2026-10-21: replaced it with `127.0.1.1 vm100-prod`; preserved a timestamped host-file backup and verified systemd/container health | done |
 
 ## P3 Later
 

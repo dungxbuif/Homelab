@@ -111,6 +111,11 @@ The host audit can now save partial host evidence using
 on the controller (0700 directory, 0600 files), not on the production host.
 These `host_runtime_only` records contain safe container/network summaries and
 a resource sample; they must not be fed directly into the full drift gate.
+
+The runtime audit and deploy-verification scripts use `python3` from the
+execution environment by default. Local contract tests may set `PYTHON_BIN` to
+the test interpreter so the same pinned dependency set is used; jobs must not
+install Python packages at runtime on production runners.
 Pi5 and VM100 now have restricted controller credentials and live Semaphore
 templates. Bootstrap administration is still used for unenrolled operations;
 general agent SSH has not been removed. Complete route/backup/remote-host

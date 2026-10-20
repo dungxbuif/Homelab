@@ -2,7 +2,7 @@
 Description=Nightly Homelab backup retention
 
 [Timer]
-OnCalendar=*-*-* 05:30:00 Asia/Ho_Chi_Minh
+OnCalendar=*-*-* 10:00:00 Asia/Ho_Chi_Minh
 Persistent=true
 Unit=homelab-backup@retention.service
 

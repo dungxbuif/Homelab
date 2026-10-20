@@ -16,7 +16,7 @@ while (($#)); do
 done
 
 ACTIVE_POLICY="${ACTIVE_POLICY}" RETIRED_POLICY="${RETIRED_POLICY}" JSON_MODE="${JSON_MODE}" \
-  python3 - <<'PY'
+  "${PYTHON_BIN:-python3}" - <<'PY'
 import json
 import os
 import subprocess

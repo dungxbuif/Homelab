@@ -34,7 +34,7 @@ This workspace houses the complete configuration, provisioning scripts, security
     ├── registry/          # Dynamic volumes and security credentials for local Docker Registry
     │   └── auth/          # Htpasswd credentials for docker login authentication
     ├── redis-prod/        # Standalone Redis for macocr-proxy and approved services
-    │   └── docker-compose.yml  # bind 0.0.0.0:16379, auth, AOF (see Redis-Prod section)
+    │   └── docker-compose.yml  # bind 10.10.0.5:16379, auth, AOF (see Redis-Prod section)
     └── rustfs/            # High-performance S3 object storage directories (RustFS engine backend)
 ```
 
@@ -66,8 +66,8 @@ Redis-prod remains the other documented LAN datastore endpoint on `:16379`.
 RelayHub application compute was moved to VM100; the old Pi5 RelayHub
 API/worker/NATS containers are stopped and only the RelayHub PostgreSQL
 container remains healthy for datastore duty. The 2026-09-15 audit also found
-monitoring `alertmanager:9093`/`victoriametrics:8428` host binds; confirm
-their consumers before closing or changing them. See the
+monitoring `alertmanager:9093`/`victoriametrics:8428` host binds. Both are now
+LAN-bound at `10.10.0.5:9093` and `10.10.0.5:8428`. See the
 [network audit](./research/network-segmentation-2026-09-15.md) and
 [resource inventory](./research/resource-limit-audit-2026-09-15.md).
 
@@ -270,7 +270,7 @@ access from the Mac:
 ---|---|
 Compose | `/ssd-data/infra/redis-prod/docker-compose.yml` |
 Image | `redis:7.2-alpine` (pinned, arm64) |
-Bind | `0.0.0.0:16379` (uncommon port — avoids dev `6379` clashes) |
+Bind | `10.10.0.5:16379` (uncommon port — avoids dev `6379` clashes) |
 Auth | password (`requirepass`) — see `local_vars.json` |
 Persistence | AOF (`appendonly yes`) |
 Memory | `maxmemory 1gb`, `noeviction` (writes fail at cap instead of evicting keys) |

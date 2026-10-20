@@ -2,7 +2,7 @@
 Description=Nightly Homelab RustFS backup
 
 [Timer]
-OnCalendar=*-*-* 04:30:00 Asia/Ho_Chi_Minh
+OnCalendar=*-*-* 04:00:00 Asia/Ho_Chi_Minh
 Persistent=true
 Unit=homelab-backup@rustfs.service
 

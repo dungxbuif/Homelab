@@ -227,14 +227,14 @@ http:
       loadBalancer:
         passHostHeader: true
         servers:
-          - url: http://tasks.netbird-server:80
+- url: http://tasks.netbird_netbird-server:80
     netbird-server-h2c:
       loadBalancer:
         passHostHeader: true
         servers:
-          - url: h2c://tasks.netbird-server:80
+- url: h2c://tasks.netbird_netbird-server:80
     netbird-dashboard:
       loadBalancer:
         passHostHeader: true
         servers:
-          - url: http://tasks.netbird-dashboard:80
+          - url: http://tasks.netbird_netbird-dashboard:80

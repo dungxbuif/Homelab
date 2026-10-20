@@ -6,7 +6,9 @@ command=${SSH_ORIGINAL_COMMAND:-}
 case "$command" in
   "$executor databases") class=databases ;;
   "$executor rustfs") class=rustfs ;;
+  "$executor configs") class=configs ;;
   "$executor retention") class=retention ;;
+  "$executor deep-verify") class=deep-verify ;;
   "$executor health") class=health ;;
   *) echo 'backup SSH key accepts only the allow-listed backup classes' >&2; exit 2 ;;
 esac

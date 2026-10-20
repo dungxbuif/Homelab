@@ -12,6 +12,10 @@ root=$(cd "$root" && pwd)
 reports="$root/security-reports"
 cache_volume=${TRIVY_CACHE_VOLUME:-homelab-trivy-cache-${CI_JOB_ID:-local}}
 start_timeout=${TRIVY_START_TIMEOUT:-20m}
+timeout_bin=${TIMEOUT_BIN:-}
+if [ -z "$timeout_bin" ]; then
+  timeout_bin=$(command -v timeout || command -v gtimeout || true)
+fi
 umask 077
 mkdir -p "$reports"
 rm -f -- "$reports/$name.json"
@@ -54,7 +58,13 @@ container=$(docker create --user 65532:65532 --cap-drop ALL --security-opt no-ne
 # API copies also work when the rootless daemon cannot traverse job-owned paths.
 docker cp "$work/image.tar" "$container:/tmp/image.tar"
 status=0
-timeout "$start_timeout" docker start --attach "$container" || status=$?
+if [ -n "$timeout_bin" ]; then
+  "$timeout_bin" "$start_timeout" docker start --attach "$container" || status=$?
+else
+  # macOS does not ship GNU timeout; the pinned EE always does. Local tests
+  # still exercise cleanup and scanner exit propagation without a time limit.
+  docker start --attach "$container" || status=$?
+fi
 if ! docker cp "$container:/tmp/report.json" "$reports/$name.json"; then
   echo 'scanner report could not be retrieved' >&2
   [ "$status" -ne 0 ] || status=1

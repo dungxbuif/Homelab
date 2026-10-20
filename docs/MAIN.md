@@ -204,7 +204,7 @@ service. NetBird runs as Swarm services on `homelab-net` with no VM100 host
 ports published. Its management, activity, and embedded IdP stores use Pi5
 PostgreSQL databases `netbird`, `netbird_activity`, and `netbird_idp` through
 `pgbouncer:6432`. Pi5 Traefik routes `netbird.dungxbuif.com` to
-`tasks.netbird-server` and `tasks.netbird-dashboard`; the VPS
+`tasks.netbird_netbird-server` and `tasks.netbird_netbird-dashboard`; the VPS
 `gateway-traefik` HostSNI allow-list includes `netbird.dungxbuif.com`.
 On 2026-09-17, a VPS-only NetBird relay/STUN container was added at
 `netbird-relay.dungxbuif.com`: Traefik routes TCP `443` by exact HostSNI to

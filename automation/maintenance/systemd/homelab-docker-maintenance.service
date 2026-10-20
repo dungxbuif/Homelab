@@ -1,0 +1,17 @@
+[Unit]
+Description=Conservative Docker task and cache maintenance
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /usr/local/lib/homelab-maintenance/docker-maintenance.sh
+SuccessExitStatus=75
+TimeoutStartSec=30min
+Nice=10
+IOSchedulingClass=idle
+CPUQuota=100%
+MemoryMax=512M
+UMask=0077
+StandardOutput=journal
+StandardError=journal

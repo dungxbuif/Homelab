@@ -1,0 +1,63 @@
+{
+  "version": 2,
+  "description": "Explicit live configuration inventory for the encrypted configs backup class.",
+  "hosts": {
+    "pi5": {
+      "required": [
+        "/home/dungxbuif/edge/traefik/traefik.yml",
+        "/home/dungxbuif/edge/traefik/dynamic.yml",
+        "/home/dungxbuif/edge/adguard/conf",
+        "/home/dungxbuif/edge/rathole/rathole.toml",
+        "/ssd-data/infra/docker-compose.yml"
+      ],
+      "optional": [
+        "/home/dungxbuif/edge/adguard/work",
+        "/home/dungxbuif/edge/traefik/acme.json",
+        "/ssd-data/infra/couchdb/.env",
+        "/ssd-data/infra/couchdb/obsidian-sync.env",
+        "/ssd-data/infra/redis-prod/docker-compose.yml",
+        "/ssd-data/infra/redis-prod/docker-compose.override.yml",
+        "/ssd-data/infra/backup/runner.env"
+      ],
+      "exclude_dirs": [
+        "/ssd-data/infra/backups",
+        "/ssd-data/infra/backup/runs",
+        "/ssd-data/infra/_pre-orange-pi",
+        "/ssd-data/infra/goclaw"
+      ]
+    },
+    "vm100": {
+      "required": [
+        "/opt/apps/netbird/docker-compose.yml",
+        "/opt/apps/netbird/config.yaml",
+        "/opt/apps/netbird/dashboard.env",
+        "/opt/apps/n8n/run/docker-compose.yml",
+        "/opt/apps/relayhub/prod/compose.yml"
+      ],
+      "optional": [
+        "/opt/apps/relayhub/prod/compose.override.yml",
+        "/opt/apps/relayhub/prod/compose.release.yml",
+        "/opt/apps/relayhub/prod/relayhub.env",
+        "/opt/apps/openclaw/src/docker-compose.yml",
+        "/opt/apps/openclaw/.env",
+        "/opt/apps/mypocket/run/.env",
+        "/opt/apps/whiteboard/docker-compose.prod.yml",
+        "/opt/apps/kubekosh/docker-compose.yml",
+        "/opt/apps/couchloom/src/docker-compose.yml",
+        "/opt/apps/family-tree/run/docker-compose.yml",
+        "/opt/apps/macocr-proxy/run/docker-compose.yml",
+        "/opt/apps/macocr-proxy/run/.env",
+        "/opt/apps/mezonhook/run/docker-compose.yml",
+        "/opt/apps/homepage/run/docker-compose.yml",
+        "/opt/apps/knowledge-hub-search/compose.yml"
+      ],
+      "exclude_dirs": [
+        "/opt/apps/homelab-backup/runs",
+        "/opt/apps/homelab-backup/backups",
+        "/opt/apps/homelab-backup/client-releases",
+        "/opt/apps/whiteboard-v1-20261019T160500Z"
+      ]
+    }
+  },
+  "sensitive": "The selected files may contain credentials. They must only enter the encrypted Restic repository and mode-0600 staging."
+}

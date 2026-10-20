@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-class=${1:?usage: pi-executor.sh databases|rustfs|retention|health}
+class=${1:?usage: pi-executor.sh databases|rustfs|configs|retention|deep-verify|health}
 case "$class" in
-  databases|rustfs|retention|health) ;;
+  databases|rustfs|configs|retention|deep-verify|health) ;;
   *) echo "unsupported backup class: $class" >&2; exit 2 ;;
 esac
 
@@ -22,13 +22,24 @@ case "$class" in
   health)
     export BACKUP_HEALTH_EXPECTED_CLASSES='databases rustfs'
     export BACKUP_HEALTH_CHECK_UNITS=false BACKUP_HEALTH_REMOTE_PI=false
+    export BACKUP_HEALTH_ACTIVE_PROCESS_PATTERN="${BACKUP_HEALTH_ACTIVE_PROCESS_PATTERN:-$app_root/automation/backup-runner/run-(retention|class|restic_container)(\.sh)?}"
     exec bash "$app_root/backup/scripts/check-backup-health.sh"
     ;;
   databases|rustfs)
     run_id="${class}-$(date -u +%Y%m%d-%H%M%S)"
     exec bash "$app_root/automation/backup-runner/run-class.sh" "$class" "$run_id"
     ;;
+  configs)
+    exec bash "$app_root/automation/backup-runner/export-configs-pi.sh"
+    ;;
   retention)
     exec bash "$app_root/automation/backup-runner/run-retention.sh"
+    ;;
+  deep-verify)
+    exec 9>"${BACKUP_LOCK_FILE:-/ssd-data/infra/backups/homelab/.homelab-backup.lock}"
+    flock -n 9 || { echo 'another homelab backup job holds the global lock' >&2; exit 75; }
+    for deep_class in databases rustfs; do
+      bash "$app_root/backup/scripts/run-integrity-check.sh" "$deep_class"
+    done
     ;;
 esac

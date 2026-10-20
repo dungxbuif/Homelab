@@ -29,6 +29,14 @@
       loop: [pi-executor.sh, pi-ssh-guard.sh]
       when: inventory_hostname == 'pi5'
 
+    - name: Install the Pi configuration exporter with rollback copy
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../backup-runner/export-configs-pi.sh'
+        dest: '{{ health_app_root }}/automation/backup-runner/export-configs-pi.sh'
+        mode: '0755'
+        backup: true
+      when: inventory_hostname == 'pi5'
+
     - name: Install only the corrected health service
       vars:
         ansible_become: true

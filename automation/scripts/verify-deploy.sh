@@ -31,7 +31,7 @@ done
 }
 
 SERVICE_ID="${SERVICE_ID}" IMAGE="${IMAGE}" ENVIRONMENT="${ENVIRONMENT}" CATALOG="${CATALOG}" \
-  python3 - <<'PY'
+  "${PYTHON_BIN:-python3}" - <<'PY'
 import os
 from pathlib import Path
 import yaml

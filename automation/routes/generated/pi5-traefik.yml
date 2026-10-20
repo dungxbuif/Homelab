@@ -75,13 +75,22 @@ http:
       middlewares:
       - lan-only
     couchdb:
-      rule: Host(`couchdb.dungxbuif.com`) || Host(`sync-db.dungxbuif.com`)
+      rule: Host(`couchdb.dungxbuif.com`)
       entryPoints:
       - websecure
       service: couchdb
       tls: *id001
       middlewares:
       - lan-only
+    sync-db:
+      rule: Host(`sync-db.dungxbuif.com`) && (Path(`/`) || Path(`/_session`) || PathPrefix(`/obsidian_vault`))
+      entryPoints:
+      - websecure
+      service: couchdb
+      tls: *id001
+      middlewares:
+      - lan-only
+      priority: 100
     llm:
       rule: Host(`llm.dungxbuif.com`)
       entryPoints:
@@ -111,6 +120,12 @@ http:
       entryPoints:
       - websecure
       service: family
+      tls: *id001
+    whiteboard:
+      rule: Host(`whiteboard.dungxbuif.com`)
+      entryPoints:
+      - websecure
+      service: whiteboard
       tls: *id001
     openclaw:
       rule: Host(`openclaw.dungxbuif.com`)
@@ -147,7 +162,7 @@ http:
         || PathPrefix(`/management.ManagementService/`) || PathPrefix(`/management.ProxyService/`))
       entryPoints:
       - websecure
-      service: netbird-grpc
+      service: netbird-server-h2c
       tls: *id001
       priority: 100
     netbird-backend:
@@ -155,7 +170,7 @@ http:
         || PathPrefix(`/api`) || PathPrefix(`/oauth2`))
       entryPoints:
       - websecure
-      service: netbird-backend
+      service: netbird-server
       tls: *id001
       priority: 100
     netbird-dashboard:
@@ -165,6 +180,28 @@ http:
       service: netbird-dashboard
       tls: *id001
       priority: 1
+    semaphore:
+      rule: Host(`semaphore.dungxbuif.com`)
+      entryPoints:
+      - websecure
+      service: semaphore
+      tls: *id001
+      middlewares:
+      - lan-only
+    kubekosh:
+      rule: Host(`kubekosh.dungxbuif.com`)
+      entryPoints:
+      - websecure
+      service: kubekosh
+      tls: *id001
+      middlewares:
+      - lan-only
+    k8s-syntax:
+      rule: Host(`k8s-syntax.dungxbuif.com`)
+      entryPoints:
+      - websecure
+      service: k8s-syntax
+      tls: *id001
   services:
     homepage:
       loadBalancer:
@@ -203,7 +240,7 @@ http:
     llm:
       loadBalancer:
         servers:
-        - url: http://10.10.0.6:1234
+        - url: http://103.82.21.202:18123
     ocr:
       loadBalancer:
         servers:
@@ -224,6 +261,10 @@ http:
         servers:
         - url: http://tasks.family-tree:3000
         passHostHeader: true
+    whiteboard:
+      loadBalancer:
+        servers:
+        - url: http://whiteboard-frontend:80
     openclaw:
       loadBalancer:
         servers:
@@ -248,15 +289,27 @@ http:
         servers:
         - url: http://relayhub-api:8080
         passHostHeader: true
-    netbird-grpc:
+    netbird-server-h2c:
       loadBalancer:
         servers:
-        - url: h2c://tasks.netbird-server:80
-    netbird-backend:
+        - url: h2c://tasks.netbird_netbird-server:80
+    netbird-server:
       loadBalancer:
         servers:
-        - url: http://tasks.netbird-server:80
+        - url: http://tasks.netbird_netbird-server:80
     netbird-dashboard:
       loadBalancer:
         servers:
-        - url: http://tasks.netbird-dashboard:80
+        - url: http://tasks.netbird_netbird-dashboard:80
+    semaphore:
+      loadBalancer:
+        servers:
+        - url: http://tasks.semaphore_semaphore:3000
+    kubekosh:
+      loadBalancer:
+        servers:
+        - url: http://kubekosh:80
+    k8s-syntax:
+      loadBalancer:
+        servers:
+        - url: http://tasks.k8s-syntax:80

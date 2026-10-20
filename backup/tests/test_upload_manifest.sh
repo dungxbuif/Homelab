@@ -52,7 +52,7 @@ for arg in "$@"; do
 done
 for arg in "$@"; do
   case "$arg" in
-    init|snapshots|backup|check|unlock|restore) command=$arg; break ;;
+    init|cat|snapshots|backup|check|unlock|restore) command=$arg; break ;;
   esac
 done
 case "$command" in
@@ -69,7 +69,8 @@ case "$command" in
       exit 1
     fi
     ;;
-  backup) touch "$state/backed-up"; printf '%s\n' '{"message_type":"summary"}' ;;
+  cat) printf '%s\n' '{"version":2}' ;;
+  backup) touch "$state/backed-up"; printf '%s\n' '{"message_type":"summary","snapshot_id":"snap-test"}' ;;
   check)
     if [ "${FAKE_DOCKER_STALE_LOCK:-0}" = 1 ] && {
       [ ! -f "$state/unlocked" ] || [ "${FAKE_ALWAYS_LOCK:-0}" = 1 ];
@@ -107,7 +108,10 @@ test "$(cat "$tmp/run/manifest.json")" = "$before"
 (cd "$tmp/run" && sha256sum --quiet -c checksums.sha256)
 test "$(cat "$tmp/run/remote/snapshot-id")" = snap-test
 test "$(cat "$tmp/run/remote/run-id")" = explicit-run
-test -f "$tmp/state/unlocked"
+if grep -qx check "$tmp/state/args"; then
+  echo 'default upload path must defer structural check' >&2
+  exit 1
+fi
 grep -qx 'run_id=explicit-run' "$tmp/state/args"
 for excluded in restic-backup.json restic-preflight.log restic-check.log remote; do
   grep -Fqx -- "--exclude=/backup-run/$excluded" "$tmp/state/args" || {
@@ -133,6 +137,7 @@ for scenario in active failed_recheck failed_unlock partial_unlock; do
   esac
   if PATH="$tmp/bin:$PATH" FAKE_DOCKER_STATE="$tmp/$scenario/state" \
     RESTIC_PASSWORD_FILE="$tmp/restic-password" RCLONE_CONFIG_FILE="$tmp/rclone.conf" \
+    RESTIC_POST_UPLOAD_CHECK=structural \
     BACKUP_LOCAL_RCLONE_BIN="$tmp/fake-rclone" RCLONE_REMOTE=gdrive DRIVE_ROOT=homelab-backups \
     FAKE_DOCKER_STALE_LOCK=1 RESTIC_ALLOW_INIT=true FAKE_PGREP_STATUS="$active" \
     FAKE_ALWAYS_LOCK="$always_lock" FAKE_UNLOCK_FAIL="$unlock_fail" FAKE_UNLOCK_PARTIAL="$unlock_partial" \

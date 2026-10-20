@@ -9,7 +9,11 @@ User=ubuntu
 Group=ubuntu
 WorkingDirectory=/opt/apps/homelab-backup/app
 EnvironmentFile=/etc/homelab-backup/runner.env
-Environment="BACKUP_HEALTH_EXPECTED_CLASSES=gitlab database-instances"
+Environment="BACKUP_HEALTH_EXPECTED_CLASSES=gitlab database-instances configs"
+Environment="BACKUP_HEALTH_DATABASES_MAX_AGE_SECONDS=7200"
+Environment="BACKUP_HEALTH_DISK_WARN_PERCENT=85"
+Environment="BACKUP_HEALTH_DISK_FAIL_PERCENT=92"
+Environment="BACKUP_HEALTH_NOTIFY_SUCCESS=true"
 Environment="BACKUP_HEALTH_REMOTE_PI=true"
 SyslogIdentifier=homelab-backup-health
 StandardOutput=journal

@@ -12,4 +12,6 @@ export RESTIC_REPOSITORY="$repo"
 # Never prune if repository integrity cannot be checked first.
 restic_run check
 restic_run forget --keep-daily 14 --keep-weekly 8 --keep-monthly 12 --prune
-restic_run check --read-data-subset=1/10
+if [[ -n "${RESTIC_READ_DATA_SUBSET:-}" ]]; then
+  restic_run check --read-data-subset="$RESTIC_READ_DATA_SUBSET"
+fi

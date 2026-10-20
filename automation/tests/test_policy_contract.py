@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import json
+import os
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -88,7 +90,9 @@ class PolicyContractTest(unittest.TestCase):
 
     def test_audit_json_has_no_secret_values(self):
         command = ["bash", str(ROOT / "automation/scripts/audit-runtime.sh"), "--json"]
-        output = subprocess.check_output(command, text=True)
+        env = os.environ.copy()
+        env["PYTHON_BIN"] = sys.executable
+        output = subprocess.check_output(command, text=True, env=env)
         report = json.loads(output)
         self.assertEqual(report["status"], "not_verified")
         self.assertNotRegex(output.lower(), r"password|token|private_key|client_secret")

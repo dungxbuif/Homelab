@@ -73,6 +73,48 @@ restricted it to the vault database path (block `/_utils`, `/_all_dbs`, `/_node`
 
 ## Pending in this rollout
 
+- N1 is complete: PostgreSQL was removed from `homelab-net` after all observed
+  database clients were confirmed on `pg-net`; one idle legacy PgBouncer
+  backend session was terminated and re-established through `10.0.30.4`.
+  The source backup is
+  `/ssd-data/infra/docker-compose.yml.bak-pg-detach-20261020-214540`.
+- NetBird was then migrated one service at a time: `pg-net` was added and
+  `homelab-net` removed from `netbird_netbird-server`. The new task converged
+  on VM100, used the existing PgBouncer DSNs, and all six old NetBird client
+  sockets on `172.30.0.91` disappeared. Root domain remained HTTP 200.
+- macOCR was migrated next with `pg-net` and a new app-specific
+  `macocr-redis-net`; `homelab-net` was removed from the service. OCR
+  `/healthz` and `/docs/` returned 200, the old `172.30.0.92` PgBouncer
+  sockets disappeared, and the Redis Compose override was persisted. Backup:
+  `/ssd-data/infra/redis-prod/docker-compose.override.yml.bak-macocr-net-20261020-214931`.
+- RelayHub API and worker were migrated from the Pi5 LAN database endpoint to
+  `pgbouncer:6432` on `pg-net`. The API uses `edge-http-net` for the Pi5 edge;
+  the worker stays on `relayhub-net` and `pg-net`. Both containers are healthy,
+  public `/readyz` is 200, and PostgreSQL sees RelayHub through PgBouncer at
+  `10.0.30.4`. Source compose and env backups are retained under
+  `/opt/apps/relayhub/prod/`.
+- PgBouncer host bind was narrowed from all interfaces to `10.10.0.5:5432`.
+  The container was recreated after clearing stale `Created` metadata, without
+  restarting Postgres. DB clients reconnected through the new PgBouncer address
+  and RelayHub, GitLab, Whiteboard, n8n and OCR public checks returned 200.
+- VictoriaMetrics host bind was narrowed to `10.10.0.5:8428`; the container was
+  recreated without changing its data volume. The LAN `/health` and TSDB API
+  probes returned 200, and the application route smoke checks remained healthy.
+  Backup: `/ssd-data/infra/docker-compose.yml.bak-bind-victoriametrics-20261020-215518`.
+- Redis host bind was narrowed to `10.10.0.5:16379`; the container remained up
+  and the application route smoke checks remained healthy. The existing Redis
+  authentication and data volume were preserved.
+- Alertmanager host bind was narrowed to `10.10.0.5:9093`; `/-/healthy` and
+  `/api/v2/status` returned 200 without changing its configuration volume.
+  Backup: `/ssd-data/infra/docker-compose.yml.bak-bind-alertmanager-20261020-215607`.
+
+N4 is complete: all four previously broad Pi5 listeners (`5432`, `16379`,
+`8428`, `9093`) now bind only to the LAN address `10.10.0.5`. The next network
+step is N5: remove remaining `homelab-net` memberships one application at a
+time, beginning with the Redis consumers after a live membership audit. MyPocket
+API and worker are the first completed N5 pair: both now use `data-net`,
+`mypocket-net`, and `mypocket-redis-net`; the Redis Compose override persists
+that network and the API route remains healthy.
 - Whiteboard: remove `homelab-net` from `backend` (replace with `pg-net` and
   `s3-net`) and from `collab` and `db-migrate`, so the DB path really uses
   `pg-net`. Not applied yet; the compose edit was blocked by the permission

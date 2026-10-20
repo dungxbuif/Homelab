@@ -36,6 +36,7 @@
           - homelab-backup@database-instances.service
           - homelab-backup@rustfs.service
           - homelab-backup@gitlab.service
+          - homelab-backup@configs.service
           - homelab-backup@retention.service
           - '-p'
           - Id,ActiveState,Result,ExecMainStatus,ExecMainExitTimestamp
@@ -64,6 +65,8 @@
           - -u
           - homelab-backup@gitlab.service
           - -u
+          - homelab-backup@configs.service
+          - -u
           - homelab-backup@retention.service
           - -o
           - cat
@@ -80,7 +83,7 @@
         argv:
           - cat
           - '{{ backup_audit_staging_roots[inventory_hostname] }}/.state/{{ item }}.success'
-      loop: '{{ ["databases", "rustfs"] if inventory_hostname == "pi5" else ["gitlab", "database-instances"] }}'
+      loop: '{{ ["databases", "rustfs"] if inventory_hostname == "pi5" else ["gitlab", "database-instances", "configs"] }}'
       register: local_markers
       changed_when: false
       failed_when: local_markers.rc != 0

@@ -27,7 +27,8 @@ class RouteContractTest(unittest.TestCase):
         catalog = render_routes.load_catalog(CATALOG)
         render_routes.validate_catalog(catalog)
         rendered = render_routes.render(catalog)
-        self.assertEqual(set(rendered["http"]["routers"]), set(rendered["http"]["services"]))
+        router_services = {router['service'] for router in rendered['http']['routers'].values()}
+        self.assertTrue(router_services <= set(rendered['http']['services']))
         self.assertIn("lan-only", rendered["http"]["routers"]["pgadmin"]["middlewares"])
         self.assertEqual(
             rendered["http"]["services"]["llm"]["loadBalancer"]["servers"][0]["url"],
@@ -37,11 +38,17 @@ class RouteContractTest(unittest.TestCase):
     def test_current_router_set_and_observed_tunnel_are_present(self):
         catalog = render_routes.load_catalog(CATALOG)
         routes = {route['id']: route for route in catalog['routes']}
-        self.assertEqual(len(routes), 24)
+        self.assertEqual(len(routes), 26)
         self.assertEqual(routes['llm']['backend']['kind'], 'tunnel')
         for route in ('semaphore', 'kubekosh'):
             self.assertEqual(routes[route]['exposure'], 'lan')
         self.assertEqual(routes['k8s-syntax']['backend']['url'], 'http://tasks.k8s-syntax:80')
+        self.assertEqual(routes['whiteboard']['backend']['url'], 'http://whiteboard-frontend:80')
+        self.assertIn('PathPrefix(`/obsidian_vault`)', routes['sync-db']['rule'])
+        self.assertEqual(routes['sync-db']['priority'], 100)
+        self.assertEqual(routes['sync-db']['service_name'], 'couchdb')
+        self.assertEqual(routes['netbird-backend']['service_name'], 'netbird-server')
+        self.assertEqual(routes['netbird-grpc']['service_name'], 'netbird-server-h2c')
 
     def test_duplicate_host_without_custom_rule_is_rejected(self):
         catalog = render_routes.load_catalog(CATALOG)

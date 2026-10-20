@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-class=${1:?usage: run-class.sh databases|database-instances|rustfs|gitlab RUN_ID [GITLAB_RUN_DIR]}
+class=${1:?usage: run-class.sh databases|database-instances|rustfs|gitlab|configs RUN_ID [GITLAB_RUN_DIR]}
 run_id=${2:-$(date -u +backup-%Y%m%d-%H%M%S)}
 gitlab_run_dir=${3:-}
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -15,7 +15,7 @@ status_root=${BACKUP_STATUS_ROOT:-$staging_root/.state}
 lock_file=${BACKUP_LOCK_FILE:-/run/lock/homelab-backup.lock}
 
 case "$class" in
-  databases|database-instances|rustfs|gitlab) ;;
+  databases|database-instances|rustfs|gitlab|configs) ;;
   *) echo "unsupported backup class: $class" >&2; exit 2 ;;
 esac
 
@@ -39,10 +39,19 @@ trap on_exit EXIT
 
 mkdir -p "$(dirname -- "$lock_file")"
 exec 9>"$lock_file"
-if ! flock -n 9; then
-  echo 'another homelab backup job holds the global lock' >&2
-  exit 75
-fi
+lock_wait=${BACKUP_LOCK_WAIT_SECONDS:-0}
+[[ "$lock_wait" =~ ^[0-9]+$ ]] || {
+  echo 'BACKUP_LOCK_WAIT_SECONDS must be a non-negative integer' >&2
+  exit 2
+}
+deadline=$((SECONDS + lock_wait))
+while ! flock -n 9; do
+  if ((SECONDS >= deadline)); then
+    echo 'another homelab backup job holds the global lock' >&2
+    exit 75
+  fi
+  sleep "${BACKUP_LOCK_RETRY_SECONDS:-30}"
+done
 
 mkdir -p "$status_root"
 # A failed or interrupted run must invalidate the previous success gate so
@@ -82,6 +91,16 @@ case "$class" in
       "$inventory" \
       "${RUSTFS_CREDENTIALS_FILE:?RUSTFS_CREDENTIALS_FILE is required}")
     summary='RustFS object backup verified'
+    ;;
+  configs)
+    stage='configuration collection'
+    pi_archive=${BACKUP_CONFIGS_PI_ARCHIVE:?BACKUP_CONFIGS_PI_ARCHIVE is required}
+    run_dir=$(python3 "$backup_scripts/run-configs-backup.py" \
+      --sources "${BACKUP_CONFIGS_SOURCES:-$app_root/backup/configs-sources.json}" \
+      --staging-root "$staging_root" \
+      --run-id "$run_id" \
+      --pi-archive "$pi_archive")
+    summary='Pi5 and VM100 configuration backup verified'
     ;;
   gitlab)
     stage='GitLab run validation'

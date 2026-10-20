@@ -1,10 +1,9 @@
 # Homelab Backup and Restore Runbook
 
-**Status:** Online adapters, encrypted Drive upload, remote restore rehearsal,
-and the replacement VM100 scheduler are deployed. The latest database, RustFS,
-and GitLab class markers are successful; the combined Semaphore read-only health
-check passed task 57 on 2026-10-15. Remote Drive restore acceptance remains a
-separate gate. The legacy
+**Status:** Online adapters, encrypted Drive upload, and the replacement VM100
+scheduler are deployed. Database, RustFS, GitLab, and configuration markers are
+successful. The `configs` class passed Restic integrity verification and a
+local-mirror scratch restore with checksum verification. The legacy
 `/ssd-data/backup/simple-backup.sh` cron entry was disabled on the Pi on
 2026-10-05; its script and historical local artifacts remain for rollback and
 audit until the replacement flow is fully verified.
@@ -13,11 +12,13 @@ audit until the replacement flow is fully verified.
 
 ## Scope
 
-This runbook covers three independent backup classes:
+This runbook covers five independent backup classes:
 
 1. PostgreSQL and CouchDB databases on Pi5.
 2. GitLab CE application data on VM100.
 3. RustFS buckets and objects on Pi5.
+4. Additional cataloged PostgreSQL instances on VM100.
+5. Selected Pi5 and VM100 configuration sources.
 
 Redis and NATS are deliberately excluded. The generic database backup does not
 include application files, Git repositories, uploads, artifacts, or object
@@ -118,6 +119,26 @@ Post-check requirements:
 - remote snapshot is readable;
 - one selected bucket/object set restores into an isolated RustFS target.
 
+### Host configurations
+
+The `configs` class combines two explicit, fail-closed inventories into one
+atomic encrypted Restic run:
+
+- Pi5 edge and stack configuration: Traefik, AdGuard, Rathole, and selected
+  Compose/env files;
+- VM100 application declarations and selected environment/config files.
+
+It excludes database volumes, backup staging, build caches, old releases, and
+source/data directories. The Pi exporter preserves root-owned AdGuard files by
+using the existing `alpine:3.22` image with `--network none`; it does not
+change file permissions or mount the Docker socket. Staging is mode `0700`,
+selected files are mode `0600`, and the collector refuses a missing required
+source or an unsafe archive member.
+
+The class is accepted only after Restic upload, remote post-check, and a
+scratch restore. Its timer is installed but currently disabled while the first
+manual snapshot gate is pending.
+
 ## Schedule
 
 Jobs run serially behind one global lock:
@@ -125,18 +146,23 @@ Jobs run serially behind one global lock:
 | Local time | Job | Service interruption |
 |---|---|---|
 | 01:00 | PostgreSQL + CouchDB | None |
+| 01:30 | Additional PostgreSQL instances | None |
+| 02:00 | RustFS object export | None |
 | 02:30 | GitLab native backup + config/secrets | None |
-| 04:30 | RustFS object export | None |
-| 05:30 | Verify repositories and apply retention | None |
+| 06:30 | Verify repositories and apply retention | None |
+| 08:00 | Read-only health check | None |
+| 09:00 | Host configurations | Disabled until first manual acceptance |
 
-If a prior job is still running, the next job waits or reports a missed window;
-it must not overlap production backup work.
+If a prior job is still running, a VM100 scheduled class waits up to one hour
+for the shared lock and then reports a missed window; it must not overlap
+production backup work. Direct Pi executor calls fail fast by design.
 
 The executable flow is defined in `automation/backup-runner/`:
 
 - `run-class.sh` performs one class in export, upload, check, and Mezon
   post-check order;
-- `run-retention.sh` owns the separate 05:30 repository maintenance lock;
+- `run-retention.sh` owns the Pi repository maintenance lock; VM100 separately
+  verifies the additional-instance and config repositories;
 - `health-report.py` emits a secret-free status summary for Semaphore and
   alerting;
 - `schedule.yaml` is the single schedule source. Do not add a second cron or
@@ -149,15 +175,17 @@ cron entry.
 
 ## Google Drive and Retention
 
-Use three encrypted restic repositories via a dedicated rclone Google Drive
+Use five encrypted restic repositories via a dedicated rclone Google Drive
 remote pinned to the `Homelab Backup` folder. The populated repositories are
 under the existing `homelab-backups/` child, so the configured `DRIVE_ROOT` is
 `homelab-backups`:
 
 ```text
 homelab-backups/databases
+homelab-backups/database-instances
 homelab-backups/gitlab
 homelab-backups/rustfs
+homelab-backups/configs
 ```
 
 Retention policy:
@@ -168,10 +196,10 @@ Retention policy:
 
 The retention job runs `restic check` first and prunes only the matching
 repository after a successful upload. It must not use `rclone sync --delete`,
-Drive-wide age deletion, or a path outside the three repositories below the
+Drive-wide age deletion, or a path outside the five repositories below the
 pinned `Homelab Backup/homelab-backups` root.
 
-After all three repository checks pass, the same retention window keeps the two
+After all required repository checks pass, the same retention window keeps the two
 newest completed local staging runs per class on the export host. It never
 removes an `.incomplete` run automatically.
 
@@ -219,9 +247,11 @@ backup/scripts/post-check-report.sh \
    target.
 2. Restore CouchDB system/security metadata and selected documents.
 3. Restore RustFS bucket settings/IAM metadata and selected objects.
-4. Restore GitLab on the exact source version and edition, then apply the
+4. Restore the selected configs snapshot into a scratch directory and compare
+   checksums before considering any live replacement.
+5. Restore GitLab on the exact source version and edition, then apply the
    configuration/secrets artifact.
-5. Run representative application checks before any production cutover.
+6. Run representative application checks before any production cutover.
 
 Production overwrite requires a separate approval. Monthly isolated restore
 tests are mandatory before claiming operational recovery.
@@ -238,6 +268,10 @@ tests are mandatory before claiming operational recovery.
   replace remote restore testing.
 - The Mezon webhook secret is intentionally not stored in this repository.
 - Redis recovery is out of scope.
+- The `configs` class stores selected host configuration and secret-bearing
+  files in its own encrypted Restic repository. Restore drills mirror the
+  repository with rclone before restoring locally; this avoids making a large
+  restore depend on a long-lived rclone stdio session.
 - A successful database backup does not restore application files or RustFS
   objects.
 - GitLab recovery requires PostgreSQL globals, the exact GitLab version and

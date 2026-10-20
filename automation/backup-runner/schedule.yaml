@@ -11,8 +11,12 @@ jobs:
     schedule: "30 2 * * *"
     command: run-class.sh gitlab gitlab-{utc_timestamp} /path/from/vm100/native-run/complete
   - name: rustfs
-    schedule: "30 4 * * *"
+    schedule: "0 2 * * *"
     command: run-class.sh rustfs rustfs-{utc_timestamp}
+  - name: configs
+    schedule: "0 9 * * *"
+    command: run-class.sh configs configs-{utc_timestamp}
+    enabled: false
   - name: retention
-    schedule: "30 5 * * *"
+    schedule: "30 6 * * *"
     command: run-retention.sh

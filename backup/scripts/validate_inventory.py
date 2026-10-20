@@ -20,7 +20,7 @@ def validate(inventory: dict, policies: dict) -> list[str]:
     if policies.get("version") != 1:
         errors.append("policies.version must be 1")
     policy_map = policies.get("policies")
-    if not isinstance(policy_map, dict) or not {"db-default", "db-instance-default", "rustfs-default", "gitlab-default"}.issubset(policy_map):
+    if not isinstance(policy_map, dict) or not {"db-default", "db-instance-default", "rustfs-default", "gitlab-default", "configs-default"}.issubset(policy_map):
         errors.append("required backup policies are missing")
     for policy_id, policy in (policy_map or {}).items():
         if not isinstance(policy, dict) or any(not isinstance(policy.get(k), int) or policy[k] < 0 for k in ("daily", "weekly", "monthly")):

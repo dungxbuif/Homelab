@@ -3,9 +3,11 @@ set -euo pipefail
 
 root=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 runner="$root/automation/backup-runner/run-class.sh"
+scheduled_runner="$root/automation/backup-runner/run-vm100-scheduled.sh"
 retention="$root/automation/backup-runner/run-retention.sh"
 
 grep -q 'flock' "$runner"
+grep -q 'BACKUP_LOCK_WAIT_SECONDS' "$runner"
 grep -q 'run-database-backup.py' "$runner"
 grep -q 'run-rustfs-backup.sh' "$runner"
 grep -q 'run-instance-backup.py' "$runner"
@@ -16,6 +18,8 @@ if grep -q '| tail -n 1' "$runner"; then
 fi
 grep -q 'upload-restic.sh' "$runner"
 grep -q 'post-check-report.sh' "$runner"
+grep -q 'weekly-integrity' "$scheduled_runner"
+grep -q 'run-integrity-check.sh' "$scheduled_runner"
 grep -q 'backup runner failed before remote post-check' "$runner"
 grep -q 'stage=' "$runner"
 grep -q 'backup_succeeded=true' "$runner"

@@ -1,5 +1,7 @@
+import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 import yaml
@@ -9,6 +11,18 @@ DIGEST = 'sha256:c128afca4e026cfc4f33d4cf1c77adc8cb08f01215a3f2bde76a1ecca12b79f
 
 
 class DeployContractTests(unittest.TestCase):
+    def setUp(self):
+        self.test_env = os.environ.copy()
+        self.test_env["PYTHON_BIN"] = sys.executable
+
+    def run_verify(self, *args):
+        return subprocess.run(
+            ['bash', str(ROOT / 'automation/scripts/verify-deploy.sh'), *args],
+            capture_output=True,
+            text=True,
+            env=self.test_env,
+        )
+
     def test_family_runtime_is_catalogued_but_not_release_ready(self):
         services = {x['id']: x for x in yaml.safe_load((ROOT / 'automation/stacks/catalog.yml').read_text())['services']}
         family = services['family-tree']
@@ -20,9 +34,8 @@ class DeployContractTests(unittest.TestCase):
         self.assertFalse(family['deployable'])
         self.assertIsNone(family['rollback_image'])
         self.assertEqual(family['source_mount'], '/opt/apps/family-tree/src')
-        result = subprocess.run(['bash', str(ROOT / 'automation/scripts/verify-deploy.sh'),
-                                 '--service', 'family-tree', '--image', DIGEST,
-                                 '--environment', 'production'], capture_output=True, text=True)
+        result = self.run_verify('--service', 'family-tree', '--image', DIGEST,
+                                 '--environment', 'production')
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('not release-ready', result.stderr)
 
@@ -36,9 +49,8 @@ class DeployContractTests(unittest.TestCase):
             with tempfile.TemporaryDirectory() as tmp:
                 path = Path(tmp) / 'catalog.yml'
                 path.write_text(yaml.safe_dump(candidate))
-                result = subprocess.run(['bash', str(ROOT / 'automation/scripts/verify-deploy.sh'),
-                                         '--catalog', str(path), '--service', 'homepage', '--image', DIGEST,
-                                         '--environment', 'production'], capture_output=True, text=True)
+                result = self.run_verify('--catalog', str(path), '--service', 'homepage', '--image', DIGEST,
+                                         '--environment', 'production')
             self.assertNotEqual(result.returncode, 0, (field, value))
 
     def test_catalog_matches_observed_runtime_not_proposed_limits(self):
@@ -60,9 +72,8 @@ class DeployContractTests(unittest.TestCase):
         self.assertEqual(services['mypocket']['health']['path'], '/api/v1/health')
 
     def verify(self, digest):
-        return subprocess.run(['bash', str(ROOT / 'automation/scripts/verify-deploy.sh'),
-                               '--service', 'homepage', '--image', digest,
-                               '--environment', 'production'], capture_output=True, text=True)
+        return self.run_verify('--service', 'homepage', '--image', digest,
+                               '--environment', 'production')
 
     def test_only_catalog_digest_passes(self):
         self.assertEqual(self.verify(DIGEST).returncode, 0)

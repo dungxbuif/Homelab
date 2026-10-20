@@ -161,11 +161,16 @@ def render(data: dict) -> dict:
             router["middlewares"] = route_middlewares
         if route.get("priority"):
             router["priority"] = route["priority"]
-        routers[route_id] = router
+        service_name = route.get("service_name", route_id)
         load_balancer = {"servers": [{"url": route["backend"]["url"]}]}
+        service = {"loadBalancer": load_balancer}
+        if service_name in services and services[service_name] != service:
+            fail(f"{route_id}: service_name {service_name!r} has conflicting backends")
+        router["service"] = service_name
+        routers[route_id] = router
         if route_id in PASS_HOST_ROUTES:
             load_balancer["passHostHeader"] = True
-        services[route_id] = {"loadBalancer": load_balancer}
+        services[service_name] = service
     return {"http": {"middlewares": middlewares, "routers": routers, "services": services}}
 
 

@@ -20,6 +20,177 @@ timestamp: 2026-07-03T15:14:00Z
 > Every significant change appends to this log; the current version marker also
 > lives in [`index.md`](../index.md) and [`MAIN.md`](./MAIN.md).
 
+## 2026-10-21 - Runtime audit continuation
+
+- **Backup and capacity check:** VM100 has no failed `homelab-backup` units and
+  retains `39G` free (`81%` used). The constrained Docker maintenance service
+  completed with `Result=success`; there are no Dead containers. The stopped
+  Compose-era `vm100-family-tree-app` container and its dangling `oven/bun`
+  image were removed after verifying that the active Swarm `family-tree`
+  service remained healthy and its bind-mounted source/uploads were untouched.
+- **AI model audit:** OpenClaw, Whiteboard and MyPocket API still select
+  `DeepSeek-V4.1-Flash`. `mypocket-worker` still reports the historical
+  `qwen/qwen3.6-35b-a3b`; the source selector map is already aligned, but the
+  Swarm service spec can only be changed from the Pi5 manager. No speculative
+  worker restart was performed.
+- **VM100 host identity cleanup:** replaced the retired `k8s-cp-1` alias in
+  `/etc/hosts` with `127.0.1.1 vm100-prod`, preserving a timestamped backup at
+  `/etc/hosts.bak-k8s-alias-20261020-205035`. `sudo` no longer warns,
+  systemd reports `running`, and the running-container count stayed at `34`.
+- **Backup health recheck:** manually started `homelab-backup-health.service`
+  after Docker cleanup. It exited successfully with a free lock, no failed
+  backup units, and the configured timers all enabled/active. Config backup is
+  scheduled for `2026-10-21 06:00 UTC`; weekly deep verification is scheduled
+  for `2026-10-25 02:00 UTC`. The health output includes the remote Pi5
+  database/RustFS markers, so their local absence from VM100's `.state` folder
+  is expected.
+- **Retired build-image cleanup:** removed unreferenced `node:26.7.0-bookworm`
+  and `node:24-bookworm` images (about `3.3G` total). No running or stopped
+  container referenced either image; production/rollback images were preserved.
+  VM100 increased from `39G` to `42G` free (`79%` used), with no unhealthy
+  containers after the cleanup.
+- **Docker volume audit:** removed 17 anonymous 4-KiB volumes and one additional
+  empty Docker metadata volume. Retained the remaining non-empty dangling
+  volumes: two PostgreSQL data directories created on 2026-10-19, the
+  `workshop-files` registry metadata/layers volume, and the named
+  `mypocket-prod-backups` volume containing the pre-migration dump. No database
+  or registry volume was deleted as part of cleanup.
+- **Proxmox VM recovery audit:** read-only API verification confirmed VM100 is
+  running with the documented `6 vCPU / 16 GiB / 200 GiB` allocation; VM IDs
+  101 and 102 are absent and only template 9000 remains. VM100 has one
+  pre-Docker-upgrade snapshot (`pre-docker-ce-20261014`) but no `vzdump` backup.
+  The only backup-capable `local` storage has about `89.8G` free while the
+  guest disk is `200G` and the guest uses about `153G`, so no same-storage
+  vzdump was started. B3 remains open until a separate NAS/PBS/attached target
+  is available.
+- **Automation test runtime:** made `audit-runtime.sh` honor `PYTHON_BIN` and
+  updated the policy contract test to pass its active interpreter. The pinned
+  execution environment remains the default; local tests no longer fall back to
+  a system Python missing `PyYAML`/`jsonschema`. Route, network-drift, policy,
+  evidence, host-observer and runtime-evidence tests now pass (`46` tests).
+- **Tracked-file credential audit:** `automation/scripts/check-secrets.sh`, the
+  secret-output scan and toolchain-security tests pass. This verifies the
+  current tracked tree only; it does not clear the open S1 finding for secrets
+  that may already exist in public Git history and still require rotation.
+- **Deploy contract test runtime:** aligned `verify-deploy.sh` and its contract
+  tests with the same `PYTHON_BIN` execution-environment boundary used by the
+  runtime audit. Deploy/policy contract tests now pass (`11` tests), including
+  the approved Homepage digest and rejection of the non-release-ready Family
+  Tree service. This validates the gate only; it does not enroll a generic
+  production deploy workflow.
+- **Cross-platform image-scan tests:** `scan-image.sh` now resolves GNU
+  `timeout`/Homebrew `gtimeout` when available. The pinned execution image
+  still enforces the configured start timeout; macOS local tests use the
+  scanner's direct start path only when neither utility exists. Full automation
+  discovery now passes: `121` tests plus `29` Ansible tests.
+
+## 2026-10-20 - VM100 capacity protection (in progress)
+
+- **Backup health runtime calibration:** historical `databases` runs completed
+  in roughly 92 to 104 minutes, while health used a 30-minute active-unit
+  limit. Raised the databases limit to two hours on VM100 and Pi5 and added a
+  regression test for a 5,600-second run. This removes the false overlong
+  failure without changing the four-hour SSH safety timeout; the current run
+  remains allowed to finish and will be checked at idle.
+
+- **Daily backup health summary:** the scheduled health service now sends a
+  successful one-line Mezon notification in addition to failure alerts. The
+  script defaults to quiet success for ad-hoc checks; only the systemd service
+  enables `BACKUP_HEALTH_NOTIFY_SUCCESS=true`.
+- **Backup schedule separation:** `database-instances` was moved from 01:30 to
+  03:00 Asia/Ho_Chi_Minh (20:00 UTC). The previous 30-minute offset overlapped
+  the normal 92-104 minute `databases` run and caused lock contention; the
+  timer is now separated by two hours.
+
+- **OpenClaw provider verification:** verified the live VM100 task uses the
+  existing `fpt-deepseek` provider at `https://token-api.fpt.ai/v1` with
+  default model `DeepSeek-V4.1-Flash`. The credential remains runtime-only via
+  `OPENAI_API_KEY`; no secret was written to docs or emitted in verification
+  output. Host/container config matched, so no restart or unrelated service
+  change was made. See
+  [OpenClaw DeepSeek verification](./deployments/openclaw-deepseek-2026-10-20.md).
+- **AI model audit and rollout:** audited production AI selectors with values
+  redacted. Only `mypocket-api` used `DeepSeek-V4-Flash`; its server-side
+  selector now uses `DeepSeek-V4.1-Flash`. The provider catalog, API health and
+  docs probes passed. `mypocket-worker` uses Qwen and was left unchanged.
+  OpenClaw was subsequently switched to the verified FPT DeepSeek credential
+  and now uses `DeepSeek-V4.1-Flash`. `whiteboard-backend` uses a separate DeepSeek endpoint with
+  `deepseek-chat`/`deepseek-reasoner`; its target-model compatibility is not
+  assumed and remains a separate verification item. Stirling's paused network
+  migration was first rolled back to its known-good state, then completed with
+  `stop-first` after an H2/config backup. Stirling is now healthy on
+  `edge-http-net` and its public probe returns HTTP 200.
+- **NetBird route repair:** corrected the remaining backend and h2c routers from
+  the retired `tasks.netbird-server` name to the live Swarm service DNS name
+  `tasks.netbird_netbird-server`; restarted the actual Pi5 Traefik container
+  after backing up its dynamic config. Public root/API/backend probes now
+  return 200/401/404 rather than 502.
+- **VM100 maintenance verification:** ran the constrained Docker maintenance
+  service successfully. It found zero eligible Dead tasks, reclaimed no
+  protected data, and left 32 running task IDs unchanged; VM100 remains at 52G
+  free / 74% used. An older lock-permission failure remains in the journal, but
+  the latest run exited 0.
+- **Backup control-flow verification:** health reporting, scheduler contract,
+  runner contract and retention-gate tests passed locally. Drive restore remains
+  unverified and therefore stays open in the backlog.
+- **Whiteboard AI rollout:** switched `whiteboard-backend` from the separately
+  failing DeepSeek endpoint to the verified FPT endpoint and set both fast and
+  reasoning selectors to `DeepSeek-V4.1-Flash`. Container and `/healthz` passed;
+  real business inference remains pending UAT.
+- **Whiteboard network cleanup:** removed the frontend's `homelab-net`
+  membership, persisted `edge-http-net` in its Compose file, recreated only the
+  frontend, and verified healthy/public HTTP 200. Compose backup:
+  `/opt/apps/whiteboard/docker-compose.prod.yml.bak-frontend-edge-20261020-153520`.
+- **KubeKosh network cleanup:** moved the LAN-only learning container from
+  `homelab-net` to `edge-http-net`, recreated it with its persistent data
+  untouched, and verified the embedded node Ready plus public HTTPS HTTP 200.
+- **CouchLoom network audit:** retained its `homelab-net` membership because
+  `vaults.json` resolves the Pi5 CouchDB service as `couchdb:5984`. This remains
+  an intentional data-client exception until a dedicated CouchDB network path
+  is introduced and verified.
+- **GitLab network cleanup:** created `gitlab-net`, attached Redis, moved GitLab
+  to `edge-http-net + gitlab-net + pg-net`, and moved all three GitLab tunnel
+  clients to `gitlab-net` only. The Redis Compose override was validated and
+  GitLab public HTTPS returned HTTP 200 after its controlled Omnibus restart.
+- **Pi5 Compose drift reconciliation:** updated the source Compose declarations
+  for the live RustFS and CouchDB edge/data networks, validated the full Compose
+  config, and did not recreate any service. Backup:
+  `/ssd-data/infra/docker-compose.yml.bak-compose-reconcile-20261020-155327`.
+
+- Added `automation/maintenance/systemd/journald.conf.d/60-homelab-retention.conf`
+  for a `1G` persistent journal budget, `20G` free-space floor, `128M` journal
+  file cap and `14-day` retention. Docker and application containers are not
+  restarted by this change. After rotation/vacuum, VM100 journald measured
+  `992.2M` and `/` measured `50G` free (`75%` used), compared with `3.3G` and
+  `48G` before the change. The 32 running container IDs were unchanged. B6
+  remains open for Docker per-container log policy, threshold tests and
+  retired-image review; VM100 is a Swarm worker, so service-level logging
+  policy must be audited from the manager before any update.
+- Added a manager-side read-only Swarm logging audit. It inventories only
+  service name, image and log bounds, and makes no service mutation.
+- **PostgreSQL network isolation (2026-10-20):** removed the live `postgres`
+  endpoint from `homelab-net` after confirming all database consumers on
+  `pg-net`; terminated one idle legacy PgBouncer backend session, which
+  reconnected through `10.0.30.4`. Postgres stayed healthy and RelayHub,
+  GitLab, Whiteboard and n8n returned HTTP 200. Compose backup remains on Pi5.
+- **NetBird PgBouncer migration (2026-10-20):** moved
+  `netbird_netbird-server` from `homelab-net` to `pg-net` while preserving
+  `netbird-net` and `edge-http-net`. The task converged, used its existing
+  PgBouncer DSNs, root domain stayed HTTP 200, and six legacy `172.30.0.91`
+  client sockets were removed.
+- **macOCR private-network migration (2026-10-20):** moved macOCR from
+  `homelab-net` to `pg-net` plus `macocr-redis-net`, persisted the Redis
+  override, and verified OCR `/healthz` and `/docs/` returned 200. Its old
+  PgBouncer sockets on `172.30.0.92` are gone.
+- **RelayHub database network migration (2026-10-20):** moved API and worker
+  from `10.10.0.5:5432` to `pgbouncer:6432` on `pg-net`; API also uses
+  `edge-http-net`. Both containers are healthy, public `/readyz` is 200, and
+  PostgreSQL shows RelayHub through PgBouncer at `10.0.30.4`.
+- **PgBouncer LAN bind hardening (2026-10-20):** narrowed the host listener
+  from `0.0.0.0:5432` to `10.10.0.5:5432`. PgBouncer was recreated after
+  clearing stale container metadata; Postgres was not restarted, all checked
+  routes returned 200, and RelayHub worker recovered healthy.
+
 ## 2026-10-19 - Audit and network hardening (in progress)
 
 - **Audit:** full security, backup and automation audit plus a network and
@@ -241,7 +412,8 @@ timestamp: 2026-07-03T15:14:00Z
 
 - **MyPocket AI provider config sync (2026-09-24):** aligned production
   `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`, `OCR_API_URL`, and `OCR_API_KEY`
-  with the local development config; DeepSeek-V4-Flash is configured. Values
+  with the local development config; DeepSeek-V4.1-Flash is now configured in
+  production. Values
   belong only in gitignored `local_vars.json` → `MYPOCKET_SECRETS` and the
   ignored MyPocket `backend/.env.local`, never in docs or commits. API task
   healthy; web and API health returned 200. Provider inference remains pending
@@ -685,3 +857,200 @@ timestamp: 2026-07-03T15:14:00Z
 - **Storage**: Selected Longhorn v1.7.x for manual installation (replica count 2).
 - **Ingress**: Established Traefik Ingress on K8s VIP `10.10.0.30` with Caddy as the main entry proxy.
 - **Topology**: Joined nodes `k8s-cp-2` and `k8s-cp-3` to cluster and installed Cilium CNI.
+## 2026-10-20 — Network hardening N4 completed
+
+- Bound Pi5 PgBouncer `5432`, Redis `16379`, VictoriaMetrics `8428`, and
+  Alertmanager `9093` to `10.10.0.5` instead of all interfaces.
+- Recreated only VictoriaMetrics and Alertmanager; persistent volumes and
+  configuration were preserved. LAN health probes returned 200, and the
+  RelayHub, GitLab, Whiteboard, n8n, OCR and MyPocket API-only route checks
+  remained consistent with their documented behavior (`money` root is
+  intentionally 404 while MyPocket web is stopped).
+- Backups retained on Pi5:
+  `/ssd-data/infra/docker-compose.yml.bak-bind-victoriametrics-20261020-215518`
+  and `/ssd-data/infra/docker-compose.yml.bak-bind-alertmanager-20261020-215607`.
+
+## 2026-10-20 — Network hardening N5 first app migration
+
+- Attached Pi5 `redis-prod` to the existing `mypocket-redis-net` with the
+  stable `redis-prod` alias and persisted that membership in the Redis Compose
+  override.
+- Removed `homelab-net` from MyPocket API and worker one service at a time.
+  The API needed `edge-http-net` added explicitly after the first probe exposed
+  the old implicit ingress dependency; the task recovered healthy and the
+  public API health/docs probes returned 200/302.
+- The first attempted API update rolled back safely because the Redis overlay
+  endpoint was missing; the failed task was inspected and the service returned
+  to its prior healthy state before retrying.
+
+## 2026-10-20 — Network hardening N5 HTTP app migrations
+
+- NetBird dashboard moved from `homelab-net` to `netbird-net` plus
+  `edge-http-net`. The active Traefik route was corrected from the stale
+  `tasks.netbird-dashboard` name to `tasks.netbird_netbird-dashboard`; public
+  `netbird.dungxbuif.com` returned 200 after reload.
+- K8s Syntax moved to `edge-http-net`; root returned 200 and `src/app.mjs`
+  retained `application/javascript` content type.
+- OpenClaw moved to `edge-http-net`; its persisted
+  `gateway.trustedProxies` now includes only the edge overlay
+  `10.0.1.0/24` in addition to the existing trusted peers. The service became
+  healthy and the public Control UI returned 200. State backup:
+  `/opt/apps/openclaw/state/openclaw.json.bak-edge-net-20261020-150621`.
+
+## 2026-10-20 — Backup health B5 lock-aware check
+
+- Added class-specific runtime limits and lock-owner-aware reporting to
+  `backup/scripts/check-backup-health.sh`. A valid in-progress backup no longer
+  appears as a failed health run; a stale or overlong unit, or a lock without a
+  matching unit, remains a failure.
+- Fixed the shared-lock open path for hosts using `fs.protected_regular`: the
+  health process creates the lock only when absent and opens it read-only before
+  calling `flock`.
+- Deployed the identical script to VM100 and Pi5. The VM100 systemd health
+  service returned exit `0`; the restricted Pi health command returned success.
+  Script SHA-256: `837f566d6d55e78ddf4280f5cd5f506a98b1e551daaa8931cdd2c2d46bd875b5`.
+- Focused health tests (8), scheduler contract tests, and `git diff --check`
+  passed. The remaining B5 work is schedule/cadence separation, not the
+  lock-aware health behavior.
+
+## 2026-10-20 — Route catalog source repair E2/E3
+
+- Repaired the two NetBird backend entries that had been dedented outside
+  their `backend` maps. The catalog now parses and renders 26 routers and 25
+  shared backend services with the current Swarm service names; the live
+  Whiteboard route is also declared.
+- Regenerated `automation/routes/generated/pi5-traefik.yml`. All 13 route
+  contract tests pass; the artifact was subsequently published and smoke-tested
+  in the following entry.
+
+## 2026-10-20 — Backup schedule separation B5
+
+- Deployed the new local schedule to VM100: RustFS at 02:00, GitLab at 02:30,
+  retention at 06:30, and health at 08:00. Database and instance backups remain
+  at 01:00 and 01:30. Timer reload/restart caused one `Persistent=true`
+  catch-up retention run immediately; it is running under the existing lock and
+  is being observed to terminal completion.
+- Source schedule and timer contract tests pass. This closes the schedule
+  deployment portion of B5; three consecutive clean nights remain for final
+  acceptance.
+
+## 2026-10-20 — Configuration backup inventory B2
+
+- Added `backup/configs-sources.json` with explicit live Pi5 and VM100 sources,
+  required/optional classification, and exclusions for runtime data and old
+  stacks.
+- Added the standalone fail-closed validator
+  `backup/scripts/validate-config-sources.py`. Three local tests pass; live
+  read-only validation found all six required Pi5 sources and all five required
+  VM100 sources. The configs timer remains disabled until collection, retention,
+  and scratch-restore integration are complete.
+
+## 2026-10-20 — Route catalog publish E2/E3
+
+- Published the validated generated catalog atomically to Pi5 Traefik after
+  preserving a timestamped rollback copy. The catalog now owns the live
+  Whiteboard route, the CouchDB/Sync-DB split, and explicit shared NetBird
+  service names.
+- Route contract tests passed. Whiteboard, KubeKosh, NetBird, and OpenClaw
+  returned 200; Sync-DB returned the expected 401 at `/` and 404 for the
+  disallowed `/_utils/` path. No Traefik configuration errors appeared in the
+  reload window.
+
+## 2026-10-20 — Configuration backup class integration B2
+
+- Added the `configs` Restic repository mapping at
+  `homelab-backups/configs`, plus a 14/8/12 retention policy and restore
+  admission.
+- Added VM100-only config retention and bounded local cleanup. It is skipped
+  until the first successful config marker, so the existing retention job is
+  unchanged while the class is disabled.
+- Added a disabled 09:00 schedule declaration. No timer was enabled and no
+  upload was started in this step.
+- Config tests (5), scheduler contract, runner contract, shell syntax, and
+  inventory validation passed. Manual upload and scratch restore remain the
+  next gates.
+
+## 2026-10-20 — Configuration backup safety gates B2
+
+- Closed the pre-enable audit findings: VM100 Ansible staging now includes the
+  collector, validator, config retention, and inventory; the Pi health repair
+  playbook includes the exporter; the temporary Pi archive uses `mktemp` under
+  `umask 077`; and the collector verifies every required Pi path after archive
+  extraction.
+- Added `configs` runtime limits to health reporting and installed the
+  disabled configs timer with the same `Asia/Ho_Chi_Minh` calendar format as
+  the existing timers.
+- Deployed the corrected runtime files to VM100/Pi5. The disabled timer is
+  confirmed `disabled`/`inactive`; no restart or production service mutation
+  was performed.
+- Scratch collection remains verified; the first encrypted upload is waiting
+  for the existing long-running retention check to release the global lock.
+
+## 2026-10-20 — Scheduled backup lock wait
+
+- VM100 scheduled backup classes now wait up to one hour for the shared backup
+  lock and retry every 30 seconds instead of failing immediately when a long
+  retention check is in progress. Direct Pi executor calls remain non-blocking.
+- The runner contract, shell syntax, config tests, and Ansible deployment
+  contract passed; the updated scheduler and runner were deployed to VM100
+  without restarting the active retention job.
+
+## 2026-10-20 — Configuration repository preflight B2
+
+- Started the first real `configs` service with the bounded lock wait. It
+  collected a complete atomic run, then stopped at Restic preflight because
+  the dedicated `homelab-backups/configs` repository does not exist.
+- This is an expected fail-closed result: the uploader refused implicit
+  repository initialization and no config data was uploaded. After the active
+  retention lock releases, initialize the repository explicitly, rerun the
+  class, verify the snapshot, and perform the scratch restore before enabling
+  the timer.
+
+### 2026-10-21 - Backup retention catch-up and remote-runner guard
+
+- The latest VM100 health run passed for the existing database, instance, and RustFS classes; the first `configs` run correctly failed closed because its dedicated Restic repository was not initialized.
+- A catch-up retention run remains active on Pi5 and is currently in a Restic integrity check. It is being preserved until terminal rather than interrupted.
+- Added a bounded 4-hour timeout to VM100-to-Pi5 backup SSH commands and taught Pi health to recognize an active forced-SSH backup process while its lock is held. Unit tests and scheduler contract tests pass.
+- The timeout/health change is staged in the workspace but publication is gated until the active retention unit becomes idle.
+- The first configs repository bootstrap exposed a second runtime issue: the
+  Restic container did not have an explicit writable cache location. The
+  wrapper now sets `HOME=/tmp` and `RESTIC_CACHE_DIR=/tmp/restic-cache`; a
+  local repository snapshot probe passes with this configuration.
+- The first configs upload completed with 44 new files and a successful
+  integrity check. Read-only snapshot metadata and restore operations now use
+  `--no-lock` after the verified upload/check, preventing stale lock objects
+  from blocking post-check or scratch restore indefinitely.
+- The configs acceptance run completed as snapshot
+  `d4ea082a8334cd8baab64c7afa1daf37d98a1eca7661e6b149eefc54030a7025`.
+  Restic reported no errors; a local rclone mirror restored 44 files / 361 MiB
+  and `sha256sum -c` passed. The scratch copy is removed after verification;
+  the configs timer is ready to enable.
+- During the first post-acceptance health run, a live Pi5 database job exposed
+  a regex gap in remote-process detection (`run-class.sh` was not matched) and
+  a missing-marker warning during an active run. The pattern and marker logic
+  were corrected so active classes report `deferred_active` until their marker
+  is written.
+
+### 2026-10-21 - Bound nightly Restic verification
+
+- Changed upload and retention verification to run structure-only `restic check` by default.
+- A deep payload read is now explicit via `RESTIC_READ_DATA_SUBSET=1/10`, reserving Google Drive pack reads for the weekly integrity window.
+- Added contract coverage and updated the backup runner documentation and B5 backlog status.
+- Added the Sunday `homelab-backup-verify-weekly` service/timer. It performs the explicit 10% payload check across Pi5 and VM100 repositories under the same lock, without pruning.
+- Spaced the production schedule to 01:00 databases, 03:00 instances, 04:00 RustFS, 05:00 GitLab, 10:00 retention, 12:00 health and 13:00 configs after a RustFS lock collision at the former 02:00 slot.
+- Ran the bounded local staging cleanup on VM100 and Pi5. It removed one old completed `database-instances` run and one old completed `databases` run; two completed runs and all incomplete/active runs were preserved. VM100 had 33G free while GitLab catch-up was writing; Pi5 had 278G free.
+- Restore drill passed for `database-instances` snapshot `9bb08b02efe6c5fc1e7163cd7de74927c8e3017e25b8df2f91b2fb63e032d347`: 7 restored files, all checksum entries passed, scratch target removed. B1 remains open for PostgreSQL/CouchDB, RustFS and GitLab coverage.
+- Added health disk thresholds: 85% usage warns and 92% fails, while retaining the 10 GiB minimum-free-space gate.
+- Recovered the interrupted `databases-20261020-180001` run after the old uploader parse failure. Reused its completed export, reran the new deduplicated upload/structural check, wrote marker success, and received snapshot `45fc58a1c463cb5ec85a008007e26ee1f0e5376d40ee1f858d2afe50436762cb`. Live health now exits 0 with only the expected 86% disk warning while GitLab is active.
+- **GitLab backup follow-up:** native export `gitlab-20261020-190208` completed with an 8.74 GB archive and Restic upload; the mandatory structural check was still active at 20:02 UTC, so the success marker and cleanup were not assumed. VM100 was 87% used with about 26 GB free. Tagged rollback images and a stopped family-tree reference were observed; no image was removed while the backup was active.
+- **Backup upload latency fix prepared:** Drive index enumeration made preflight and inline structural checking hold backup locks for minutes. `upload-restic.sh` now defaults to `cat config` preflight and takes the snapshot ID from the backup summary; structural checking remains in retention/deep-verify, with explicit opt-ins for snapshot preflight and inline check. Upload immutability, default-deferred behavior, stale-lock and Restic contract tests pass locally. Deployment waits for the active database-instances check to finish.
+- **Backup transport acceptance 2026-10-21:** controlled `database-instances-20261020-202507` completed with snapshot `164f85eb25e03f936a9cba0c29185d00712bf4cfbc155d1818726224ea3e72c7`. The Drive pacer default is now `100ms` with burst `1`; the prior `10s` default was the observed lock/latency bottleneck. GitLab run `gitlab-20261020-190208` passed archive checksums 4/4 and remote snapshot verification (`a0cbb341f856d2ef324cb57b4ddb29dc4eab23f22c6909e9c0d131531cac26fb`); its success marker and Mezon success were restored. One old completed staging run was removed. VM100 ended at 83% used with 34GB free; health exited 0.
+- **VM100 disk cleanup 2026-10-21:** read-only inventory found no Dead Swarm tasks. After checking that no container referenced the retired Educates image, removed the created `tmpfs-repro-repro-1` test container and `ghcr.io/educates/educates-base-environment:3.8.0` (5.28GB). Docker daemon remained healthy; VM100 ended at 81% used with 39GB free and 34 running containers.
+- **Docker maintenance guard 2026-10-21:** `docker system df` was reproduced as a potentially hanging read when stale layer metadata is present. Added a 30-second timeout with a non-fatal warning, deployed the maintenance script to VM100, and ran the service successfully: no Dead tasks, running containers unchanged, and the accounting report completed. The timer no longer turns a reporting failure into a cleanup failure.
+- **AI model audit 2026-10-21:** VM100 runtime inspection found OpenClaw, Whiteboard and MyPocket API already on `DeepSeek-V4.1-Flash`; `mypocket-worker` still used `qwen/qwen3.6-35b-a3b`. OmniScan's production template and documentation were updated to `DeepSeek-V4.1-Flash`. The worker update is intentionally pending until Pi5 manager SSH recovers; VM100 cannot mutate Swarm service specs.
+- **AI model audit automation 2026-10-21:** added the secret-free read-only checker `automation/scripts/audit-ai-models.sh`, contract-tested it, and installed it on VM100. Live result: OpenClaw, both Whiteboard selectors, and MyPocket API pass; only MyPocket worker fails with the old Qwen selector. The checker is now the verification gate for the pending manager-side update.
+- **Manager transport verification 2026-10-21:** Semaphore task `#139` reached the Pi5 approval assertion but failed as `UNREACHABLE` on the first remote install task. This confirms the pending model update is blocked by Pi5 transport/SSH, not by the Ansible playbook or model value; no repeated retry job was left active.
+- **AI source-config reconciliation 2026-10-21:** aligned `OMNISCAN_SECRETS.LLM_MODEL` and `MYPOCKET_SECRETS.AI_MODEL` in `local_vars.json` to `DeepSeek-V4.1-Flash`. JSON validation passed and no endpoint or credential field was changed. Runtime verification still reports only the Swarm `mypocket-worker` as stale.
+- **Backup test verification 2026-10-21:** ran the complete `backup/tests` suite in a Linux container with `flock` and the required Python dependencies: 116 tests passed, 1 intentionally skipped. The same suite on macOS reports only the expected environment error because macOS does not ship the Linux `flock` command; production backup execution remains Linux-based and was verified in the Linux run.
+- **Backup control-plane reconciliation 2026-10-21:** health now checks `homelab-backup@configs.service`; the Ansible backup audit includes the configs marker, unit outcome and journal evidence; and the runtime deployment playbook installs and enables the configs and weekly verification timer units while refusing publication during an active configs/deep-verify job. Linux verification now passes `117` backup tests and `29` Ansible tests. This is prepared in the repo; production publication still requires the existing controlled VM100 deployment window.
+- **NetBird documentation reconciliation 2026-10-21:** corrected the remaining active docs that named retired `tasks.netbird-server`/`tasks.netbird-dashboard` DNS records. They now match the live Swarm service names `tasks.netbird_netbird-server` and `tasks.netbird_netbird-dashboard`; archived topology notes remain historical by design.

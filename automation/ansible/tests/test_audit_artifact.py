@@ -30,6 +30,7 @@ class AuditArtifactTest(unittest.TestCase):
         journal = next(argv for argv in commands if "journalctl" in argv)
         self.assertEqual(journal[:3], ["timeout", "20s", "journalctl"])
         self.assertNotIn("homelab-backup@*", journal)
+        self.assertIn("homelab-backup@configs.service", journal)
         journal_task = next(t for t in tasks if "journalctl" in
                             t.get("ansible.builtin.command", {}).get("argv", []))
         self.assertEqual(journal_task["when"], "inventory_hostname == 'vm100'")

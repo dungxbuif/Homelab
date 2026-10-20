@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Docker maintenance outside the backup window
+
+[Timer]
+OnCalendar=*-*-* 12:00:00 Asia/Ho_Chi_Minh
+RandomizedDelaySec=5min
+Persistent=false
+Unit=homelab-docker-maintenance.service
+
+[Install]
+WantedBy=timers.target

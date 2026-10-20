@@ -98,7 +98,9 @@ its remote metadata under `remote/` and the `database-instances.success` marker
 was written only after the Mezon post-check.
 
 The VM100 timer is now enabled and active, with the next scheduled run at
-18:30 UTC. The VM100 health service completed with `Result=success`; its
+20:00 UTC (03:00 local). It is intentionally separated from the 18:00 UTC
+database backup, whose observed runtime is about 92 to 104 minutes. The VM100
+health service completed with `Result=success`; its
 health check covers the local `gitlab` and `database-instances` markers and the
 Pi5 health result. The Pi5 health check also passes with a free backup lock.
 
