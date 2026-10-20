@@ -16,10 +16,16 @@ grep -q 'PI_BACKUP_SSH_TARGET' "$vm_runner"
 grep -q 'run-class.sh.*gitlab' "$vm_runner"
 grep -q 'run-class.sh.*database-instances' "$vm_runner"
 grep -q 'run-instance-retention.sh' "$vm_runner"
-grep -q 'run-retention.sh' "$pi_runner"
+grep -q 'run-retention.sh' "$vm_runner"
+grep -q 'run_pi markers' "$vm_runner"
+if grep -q 'run_pi retention' "$vm_runner"; then
+  echo 'VM100 retention must not invoke Pi5 restic retention' >&2
+  exit 1
+fi
 grep -q 'homelab-backup-executor' "$vm_runner"
 grep -q 'SSH_ORIGINAL_COMMAND' "$ssh_guard"
 grep -q 'accepts only the allow-listed' "$ssh_guard"
+grep -q 'markers' "$ssh_guard"
 grep -q 'simple-backup' "$root/docs/deployments/backup-scheduler-2026-10-06.md"
 grep -q 'EnvironmentFile=/etc/homelab-backup/runner.env' "$service"
 grep -q 'RCLONE_CONFIG_WORK_ROOT=/home/ubuntu/.homelab-backup-runtime' "$service"

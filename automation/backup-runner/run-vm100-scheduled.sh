@@ -40,6 +40,34 @@ run_pi() {
     ssh "${ssh_options[@]}" "$pi_target" "$pi_executor $1"
 }
 
+sync_pi_markers() {
+  local bundle marker_tmp class
+  bundle=$(mktemp "$status_root/.pi-markers.XXXXXX")
+  trap 'rm -f -- "$bundle"' RETURN
+  run_pi markers > "$bundle"
+  for class in databases rustfs; do
+    marker_tmp="$status_root/.${class}.success.pi-$$.tmp"
+    rm -f -- "$status_root/$class.success" "$marker_tmp"
+    awk -v begin="MARKER $class" '
+      $0 == begin { inside=1; next }
+      $0 == "ENDMARKER" { if (inside) exit }
+      inside { print }
+    ' "$bundle" > "$marker_tmp"
+    [[ -s "$marker_tmp" ]] || {
+      rm -f -- "$marker_tmp"
+      echo "Pi5 success marker is missing: $class" >&2
+      return 1
+    }
+    grep -Eq '^completed_at=[0-9]+$' "$marker_tmp" || {
+      rm -f -- "$marker_tmp"
+      echo "Pi5 success marker is invalid: $class" >&2
+      return 1
+    }
+    chmod 600 "$marker_tmp"
+    mv -f -- "$marker_tmp" "$status_root/$class.success"
+  done
+}
+
 case "$class" in
   health)
     run_pi health
@@ -86,12 +114,11 @@ case "$class" in
     ;;
   retention)
     python3 "$script_dir/wait-retention-prerequisites.py"
-    marker="$status_root/gitlab.success"
-    [[ -f "$marker" ]] || {
-      echo 'GitLab success marker is missing before retention' >&2
-      exit 1
-    }
-    run_pi retention < "$marker"
+    sync_pi_markers
+    BACKUP_APP_ROOT="$app_root" \
+      BACKUP_STAGING_ROOT="$staging_root" \
+      BACKUP_STATUS_ROOT="$status_root" \
+      bash "$script_dir/run-retention.sh"
     BACKUP_APP_ROOT="$app_root" \
       BACKUP_STAGING_ROOT="$staging_root" \
       BACKUP_STATUS_ROOT="$status_root" \
@@ -110,8 +137,7 @@ case "$class" in
   weekly-integrity)
     exec 9>"${BACKUP_LOCK_FILE:-/run/lock/homelab-backup.lock}"
     flock -n 9 || { echo 'another homelab backup job holds the global lock' >&2; exit 75; }
-    RESTIC_READ_DATA_SUBSET=1/10 run_pi deep-verify
-    for deep_class in database-instances gitlab; do
+    for deep_class in databases rustfs database-instances gitlab; do
       RESTIC_READ_DATA_SUBSET=1/10 \
         BACKUP_APP_ROOT="$app_root" \
         BACKUP_STAGING_ROOT="$staging_root" \

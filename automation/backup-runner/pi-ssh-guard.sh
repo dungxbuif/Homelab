@@ -7,6 +7,7 @@ case "$command" in
   "$executor databases") class=databases ;;
   "$executor rustfs") class=rustfs ;;
   "$executor configs") class=configs ;;
+  "$executor markers") class=markers ;;
   "$executor retention") class=retention ;;
   "$executor deep-verify") class=deep-verify ;;
   "$executor health") class=health ;;

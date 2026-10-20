@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-class=${1:?usage: pi-executor.sh databases|rustfs|configs|retention|deep-verify|health}
+class=${1:?usage: pi-executor.sh databases|rustfs|configs|markers|retention|deep-verify|health}
 case "$class" in
-  databases|rustfs|configs|retention|deep-verify|health) ;;
+  databases|rustfs|configs|markers|retention|deep-verify|health) ;;
   *) echo "unsupported backup class: $class" >&2; exit 2 ;;
 esac
 
@@ -18,6 +18,17 @@ set -a
 source "$env_file"
 set +a
 app_root=${BACKUP_APP_ROOT:-/ssd-data/infra/backup-runner/app}
+status_root=${BACKUP_STATUS_ROOT:-/ssd-data/infra/backups/homelab/.state}
+if [[ "$class" == markers ]]; then
+  for marker_class in databases rustfs; do
+    marker="$status_root/$marker_class.success"
+    [[ -f "$marker" ]] || continue
+    printf 'MARKER %s\n' "$marker_class"
+    cat -- "$marker"
+    printf 'ENDMARKER\n'
+  done
+  exit 0
+fi
 resource_runner="$app_root/automation/backup-runner/run-pi-capped.sh"
 [[ -x "$resource_runner" ]] || { echo "bounded Pi runner is missing: $resource_runner" >&2; exit 1; }
 

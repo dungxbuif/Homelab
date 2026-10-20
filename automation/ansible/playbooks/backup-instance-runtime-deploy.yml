@@ -19,6 +19,7 @@
       - backup/scripts/restic-lib.sh
       - backup/scripts/upload-restic.sh
       - backup/scripts/verify-retention.sh
+      - backup/scripts/run-integrity-check.sh
       - backup/scripts/restore-staging.sh
       - backup/scripts/check-backup-health.sh
       - automation/backup-runner/run-restore-drill.sh
@@ -115,6 +116,7 @@
             {{ backup_candidate.path }}/backup/scripts/restic-lib.sh
             {{ backup_candidate.path }}/backup/scripts/upload-restic.sh
             {{ backup_candidate.path }}/backup/scripts/verify-retention.sh
+            {{ backup_candidate.path }}/backup/scripts/run-integrity-check.sh
             {{ backup_candidate.path }}/backup/scripts/restore-staging.sh
             {{ backup_candidate.path }}/backup/scripts/check-backup-health.sh
             && python3 {{ backup_candidate.path }}/backup/scripts/validate_inventory.py
