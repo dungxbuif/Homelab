@@ -37,6 +37,13 @@ window. cAdvisor does not expose CouchDB request-source counts; a separate
 access-log/LiveSync client audit is still required before changing client
 polling or rate limits.
 
+The authenticated native CouchDB stats endpoint was also sampled. It reported
+`1,040,832` cumulative HTTP requests, `544,723` GETs, `496,108` POSTs, exactly
+`2` clients requesting continuous `_changes`, zero view/find/all-docs
+timeouts, and zero HTTP 5xx responses. These counters confirm the two active
+LiveSync streams but do not identify their source addresses or provide a
+time-window delta, so no rate limit was added from this sample alone.
+
 ## Findings
 
 Most Pi5 containers currently have no Docker CPU or memory limit. This includes
