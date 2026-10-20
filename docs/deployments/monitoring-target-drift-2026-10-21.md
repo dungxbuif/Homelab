@@ -24,3 +24,9 @@ configuration backup and a rollback copy.
 
 The source file and reload mechanism are not exposed by the current read-only
 host-audit contract, so no live configuration was changed in this audit.
+
+The repository now contains the bounded read-only gate
+`automation/maintenance/audit-monitoring-targets.py`. It queries
+`up == 0`, fails only for the three known retired job/instance pairs, and is
+ready to be called by the manager-side drift/maintenance job once that job has
+the approved Pi5 execution path.
