@@ -1,0 +1,48 @@
+# Pi5 runtime audit
+
+Date: 2026-10-21
+
+## Collection path
+
+The audit was executed through Semaphore's private `Homelab Audit` project,
+task `#140`, using the restricted read-only observer identity. It did not use
+the public VPS route and did not mutate Pi5 or the Swarm manager.
+
+The public URL `semaphore.dungxbuif.com` intentionally remains LAN-only. From
+the VPS it returns `404`; from the private Pi5 edge route it returns the
+Semaphore UI and `/api/ping` returns `pong`. This is an exposure policy result,
+not a broken Semaphore application.
+
+## Observed runtime
+
+- Pi5 is the active Swarm manager and data/edge host.
+- Root filesystem: 503 GB total, 185.5 GB used, 297.4 GB free (39%).
+- Memory: 7.75 GiB total, 5.65 GiB available.
+- Swap: 4 GiB total, 1.66 GiB used.
+- CouchDB sample: 0.73% CPU, 131.5 MiB resident memory.
+- PostgreSQL sample: 1.28% CPU, 541.8 MiB resident memory, 2 GiB memory limit,
+  1.5 CPU limit.
+- RustFS sample: 0.02% CPU, 411.6 MiB resident memory.
+- cAdvisor sample: 3.71% CPU, 84.1 MiB resident memory.
+
+## Findings
+
+Most Pi5 containers currently have no Docker CPU or memory limit. This includes
+CouchDB, RustFS, Redis, PgBouncer, edge Traefik, AdGuard and the monitoring
+containers. The current point-in-time sample is healthy, but the absence of
+limits means a future workload can still starve the datastore or edge.
+
+The audit also confirms old exited task containers remain as history, including
+old Semaphore/provisioner tasks and a stopped RelayHub Compose stack. They are
+not production processes, but their removal must be done through the approved
+Pi manager maintenance path rather than from the VM100 worker.
+
+## Next controlled action
+
+1. Capture a 24-hour CPU/memory baseline from VictoriaMetrics/cAdvisor.
+2. Add limits only to non-data workloads first, with one service per canary.
+3. Keep PostgreSQL, CouchDB and RustFS limits conservative and change them only
+   after observing working-set and IO headroom.
+4. Remove exited task containers through a separately reviewed maintenance job.
+
+No production service was restarted or reconfigured by task `#140`.
