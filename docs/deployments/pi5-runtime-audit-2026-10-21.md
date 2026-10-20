@@ -44,6 +44,12 @@ timeouts, and zero HTTP 5xx responses. These counters confirm the two active
 LiveSync streams but do not identify their source addresses or provide a
 time-window delta, so no rate limit was added from this sample alone.
 
+A follow-up native-stats delta taken 10.7 seconds apart increased the request
+counter by only 2 requests (about `0.19 req/s`), with the same two continuous
+change clients. Current request pressure is therefore low; historical source-IP
+log analysis remains optional evidence work rather than a reason to change
+production polling or rate limits.
+
 ## Findings
 
 Most Pi5 containers currently have no Docker CPU or memory limit. This includes
