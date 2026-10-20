@@ -1,7 +1,7 @@
 ---
 title: "Pi5 backup resource cap"
 date: 2026-10-21
-status: prepared-not-deployed
+status: deployed-portable
 ---
 
 # Pi5 backup resource cap
@@ -30,15 +30,18 @@ cannot silently restore an unrestricted backup path.
 
 ## Current state
 
-This change is prepared and contract-tested in the repository. It is **not
-deployed to Pi5 yet** because the current direct write transport is unavailable
-and the observer SSH key is read-only. No production backup schedule was
-changed in this step.
+The bounded launcher and restricted handlers were deployed to Pi5 by
+Semaphore task `#144` from commit `8e35a85`. The task finished with
+`unreachable=0`, `failed=0`, and published all three files. The current
+runtime uses the compatible `portable` mode by default, so backup work runs
+with `nice` and `ionice -c 3` without requiring a privileged cgroup manager.
+No production backup schedule was changed.
 
 The approved Pi5 release playbook now includes the launcher alongside the
-restricted executor and guard. Once the Semaphore Pi5 release identity is
-available, release it as one atomic client change and verify the next backup
-class from `journalctl` before enabling `systemd` mode.
+restricted executor and guard. The stronger `systemd` mode remains a follow-up:
+first verify that a narrowly scoped root-owned wrapper is available, then
+enable it through a separate reviewed release and inspect the next backup
+class from `journalctl`.
 
 ## Verification
 
