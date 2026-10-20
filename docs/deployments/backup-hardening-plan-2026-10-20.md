@@ -21,6 +21,9 @@ Runner code: `automation/backup-runner/`, `backup/scripts/`. Status: **plan, not
 | Disk was nearly full on 2026-10-18 | Health log: `free_bytes=105639936`, GitLab backup and retention failed |
 | Health is red for the wrong reason | 2026-10-19 06:15 health ran while retention (05:30 start, about 4.5 h: `restic check` loads indexes and checks all packs) held the global lock |
 | Timeline overlaps | GitLab native backup 02:30 to about 05:52 local (3 h 20 min), RustFS 04:30 to 05:11, retention 05:30 to about 10:00, health 06:15 |
+| Disk consumers measured (`sudo du`) | `/var/lib/containerd` 69 GB, `/var/lib/docker` 34 GB (`rootfs` 28 GB, `containers` 5.6 GB, `volumes` 0.5 GB), `/opt/apps/gitlab/data` 36 GB, `/var/log` 3.9 GB, `/home` 3.2 GB, GitLab logs 0.9 GB. Docker plus containerd is about 103 GB of the 152 GB used |
+| Stale Docker state | About 20 containers in `Dead` state (old swarm tasks of mypocket, netbird, openclaw, family-tree, macocr, k8s-syntax, mezonhook, tunnel clients), plus `tmpfs-repro-repro-1` in `Created` and an exited `pg-net-anchor` task; `docker system df` errors on `rw layer snapshot not found` |
+| Large images, none tied to a running container in the list | `ollama/ollama:0.34.0` 9.2 GB, `educates-base-environment:3.8.0` 5.3 GB, `node:24-bookworm` 1.6 GB, `zeborg/kubekosh` 1.6 GB, untagged `semaphore-runner` 0.8 GB (to be confirmed unused before removal) |
 | Docker on VM100 is unhealthy | `docker system df` fails: `rw layer snapshot not found for container 1711725e...`; VM rebooted about 2026-10-19 16:30 local, cause unknown |
 | Only Google Drive holds remote copies | Three restic repos under `homelab-backups/{databases,gitlab,rustfs}`; no second target, no restore drill, no host-config class, no VM image |
 
@@ -43,6 +46,14 @@ Goal: know what fills VM100, stop it filling again, and prove retention prunes.
 1.1 **Measure.** `sudo du -xh --max-depth=2 /var/lib/docker /var/lib/containerd /var/log /opt/apps /home | sort -rh | head -30`
 (use `nice`, run in background; a first attempt exceeded 120 s). Record the top ten consumers in this note. Expected suspects:
 Docker image layers and build cache, `/var/log` (3.9 GB seen), GitLab data volume, restic temp caches in `/tmp/restic-check-cache-*`.
+
+1.1b **Remove stale Docker objects (largest expected win, tens of GB).** List: `docker ps -a --filter status=dead --format '{{.ID}} {{.Names}}'`;
+remove each Dead container (`docker rm -f <id>`; the rw-layer error container `1711725e6d25` is one of them) and `tmpfs-repro-repro-1`.
+Then `docker images -a` against running containers: for every image with no container, record it, and remove after review
+(`docker rmi`), starting with `ollama`, `educates-base-environment`, `node:24-bookworm`. Do not use `docker system prune -a --volumes`.
+After removal measure `/var/lib/containerd` and `/var/lib/docker/rootfs` again (the `rootfs` 28 GB may be nested k3s containerd
+data, see the `.../var/lib/rancher/k3s/...` paths in the `du` error); identify which container owns it with
+`sudo ls -la /var/lib/docker/rootfs/overlayfs/` and `docker inspect`.
 
 1.2 **Fix the Docker record error.** `docker ps -a --format '{{.ID}} {{.Names}} {{.Status}}'`; remove the container whose
 layer is missing (`docker rm -f 1711725e6d25...`, confirm it is not a swarm task first with `docker inspect`). Re-run `docker system df`.
