@@ -34,6 +34,8 @@ The project now contains only these seven operational templates:
   seven retained templates. Entries associated with the retired templates no
   longer appear in the project history after the API deletion, so the old
   Knowledge Hub failure burst is no longer mixed into the operator view.
+- Retained template `5` was executed as task `#141` after the trim; it completed
+  with `ok=4`, `failed=0`, `unreachable=0`, and `changed=0`.
 - The separate `Homelab Audit` project remains available for read-only audits.
 
 Future one-off experiments must use a temporary branch and be removed from the
