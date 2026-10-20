@@ -63,6 +63,14 @@ restricted it to the vault database path (block `/_utils`, `/_all_dbs`, `/_node`
 `/_config`) after checking the plugin's required paths, and make
 `couchdb.dungxbuif.com` (admin name) LAN-only.
 
+### 2026-10-20: DB consumers moved to pg-net
+
+| Change | Result | Rollback |
+|---|---|---|
+| Pi5 `docker-compose.yml`: postgres gets alias `postgres-pg` on `pg-net`; pgbouncer joins `pg-net` and uses `DB_HOST=postgres-pg` (live: alias via `docker network connect --alias`, `pgbouncer.ini` host edited, HUP) | New pgbouncer-to-postgres connections come from `10.0.30.4`; old ones age out; sites 200 | Restore `docker-compose.yml.bak-pgnet-*`, set `host=postgres`, HUP |
+| VM100 whiteboard: `db-migrate`, `backend`, `collab` drop `homelab-net`; `DATABASE_URL` host `postgres-pg`; `s3-net` added for `rustfs` | Connections from `10.0.30.13/14`; backend and collab healthy; site 200 | Restore `docker-compose.prod.yml.bak-nohomelab-*` and `.env.prod.bak-nohomelab-*`, `up -d --no-deps backend collab` |
+| GitLab stack: `db_host = postgres-pg`, `pg-net` added (keeps `homelab-net` for `redis-prod`), new swarm config `gitlab_omnibus_pgnet_20261020204731` | 40 connections from `10.0.30.15`; web 200; restart took about 4 minutes | Restore `gitlab-omnibus.rb.bak-pgnet-*` and `gitlab-stack.yml.bak-pgnet-*`, `docker stack deploy` |
+
 ## Pending in this rollout
 
 - Whiteboard: remove `homelab-net` from `backend` (replace with `pg-net` and
