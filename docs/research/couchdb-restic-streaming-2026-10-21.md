@@ -20,14 +20,17 @@ compression does not remove the need to hold the whole payload locally.
 2. Serialize one database as a gzip NDJSON stream to stdout.
 3. Feed that stream directly to a Restic `--stdin` backup with a stable
    `--stdin-filename` and the existing class/run tags.
-4. Store only small metadata, manifest and checksum records locally.
-5. Restore the stream into a temporary file or pipe, then use the existing
-   CouchDB restore helper and document-count gate.
+4. Store only small metadata, manifest and checksum records locally. The
+   metadata is also uploaded as a separate small Restic snapshot with the same
+   run tag so it is recoverable independently of VM100 staging.
+5. Restore the stream and metadata snapshots into a temporary target, then use
+   the existing CouchDB restore helper and document-count gate.
 
 The stream exporter, opt-in Restic stdin wrapper and experimental per-database
-uploader now have source tests. The uploader records a stream checksum and
-Restic snapshot ID without staging the payload. The multi-artifact restore
-drill is not implemented yet, so this remains an experimental boundary.
+uploader now have source tests. The uploader records a stream checksum, stream
+snapshot ID and metadata snapshot ID without staging the payload. The
+multi-artifact restore drill is not implemented yet, so this remains an
+experimental boundary.
 
 The VM100 runtime deployment contract now stages the adapter, exporter and
 uploader together and validates Python/shell syntax. This makes a later
@@ -63,7 +66,7 @@ failed-safe gate, not a successful Restic/restore acceptance.
 - A truncated gzip stream must be rejected before it can be considered a
   snapshot.
 - The manifest must record database name, document count, security metadata,
-  stream checksum and Restic snapshot ID.
+  stream checksum, stream Restic snapshot ID and metadata snapshot ID.
 - The uploader must re-query the selected Restic repository and find the exact
   snapshot ID with the matching `run_id` tag before writing `status=complete`.
 - Restore must match the recorded document count in an isolated CouchDB target.

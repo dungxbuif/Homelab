@@ -13,6 +13,7 @@ stream_dir="$run_dir/couchdb-stream"
 metadata="$stream_dir/$database.metadata.json"
 stream_hash="$stream_dir/$database.stream.sha256"
 restic_output="$stream_dir/$database.restic.jsonl"
+metadata_restic_output="$stream_dir/$database.metadata.restic.jsonl"
 remote_check="$stream_dir/$database.remote.json"
 manifest="$stream_dir/$database.manifest.json"
 
@@ -62,21 +63,59 @@ print(snapshot)
 PY
 )
 
+# Keep the small metadata needed for restore in the same repository. The
+# document stream remains stdin-based; this second snapshot avoids staging the
+# large payload while keeping security/doc-count metadata recoverable.
+export RESTIC_INPUT_DIR="$stream_dir"
+metadata_snapshot_id=$(restic_run backup --json \
+  --tag "class=databases" \
+  --tag "run_id=$run_id" \
+  --tag "stream_metadata=true" \
+  "/backup-run/$(basename -- "$metadata")" \
+  >"$metadata_restic_output" && python3 - "$metadata_restic_output" <<'PY'
+import json
+import re
+import sys
+
+snapshot = ''
+for line in open(sys.argv[1], encoding='utf-8'):
+    try:
+        record = json.loads(line)
+    except json.JSONDecodeError:
+        continue
+    if record.get('message_type') == 'summary':
+        snapshot = record.get('snapshot_id') or ''
+if not re.fullmatch(r'[0-9a-f]{64}', snapshot):
+    raise SystemExit('stream metadata Restic output has no valid snapshot id')
+print(snapshot)
+PY
+)
+
 # Do not trust the client-side summary alone. Confirm the immutable snapshot
 # is visible in the selected repository before writing a complete manifest.
 restic_run snapshots --no-lock --json --tag "run_id=$run_id" >"$remote_check"
-python3 - "$remote_check" "$snapshot_id" "$run_id" <<'PY'
+python3 - "$remote_check" "$snapshot_id" "$metadata_snapshot_id" "$run_id" <<'PY'
 import json
 import sys
 
-path, snapshot_id, run_id = sys.argv[1:]
+path, snapshot_id, metadata_snapshot_id, run_id = sys.argv[1:]
 records = json.loads(open(path, encoding='utf-8').read())
 if not isinstance(records, list):
     raise SystemExit('stream Restic remote check did not return a snapshot list')
-for record in records:
-    if record.get('id') == snapshot_id and f'run_id={run_id}' in record.get('tags', []):
-        raise SystemExit(0)
-raise SystemExit('stream Restic remote check did not find the uploaded snapshot')
+stream_ok = any(
+    record.get('id') == snapshot_id
+    and f'run_id={run_id}' in record.get('tags', [])
+    and 'stream_metadata=true' not in record.get('tags', [])
+    for record in records
+)
+metadata_ok = any(
+    record.get('id') == metadata_snapshot_id
+    and f'run_id={run_id}' in record.get('tags', [])
+    and 'stream_metadata=true' in record.get('tags', [])
+    for record in records
+)
+if not stream_ok or not metadata_ok:
+    raise SystemExit('stream Restic remote check did not find both uploaded snapshots')
 PY
 
 stream_digest=$(awk '{print $1}' "$stream_hash")
@@ -85,18 +124,19 @@ stream_digest=$(awk '{print $1}' "$stream_hash")
   exit 1
 }
 
-python3 - "$manifest" "$database" "$run_id" "$snapshot_id" "$stream_digest" "$metadata" <<'PY'
+python3 - "$manifest" "$database" "$run_id" "$snapshot_id" "$stream_digest" "$metadata_snapshot_id" "$metadata" <<'PY'
 import json
 import sys
 from pathlib import Path
 
-path, database, run_id, snapshot, digest, metadata = sys.argv[1:]
+path, database, run_id, snapshot, digest, metadata_snapshot, metadata = sys.argv[1:]
 data = json.loads(Path(metadata).read_text(encoding='utf-8'))
 Path(path).write_text(json.dumps({
     'schema_version': 1,
     'database': database,
     'run_id': run_id,
     'snapshot_id': snapshot,
+    'metadata_snapshot_id': metadata_snapshot,
     'stream_sha256': digest,
     'metadata': str(Path(metadata).relative_to(Path(path).parent.parent)),
     'doc_count': data.get('info', {}).get('doc_count'),

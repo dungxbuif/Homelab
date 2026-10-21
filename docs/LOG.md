@@ -1236,6 +1236,12 @@ timestamp: 2026-07-03T15:14:00Z
   matching `run_id` tag before writing the `complete` manifest. Contract and
   syntax checks pass; no production scheduler or repository was used.
 
+- **CouchDB stream metadata durability 2026-10-21:** the experimental
+  uploader now stores the small CouchDB metadata document in a second Restic
+  snapshot tagged `stream_metadata=true`, then verifies both snapshot IDs
+  remotely before writing `status=complete`. The large document stream remains
+  stdin-based; production scheduling is unchanged.
+
 - **Backup test regression fixes 2026-10-21:** full macOS discovery exposed
   two real compatibility defects: the Pi health-only command incorrectly
   required the bounded runner, and Bash 3.2 expanded an empty Restic option
