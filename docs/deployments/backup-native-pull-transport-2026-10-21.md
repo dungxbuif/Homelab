@@ -44,6 +44,22 @@ This source change is not the cutover. Before enabling it on VM100:
 No production service is stopped by the source transport. No live runtime was
 changed by this document or its implementation.
 
+## Current runtime inventory
+
+The read-only audit on 2026-10-21 found:
+
+- Pi5 still has `/ssd-data/infra/backup/runner.env`,
+  `/ssd-data/infra/backup/secrets/rclone.conf`, and
+  `/ssd-data/infra/backup/secrets/restic-password` (all mode `0600`); this is
+  why the final secret-removal step is not marked done.
+- VM100 has its root-owned `/etc/homelab-backup/runner.env` and Drive config,
+  with all four primary backup timers active.
+- PostgreSQL has no role whose name contains `backup`; the dedicated
+  least-privilege identity must be created before network mode can be enabled.
+- VM100 service membership is consistent with the preflight: application
+  consumers use `pg-net`/`s3-net`; CouchLoom remains the documented
+  `homelab-net` exception.
+
 ## Verification
 
 The three native-transport contract tests pass, including private network and
