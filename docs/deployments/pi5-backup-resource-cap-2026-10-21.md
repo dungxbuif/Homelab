@@ -1,7 +1,7 @@
 ---
 title: "Pi5 backup resource cap"
 date: 2026-10-21
-status: deployed-portable
+status: deployed-systemd
 ---
 
 # Pi5 backup resource cap
@@ -31,11 +31,11 @@ cannot silently restore an unrestricted backup path.
 ## Current state
 
 The bounded launcher and restricted handlers were deployed to Pi5 by
-Semaphore task `#144` from commit `8e35a85`. The task finished with
-`unreachable=0`, `failed=0`, and published all three files. The current
-runtime uses the compatible `portable` mode by default, so backup work runs
-with `nice` and `ionice -c 3` without requiring a privileged cgroup manager.
-No production backup schedule was changed.
+Semaphore task `#144` from commit `8e35a85`. A root-owned class wrapper and
+argument-specific sudoers rules are now added; the executor defaults to
+`systemd` mode. Backup work uses transient scopes with `CPUQuota=100%`,
+`MemoryMax=1G`, and `IOWeight=50`. The portable mode remains available as an
+explicit rollback via `BACKUP_PI_RESOURCE_MODE=portable`.
 
 The approved Pi5 release playbook now includes the launcher alongside the
 restricted executor and guard. The stronger `systemd` mode remains a follow-up:
@@ -44,8 +44,9 @@ enable it through a separate reviewed release and inspect the next backup
 class from `journalctl`.
 
 The direct Pi5 probe confirmed `systemd-run` exists but a user scope returns
-`Access denied` because it requires interactive authentication. Portable mode
-must therefore remain the active default until a root-owned wrapper is enrolled.
+`Access denied`; the root-owned wrapper is the controlled path around that
+restriction. The wrapper accepts only the five backup classes and invokes fixed
+root-owned scripts; it cannot be used to run an arbitrary command.
 
 ## Verification
 
@@ -53,7 +54,10 @@ must therefore remain the active default until a root-owned wrapper is enrolled.
 properties, and strict failure when `systemd-run` is unavailable.
 
 `backup/tests/test_scheduler_contract.sh` proves the executor requires the
-launcher and the health-repair playbook publishes it.
+launcher, the class wrapper and sudoers validation, and the health-repair
+playbook publishes the launcher. The live release must still pass the Pi5
+wrapper probe and one scheduled class before this change is considered fully
+accepted.
 
 ## Rollback
 

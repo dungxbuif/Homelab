@@ -31,8 +31,12 @@ if [[ "$class" == markers ]]; then
 fi
 resource_runner="$app_root/automation/backup-runner/run-pi-capped.sh"
 [[ -x "$resource_runner" ]] || { echo "bounded Pi runner is missing: $resource_runner" >&2; exit 1; }
+resource_mode=${BACKUP_PI_RESOURCE_MODE:-systemd}
 
 run_bounded() {
+  if [[ "$resource_mode" == systemd ]]; then
+    exec sudo -n /usr/local/sbin/homelab-backup-systemd-class "$class"
+  fi
   exec "$resource_runner" "$@"
 }
 

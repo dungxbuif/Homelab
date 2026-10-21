@@ -22,6 +22,13 @@ timestamp: 2026-07-03T15:14:00Z
 
 ## 2026-10-21 - Runtime audit continuation
 
+- **Pi5 backup cgroup enforcement:** installed a root-owned, class allow-listed
+  systemd wrapper and argument-specific sudoers rules. The Pi executor now
+  defaults to transient scopes with `CPUQuota=100%`, `MemoryMax=1G`, and
+  `IOWeight=50`; explicit `configs` probe exited 0 with payload output
+  suppressed. Portable mode remains the rollback path. Pi5 resource-cap tests
+  and scheduler contract tests pass.
+
 - **OpenClaw resource canary:** bounded the VM100 Swarm service at `1 CPU/2 GiB`
   with `stop-first`, preserving its persistent state/auth/workspace mounts and
   rollback policy. The update completed, the new task became healthy, and the

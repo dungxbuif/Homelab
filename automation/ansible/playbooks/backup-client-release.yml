@@ -112,6 +112,32 @@
             - src: pi-ssh-guard.sh
               dest: /home/dungxbuif/.local/sbin/homelab-backup-ssh-guard
           when: inventory_hostname == 'pi5'
+        - name: Publish the root-owned systemd wrapper
+          become: true
+          ansible.builtin.copy:
+            src: '{{ playbook_dir }}/../../backup-runner/pi-systemd-class.sh'
+            dest: /usr/local/sbin/homelab-backup-systemd-class
+            owner: root
+            group: root
+            mode: '0755'
+            backup: true
+          when: inventory_hostname == 'pi5'
+        - name: Publish the argument-specific sudoers allow-list
+          become: true
+          ansible.builtin.copy:
+            src: '{{ playbook_dir }}/../../backup-runner/homelab-backup-systemd-class.sudoers'
+            dest: /etc/sudoers.d/homelab-backup-systemd-class
+            owner: root
+            group: root
+            mode: '0440'
+            validate: '/usr/sbin/visudo -cf %s'
+            backup: true
+          when: inventory_hostname == 'pi5'
+        - name: Validate the root-owned systemd wrapper and sudoers syntax
+          ansible.builtin.command:
+            argv: ['visudo', '-cf', /etc/sudoers.d/homelab-backup-systemd-class]
+          changed_when: false
+          when: inventory_hostname == 'pi5'
       always:
         - name: Remove only this candidate directory
           ansible.builtin.file:

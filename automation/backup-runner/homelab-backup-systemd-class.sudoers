@@ -1,0 +1,5 @@
+dungxbuif ALL=(root) NOPASSWD: /usr/local/sbin/homelab-backup-systemd-class databases
+dungxbuif ALL=(root) NOPASSWD: /usr/local/sbin/homelab-backup-systemd-class rustfs
+dungxbuif ALL=(root) NOPASSWD: /usr/local/sbin/homelab-backup-systemd-class configs
+dungxbuif ALL=(root) NOPASSWD: /usr/local/sbin/homelab-backup-systemd-class retention
+dungxbuif ALL=(root) NOPASSWD: /usr/local/sbin/homelab-backup-systemd-class deep-verify
