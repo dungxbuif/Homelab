@@ -16,7 +16,11 @@ restic_output="$stream_dir/$database.restic.jsonl"
 manifest="$stream_dir/$database.manifest.json"
 
 mkdir -p "$stream_dir"
-export RESTIC_REPOSITORY=$(restic_repo_for databases)
+if [[ -n "${BACKUP_STREAM_RESTIC_REPOSITORY:-}" ]]; then
+  export RESTIC_REPOSITORY="$BACKUP_STREAM_RESTIC_REPOSITORY"
+else
+  export RESTIC_REPOSITORY=$(restic_repo_for databases)
+fi
 export RESTIC_INTERACTIVE_STDIN=true
 
 # The stream is never written to disk. tee computes a checksum in a side

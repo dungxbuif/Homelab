@@ -1228,3 +1228,9 @@ timestamp: 2026-07-03T15:14:00Z
   pages. Only metadata was written and then removed; no Drive upload,
   scheduler change or database mutation occurred. The Restic stream uploader
   remains experimental pending an isolated repository and restore drill.
+- **CouchDB stream Restic gate:** attempted the uploader against a local
+  scratch Restic repository. VM100 reached the configured `85%` disk warning
+  before a snapshot receipt was produced, so the run was terminated and all
+  scratch files/processes were removed. The scratch repository itself was only
+  28 KiB; no Google Drive or production repository was touched. This gate is
+  intentionally recorded as failed-safe, not passed.

@@ -29,6 +29,12 @@ uploader now have source tests. The uploader records a stream checksum and
 Restic snapshot ID without staging the payload. The multi-artifact restore
 drill is not implemented yet, so this remains an experimental boundary.
 
+For the isolated gate only, `BACKUP_STREAM_RESTIC_REPOSITORY` may select a
+local Restic repository and `RESTIC_LOCAL_REPOSITORY_DIR` mounts it at
+`/restic-repo` inside the pinned client. These variables are deliberately not
+part of the scheduled environment and must never replace the Google Drive
+repository in production.
+
 ## Live source gate
 
 On 2026-10-21, VM100 streamed `obsidian_vault` through the private Pi5 proxy
@@ -37,6 +43,12 @@ and page size `3,000`, and left only a small metadata file; the transferred
 source files and metadata were removed after the check. No Google Drive upload,
 production scheduler or database mutation occurred.
 The scheduled `databases` class remains unchanged during this work.
+
+An isolated Restic-local upload was then attempted with the same stream and a
+scratch repository. It was stopped at the VM100 `85%` disk warning before a
+snapshot receipt was produced. The scratch repository was only `28 KiB`; no
+remote repository or production scheduler was touched. This is a deliberate
+failed-safe gate, not a successful Restic/restore acceptance.
 
 ## Non-negotiable gates
 

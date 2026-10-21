@@ -56,6 +56,9 @@ restic_run() {
   if [[ -n "${RESTIC_RESTORE_DIR:-}" ]]; then
     volumes+=(--volume "${RESTIC_RESTORE_DIR}:/restore-target")
   fi
+  if [[ -n "${RESTIC_LOCAL_REPOSITORY_DIR:-}" ]]; then
+    volumes+=(--volume "${RESTIC_LOCAL_REPOSITORY_DIR}:/restic-repo")
+  fi
   if [[ -n "${RESTIC_CONTAINER_USER:-}" ]]; then
     volumes+=(--user "$RESTIC_CONTAINER_USER")
   fi
