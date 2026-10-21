@@ -73,12 +73,20 @@ The read-only audit on 2026-10-21 found:
   consumers use `pg-net`/`s3-net`; CouchLoom remains the documented
   `homelab-net` exception.
 
+The source adapter and PostgreSQL credential are deployed on VM100, but the
+production runner is intentionally still on the original Pi5 transport. A
+full comparison attempt completed the PostgreSQL portion and then stopped at
+CouchDB because VM100 has no CouchDB container or enrolled CouchDB credential.
+The runtime native PostgreSQL variables were rolled back after that attempt so
+the combined `databases` class cannot enter a partial-failure state.
+
 ## Verification
 
 The three native-transport contract tests pass, including private network and
 file-backed credential assertions. Python compilation passes for both adapters
 and the new tests. The live direct PostgreSQL probe and `pg_restore --list`
-check pass. The full local backup suite still has unrelated workstation
+check pass. The combined comparison remains pending on the CouchDB read-only
+transport. The full local backup suite still has unrelated workstation
 baseline failures: macOS has no `flock`, the local interpreter lacks `jinja2`,
 and two health fixtures expect the enrolled Pi runner/marker setup. Those
 failures do not exercise the new transport path; the pinned automation
