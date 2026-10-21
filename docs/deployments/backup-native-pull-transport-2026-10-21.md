@@ -18,9 +18,9 @@ not enough.
 
 - The existing container transport remains the default and is unchanged.
 - `BACKUP_POSTGRES_TRANSPORT=network` runs the PostgreSQL client image on
-  `pg-net`, connecting to the declared `BACKUP_POSTGRES_HOST` and port with a
-  dedicated `backup_ro` credential file. It never publishes a database port or
-  uses a host IP.
+  `pg-net`, connecting directly to `postgres-pg:5432` with a dedicated
+  `backup_ro` credential file. It never publishes a database port or uses a
+  host IP. PgBouncer is deliberately not in the backup path.
 - `BACKUP_COUCHDB_TRANSPORT=network` runs the curl client image on
   `homelab-net`, connecting to the Docker service name `couchdb`. It uses a
   dedicated read-only CouchDB credential file and never exposes port 5984.
@@ -44,6 +44,14 @@ This source change is not the cutover. Before enabling it on VM100:
 No production service is stopped by the source transport. No live runtime was
 changed by this document or its implementation.
 
+## Database authentication decision
+
+The Pi5 PgBouncer instance uses `auth_file` with SCRAM for application traffic,
+but native backup does not depend on that auth path. The `backup_ro` role is
+created directly in PostgreSQL with no login-administration, database-creation,
+superuser, replication, or write-data privileges and is tested through
+`postgres-pg:5432` on `pg-net`. No application credential is changed.
+
 ## Current runtime inventory
 
 The read-only audit on 2026-10-21 found:
@@ -54,8 +62,10 @@ The read-only audit on 2026-10-21 found:
   why the final secret-removal step is not marked done.
 - VM100 has its root-owned `/etc/homelab-backup/runner.env` and Drive config,
   with all four primary backup timers active.
-- PostgreSQL has no role whose name contains `backup`; the dedicated
-  least-privilege identity must be created before network mode can be enabled.
+- PostgreSQL now has the dedicated least-privilege `backup_ro` identity. VM100
+  stores its credential in `/etc/homelab-backup/secrets/postgres-backup.env`
+  with root-owned `640` permissions. A disposable VM100 client verified login
+  and a custom-format `pg_dump` over `pg-net` to `postgres-pg:5432`.
 - VM100 service membership is consistent with the preflight: application
   consumers use `pg-net`/`s3-net`; CouchLoom remains the documented
   `homelab-net` exception.
@@ -64,7 +74,8 @@ The read-only audit on 2026-10-21 found:
 
 The three native-transport contract tests pass, including private network and
 file-backed credential assertions. Python compilation passes for both adapters
-and the new tests. The full local backup suite still has unrelated workstation
+and the new tests. The live direct PostgreSQL probe and `pg_restore --list`
+check pass. The full local backup suite still has unrelated workstation
 baseline failures: macOS has no `flock`, the local interpreter lacks `jinja2`,
 and two health fixtures expect the enrolled Pi runner/marker setup. Those
 failures do not exercise the new transport path; the pinned automation

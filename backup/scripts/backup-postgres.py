@@ -57,7 +57,7 @@ def create_backup(inventory: dict, output: Path) -> dict:
     globals_mode = os.environ.get("BACKUP_POSTGRES_GLOBALS_TRANSPORT", "container")
     globals_dump = pg_command(
         container,
-        ["pg_dumpall", "-U", user, "--globals-only"],
+        ["pg_dumpall", "-U", user, "--globals-only", "--no-role-passwords"],
         network_mode=False if globals_mode == "container" else None,
     )
     if len(globals_dump) < 32:
