@@ -118,6 +118,35 @@ For local validation without sending a message, add `--dry-run`.
   client secrets and tokens remain host-local and are never committed.
 - No production service is stopped by the online backup wrappers.
 
+## Optional VM100 native pull transport
+
+The default adapter transport remains the Pi5 container path. During the B9
+comparison window, VM100 may opt into private-network exports by setting these
+runtime-only values in `/etc/homelab-backup/runner.env`:
+
+```text
+BACKUP_POSTGRES_TRANSPORT=network
+BACKUP_POSTGRES_NETWORK=pg-net
+BACKUP_POSTGRES_CLIENT_IMAGE=postgres@sha256:<approved-digest>
+BACKUP_POSTGRES_CREDENTIALS_FILE=/etc/homelab-backup/secrets/postgres-backup.env
+BACKUP_POSTGRES_HOST=pgbouncer
+BACKUP_POSTGRES_PORT=6432
+BACKUP_POSTGRES_USER=backup_ro
+BACKUP_COUCHDB_TRANSPORT=network
+BACKUP_COUCHDB_NETWORK=homelab-net
+BACKUP_COUCHDB_CLIENT_IMAGE=curlimages/curl@sha256:<approved-digest>
+BACKUP_COUCHDB_CREDENTIALS_FILE=/etc/homelab-backup/secrets/couchdb-backup.env
+BACKUP_COUCHDB_ENDPOINT=http://couchdb:5984
+```
+
+The files contain only runtime credentials and remain root-owned, mode `0600`.
+The PostgreSQL globals export stays on the existing narrow Pi5 path during the
+comparison because `pg_dumpall --globals-only` may require privileges that
+`backup_ro` must not receive. Do not enable this mode until the dedicated
+identities, image digests and one-week manifest/restore comparison are
+reviewed. Removing Pi5 Restic/Drive secrets is a later acceptance step, not an
+automatic consequence of setting these variables.
+
 ## Status contract
 
 The operator receives one message only after each class passes its post-check:

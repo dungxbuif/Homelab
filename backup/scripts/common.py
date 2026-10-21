@@ -169,5 +169,24 @@ def docker_exec(container: str, command: list[str], *, input_bytes: bytes | None
     return result.stdout
 
 
+def docker_run(
+    network: str,
+    image: str,
+    command: list[str],
+    *,
+    env_file: str | Path | None = None,
+    entrypoint: str | None = None,
+    input_bytes: bytes | None = None,
+) -> bytes:
+    """Run a one-shot client on a private Docker network without publishing ports."""
+    args = ["docker", "run", "--rm", "--network", network]
+    if env_file is not None:
+        args.extend(["--env-file", str(env_file)])
+    if entrypoint is not None:
+        args.extend(["--entrypoint", entrypoint])
+    args.extend([image, *command])
+    return run_command(args, input_bytes=input_bytes).stdout
+
+
 def json_bytes(value: Any) -> bytes:
     return (json.dumps(value, separators=(",", ":")) + "\n").encode("utf-8")

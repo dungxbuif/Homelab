@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shlex
 import sys
 from urllib.parse import quote
@@ -13,7 +14,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from common import docker_exec, load_document, select_backup_entries, validate_name, write_json  # noqa: E402
+from common import docker_exec, docker_run, load_document, select_backup_entries, validate_name, write_json  # noqa: E402
 
 
 PAGE_SIZE = 100
@@ -22,7 +23,13 @@ MAX_PAGE_BYTES = 128 * 1024 * 1024
 
 def curl_db(container: str, database: str, suffix: str) -> bytes:
     validate_name(database, "database")
-    url = f"http://127.0.0.1:5984/{database}{suffix}"
+    mode = os.environ.get("BACKUP_COUCHDB_TRANSPORT", "container")
+    if mode == "container":
+        url = f"http://127.0.0.1:5984/{database}{suffix}"
+    elif mode == "network":
+        url = f"{os.environ.get('BACKUP_COUCHDB_ENDPOINT', 'http://couchdb:5984').rstrip('/')}/{database}{suffix}"
+    else:
+        raise RuntimeError(f"unsupported BACKUP_COUCHDB_TRANSPORT: {mode}")
     # Bound each page request and retry transient CouchDB/network failures.
     # Without a max time, one stalled page can hold the whole backup forever.
     curl_options = (
@@ -30,7 +37,16 @@ def curl_db(container: str, database: str, suffix: str) -> bytes:
         "--retry-max-time 900 --retry-connrefused"
     )
     script = f"curl -fsS {curl_options} -u \"$COUCHDB_USER:$COUCHDB_PASSWORD\" {shlex.quote(url)}"
-    return docker_exec(container, ["sh", "-c", script])
+    if mode == "container":
+        return docker_exec(container, ["sh", "-c", script])
+    network = os.environ.get("BACKUP_COUCHDB_NETWORK")
+    image = os.environ.get("BACKUP_COUCHDB_CLIENT_IMAGE")
+    env_file = os.environ.get("BACKUP_COUCHDB_CREDENTIALS_FILE")
+    if not all((network, image, env_file)):
+        raise RuntimeError("network CouchDB transport requires network, client image and credentials file")
+    if not os.access(env_file, os.R_OK):
+        raise RuntimeError("CouchDB credentials file is not readable")
+    return docker_run(network, image, ["-c", script], env_file=env_file, entrypoint="sh")
 
 
 def create_backup(inventory: dict, output: Path) -> dict:

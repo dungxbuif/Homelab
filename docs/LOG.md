@@ -40,6 +40,15 @@ timestamp: 2026-07-03T15:14:00Z
   found; remaining matches were deprecated placeholders. S1 remains open until
   previously exposed credentials are revoked or rotated at their issuers. See
   [GitHub credential exposure audit](./deployments/github-credential-exposure-audit-2026-10-21.md).
+- **B9 native pull transport:** the backup adapters still used Pi5 `docker exec`
+  for database export even after VM100 took over Restic retention. Added the
+  source contract for optional VM100 network transports, retaining Pi5 mode as
+  the default rollback path. No runtime or credential changed. See [native
+  pull transport](./deployments/backup-native-pull-transport-2026-10-21.md).
+- **Native pull verification:** the new PostgreSQL/CouchDB transport contracts
+  and Python compilation pass. The workstation-wide backup suite still reports
+  pre-existing macOS fixture issues (`flock`, missing `jinja2`, and unenrolled
+  Pi health fixtures); no runtime backup service was changed.
 
 - **Image update watch:** added VM100 Diun in notify-only mode with a pinned
   image digest, read-only Docker socket, no published ports, and `0.25 CPU /
