@@ -87,4 +87,13 @@ preserved, including `mypocket-prod-backups`, RelayHub NATS data and RelayHub
 PostgreSQL data. The Pi5 runtime remained at 20 running containers; no service
 was restarted.
 
+## Build-cache cleanup: 2026-10-21
+
+Before cleanup, Docker reported 39.05 GiB of inactive BuildKit cache and no
+active build process. The approved `docker builder prune -f --filter
+until=168h` policy reclaimed 13.5 GiB. The Pi5 filesystem moved from 40% to
+37% used (284 GiB free); the remaining 25.55 GiB is still inactive cache and
+can be handled by the same recurring policy. No image, volume, database or
+running service was removed.
+
 No production service was restarted or reconfigured by task `#140`.
