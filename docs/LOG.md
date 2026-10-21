@@ -1266,6 +1266,11 @@ timestamp: 2026-07-03T15:14:00Z
   `9.7 GiB`. No backup process was active, but this is at the warning
   threshold; the CouchDB scratch restore was deliberately not started.
 
+- **CouchDB stream restore disk gate 2026-10-21:** added a preflight to the
+  manual two-snapshot orchestrator. It checks the target filesystem before any
+  directory creation or Restic restore and fails with exit `75` below the
+  configurable `RESTORE_STREAM_MIN_FREE_BYTES` floor (20 GiB default).
+
 - **VM100 staging disk attribution 2026-10-21:** read-only per-run sizing
   identified `gitlab-20261020-220000/complete/gitlab-native-backup.tar` as the
   dominant local consumer at `8.2 GiB`; the next largest run is RustFS at

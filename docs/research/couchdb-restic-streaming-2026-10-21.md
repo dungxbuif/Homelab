@@ -34,6 +34,8 @@ and verifies the target document count. A separate manual orchestrator now
 discovers both snapshots by `run_id`, restores them into a new target and
 invokes that helper. It is not attached to the scheduled restore drill yet,
 so this remains an experimental boundary.
+The orchestrator also fails closed before creating the target when free space
+is below `RESTORE_STREAM_MIN_FREE_BYTES` (20 GiB by default).
 
 The VM100 runtime deployment contract now stages the adapter, exporter and
 uploader together and validates Python/shell syntax. This makes a later

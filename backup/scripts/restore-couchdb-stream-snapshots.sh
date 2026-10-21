@@ -6,12 +6,22 @@ database=${1:?usage: restore-couchdb-stream-snapshots.sh DATABASE RUN_ID TARGET_
 run_id=${2:?usage: restore-couchdb-stream-snapshots.sh DATABASE RUN_ID TARGET_DIR CONTAINER}
 target=${3:?usage: restore-couchdb-stream-snapshots.sh DATABASE RUN_ID TARGET_DIR CONTAINER}
 container=${4:?usage: restore-couchdb-stream-snapshots.sh DATABASE RUN_ID TARGET_DIR CONTAINER}
+min_free_bytes=${RESTORE_STREAM_MIN_FREE_BYTES:-21474836480}
 
 [[ "$database" =~ ^[a-z][a-z0-9_$()-]*$ ]] || { echo 'invalid database name' >&2; exit 2; }
 [[ "$run_id" =~ ^[A-Za-z0-9._-]+$ ]] || { echo 'invalid run id' >&2; exit 2; }
 [[ "$target" == /* && ! -e "$target" && ! -L "$target" ]] || {
   echo 'restore target must be a new absolute directory' >&2
   exit 2
+}
+[[ "$min_free_bytes" =~ ^[0-9]+$ ]] || { echo 'invalid RESTORE_STREAM_MIN_FREE_BYTES' >&2; exit 2; }
+target_parent=$(dirname -- "$target")
+read -r _ _ available_kb _ < <(df -Pk "$target_parent" | awk 'NR > 1 {print $2, $3, $4; exit}')
+[[ "$available_kb" =~ ^[0-9]+$ ]] || { echo 'could not read restore free space' >&2; exit 1; }
+available_bytes=$((available_kb * 1024))
+((available_bytes >= min_free_bytes)) || {
+  echo "restore blocked: free_bytes=$available_bytes floor=$min_free_bytes" >&2
+  exit 75
 }
 
 # shellcheck source=restic-lib.sh
