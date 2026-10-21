@@ -37,6 +37,7 @@ timestamp: 2026-10-21T00:00:00+07:00
 * [Backup Runner](../automation/backup-runner/README.md) - serial export/upload/post-check flow, retention lock, and schedule contract.
 * [Native Backup Pull Transport](./deployments/backup-native-pull-transport-2026-10-21.md) - private-network PostgreSQL/RustFS transport and staged CouchDB proxy boundary.
 * [CouchDB Backup Proxy](./deployments/couchdb-backup-proxy-2026-10-21.md) - GET-only VM100-to-Pi5 proxy, credential boundary, restore evidence, and current cutover gate.
+* [CouchDB Restic Streaming Research](./research/couchdb-restic-streaming-2026-10-21.md) - experimental no-staging design and restore gates; not scheduled production.
 * [RustFS Native Pull Cutover](./deployments/rustfs-native-pull-cutover-2026-10-21.md) - production S3 network, read-only key, export and restore evidence.
 * [VM100 Vzdump Preflight](./deployments/vm100-vzdump-preflight-2026-10-21.md) - current Proxmox capacity and the separate-failure-domain requirement.
 * [GitLab CI Homepage Approval](./deployments/gitlab-ci-homepage-approval-2026-10-21.md) - manual release contract and live enrollment gate.
