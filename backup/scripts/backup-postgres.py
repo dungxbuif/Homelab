@@ -55,9 +55,13 @@ def create_backup(inventory: dict, output: Path) -> dict:
     # not granted to backup_ro. During the comparison phase it stays on the
     # existing forced Pi5 path while per-database dumps move to pg-net.
     globals_mode = os.environ.get("BACKUP_POSTGRES_GLOBALS_TRANSPORT", "container")
+    globals_user = os.environ.get(
+        "BACKUP_POSTGRES_GLOBALS_USER",
+        config["admin_user"] if globals_mode == "container" else user,
+    )
     globals_dump = pg_command(
         container,
-        ["pg_dumpall", "-U", user, "--globals-only", "--no-role-passwords"],
+        ["pg_dumpall", "-U", globals_user, "--globals-only", "--no-role-passwords"],
         network_mode=False if globals_mode == "container" else None,
     )
     if len(globals_dump) < 32:
@@ -76,8 +80,9 @@ def create_backup(inventory: dict, output: Path) -> dict:
             listing = docker_run(
                 os.environ["BACKUP_POSTGRES_NETWORK"],
                 os.environ["BACKUP_POSTGRES_CLIENT_IMAGE"],
-                ["pg_restore", "--list"],
+                ["-c", "cat > /tmp/backup.dump && pg_restore --list /tmp/backup.dump"],
                 env_file=os.environ["BACKUP_POSTGRES_CREDENTIALS_FILE"],
+                entrypoint="sh",
                 input_bytes=dump,
             )
         else:

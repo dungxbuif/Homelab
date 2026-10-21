@@ -21,6 +21,9 @@ not enough.
   `pg-net`, connecting directly to `postgres-pg:5432` with a dedicated
   `backup_ro` credential file. It never publishes a database port or uses a
   host IP. PgBouncer is deliberately not in the backup path.
+- `BACKUP_POSTGRES_GLOBALS_TRANSPORT=network` keeps globals on the same private
+  `pg-net` path and uses `backup_ro` with `--no-role-passwords`; no admin
+  credential leaves PostgreSQL or enters the VM100 credential file.
 - `BACKUP_COUCHDB_TRANSPORT=network` runs the curl client image on
   `homelab-net`, connecting to the Docker service name `couchdb`. It uses a
   dedicated read-only CouchDB credential file and never exposes port 5984.

@@ -132,6 +132,8 @@ BACKUP_POSTGRES_CREDENTIALS_FILE=/etc/homelab-backup/secrets/postgres-backup.env
 BACKUP_POSTGRES_HOST=postgres-pg
 BACKUP_POSTGRES_PORT=5432
 BACKUP_POSTGRES_USER=backup_ro
+BACKUP_POSTGRES_GLOBALS_TRANSPORT=network
+BACKUP_POSTGRES_GLOBALS_USER=backup_ro
 BACKUP_COUCHDB_TRANSPORT=network
 BACKUP_COUCHDB_NETWORK=homelab-net
 BACKUP_COUCHDB_CLIENT_IMAGE=curlimages/curl@sha256:<approved-digest>
@@ -140,9 +142,8 @@ BACKUP_COUCHDB_ENDPOINT=http://couchdb:5984
 ```
 
 The files contain only runtime credentials and remain root-owned, mode `0600`.
-The PostgreSQL globals export stays on the existing narrow Pi5 container path
-during the comparison because `backup_ro` must not receive catalog-admin
-privileges. It is always requested with `--no-role-passwords`, so role password
+The PostgreSQL globals export also uses the private network path with
+`backup_ro`; it is always requested with `--no-role-passwords`, so role password
 hashes are not written into the backup payload. The per-database dumps use the
 private `postgres-pg:5432` endpoint directly; PgBouncer remains an application
 pooler and is not a backup dependency. Do not enable this mode until the

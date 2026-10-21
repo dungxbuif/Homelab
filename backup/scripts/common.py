@@ -180,6 +180,8 @@ def docker_run(
 ) -> bytes:
     """Run a one-shot client on a private Docker network without publishing ports."""
     args = ["docker", "run", "--rm", "--network", network]
+    if input_bytes is not None:
+        args.insert(3, "-i")
     if env_file is not None:
         args.extend(["--env-file", str(env_file)])
     if entrypoint is not None:
