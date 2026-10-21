@@ -37,6 +37,11 @@ timestamp: 2026-07-03T15:14:00Z
   retaining the NATS volume; all four containers became healthy and public
   `/readyz`, `/healthz`, and `/docs/` returned 200. See
   [RelayHub resource canary](./deployments/relayhub-resource-canary-2026-10-21.md).
+- **Family Tree and MezonHook resource canaries:** capped Family Tree at
+  `0.50 CPU/512 MiB` with `stop-first` and MezonHook at `0.50 CPU/512 MiB`
+  with `start-first`. Their route checks returned 200 and their images,
+  networks, mounts, and environment were preserved. See
+  [Family/MezonHook canary](./deployments/family-mezon-resource-canary-2026-10-21.md).
 - **NetBird dashboard resource canary:** capped the stateless dashboard at
   `0.50 CPU/512 MiB` with `start-first`. The Swarm update completed and the
   public dashboard returned HTTP 200. The stateful NetBird server was left
