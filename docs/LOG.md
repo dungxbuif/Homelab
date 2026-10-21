@@ -34,6 +34,12 @@ timestamp: 2026-07-03T15:14:00Z
   from a masked text variable to a protected GitLab file variable, so the
   release job reads the existing webhook only as a file-backed runtime value.
   Live enrollment remains pending; no secret was transmitted in this change.
+- **Public GitHub credential audit:** fetched the public Homelab repository
+  read-only and scanned its two refs/13 reachable commits for token, private
+  key, webhook, bot-token, JWT and cloud-key patterns. No real credential was
+  found; remaining matches were deprecated placeholders. S1 remains open until
+  previously exposed credentials are revoked or rotated at their issuers. See
+  [GitHub credential exposure audit](./deployments/github-credential-exposure-audit-2026-10-21.md).
 
 - **Image update watch:** added VM100 Diun in notify-only mode with a pinned
   image digest, read-only Docker socket, no published ports, and `0.25 CPU /
