@@ -55,6 +55,12 @@ class CouchDBStreamTests(unittest.TestCase):
                 MODULE.stream_database(inventory, "missing", io.BytesIO(), Path(tempfile.gettempdir()) / "metadata.json")
         curl.assert_not_called()
 
+    def test_stream_free_space_floor_fails_closed(self):
+        with patch.dict(MODULE.os.environ, {"BACKUP_COUCHDB_MIN_FREE_BYTES": "100"}), \
+             patch.object(MODULE.shutil, "disk_usage", return_value=MODULE.shutil._ntuple_diskusage(1000, 901, 99)):
+            with self.assertRaisesRegex(RuntimeError, "disk floor"):
+                MODULE.enforce_free_space(Path("/tmp"))
+
 
 if __name__ == "__main__":
     unittest.main()

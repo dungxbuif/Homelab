@@ -8,6 +8,8 @@ import hashlib
 import gzip
 import importlib.util
 import json
+import os
+import shutil
 import sys
 from pathlib import Path
 from urllib.parse import quote
@@ -42,6 +44,23 @@ class HashingWriter:
         return self.sink.flush()
 
 
+def enforce_free_space(path: Path) -> None:
+    raw_floor = os.environ.get("BACKUP_COUCHDB_MIN_FREE_BYTES", "")
+    if not raw_floor:
+        return
+    try:
+        floor = int(raw_floor)
+    except ValueError as exc:
+        raise RuntimeError("BACKUP_COUCHDB_MIN_FREE_BYTES must be an integer") from exc
+    if floor < 0:
+        raise RuntimeError("BACKUP_COUCHDB_MIN_FREE_BYTES must be non-negative")
+    free = shutil.disk_usage(path).free
+    if free < floor:
+        raise RuntimeError(
+            f"CouchDB stream stopped before disk floor: free={free} floor={floor}"
+        )
+
+
 def stream_database(inventory: dict, database: str, output, metadata_path: Path, checksum_path: Path | None = None) -> dict:
     config = inventory["couchdb"]
     entries, excluded_retired = select_backup_entries(config["databases"])
@@ -66,6 +85,7 @@ def stream_database(inventory: dict, database: str, output, metadata_path: Path,
     hashed_output = HashingWriter(output) if checksum_path else output
     with gzip.GzipFile(fileobj=hashed_output, mode="wb", compresslevel=6) as compressed:
         while True:
+            enforce_free_space(metadata_path.parent)
             query = f"/_all_docs?include_docs=true&attachments=true&limit={PAGE_SIZE}"
             if last_id is not None:
                 query += f"&startkey_docid={quote(last_id, safe='')}&skip=1"

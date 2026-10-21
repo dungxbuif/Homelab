@@ -53,6 +53,8 @@ failed-safe gate, not a successful Restic/restore acceptance.
 ## Non-negotiable gates
 
 - A non-zero exporter or Restic exit must not create a success marker.
+- The stream exporter must honor `BACKUP_COUCHDB_MIN_FREE_BYTES` before each
+  page even though it does not stage the document payload locally.
 - A truncated gzip stream must be rejected before it can be considered a
   snapshot.
 - The manifest must record database name, document count, security metadata,
