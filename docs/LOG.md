@@ -1255,6 +1255,12 @@ timestamp: 2026-07-03T15:14:00Z
   count-verifying restore helper. It is packaged and contract-tested but is
   not scheduled or pointed at the production repository by default.
 
+- **B9 backlog reconciliation 2026-10-21:** updated the current status and
+  backlog to include the guarded stream uploader, durable metadata snapshot,
+  remote post-check and manual two-snapshot restore orchestrator. B9 remains
+  partial solely because the full `homelab` acceptance and scheduler cutover
+  have not been run under the VM100 disk safety gate.
+
 - **Backup test regression fixes 2026-10-21:** full macOS discovery exposed
   two real compatibility defects: the Pi health-only command incorrectly
   required the bounded runner, and Bash 3.2 expanded an empty Restic option

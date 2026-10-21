@@ -53,7 +53,7 @@ incident and rollback context.
 | A1 | AI rollout owner UAT | Runtime and synthetic matrix pass; business acceptance is still separate | Owner-approved UAT record |
 | A8 | GitLab CI Homepage release | Source contract and tests pass; protected variables, runner enrollment and live positive/no-op runs remain | GitLab pipeline receipts |
 | B3 | VM100 image backup | Proxmox has no separate failure-domain target | PBS/NAS/other target and a verified `vzdump` restore |
-| B9 | Passive Pi5 backups | RustFS/PostgreSQL are native-pull; CouchDB full `homelab` comparison is still pending | Complete export, representative restore, scheduler cutover and rollback test |
+| B9 | Passive Pi5 backups | RustFS/PostgreSQL are native-pull; CouchDB has a guarded stream uploader, durable metadata snapshot and manual two-snapshot restore orchestrator, but the full `homelab` comparison is still pending | Complete export, representative restore, scheduler cutover and rollback test |
 
 ## Operator rules
 
