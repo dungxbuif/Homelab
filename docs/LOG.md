@@ -1271,6 +1271,13 @@ timestamp: 2026-07-03T15:14:00Z
   directory creation or Restic restore and fails with exit `75` below the
   configurable `RESTORE_STREAM_MIN_FREE_BYTES` floor (20 GiB default).
 
+- **Remaining gate contract audit 2026-10-21:** ran the local guard suites in
+  a Linux container with the reviewed dependencies. S2 HostSNI guard passed
+  `6/6`; A8 Homepage release plus Proxmox import/baseline contracts passed
+  `12/12`; B3 runtime deploy contract passed `2/2`; and B9 stream contracts
+  passed. No live VPS, GitLab, Proxmox mutation or backup scheduler change was
+  performed.
+
 - **VM100 staging disk attribution 2026-10-21:** read-only per-run sizing
   identified `gitlab-20261020-220000/complete/gitlab-native-backup.tar` as the
   dominant local consumer at `8.2 GiB`; the next largest run is RustFS at
