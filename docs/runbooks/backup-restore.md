@@ -242,6 +242,42 @@ backup/scripts/post-check-report.sh \
   --dry-run
 ```
 
+## CouchDB Native-Pull Staging
+
+The CouchDB native-pull path is staged, not the production scheduled path.
+Pi5 currently remains the export source for the `databases` class. The live
+GET-only proxy is private LAN traffic:
+
+```text
+VM100 -> 10.10.0.5:15984 -> Pi5 couchdb-backup-proxy:8080 -> couchdb:5984
+```
+
+- The listener is not exposed through Traefik, Rathole or a public domain.
+- Only VM100 (`10.10.0.31/32`) is allowed.
+- Only `GET`/`HEAD` backup paths and the configured database allow-list are
+  accepted; mutating requests are rejected.
+- VM100 stores only `BACKUP_PROXY_TOKEN`; CouchDB admin credentials remain on
+  Pi5. Deployment evidence and rollback are in
+  [the proxy deployment note](../deployments/couchdb-backup-proxy-2026-10-21.md).
+
+Verify from VM100 with the pinned curl image and the secret file, without
+printing the token:
+
+```bash
+docker run --rm --network homelab-net \
+  --env-file /etc/homelab-backup/secrets/couchdb-backup-proxy.env \
+  curlimages/curl@sha256:d9b4541e214bcd85196d6e92e2753ac6d0ea699f0af5741f8c6cccbfcf00ef4b \
+  sh -c 'curl -fsS -o /dev/null -w "%{http_code} %{size_download}\\n" \
+    -H "Authorization: Bearer $BACKUP_PROXY_TOKEN" \
+    http://10.10.0.5:15984/obsidian_vault'
+```
+
+Expected: non-empty `200` with the valid token and `401` with a wrong token.
+Do not enable `BACKUP_COUCHDB_TRANSPORT=network-proxy` in the scheduled class
+until a complete export, manifest comparison and isolated restore pass. The
+rollback is to stop `couchdb-backup-proxy` on Pi5; the current Pi5 backup path
+continues independently.
+
 ## Restore Order
 
 1. Restore PostgreSQL globals/roles, then the selected database into an isolated

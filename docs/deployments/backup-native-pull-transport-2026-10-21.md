@@ -55,16 +55,16 @@ created directly in PostgreSQL with no login-administration, database-creation,
 superuser, replication, or write-data privileges and is tested through
 `postgres-pg:5432` on `pg-net`. No application credential is changed.
 
-### CouchDB ACL limitation and pending design
+### CouchDB ACL limitation and proxy design
 
 CouchDB has no native database-level read-only member role: a non-admin member
 can also write documents. A live enrollment probe confirmed that `_users`
 security cannot be changed for this purpose (`403`), so direct member
-enrollment is rejected. The selected next design is a Pi5-local GET-only
+enrollment is rejected. The selected design is a Pi5-local GET-only
 proxy that keeps CouchDB admin credentials inside the data host, accepts a
 separate VM100 token, allows only the backup `GET` paths, and rejects all
-mutating methods. This design is pending explicit approval and has not been
-deployed.
+mutating methods. It is deployed on private port `10.10.0.5:15984` and is not
+exposed through Traefik, Rathole or a public domain.
 
 ## Current runtime inventory
 
@@ -85,16 +85,23 @@ The read-only audit on 2026-10-21 found:
   `homelab-net` exception.
 
 The source adapter and PostgreSQL credential are deployed on VM100, but the
-production runner is intentionally still on the original Pi5 transport. A
-full comparison attempt completed the PostgreSQL portion and then stopped at
-CouchDB because VM100 has no CouchDB container or enrolled CouchDB credential.
-The approved Pi5-side GET-only proxy is now deployed on private port
-`10.10.0.5:15984`, restricted to VM100 and the backup paths. A real export
-probe was started and stopped before completion because the large `homelab`
-database would have continued for an extended period; production cutover is
-still intentionally pending. The runtime native PostgreSQL variables remain
-rolled back so the combined `databases` class cannot enter a partial-failure
-state.
+production runner is intentionally still on the original Pi5 transport. The
+Pi5-side proxy is live on private port `10.10.0.5:15984`, restricted to VM100
+and the backup paths. A real export probe was started and stopped before
+completion because the large `homelab` database would have continued for an
+extended period; production cutover is still intentionally pending. The
+runtime native PostgreSQL variables remain rolled back so the combined
+`databases` class cannot enter a partial-failure state.
+
+Live verification completed:
+
+- valid VM100 request: non-empty HTTP `200` response;
+- invalid proxy token: HTTP `401` response;
+- proxy container: running as non-root with zero restarts;
+- no production CouchDB data or backup marker was changed by the probe.
+
+The exact deployment and rollback details are in
+[`couchdb-backup-proxy-2026-10-21.md`](./couchdb-backup-proxy-2026-10-21.md).
 
 ## Verification
 

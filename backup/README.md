@@ -144,7 +144,11 @@ BACKUP_COUCHDB_ENDPOINT=http://10.10.0.5:15984
 The proxy credentials file contains only `BACKUP_PROXY_TOKEN`; CouchDB admin
 credentials remain on Pi5.
 
-The files contain only runtime credentials and remain root-owned, mode `0600`.
+On VM100, the proxy file is root-owned and readable only by the backup runtime
+group (`0640`); on Pi5, the token source remains root-owned and private. Neither
+file is committed. The proxy is deployed and verified on the private LAN, but
+the scheduled `databases` class still uses the existing Pi5 transport until the
+comparison and restore gate below is accepted.
 The PostgreSQL globals export also uses the private network path with
 `backup_ro`; it is always requested with `--no-role-passwords`, so role password
 hashes are not written into the backup payload. The per-database dumps use the
@@ -153,6 +157,40 @@ pooler and is not a backup dependency. Do not enable this mode until the
 dedicated identities, image digests and one-week manifest/restore comparison
 are reviewed. Removing Pi5 Restic/Drive secrets is a later acceptance step,
 not an automatic consequence of setting these variables.
+
+### Live CouchDB proxy checks
+
+The Pi5 proxy listens only on the private LAN address `10.10.0.5:15984`; it is
+not routed through Traefik, Rathole or a public domain. It is restricted to the
+VM100 source address and the allow-listed backup databases/paths. The upstream
+connection stays inside Pi5's Docker network at `couchdb:5984`.
+
+Run this check from VM100 without printing the token:
+
+```bash
+docker run --rm --network homelab-net \
+  --env-file /etc/homelab-backup/secrets/couchdb-backup-proxy.env \
+  curlimages/curl@sha256:d9b4541e214bcd85196d6e92e2753ac6d0ea699f0af5741f8c6cccbfcf00ef4b \
+  sh -c 'curl -fsS -o /dev/null -w "%{http_code} %{size_download}\\n" \
+    -H "Authorization: Bearer $BACKUP_PROXY_TOKEN" \
+    http://10.10.0.5:15984/obsidian_vault'
+```
+
+Expected results are a non-empty `200` response with the valid token and
+`401` with an intentionally incorrect token. A full export probe was stopped
+before completion because `homelab` is large; it did not modify CouchDB or the
+production backup marker.
+
+To roll back the staged proxy without touching CouchDB:
+
+```bash
+cd /ssd-data/infra
+docker compose -f docker-compose.yml \
+  -f couchdb/backup-proxy.compose.yml stop couchdb-backup-proxy
+```
+
+The scheduled backup remains on the Pi5 path during this staged period, so
+stopping the proxy does not disable the current production backup.
 
 ## Status contract
 
