@@ -68,10 +68,13 @@ def stop_client(process, grace):
         process.wait(timeout=grace)
 
 
-def run(args, timeout, grace, cleanup_timeout):
+def run(args, timeout, grace, cleanup_timeout, interactive_stdin=False):
     invocation = secrets.token_hex(16)
     label = 'homelab.backup.invocation=' + invocation
-    command = ['docker', 'create', '--rm', '--name', 'homelab-restic-' + invocation,
+    command = ['docker', 'create', '--rm', '--name', 'homelab-restic-' + invocation]
+    if interactive_stdin:
+        command.append('--interactive')
+    command += [
                '--label', label, *args]
     process = None
     status = 125
@@ -107,7 +110,11 @@ def run(args, timeout, grace, cleanup_timeout):
         acknowledged_id = identity
         if pending_signal is not None:
             raise Interrupted(pending_signal)
-        process = subprocess.Popen(['docker', 'start', '--attach', acknowledged_id], start_new_session=True)
+        start_command = ['docker', 'start', '--attach']
+        if interactive_stdin:
+            start_command.append('--interactive')
+        start_command.append(acknowledged_id)
+        process = subprocess.Popen(start_command, start_new_session=True)
         status = wait_client()
         if status < 0:
             status = 128 - status
@@ -146,6 +153,7 @@ if __name__ == '__main__':
     parser.add_argument('--timeout', required=True, type=duration)
     parser.add_argument('--grace', default='30s', type=duration)
     parser.add_argument('--cleanup-timeout', default='30s', type=duration)
+    parser.add_argument('--interactive-stdin', action='store_true')
     parser.add_argument('docker_args', nargs=argparse.REMAINDER)
     options = parser.parse_args()
     arguments = options.docker_args
@@ -153,4 +161,5 @@ if __name__ == '__main__':
         arguments = arguments[1:]
     if not arguments:
         parser.error('Docker image arguments are required')
-    sys.exit(run(arguments, options.timeout, options.grace, options.cleanup_timeout))
+    sys.exit(run(arguments, options.timeout, options.grace, options.cleanup_timeout,
+                 options.interactive_stdin))

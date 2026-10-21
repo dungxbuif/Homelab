@@ -176,7 +176,9 @@ VM100 staging experiment, set `BACKUP_COUCHDB_MIN_FREE_BYTES` to a safety
 floor; the exporter checks it before each page and fails closed. It is unset
 by default. The experimental `backup/scripts/stream-couchdb.py` source
 boundary emits one database as gzip NDJSON to stdout for a future Restic
-`--stdin` integration; it is not part of the scheduled runner yet.
+`--stdin` integration; `run_restic_container.py --interactive-stdin` now
+passes that stream through the pinned Docker client, but it is not part of the
+scheduled runner yet.
 
 Run this check from VM100 without printing the token:
 

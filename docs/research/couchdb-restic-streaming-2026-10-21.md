@@ -24,8 +24,9 @@ compression does not remove the need to hold the whole payload locally.
 5. Restore the stream into a temporary file or pipe, then use the existing
    CouchDB restore helper and document-count gate.
 
-The stream exporter is an experimental source boundary until the Restic stdin
-wrapper, multi-artifact manifest and restore drill are implemented and tested.
+The stream exporter and the opt-in Restic stdin wrapper are now source-tested.
+The multi-artifact manifest, remote snapshot receipt and restore drill are not
+implemented yet, so this remains an experimental boundary.
 The scheduled `databases` class remains unchanged during this work.
 
 ## Non-negotiable gates

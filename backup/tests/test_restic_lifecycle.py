@@ -94,6 +94,25 @@ sys.exit(module.run(["fixture-image"], 1, 0.1, 1))
         self.assertFalse(active)
         self.assertFalse(any(c[0] == 'start' for c in calls))
 
+    def test_opt_in_interactive_stdin_reaches_docker_start(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docker = root / 'docker'
+            docker.write_bytes(FAKE.read_bytes())
+            docker.chmod(0o755)
+            env = dict(os.environ, PATH=f'{root}:{os.environ["PATH"]}',
+                       LIFECYCLE_FIXTURE=tmp, LIFECYCLE_MODE='success')
+            command = ['python3', str(SCRIPT), '--timeout', '1s',
+                       '--grace', '0.1s', '--cleanup-timeout', '1s',
+                       '--interactive-stdin', '--', 'fixture-image', 'backup', '--stdin']
+            result = subprocess.run(command, env=env, input=b'stream-payload',
+                                    capture_output=True, timeout=8)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual((root / 'stdin').read_bytes(), b'stream-payload')
+            calls = [json.loads(line) for line in (root / 'calls').read_text().splitlines()]
+            self.assertIn('--interactive', calls[0])
+            self.assertIn('--interactive', calls[1])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -21,6 +21,8 @@ if args[0] == 'create':
     active.write_text(label)
     print('a' * 64)
 elif args[:2] == ['start', '--attach']:
+    if '--interactive' in args:
+        (root / 'stdin').write_bytes(sys.stdin.buffer.read())
     if mode == 'hang':
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
         while True:
