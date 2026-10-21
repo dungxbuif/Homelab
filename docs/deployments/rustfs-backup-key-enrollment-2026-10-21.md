@@ -27,15 +27,15 @@ a custom bucket-scoped policy with only:
 
 ### Current image compatibility check
 
-The live image is `rustfs/rustfs:1.0.0-rc.1`. Signed, non-production Admin API
-probes reached `/rustfs/admin/v3/add-service-account`, but this image returned
-HTTP `400 InvalidRequest` while unmarshalling the documented service-account
-body, even with a valid alphanumeric key and 40-character secret. No account
-was created and no credential was written to VM100. The same body succeeded in
-an isolated `rustfs/rustfs:1.0.1` container, so this is a version-compatibility
-gap. Do not use the root key for backup or upgrade the production image as a
-quick workaround. Use the live Console's Identity/Access Keys flow, or plan a
-version-pinned RustFS upgrade with a data backup and rollback gate.
+The live image is now `rustfs/rustfs:1.0.1`. The prior production image
+`1.0.0-rc.1` returned HTTP `400 InvalidRequest` while unmarshalling the
+documented service-account body. After the controlled upgrade, the production
+Admin API still rejects the enrollment body, while the same body succeeds in
+an isolated `1.0.1` container. No production account was created and no
+credential was written to VM100. Treat this as a production IAM-state/API
+compatibility issue, not as permission to use the root key for backup. Use the
+live Console's Identity/Access Keys flow, or complete a separately approved
+IAM migration before enabling the VM100 RustFS transport.
 
 Each action is limited to the inventory bucket ARN and its object ARN. The
 credential is stored only on VM100 at

@@ -23,6 +23,13 @@ timestamp: 2026-10-21T00:00:00+07:00
 The restore copied only object payloads, excluding backup control metadata. No
 production RustFS container, bucket, volume or Pi5 service was changed.
 
+This acceptance used a disposable scratch image pinned at the time of the
+drill. The production RustFS image was subsequently upgraded to `1.0.1`; this
+does not invalidate the payload/checksum restore result. A fresh restore drill
+after the upgrade remains a useful follow-up, but is not required for the
+upgrade health gate because the production service was only recreated and its
+data volume was not migrated.
+
 ## Repair discovered during acceptance
 
 The deployed helper lived at `/opt/apps/homelab-backup/app/rustfs-backup/`,

@@ -40,6 +40,8 @@ not sufficient for this exporter without a bucket-scoped custom policy.
 
 The enrollment procedure is documented in
 [`rustfs-backup-key-enrollment-2026-10-21.md`](./rustfs-backup-key-enrollment-2026-10-21.md).
-The current `1.0.0-rc.1` image's Admin API probe returned HTTP 400 for the
-documented service-account body; the same body succeeded in an isolated
-`1.0.1` container. No key was created and production was not changed.
+The production image is now `1.0.1`; the controlled upgrade is recorded in
+[`rustfs-upgrade-2026-10-21.md`](./rustfs-upgrade-2026-10-21.md). The production
+Admin API still returns HTTP 400 for the documented service-account body, while
+the same body succeeds in an isolated `1.0.1` container. No key was created and
+the scheduled transport was not changed.

@@ -54,7 +54,7 @@ inventory instead.
 | `edge-adguardhome-pi5` | `adguard/adguardhome:latest` | `sha256:e38d0ed0724eb284aa9e196359bd24cae4fff315b4550270cca948986b4b16b8`; `53/tcp+udp`, HTTP/HTTPS admin |
 | PostgreSQL | `pgvector/pgvector:pg16` | `sha256:af89eca7a846ab51eae829d24dacd674684fa9e86720fa124214f401d4db0127`; raw DB remains internal, PgBouncer is the approved client endpoint |
 | Redis production | `redis:7.2-alpine` | `sha256:9a79915a9511975e7aab6215229fed405cd3255a44c8daa5f08973fe16d82e3`; shared logical DB policy is documented in `STACK.md` |
-| RustFS | `rustfs/rustfs:1.0.0-rc.1` | `sha256:5baa982d37867287f4316e48a6da878ec9869ac8aff5f0507cfa3764fd9f724c` |
+| RustFS | `rustfs/rustfs:1.0.1` | Production image upgraded and verified 2026-10-21; see [upgrade evidence](./rustfs-upgrade-2026-10-21.md). |
 | CouchDB | `couchdb:3.3.3` | Obsidian/LiveSync source of truth |
 | Semaphore | `semaphoreui/semaphore:v2.19.12` | `sha256:b85760f41eac1964a89b830aee9e6240a3bdee804b27ce689beeea49c6082103` |
 | Provisioner | `homelab/provisioner:20261005` | `sha256:abe3fca933569bd9d43b568022c385f2316e63113b7d41ff8d7f602de491a1c5`; internal only |

@@ -114,7 +114,7 @@ listed in the [resource audit](./research/resource-limit-audit-2026-09-15.md).
 
 |Service|Container Name|Docker Image & Version|Port Mapping (Host / Container)|Subdomain Routing / Ingress Target|Core Purpose & Technical Parameters|
 |---|---|---|---|---|---|
-|**RustFS Storage**|`rustfs`|`rustfs/rustfs:1.0.0-rc.1`|**Portless** on `proxy_net` and `homelab-net`|`storage.dungxbuif.com` (S3 API) <br>`cdn.dungxbuif.com` (Console)|ARM64 S3 storage; ports 9000/9001 internal.|
+|**RustFS Storage**|`rustfs`|`rustfs/rustfs:1.0.1`|**Portless** on `proxy_net` and `homelab-net`|`storage.dungxbuif.com` (S3 API) <br>`cdn.dungxbuif.com` (Console)|ARM64 S3 storage; ports 9000/9001 internal.|
 |**Private Registry**|`docker-registry`|`registry:2`|**Portless** on `proxy_net` and `homelab-net`|`registry.dungxbuif.com`|Docker image registry on Pi5 SSD.|
 |**Librespeed**|`librespeed`|`lscr.io/linuxserver/librespeed`|**Portless** on `proxy_net` and `homelab-net`|`speed.dungxbuif.com`|LAN/WAN speedtest backend.|
 |**Centralized PostgreSQL**|`postgres`|`pgvector/pgvector:pg16`|**Portless** on `proxy_net` and `homelab-net`; PgBouncer maps LAN `:5432` to pooler `:6432`|Direct container DNS `postgres:5432` only for approved clients such as GitLab; LAN `10.10.0.5:5432` is PgBouncer, not raw PostgreSQL; no edge route|Pinned backend DB serving Pi5 apps and approved VM100 services.|
