@@ -14,6 +14,8 @@ Homepage is now bounded at 512 MiB/0.50 CPU after its canary update; its
 approved image digest stayed unchanged and the public route returned HTTP 200.
 The macOCR proxy is now bounded at 1 GiB/1 CPU; its image stayed unchanged and
 both `/healthz` and `/readyz` returned HTTP 200 after the stop-first update.
+The n8n service is now bounded at 2 GiB/1 CPU; its task became healthy after
+the expected warm-up and `/healthz` returned HTTP 200.
 
 Already bounded workloads include GitLab (10 GiB/4 CPU), KubeKosh (4 GiB/2
 CPU), Stirling PDF (2 GiB/2 CPU), the Semaphore runner (1 GiB/1 CPU),
@@ -21,7 +23,7 @@ CouchLoom (2 GiB/2 CPU), the GitLab tunnels (128 MiB/0.5 CPU each), K8s
 Syntax (128 MiB/0.25 CPU), and the pg-net anchor (16 MiB/0.05 CPU).
 
 The following production workloads were running without a Docker limit in the
-snapshot: OpenClaw, n8n, MyPocket API, MyPocket worker,
+snapshot: OpenClaw, MyPocket API, MyPocket worker,
 RelayHub API, RelayHub worker, NetBird server and NetBird dashboard. The
 snapshot is an observation, not a safe limit recommendation by itself.
 

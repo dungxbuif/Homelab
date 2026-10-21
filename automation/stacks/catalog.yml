@@ -117,8 +117,7 @@ services:
     networks: [data-net, edge-http-net]
     routes: [n8n]
     health: {path: /healthz, expected_status: [200]}
-    resources: {}
-    proposed_resources: {cpus: '1.00', memory_mb: 2048}
+    resources: {cpus: '1.00', memory_mb: 2048}
     rollback_image: docker.n8n.io/n8nio/n8n:stable
     deployable: false
   - id: kubekosh
