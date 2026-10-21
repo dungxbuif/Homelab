@@ -34,8 +34,14 @@ cold recovery, not the scheduled mechanism.
 ## Optional VM100 network transport
 
 The default transport uses the inventory endpoint and the existing Pi5 Docker
-network. A future VM100 pull may opt in to a private Docker-network endpoint
-with all of these runtime-only values:
+network. The VM100 network mode is source-ready but **not currently enabled**:
+the Pi5 RustFS container is on Pi5-local Docker networks and publishes no host
+S3 port, so VM100 cannot reach `s3-net` directly. Before enabling this mode,
+provision a private, source-restricted endpoint and a read-only key. Do not use
+the public `storage.dungxbuif.com` route for backup traffic.
+
+Once that endpoint has passed object-listing, manifest-parity and isolated
+restore checks, VM100 may opt in with these runtime-only values:
 
 ```text
 BACKUP_RUSTFS_TRANSPORT=network

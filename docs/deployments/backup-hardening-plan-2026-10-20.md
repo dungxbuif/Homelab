@@ -276,8 +276,11 @@ CLI/rclone or `mc mirror` to staging, then restic), instead of exporting the
 live volume on Pi5. Do not attach VM100 to Pi5's local Docker networks and do
 not publish RustFS through Traefik, Rathole or a public domain.
 
-7.3 CouchDB: attach CouchDB to a dedicated `couch-net` visible to VM100 (same anchor pattern as `pg-net-anchor`); replicate or `_all_docs` export from VM100 with
-a read-only `_security` member, not the admin account.
+7.3 CouchDB: do not attach the Pi5 CouchDB container to a VM100-visible
+network and do not rely on a CouchDB `_security` member for read-only access;
+the ACL model cannot enforce that boundary. Use the deployed private GET-only
+proxy on `10.10.0.5:15984`, compare the full manifest and restore result from
+VM100, then cut over only after the comparison gate passes.
 
 7.4 After a week of matching output, disable the Pi5 `databases` and `rustfs` classes and remove `pi-executor.sh`; delete `runner.env` and the rclone token from Pi5.
 
