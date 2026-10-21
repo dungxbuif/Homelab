@@ -1266,6 +1266,13 @@ timestamp: 2026-07-03T15:14:00Z
   `9.7 GiB`. No backup process was active, but this is at the warning
   threshold; the CouchDB scratch restore was deliberately not started.
 
+- **VM100 staging disk attribution 2026-10-21:** read-only per-run sizing
+  identified `gitlab-20261020-220000/complete/gitlab-native-backup.tar` as the
+  dominant local consumer at `8.2 GiB`; the next largest run is RustFS at
+  `731 MiB`, followed by configs at about `363 MiB`. The GitLab archive is a
+  complete locally retained run used by the restore policy, so it was not
+  deleted without an explicit retention decision.
+
 - **Backup test regression fixes 2026-10-21:** full macOS discovery exposed
   two real compatibility defects: the Pi health-only command incorrectly
   required the bounded runner, and Bash 3.2 expanded an empty Restic option
