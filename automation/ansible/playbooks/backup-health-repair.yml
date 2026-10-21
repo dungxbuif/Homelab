@@ -53,7 +53,15 @@
         backup: true
       when: inventory_hostname == 'pi5'
 
-    - name: Install the monitoring drift report on VM100
+    - name: Install the monitoring target audit on VM100
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../maintenance/audit-monitoring-targets.py'
+        dest: /opt/apps/homelab-backup/app/automation/maintenance/audit-monitoring-targets.py
+        mode: '0755'
+        backup: true
+      when: inventory_hostname == 'vm100'
+
+    - name: Install the monitoring drift report on VM100 after its dependency
       ansible.builtin.copy:
         src: '{{ playbook_dir }}/../../maintenance/run-monitoring-drift-report.sh'
         dest: /opt/apps/homelab-backup/app/automation/maintenance/run-monitoring-drift-report.sh
@@ -61,12 +69,23 @@
         backup: true
       when: inventory_hostname == 'vm100'
 
-    - name: Install the monitoring target audit on VM100
-      ansible.builtin.copy:
-        src: '{{ playbook_dir }}/../../maintenance/audit-monitoring-targets.py'
-        dest: /opt/apps/homelab-backup/app/automation/maintenance/audit-monitoring-targets.py
-        mode: '0755'
-        backup: true
+    - name: Require both monitoring drift files before enabling the timer
+      ansible.builtin.stat:
+        path: '{{ item }}'
+      loop:
+        - /opt/apps/homelab-backup/app/automation/maintenance/audit-monitoring-targets.py
+        - /opt/apps/homelab-backup/app/automation/maintenance/run-monitoring-drift-report.sh
+      register: monitoring_drift_files
+      when: inventory_hostname == 'vm100'
+
+    - name: Fail closed if the monitoring drift release is incomplete
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists | bool
+          - item.stat.isreg | bool
+          - item.stat.executable | bool
+        fail_msg: 'Monitoring drift release is incomplete: {{ item.item }}'
+      loop: '{{ monitoring_drift_files.results | default([]) }}'
       when: inventory_hostname == 'vm100'
 
     - name: Install the monitoring drift systemd units on VM100

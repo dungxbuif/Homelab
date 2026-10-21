@@ -33,5 +33,9 @@ VictoriaMetrics, and a free VM100 backup lock.
   was missing from the release. The dependency was added to the release
   contract, redeployed with a rollback copy, and the next run completed with
   `Result=success` and `ExecMainStatus=0`.
+- The repair playbook now installs the dependency before the wrapper, verifies
+  both executable regular files before enabling the timer, and has a contract
+  test for that ordering. This removes the previous deployment-order window
+  that produced transient failure notifications.
 - The wrapper uses the existing VM100 Mezon secret file and VictoriaMetrics
   target gate. It does not embed a webhook or alter scrape configuration.
