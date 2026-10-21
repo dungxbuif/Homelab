@@ -29,17 +29,6 @@ if [[ "$class" == markers ]]; then
   done
   exit 0
 fi
-resource_runner="$app_root/automation/backup-runner/run-pi-capped.sh"
-[[ -x "$resource_runner" ]] || { echo "bounded Pi runner is missing: $resource_runner" >&2; exit 1; }
-resource_mode=${BACKUP_PI_RESOURCE_MODE:-systemd}
-
-run_bounded() {
-  if [[ "$resource_mode" == systemd ]]; then
-    exec sudo -n /usr/local/sbin/homelab-backup-systemd-class "$class"
-  fi
-  exec "$resource_runner" "$@"
-}
-
 case "$class" in
   health)
     export BACKUP_HEALTH_EXPECTED_CLASSES='databases rustfs'
@@ -48,19 +37,43 @@ case "$class" in
     exec bash "$app_root/backup/scripts/check-backup-health.sh"
     ;;
   databases|rustfs)
+    resource_runner="$app_root/automation/backup-runner/run-pi-capped.sh"
+    [[ -x "$resource_runner" ]] || { echo "bounded Pi runner is missing: $resource_runner" >&2; exit 1; }
+    resource_mode=${BACKUP_PI_RESOURCE_MODE:-systemd}
     run_id="${class}-$(date -u +%Y%m%d-%H%M%S)"
-    run_bounded bash "$app_root/automation/backup-runner/run-class.sh" "$class" "$run_id"
+    if [[ "$resource_mode" == systemd ]]; then
+      exec sudo -n /usr/local/sbin/homelab-backup-systemd-class "$class"
+    fi
+    exec "$resource_runner" bash "$app_root/automation/backup-runner/run-class.sh" "$class" "$run_id"
     ;;
   configs)
-    run_bounded bash "$app_root/automation/backup-runner/export-configs-pi.sh"
+    resource_runner="$app_root/automation/backup-runner/run-pi-capped.sh"
+    [[ -x "$resource_runner" ]] || { echo "bounded Pi runner is missing: $resource_runner" >&2; exit 1; }
+    resource_mode=${BACKUP_PI_RESOURCE_MODE:-systemd}
+    if [[ "$resource_mode" == systemd ]]; then
+      exec sudo -n /usr/local/sbin/homelab-backup-systemd-class "$class"
+    fi
+    exec "$resource_runner" bash "$app_root/automation/backup-runner/export-configs-pi.sh"
     ;;
   retention)
-    run_bounded bash "$app_root/automation/backup-runner/run-retention.sh"
+    resource_runner="$app_root/automation/backup-runner/run-pi-capped.sh"
+    [[ -x "$resource_runner" ]] || { echo "bounded Pi runner is missing: $resource_runner" >&2; exit 1; }
+    resource_mode=${BACKUP_PI_RESOURCE_MODE:-systemd}
+    if [[ "$resource_mode" == systemd ]]; then
+      exec sudo -n /usr/local/sbin/homelab-backup-systemd-class "$class"
+    fi
+    exec "$resource_runner" bash "$app_root/automation/backup-runner/run-retention.sh"
     ;;
   deep-verify)
+    resource_runner="$app_root/automation/backup-runner/run-pi-capped.sh"
+    [[ -x "$resource_runner" ]] || { echo "bounded Pi runner is missing: $resource_runner" >&2; exit 1; }
+    resource_mode=${BACKUP_PI_RESOURCE_MODE:-systemd}
     exec 9>"${BACKUP_LOCK_FILE:-/ssd-data/infra/backups/homelab/.homelab-backup.lock}"
     flock -n 9 || { echo 'another homelab backup job holds the global lock' >&2; exit 75; }
-    run_bounded bash -c '
+    if [[ "$resource_mode" == systemd ]]; then
+      exec sudo -n /usr/local/sbin/homelab-backup-systemd-class "$class"
+    fi
+    exec "$resource_runner" bash -c '
       for deep_class in databases rustfs; do
         bash "$1/backup/scripts/run-integrity-check.sh" "$deep_class"
       done

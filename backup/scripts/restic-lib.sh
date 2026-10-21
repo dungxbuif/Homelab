@@ -62,12 +62,12 @@ restic_run() {
   if [[ -n "${RESTIC_CONTAINER_USER:-}" ]]; then
     volumes+=(--user "$RESTIC_CONTAINER_USER")
   fi
-  local interactive_stdin_args=()
+  local restic_lifecycle_args=(--timeout "$restic_command_timeout")
   if [[ "${RESTIC_INTERACTIVE_STDIN:-false}" == true ]]; then
-    interactive_stdin_args+=(--interactive-stdin)
+    restic_lifecycle_args+=(--interactive-stdin)
   fi
   python3 "$(dirname -- "$rclone_prepare_script")/run_restic_container.py" \
-    --timeout "$restic_command_timeout" "${interactive_stdin_args[@]}" -- \
+    "${restic_lifecycle_args[@]}" -- \
     -e RCLONE_CONFIG=/config/rclone.conf \
     -e RCLONE_DRIVE_PACER_MIN_SLEEP="$drive_pacer_min_sleep" \
     -e RCLONE_DRIVE_PACER_BURST="$drive_pacer_burst" \
