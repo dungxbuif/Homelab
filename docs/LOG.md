@@ -1261,6 +1261,11 @@ timestamp: 2026-07-03T15:14:00Z
   partial solely because the full `homelab` acceptance and scheduler cutover
   have not been run under the VM100 disk safety gate.
 
+- **B9 disk gate recheck 2026-10-21:** read-only VM100 check at 16:11 UTC
+  found `/dev/sda1` at `85%` with about `31 GiB` free and local backup runs at
+  `9.7 GiB`. No backup process was active, but this is at the warning
+  threshold; the CouchDB scratch restore was deliberately not started.
+
 - **Backup test regression fixes 2026-10-21:** full macOS discovery exposed
   two real compatibility defects: the Pi health-only command incorrectly
   required the bounded runner, and Bash 3.2 expanded an empty Restic option
