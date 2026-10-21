@@ -1,7 +1,7 @@
 # Swarm service inventory probe
 
 Date: 2026-10-21
-Status: source implemented; live rollout pending
+Status: deployed and verified
 
 ## Decision
 
@@ -20,5 +20,14 @@ forced-command SSH path and the evidence scope remains `host_runtime_only`.
 - Host observer unit tests cover the worker-safe branch and fixed command
   boundary.
 - Export and runtime evidence contract tests require the new probe.
-- Live acceptance requires a successful Pi5 observer task containing a
-  manager-side service list, followed by the existing drift report gate.
+- The helper was released to Pi5 at `/usr/local/libexec/homelab-host-observer`
+  with a timestamped rollback copy. The release itself did not restart a
+  service or change Docker state.
+- Semaphore task `#149` (`Inspect Pi5 runtime (read only)`) completed with
+  `ok=4`, `failed=0`, and `unreachable=0`.
+- The live report contains `swarm_services.manager=true` and a manager-side
+  inventory of 25 services, including image and replica state. The Pi5
+  manager evidence gap is closed.
+- The scheduled VM100 target drift report remains the separate daily control;
+  this probe supplies the manager-side service inventory it could not collect
+  from the VM100 worker.
