@@ -79,3 +79,8 @@ path, also with `--static-config` so the restored candidate is checked first.
 The live VPS file matches the known-good SHA-256 recorded in the incident
 evidence. The failed copy remains preserved under
 `/root/firewall-backup/dynamic.yml.broken-attempt` for forensic comparison.
+
+The generic guard contract test now passes in a temporary Python environment
+with `PyYAML` (`6 tests, OK`). A live VPS dry-run and route smoke check still
+require an approved current hash and operator access; this note does not claim
+that historical watcher behavior has been reproduced.
