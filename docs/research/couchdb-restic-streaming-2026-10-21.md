@@ -64,6 +64,8 @@ failed-safe gate, not a successful Restic/restore acceptance.
   snapshot.
 - The manifest must record database name, document count, security metadata,
   stream checksum and Restic snapshot ID.
+- The uploader must re-query the selected Restic repository and find the exact
+  snapshot ID with the matching `run_id` tag before writing `status=complete`.
 - Restore must match the recorded document count in an isolated CouchDB target.
 - The Pi5 proxy remains GET-only and no CouchDB admin credential moves to VM100.
 - The current Pi5 backup path remains the rollback path until one complete

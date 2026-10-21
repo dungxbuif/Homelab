@@ -1230,6 +1230,12 @@ timestamp: 2026-07-03T15:14:00Z
   full `homelab` stream/restore rehearsal; no cleanup, scheduler change or
   production backup mutation was performed.
 
+- **CouchDB stream remote post-check 2026-10-21:** tightened the experimental
+  uploader so the client-side Restic summary is not sufficient for success.
+  It now queries the selected repository for the exact snapshot ID and
+  matching `run_id` tag before writing the `complete` manifest. Contract and
+  syntax checks pass; no production scheduler or repository was used.
+
 - **CouchDB stream disk guard 2026-10-21:** added a fail-closed
   `BACKUP_COUCHDB_MIN_FREE_BYTES` check before every streamed page, so the
   experimental VM100-to-Pi5 stream stops before disk pressure can worsen and

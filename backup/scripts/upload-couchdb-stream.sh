@@ -13,6 +13,7 @@ stream_dir="$run_dir/couchdb-stream"
 metadata="$stream_dir/$database.metadata.json"
 stream_hash="$stream_dir/$database.stream.sha256"
 restic_output="$stream_dir/$database.restic.jsonl"
+remote_check="$stream_dir/$database.remote.json"
 manifest="$stream_dir/$database.manifest.json"
 
 mkdir -p "$stream_dir"
@@ -60,6 +61,23 @@ if not re.fullmatch(r'[0-9a-f]{64}', snapshot):
 print(snapshot)
 PY
 )
+
+# Do not trust the client-side summary alone. Confirm the immutable snapshot
+# is visible in the selected repository before writing a complete manifest.
+restic_run snapshots --no-lock --json --tag "run_id=$run_id" >"$remote_check"
+python3 - "$remote_check" "$snapshot_id" "$run_id" <<'PY'
+import json
+import sys
+
+path, snapshot_id, run_id = sys.argv[1:]
+records = json.loads(open(path, encoding='utf-8').read())
+if not isinstance(records, list):
+    raise SystemExit('stream Restic remote check did not return a snapshot list')
+for record in records:
+    if record.get('id') == snapshot_id and f'run_id={run_id}' in record.get('tags', []):
+        raise SystemExit(0)
+raise SystemExit('stream Restic remote check did not find the uploaded snapshot')
+PY
 
 stream_digest=$(awk '{print $1}' "$stream_hash")
 [[ "$stream_digest" =~ ^[0-9a-f]{64}$ ]] || {
