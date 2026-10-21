@@ -62,12 +62,13 @@ class DeployContractTests(unittest.TestCase):
         self.assertEqual(services['kubekosh']['resources'], {'cpus': '2.00', 'memory_mb': 4096, 'memory_reservation_mb': 1024})
         self.assertEqual(services['stirling-pdf']['resources']['cpus'], '2.00')
         self.assertEqual(services['bds-app']['networks'], ['bds-tunnel-net', 'homelab-net'])
-        self.assertEqual(services['macocr-proxy']['networks'], ['edge-http-net', 'homelab-net'])
+        self.assertEqual(services['macocr-proxy']['networks'], ['edge-http-net', 'macocr-redis-net', 'pg-net'])
         self.assertEqual(services['mypocket']['networks'], ['data-net', 'homelab-net', 'mypocket-net', 'mypocket-redis-net'])
         self.assertEqual(services['n8n']['networks'], ['data-net', 'edge-http-net'])
-        for name in ('relayhub', 'macocr-proxy', 'mypocket', 'openclaw', 'n8n', 'bds-app'):
+        for name in ('relayhub', 'mypocket', 'openclaw', 'n8n', 'bds-app'):
             self.assertEqual(services[name]['resources'], {})
             self.assertTrue(services[name]['proposed_resources'])
+        self.assertEqual(services['macocr-proxy']['resources'], {'cpus': '1.00', 'memory_mb': 1024})
         self.assertEqual(services['relayhub']['health']['path'], '/readyz')
         self.assertEqual(services['mypocket']['health']['path'], '/api/v1/health')
 

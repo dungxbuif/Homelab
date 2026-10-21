@@ -221,7 +221,7 @@ services:
     host: vm100
     class: application
     lifecycle: active
-    networks: [edge-http-net, homelab-net]
+    networks: [edge-http-net, macocr-redis-net, pg-net]
     observed_image: homelab/macocr-proxy:scan-api-20261008
   - id: gitlab-https-tunnel
     host: vm100
