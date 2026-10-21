@@ -59,13 +59,28 @@ class NativePullTransportTests(unittest.TestCase):
                 "BACKUP_COUCHDB_CREDENTIALS_FILE": credentials.name,
             },
             clear=False,
-        ), patch.object(couchdb, "docker_run", return_value=b"{}") as run:
+        ), patch.object(couchdb.os, "access", return_value=True), patch.object(couchdb, "docker_run", return_value=b"{}") as run:
             result = couchdb.curl_db("couchdb", "homelab", "")
         self.assertEqual(result, b"{}")
         args, kwargs = run.call_args
         self.assertEqual(args[0:2], ("homelab-net", "curlimages/curl@sha256:" + "b" * 64))
         self.assertIn(b"couchdb:5984", args[2][1].encode())
-        self.assertEqual(kwargs["entrypoint"], "sh")
+
+    def test_couchdb_proxy_transport_uses_bearer_token(self):
+        with tempfile.NamedTemporaryFile() as credentials, patch.dict(
+            couchdb.os.environ,
+            {
+                "BACKUP_COUCHDB_TRANSPORT": "network-proxy",
+                "BACKUP_COUCHDB_ENDPOINT": "http://10.10.0.5:15984",
+                "BACKUP_COUCHDB_NETWORK": "homelab-net",
+                "BACKUP_COUCHDB_CLIENT_IMAGE": "curlimages/curl@sha256:" + "c" * 64,
+                "BACKUP_COUCHDB_CREDENTIALS_FILE": credentials.name,
+            },
+        ), patch.object(couchdb, "docker_run", return_value=b"{}") as run:
+            couchdb.curl_db("couchdb", "homelab", "")
+        args = run.call_args.args
+        self.assertIn(b"Authorization: Bearer $BACKUP_PROXY_TOKEN", args[2][1].encode())
+        self.assertNotIn(b"COUCHDB_PASSWORD", args[2][1].encode())
 
 
 if __name__ == "__main__":

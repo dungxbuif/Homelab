@@ -88,8 +88,13 @@ The source adapter and PostgreSQL credential are deployed on VM100, but the
 production runner is intentionally still on the original Pi5 transport. A
 full comparison attempt completed the PostgreSQL portion and then stopped at
 CouchDB because VM100 has no CouchDB container or enrolled CouchDB credential.
-The runtime native PostgreSQL variables were rolled back after that attempt so
-the combined `databases` class cannot enter a partial-failure state.
+The approved Pi5-side GET-only proxy is now deployed on private port
+`10.10.0.5:15984`, restricted to VM100 and the backup paths. A real export
+probe was started and stopped before completion because the large `homelab`
+database would have continued for an extended period; production cutover is
+still intentionally pending. The runtime native PostgreSQL variables remain
+rolled back so the combined `databases` class cannot enter a partial-failure
+state.
 
 ## Verification
 

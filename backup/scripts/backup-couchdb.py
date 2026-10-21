@@ -26,7 +26,7 @@ def curl_db(container: str, database: str, suffix: str) -> bytes:
     mode = os.environ.get("BACKUP_COUCHDB_TRANSPORT", "container")
     if mode == "container":
         url = f"http://127.0.0.1:5984/{database}{suffix}"
-    elif mode == "network":
+    elif mode in {"network", "network-proxy"}:
         url = f"{os.environ.get('BACKUP_COUCHDB_ENDPOINT', 'http://couchdb:5984').rstrip('/')}/{database}{suffix}"
     else:
         raise RuntimeError(f"unsupported BACKUP_COUCHDB_TRANSPORT: {mode}")
@@ -36,7 +36,10 @@ def curl_db(container: str, database: str, suffix: str) -> bytes:
         "--connect-timeout 15 --max-time 900 --retry 5 --retry-delay 5 "
         "--retry-max-time 900 --retry-connrefused"
     )
-    script = f"curl -fsS {curl_options} -u \"$COUCHDB_USER:$COUCHDB_PASSWORD\" {shlex.quote(url)}"
+    if mode == "network-proxy":
+        script = f"curl -fsS {curl_options} -H \"Authorization: Bearer $BACKUP_PROXY_TOKEN\" {shlex.quote(url)}"
+    else:
+        script = f"curl -fsS {curl_options} -u \"$COUCHDB_USER:$COUCHDB_PASSWORD\" {shlex.quote(url)}"
     if mode == "container":
         return docker_exec(container, ["sh", "-c", script])
     network = os.environ.get("BACKUP_COUCHDB_NETWORK")

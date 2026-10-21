@@ -134,12 +134,15 @@ BACKUP_POSTGRES_PORT=5432
 BACKUP_POSTGRES_USER=backup_ro
 BACKUP_POSTGRES_GLOBALS_TRANSPORT=network
 BACKUP_POSTGRES_GLOBALS_USER=backup_ro
-BACKUP_COUCHDB_TRANSPORT=network
+BACKUP_COUCHDB_TRANSPORT=network-proxy
 BACKUP_COUCHDB_NETWORK=homelab-net
 BACKUP_COUCHDB_CLIENT_IMAGE=curlimages/curl@sha256:<approved-digest>
-BACKUP_COUCHDB_CREDENTIALS_FILE=/etc/homelab-backup/secrets/couchdb-backup.env
-BACKUP_COUCHDB_ENDPOINT=http://couchdb:5984
+BACKUP_COUCHDB_CREDENTIALS_FILE=/etc/homelab-backup/secrets/couchdb-backup-proxy.env
+BACKUP_COUCHDB_ENDPOINT=http://10.10.0.5:15984
 ```
+
+The proxy credentials file contains only `BACKUP_PROXY_TOKEN`; CouchDB admin
+credentials remain on Pi5.
 
 The files contain only runtime credentials and remain root-owned, mode `0600`.
 The PostgreSQL globals export also uses the private network path with
