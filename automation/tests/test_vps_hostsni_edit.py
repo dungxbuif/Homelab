@@ -1,6 +1,7 @@
 import hashlib
 import importlib.util
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -41,7 +42,29 @@ class VpsHostSniEditTests(unittest.TestCase):
             self.assertNotIn(b"remove.example", path.read_bytes())
 
     def test_hash_mismatch_is_rejected_by_contract(self):
-        self.assertNotEqual(hashlib.sha256(BASE).hexdigest(), "0" * 64)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "dynamic.yml"
+            static = Path(directory) / "traefik.yml"
+            path.write_bytes(BASE)
+            static.write_text("providers: {}\n")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(MODULE_PATH),
+                    "--path",
+                    str(path),
+                    "--static-config",
+                    str(static),
+                    "--expect-sha256",
+                    "0" * 64,
+                    "--remove-host",
+                    "remove.example",
+                ],
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("current VPS dynamic config hash differs", result.stderr)
 
     def test_restore_preserves_inode(self):
         with tempfile.TemporaryDirectory() as directory:

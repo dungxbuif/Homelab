@@ -81,6 +81,7 @@ evidence. The failed copy remains preserved under
 `/root/firewall-backup/dynamic.yml.broken-attempt` for forensic comparison.
 
 The generic guard contract test now passes in a temporary Python environment
-with `PyYAML` (`6 tests, OK`). A live VPS dry-run and route smoke check still
+with `PyYAML` (`6 tests, OK`), including a subprocess check that a mismatched
+expected hash is rejected before the provider check. A live VPS dry-run and route smoke check still
 require an approved current hash and operator access; this note does not claim
 that historical watcher behavior has been reproduced.
