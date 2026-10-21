@@ -28,6 +28,10 @@ timestamp: 2026-07-03T15:14:00Z
   public route plus `/healthz` and `/readyz` returned 200. A brief 502 during
   warm-up cleared without rollback. See
   [OpenClaw resource canary](./deployments/openclaw-resource-canary-2026-10-21.md).
+- **MyPocket API resource canary:** bounded only `mypocket-api` at `1 CPU/1 GiB`
+  with `stop-first`; the worker remains uncapped pending queue metrics. The API
+  task became healthy and `/api/v1/health` returned 200 after a brief warm-up
+  502. See [MyPocket API resource canary](./deployments/mypocket-api-resource-canary-2026-10-21.md).
 
 - **Backup and capacity check:** VM100 has no failed `homelab-backup` units and
   retains `39G` free (`81%` used). The constrained Docker maintenance service
