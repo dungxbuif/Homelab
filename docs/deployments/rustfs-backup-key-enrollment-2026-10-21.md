@@ -25,6 +25,17 @@ a custom bucket-scoped policy with only:
 - `s3:GetObject`
 - `s3:GetObjectVersion`
 
+### Current image compatibility check
+
+The live image is `rustfs/rustfs:1.0.0-rc.1`. A signed, non-production Admin
+API probe reached `/rustfs/admin/v3/add-service-account`, but the image
+returned HTTP `400 InvalidRequest` while unmarshalling the documented
+service-account body. No account was created and no credential was written to
+VM100. Do not retry with root credentials or upgrade the production image as a
+workaround. Use the live Console's Identity/Access Keys flow, or test a
+version-pinned RustFS upgrade in an isolated container with a data backup and
+rollback plan.
+
 Each action is limited to the inventory bucket ARN and its object ARN. The
 credential is stored only on VM100 at
 `/etc/homelab-backup/secrets/rustfs-readonly.env` with `root:ubuntu 0640`.
