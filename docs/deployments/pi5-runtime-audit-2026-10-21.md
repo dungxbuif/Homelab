@@ -78,4 +78,13 @@ Pi manager maintenance path rather than from the VM100 worker.
    after observing working-set and IO headroom.
 4. Remove exited task containers through a separately reviewed maintenance job.
 
+## Container-history cleanup: 2026-10-21
+
+The manager-side review found 11 stopped RelayHub Compose, Semaphore and
+provisioner task containers and no `dead` containers. They were removed by ID
+after checking that no running service used them. Named data volumes were
+preserved, including `mypocket-prod-backups`, RelayHub NATS data and RelayHub
+PostgreSQL data. The Pi5 runtime remained at 20 running containers; no service
+was restarted.
+
 No production service was restarted or reconfigured by task `#140`.
