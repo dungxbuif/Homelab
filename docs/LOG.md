@@ -1244,6 +1244,11 @@ timestamp: 2026-07-03T15:14:00Z
   Targeted tests pass; the full suite is being re-run with Linux-only
   dependencies separated from source failures.
 
+- **Backup suite Linux verification 2026-10-21:** ran the complete
+  `backup/tests` suite in `python:3.13-alpine` with `flock`, `PyYAML` and
+  `Jinja2` available. All `134` tests passed with one intentional skip. The
+  macOS-only `flock` limitation is therefore not a production test failure.
+
 - **CouchDB stream disk guard 2026-10-21:** added a fail-closed
   `BACKUP_COUCHDB_MIN_FREE_BYTES` check before every streamed page, so the
   experimental VM100-to-Pi5 stream stops before disk pressure can worsen and
