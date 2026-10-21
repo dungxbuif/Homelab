@@ -14,9 +14,12 @@ ephemeral. Current VM100 service/storage details are in [VM100.md](./VM100.md).
 | Guest persistent state | GitLab config/data/repositories/Registry trial, app bind mounts and runtime volumes |
 | Database placement | Pi5; never infer GitLab DB is on Proxmox from its application placement |
 | Retired VMs | `101/102` removed per migration record; no hypervisor-side confirmation in this audit |
+| Current recovery target | Only `local` (directory, 89.8 GB free) and `local-lvm` (104.8 GB free, 72.0% thin-pool usage); no PBS/NAS target |
 | Historical design | HA K8s, kube-vip, Longhorn and old workload topology; no such cluster or VM is active |
 
-Guest disk increased from 80 to 200 GiB on 2026-09-15. After restart,
+The Proxmox metadata name remains the legacy `k8s-cp-1`; the guest and
+automation identity are `vm100`/`vm100-prod`. Guest disk increased from 80 to
+200 GiB on 2026-09-15. After restart,
 `discard=on` and guest `fstrim` returned thin-pool capacity in the recorded
 audit. These are dated observations; logical guest free space is not proof
 of current physical thin-pool headroom. Inspect `qm config 100`, storage

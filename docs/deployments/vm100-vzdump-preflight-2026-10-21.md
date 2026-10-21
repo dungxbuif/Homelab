@@ -2,16 +2,21 @@
 
 ## Proxmox evidence
 
-Read-only Proxmox API (`pve` / `10.10.0.20`, version 8.3.5) reports:
+Read-only Proxmox API (`pve` / `10.10.0.20`, version 8.3.5) rechecked on
+2026-10-21 reports:
 
 | Item | Current value |
 |---|---|
 | VM | `100`, running, 6 vCPU, 16 GiB RAM |
 | Disk | `local-lvm:vm-100-disk-0`, 200 GiB |
 | `local` directory storage | 89.8 GB free, backup content enabled |
-| `local-lvm` | 100.0 GB free, 73.3% thin-pool usage |
+| `local-lvm` | 104.8 GB free, 72.0% thin-pool usage |
 | VM snapshots | `pre-docker-ce-20261014` plus the live `current` state |
 | PBS/NAS storage | Not configured |
+
+The current Proxmox API configuration still names VM100 `k8s-cp-1`; this is a
+legacy Proxmox metadata name. The guest hostname and active automation identity
+are `vm100`/`vm100-prod`.
 
 The host has enough `local` space for a compressed first copy only if the
 compressed guest image stays below the remaining 89.8 GB. That copy would
