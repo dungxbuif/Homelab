@@ -25,7 +25,7 @@ until queue latency and memory high-water marks are captured. RelayHub API and
 worker are now each bounded at 1 GiB/1 CPU in their persistent Compose source;
 `/readyz`, `/healthz`, and `/docs/` returned HTTP 200 after recreate. RelayHub
 NATS and Redis were recreated by Compose but their persistent volumes were
-retained and their limits remain unchanged.
+retained; both now use generous 1 GiB/1 CPU limits.
 
 Already bounded workloads include GitLab (10 GiB/4 CPU), KubeKosh (4 GiB/2
 CPU), Stirling PDF (2 GiB/2 CPU), the Semaphore runner (1 GiB/1 CPU),
@@ -33,10 +33,12 @@ CouchLoom (2 GiB/2 CPU), the GitLab tunnels (128 MiB/0.5 CPU each), K8s
 Syntax (128 MiB/0.25 CPU), and the pg-net anchor (16 MiB/0.05 CPU).
 
 The following production workloads were running without a Docker limit in the
-snapshot: MyPocket worker, NetBird server and NetBird dashboard. MyPocket API
-and RelayHub API/worker are now capped. NetBird dashboard is now capped at
+snapshot: MyPocket worker, NetBird server and NetBird dashboard. MyPocket API,
+MyPocket worker, RelayHub API/worker, NetBird dashboard, and NetBird server are
+now capped. NetBird dashboard is capped at
 512 MiB/0.50 CPU with `start-first`; its public dashboard returned HTTP 200.
-NetBird server remains uncapped because it owns persistent control-plane state.
+NetBird server is now bounded at 1 GiB/1 CPU with `stop-first`; its persistent
+control-plane volume was preserved and the dashboard remained HTTP 200.
 Family Tree is now capped at 512 MiB/0.50 CPU with `stop-first`; `/login`
 returned HTTP 200. MezonHook is now capped at 512 MiB/0.50 CPU with
 `start-first`; its public health route returned HTTP 200. The snapshot is not

@@ -42,6 +42,11 @@ timestamp: 2026-07-03T15:14:00Z
   with `start-first`. Their route checks returned 200 and their images,
   networks, mounts, and environment were preserved. See
   [Family/MezonHook canary](./deployments/family-mezon-resource-canary-2026-10-21.md).
+- **Worker/control-plane resource canaries:** capped `mypocket-worker` and
+  `n8n-runners` at `0.50 CPU/512 MiB`, and NetBird server at `1 CPU/1 GiB`
+  with `stop-first`. Their tasks remained running; the NetBird dashboard stayed
+  HTTP 200. Stateful RelayHub dependencies now also use `1 CPU/1 GiB` with
+  volumes retained.
 - **NetBird dashboard resource canary:** capped the stateless dashboard at
   `0.50 CPU/512 MiB` with `start-first`. The Swarm update completed and the
   public dashboard returned HTTP 200. The stateful NetBird server was left
