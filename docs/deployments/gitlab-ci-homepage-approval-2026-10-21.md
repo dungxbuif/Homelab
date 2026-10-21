@@ -31,11 +31,13 @@ the first live run:
 ```text
 HOMELAB_HOMEPAGE_RELEASE_PRIVATE_KEY_FILE  (file variable)
 HOMELAB_PI_KNOWN_HOSTS_FILE                (file variable)
-HOMELAB_MEZON_WEBHOOK_URL                  (masked variable)
+HOMELAB_MEZON_WEBHOOK_URL_FILE            (file variable)
 ```
 
 The first two files are the dedicated Homepage release key and the pinned Pi5
-host key. The third is the existing Mezon webhook and must never be echoed.
+host key. The third file contains the existing Mezon webhook and must never be
+echoed. The release script reads it only for the notifier process, so no
+secret-bearing text variable is needed.
 The environment named `production` must also be protected so only the intended
 maintainer can click the manual job.
 

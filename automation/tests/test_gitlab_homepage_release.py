@@ -17,6 +17,8 @@ class GitLabHomepageReleaseTests(unittest.TestCase):
         self.assertIn('homepage-release "$HOMEPAGE_IMAGE_DIGEST"', source)
         self.assertIn('StrictHostKeyChecking=yes', source)
         self.assertIn('notify-homepage-release.py', source)
+        self.assertIn('HOMELAB_MEZON_WEBHOOK_URL_FILE', source)
+        self.assertNotIn('HOMELAB_MEZON_WEBHOOK_URL:?', source)
         self.assertNotIn('ssh root@', source)
         self.assertNotIn('bash -s', source)
 

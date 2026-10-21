@@ -30,6 +30,10 @@ timestamp: 2026-07-03T15:14:00Z
   historical watcher event is not recoverable from retained logs; S2 is now
   partial while the guarded edit path is implemented. See [VPS HostSNI
   incident](./deployments/vps-hostsni-incident-2026-10-21.md).
+- **Homepage CI secret boundary tightened:** changed the Mezon webhook input
+  from a masked text variable to a protected GitLab file variable, so the
+  release job reads the existing webhook only as a file-backed runtime value.
+  Live enrollment remains pending; no secret was transmitted in this change.
 
 - **Image update watch:** added VM100 Diun in notify-only mode with a pinned
   image digest, read-only Docker socket, no published ports, and `0.25 CPU /

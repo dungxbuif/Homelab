@@ -5,6 +5,7 @@ root_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 : "${HOMEPAGE_IMAGE_DIGEST:?HOMEPAGE_IMAGE_DIGEST is required}"
 : "${HOMELAB_HOMEPAGE_RELEASE_PRIVATE_KEY_FILE:?protected file variable is required}"
 : "${HOMELAB_PI_KNOWN_HOSTS_FILE:?protected file variable is required}"
+: "${HOMELAB_MEZON_WEBHOOK_URL_FILE:?protected file variable is required}"
 : "${CI_PIPELINE_ID:?CI_PIPELINE_ID is required}"
 
 [[ "$HOMEPAGE_IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || {
@@ -17,6 +18,10 @@ root_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 }
 [[ -r "$HOMELAB_PI_KNOWN_HOSTS_FILE" ]] || {
   echo 'Pinned Pi5 known_hosts file is not readable' >&2
+  exit 1
+}
+[[ -r "$HOMELAB_MEZON_WEBHOOK_URL_FILE" ]] || {
+  echo 'Protected Mezon webhook file is not readable' >&2
   exit 1
 }
 
@@ -38,7 +43,7 @@ ssh -F /dev/null \
   homelab-homepage-release@10.10.0.5 \
   homepage-release "$HOMEPAGE_IMAGE_DIGEST" >"$tmp_dir/receipt.json"
 
-HOMELAB_MEZON_WEBHOOK_URL=${HOMELAB_MEZON_WEBHOOK_URL:?protected Mezon variable is required} \
+HOMELAB_MEZON_WEBHOOK_URL=$(<"$HOMELAB_MEZON_WEBHOOK_URL_FILE") \
   "$root_dir/automation/scripts/notify-homepage-release.py" \
   --task-id "$CI_PIPELINE_ID" <"$tmp_dir/receipt.json"
 
