@@ -67,3 +67,19 @@ ok
 This proves deterministic safety and reliability boundaries only. The opt-in
 live provider matrix remains separate and must use synthetic input plus an
 approved UAT receipt before the quality item can close.
+
+## Live quality follow-up
+
+The first live matrix found one defect: after a `not_found` finance result,
+the provider attempted an unrelated wallet lookup. MyPocket commit
+`23ecdca` now treats an all-`not_found` read batch as terminal and refuses to
+dispatch an unexpected follow-up tool. The regression test and deterministic
+suite pass, and the rerun of `TestLiveAdvisorQualityMatrix` passed all six
+synthetic cases in about 77 seconds: period, follow-up, missing data,
+unsupported banking, prompt injection and review-only proposal.
+
+The live run used no production database, ledger, confirmation endpoint or
+user data. This closes the model-routing/safety verification gate; owner-level
+business UAT remains separate. The MyPocket commit is present locally, but its
+GitHub push was rejected because the remote repository reported a missing
+historical object; no force-push or history rewrite was attempted.
