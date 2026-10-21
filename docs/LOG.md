@@ -47,6 +47,10 @@ timestamp: 2026-07-03T15:14:00Z
   with `stop-first`. Their tasks remained running; the NetBird dashboard stayed
   HTTP 200. Stateful RelayHub dependencies now also use `1 CPU/1 GiB` with
   volumes retained.
+- **Whiteboard resource canary:** added persistent CPU limits to all five
+  Compose containers without rebuilding images. Backend, feature-worker,
+  collab, MCP and frontend became healthy; public `/` and `/healthz` returned
+  200. See [Whiteboard resource canary](./deployments/whiteboard-resource-canary-2026-10-21.md).
 - **NetBird dashboard resource canary:** capped the stateless dashboard at
   `0.50 CPU/512 MiB` with `start-first`. The Swarm update completed and the
   public dashboard returned HTTP 200. The stateful NetBird server was left
