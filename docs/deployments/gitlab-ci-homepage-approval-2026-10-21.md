@@ -46,6 +46,7 @@ intentionally fail-closed and A1 remains pending live acceptance.
 
 ## Verification
 
-The local shell contract test and `bash -n` pass. Live acceptance requires one
-successful manual job and one same-digest no-op, with the Homepage route and
-Mezon receipt verified after each run.
+The six local GitLab CI/deploy contract tests pass in an isolated Python
+environment with `PyYAML`, and the release script passes `bash -n`. Live
+acceptance still requires one successful manual job and one same-digest no-op,
+with the Homepage route and Mezon receipt verified after each run.
