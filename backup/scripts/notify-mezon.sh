@@ -97,6 +97,7 @@ status_words = {
     'failure': 'Backup gặp lỗi',
     'warning': 'Backup cần chú ý',
 }
+display_icons = {'OK': '✅', 'WARN': '⚠️', 'FAIL': '❌'}
 
 def human_bytes(value):
     try:
@@ -143,7 +144,7 @@ def friendly_details(value):
             output.append(line)
     return output[:5]
 
-lines = [f'{icon} {status_words[status]}: {label}']
+lines = [f'{display_icons.get(icon, icon)} {status_words[status]}: {label}']
 if status == 'success':
     lines.append('Đã lưu và kiểm tra bản backup thành công.')
 else:
