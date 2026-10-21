@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import os
 import shlex
@@ -21,6 +22,20 @@ from common import docker_exec, docker_run, load_document, select_backup_entries
 # response accepted from the proxy/client.
 PAGE_SIZE = 1000
 MAX_PAGE_BYTES = 128 * 1024 * 1024
+
+
+def docs_file_path(db_dir: Path, database: str) -> Path:
+    compression = os.environ.get("BACKUP_COUCHDB_COMPRESSION", "none").lower()
+    if compression not in {"none", "gzip"}:
+        raise RuntimeError("unsupported BACKUP_COUCHDB_COMPRESSION: " + compression)
+    suffix = ".docs.ndjson.gz" if compression == "gzip" else ".docs.ndjson"
+    return db_dir / f"{database}{suffix}"
+
+
+def open_docs_file(path: Path):
+    if path.name.endswith(".gz"):
+        return gzip.open(path, "wt", encoding="utf-8", compresslevel=6)
+    return path.open("w", encoding="utf-8")
 
 
 def curl_db(container: str, database: str, suffix: str) -> bytes:
@@ -72,11 +87,11 @@ def create_backup(inventory: dict, output: Path) -> dict:
             "security": security,
         }
         metadata_path = db_dir / f"{name}.metadata.json"
-        docs_path = db_dir / f"{name}.docs.ndjson"
+        docs_path_for_db = docs_file_path(db_dir, name)
         write_json(metadata_path, info_payload)
         document_count = 0
         last_id: str | None = None
-        with docs_path.open("w", encoding="utf-8") as docs_file:
+        with open_docs_file(docs_path_for_db) as docs_file:
             while True:
                 query = f"/_all_docs?include_docs=true&attachments=true&limit={PAGE_SIZE}"
                 if last_id is not None:
@@ -102,7 +117,7 @@ def create_backup(inventory: dict, output: Path) -> dict:
             "application": entry["application"],
             "lifecycle": entry["lifecycle"],
             "metadata": metadata_path.relative_to(output).as_posix(),
-            "docs": docs_path.relative_to(output).as_posix(),
+            "docs": docs_path_for_db.relative_to(output).as_posix(),
             "doc_count": document_count,
             "security_included": True,
         })

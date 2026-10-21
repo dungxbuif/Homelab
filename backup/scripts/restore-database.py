@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import shlex
 import sys
@@ -55,7 +56,11 @@ def restore_couchdb(run_dir: Path, source_db: str, target_db: str, container: st
     couch_request(container, "PUT", f"{target_db}/_security", security)
     docs_path = run_dir / selected["docs"]
     clean_docs = []
-    with docs_path.open(encoding="utf-8") as docs_file:
+    if docs_path.name.endswith(".gz"):
+        docs_file = gzip.open(docs_path, mode="rt", encoding="utf-8")
+    else:
+        docs_file = docs_path.open(encoding="utf-8")
+    with docs_file:
         docs = (json.loads(line) for line in docs_file if line.strip())
         for doc in docs:
             item = dict(doc)

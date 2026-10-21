@@ -56,9 +56,12 @@ The deployment was verified from VM100:
    database was changed.
 
 The exporter now requests 1,000 documents per page and keeps the existing
-128 MiB response ceiling. A staged performance check returned a 1,000-document
-page of about 13 MiB promptly; this changes throughput only, not the allowed
-database paths or credential boundary.
+128 MiB response ceiling. VM100 staged runs may set
+`BACKUP_COUCHDB_COMPRESSION=gzip`, which stores the NDJSON stream compressed
+and is understood by the native restore helper; the default remains
+uncompressed for compatibility. A staged performance check returned a
+1,000-document page of about 13 MiB promptly; compression changes local
+staging size only, not the allowed database paths or credential boundary.
 
 This is a staged transport. The scheduled `databases` class still uses the
 existing Pi5 export path. The representative export/restore passed, but the

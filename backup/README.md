@@ -139,6 +139,7 @@ BACKUP_COUCHDB_NETWORK=homelab-net
 BACKUP_COUCHDB_CLIENT_IMAGE=curlimages/curl@sha256:<approved-digest>
 BACKUP_COUCHDB_CREDENTIALS_FILE=/etc/homelab-backup/secrets/couchdb-backup-proxy.env
 BACKUP_COUCHDB_ENDPOINT=http://10.10.0.5:15984
+BACKUP_COUCHDB_COMPRESSION=gzip
 ```
 
 The proxy credentials file contains only `BACKUP_PROXY_TOKEN`; CouchDB admin
@@ -168,7 +169,9 @@ connection stays inside Pi5's Docker network at `couchdb:5984`.
 The exporter requests `_all_docs` in 1,000-document pages and rejects any
 single response larger than 128 MiB. This keeps attachment-heavy exports
 practical without allowing an unexpectedly large response to consume
-unbounded memory.
+unbounded memory. `BACKUP_COUCHDB_COMPRESSION=gzip` stores document streams as
+`.docs.ndjson.gz`; it is optional and defaults to uncompressed `.ndjson` for
+backward compatibility. The native restore helper reads either form.
 
 Run this check from VM100 without printing the token:
 
