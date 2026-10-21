@@ -2,14 +2,14 @@
 type: Reference
 title: "Raspberry Pi 5 Datastore Specification"
 description: "Technical specification of the Pi5 manager/datastore node: PostgreSQL, Redis, object storage, and persistent services"
-timestamp: 2026-10-13T00:00:00+07:00
+timestamp: 2026-10-21T00:00:00+07:00
 ---
 
 # System Specification & Architectural Design: Pi5 Datastore Infrastructure
 
 > **Host Device:** Raspberry Pi 5 (ARM64 Architecture - Broadcom BCM2712) **Host Static LAN IP:** `10.10.0.5` **Target Audience:** AI Coding & DevOps Agents **Root Directory:** `/ssd-data` (High-speed External SSD mounted on Raspberry Pi 5) **Role:** Docker Swarm manager, active Traefik/Rathole/AdGuard edge, datastore, and persistent-services host.
 
-> **Current runtime source:** [Runtime Inventory and Deployment Reconciliation](./deployments/runtime-inventory-2026-10-13.md). This file contains the Pi5 architecture and runbook; the linked audit contains current image IDs, replica state, and backup markers.
+> **Current runtime source:** [Current Homelab Status](./STATUS.md), the dated deployment evidence it links, and [Runtime Inventory and Deployment Reconciliation](./deployments/runtime-inventory-2026-10-13.md). This file contains the Pi5 architecture and runbook; it does not override newer dated evidence.
 
 ## Placement decision
 
@@ -203,7 +203,7 @@ datastore/object executor. The latest database, RustFS, and GitLab success
 markers plus remote snapshot IDs are in the [runtime inventory](./deployments/runtime-inventory-2026-10-13.md).
 Redis and NATS remain excluded. The combined Semaphore health check passed as
 task 57 on 2026-10-15 with free space, lock state, and all three class markers
-within policy; remote Drive restore remains a separate acceptance gate.
+within policy; remote Drive restore acceptance is recorded in the [restore-drill acceptance](./deployments/backup-restore-drill-acceptance-2026-10-21.md); monthly execution remains an operational observation item.
 
 ---
 

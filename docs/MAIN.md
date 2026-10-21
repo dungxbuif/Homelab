@@ -2,7 +2,7 @@
 type: Playbook
 title: "System Ingress & Tunnels Configuration"
 description: "End-to-end setup and configuration for VPS Traefik, Rathole, Pi5 Traefik/split DNS, VM100 compute, and Pi5 datastore topology"
-timestamp: 2026-10-13T00:00:00+07:00
+timestamp: 2026-10-21T00:00:00+07:00
 ---
 
 # 🏠 HOMELAB SYSTEM CONTEXT & AI AGENT PLAYBOOK
@@ -11,7 +11,7 @@ timestamp: 2026-10-13T00:00:00+07:00
 > Start with [STACK.md](./STACK.md) for the audited inventory and evidence
 > boundaries; consult manifests and runtime before changing infrastructure.
 >
-> **Architecture version:** v3.4 (2026-10). User-facing workloads run on
+> **Architecture version:** v3.5 (2026-10-21). User-facing workloads run on
 > **VM100** (`10.10.0.31`); the **Pi5** (`10.10.0.5`) is the active home edge
 > (Traefik+Rathole+AdGuard), datastore backend, and Swarm manager while the
 > **Orange Pi Zero 3** (`10.10.0.2`) is unavailable; the **Mac mini**

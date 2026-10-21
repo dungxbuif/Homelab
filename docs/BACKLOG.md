@@ -1,15 +1,15 @@
 ---
 type: Reference
 title: "Homelab Backlog"
-description: "Consolidated open work from the 2026-10-19/20 audit and network-hardening rollout, ordered by priority"
-timestamp: 2026-10-20T00:00:00+07:00
+description: "Consolidated open work from the 2026-10-19/21 audit and network-hardening rollout, ordered by priority"
+timestamp: 2026-10-21T00:00:00+07:00
 ---
 
 # Homelab Backlog
 
 Sources: [network, workload and automation audit](./research/network-workload-automation-audit-2026-10-19.md),
 [network hardening rollout](./deployments/network-hardening-2026-10-19.md),
-[backup runbook](./runbooks/backup-restore.md), and the 2026-10-20 operating session.
+[backup runbook](./runbooks/backup-restore.md), and the 2026-10-21 operating session.
 Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`.
 
 ## P0 Security

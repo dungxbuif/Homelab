@@ -1,11 +1,13 @@
 ---
 type: Dashboard
 title: "Homelab Core Documentation Index"
-description: "Centralized table of contents for Homelab core files, workloads, and services (v3.4 — Pi5 edge, VM100 production worker, and Mac service tunnel)"
-timestamp: 2026-10-17T00:00:00+07:00
+description: "Centralized table of contents for Homelab core files, workloads, and services (v3.5 — Pi5 edge, VM100 production worker, and Mac service tunnel)"
+timestamp: 2026-10-21T00:00:00+07:00
 ---
 
 # Homelab Core Infrastructure (v3.5)
+
+* [Current Homelab Status](./STATUS.md) — short operational truth, verified boundaries, and remaining gates.
 
 * [Runtime Inventory and Deployment Reconciliation](./deployments/runtime-inventory-2026-10-13.md) — historical 2026-10-13 baseline; use the later 2026-10-15/16 reconciliation notes for current runtime state.
 * [Backup Hardening Plan, 2026-10-20](./deployments/backup-hardening-plan-2026-10-20.md) — phased plan: disk, schedule and health, dead-man's switch, restore drill, config backup.
