@@ -1223,6 +1223,13 @@ timestamp: 2026-07-03T15:14:00Z
   scheduled `databases` timer and current Pi5 transport remain unchanged;
   this only makes the later acceptance deployment reproducible.
 
+- **CouchDB stream acceptance preflight 2026-10-21:** read-only VM100 probe
+  found `/dev/sda1` at `83%` with about `35 GiB` free and approximately
+  `9.7 GiB` of local backup runs. All backup timers were active, but no backup,
+  Restic or rclone process was running. This is below the safe margin for a
+  full `homelab` stream/restore rehearsal; no cleanup, scheduler change or
+  production backup mutation was performed.
+
 - **CouchDB stream disk guard 2026-10-21:** added a fail-closed
   `BACKUP_COUCHDB_MIN_FREE_BYTES` check before every streamed page, so the
   experimental VM100-to-Pi5 stream stops before disk pressure can worsen and
