@@ -33,11 +33,15 @@ class CouchDBStreamTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, patch.object(
             MODULE, "curl_db", side_effect=lambda *_args: json.dumps(next(responses)).encode()
         ):
-            manifest = MODULE.stream_database(inventory, "homelab", output, Path(tmp) / "metadata.json")
+            checksum = Path(tmp) / "stream.sha256"
+            manifest = MODULE.stream_database(inventory, "homelab", output, Path(tmp) / "metadata.json", checksum)
             metadata = json.loads((Path(tmp) / "metadata.json").read_text())
+            stream_checksum = checksum.read_text().strip()
         self.assertEqual(manifest["doc_count"], 2)
         self.assertEqual(metadata["database"], "homelab")
         self.assertEqual(gzip.decompress(output.getvalue()).decode(), '{"_id":"one"}\n{"_id":"two"}\n')
+        import hashlib
+        self.assertEqual(stream_checksum, hashlib.sha256(output.getvalue()).hexdigest())
 
     def test_unknown_database_refuses_before_network_request(self):
         inventory = {

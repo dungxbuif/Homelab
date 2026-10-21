@@ -23,16 +23,17 @@ else
 fi
 export RESTIC_INTERACTIVE_STDIN=true
 
-# The stream is never written to disk. tee computes a checksum in a side
-# process while Restic receives the same bytes through the interactive Docker
-# stdin path. A failed exporter or Restic command aborts the pipeline.
+# The stream is never written to disk. The exporter computes the checksum only
+# after the gzip stream closes successfully while Restic receives the bytes
+# through the interactive Docker stdin path. A failed exporter or Restic
+# command aborts the pipeline.
 set -o pipefail
 python3 "$stream_script" \
   --inventory "$inventory" \
   --database "$database" \
   --metadata-output "$metadata" \
+  --checksum-output "$stream_hash" \
   2>"$stream_dir/$database.export.log" \
-  | tee >(sha256sum >"$stream_hash") \
   | restic_run backup --stdin \
       --stdin-filename "couchdb/$database.docs.ndjson.gz" \
       --tag "class=databases" \

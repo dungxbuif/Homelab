@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import gzip
 import importlib.util
 import json
@@ -28,7 +29,20 @@ validate_name = _ADAPTER.validate_name
 write_json = _ADAPTER.write_json
 
 
-def stream_database(inventory: dict, database: str, output, metadata_path: Path) -> dict:
+class HashingWriter:
+    def __init__(self, sink):
+        self.sink = sink
+        self.digest = hashlib.sha256()
+
+    def write(self, data):
+        self.digest.update(data)
+        return self.sink.write(data)
+
+    def flush(self):
+        return self.sink.flush()
+
+
+def stream_database(inventory: dict, database: str, output, metadata_path: Path, checksum_path: Path | None = None) -> dict:
     config = inventory["couchdb"]
     entries, excluded_retired = select_backup_entries(config["databases"])
     selected = next((item for item in entries if item["name"] == database), None)
@@ -49,7 +63,8 @@ def stream_database(inventory: dict, database: str, output, metadata_path: Path)
     count = 0
     last_id: str | None = None
     # The caller owns stdout and can connect it directly to Restic --stdin.
-    with gzip.GzipFile(fileobj=output, mode="wb", compresslevel=6) as compressed:
+    hashed_output = HashingWriter(output) if checksum_path else output
+    with gzip.GzipFile(fileobj=hashed_output, mode="wb", compresslevel=6) as compressed:
         while True:
             query = f"/_all_docs?include_docs=true&attachments=true&limit={PAGE_SIZE}"
             if last_id is not None:
@@ -71,6 +86,8 @@ def stream_database(inventory: dict, database: str, output, metadata_path: Path)
             if not next_id or next_id == last_id or len(rows) < PAGE_SIZE:
                 break
             last_id = next_id
+    if checksum_path:
+        checksum_path.write_text(hashed_output.digest.hexdigest() + "\n", encoding="ascii")
     return {
         "schema_version": 1,
         "database": name,
@@ -88,8 +105,9 @@ def main() -> int:
     parser.add_argument("--inventory", type=Path, required=True)
     parser.add_argument("--database", required=True)
     parser.add_argument("--metadata-output", type=Path, required=True)
+    parser.add_argument("--checksum-output", type=Path)
     args = parser.parse_args()
-    manifest = stream_database(load_document(args.inventory), args.database, sys.stdout.buffer, args.metadata_output)
+    manifest = stream_database(load_document(args.inventory), args.database, sys.stdout.buffer, args.metadata_output, args.checksum_output)
     print(json.dumps(manifest, sort_keys=True), file=sys.stderr)
     return 0
 
