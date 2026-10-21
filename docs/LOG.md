@@ -1217,6 +1217,12 @@ timestamp: 2026-07-03T15:14:00Z
   Reconciled `STATUS.md`, `BACKLOG.md`, and the CouchDB streaming research
   record after commit `6736615`; D1 is now complete.
 
+- **CouchDB stream runtime packaging 2026-10-21:** added the CouchDB adapter,
+  stream exporter and experimental Restic uploader to the VM100 runtime
+  candidate contract, with Python compile and shell syntax gates. The
+  scheduled `databases` timer and current Pi5 transport remain unchanged;
+  this only makes the later acceptance deployment reproducible.
+
 - **CouchDB stream disk guard 2026-10-21:** added a fail-closed
   `BACKUP_COUCHDB_MIN_FREE_BYTES` check before every streamed page, so the
   experimental VM100-to-Pi5 stream stops before disk pressure can worsen and

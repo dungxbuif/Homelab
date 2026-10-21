@@ -11,6 +11,7 @@
       - backup/configs-sources.json
       - backup/policies.yaml
       - backup/scripts/common.py
+      - backup/scripts/backup-couchdb.py
       - backup/scripts/backup-postgres.py
       - backup/scripts/run-database-backup.py
       - backup/scripts/run-instance-backup.py
@@ -18,6 +19,8 @@
       - backup/scripts/cleanup-local-runs.sh
       - backup/scripts/restic-lib.sh
       - backup/scripts/upload-restic.sh
+      - backup/scripts/stream-couchdb.py
+      - backup/scripts/upload-couchdb-stream.sh
       - backup/scripts/verify-retention.sh
       - backup/scripts/run-integrity-check.sh
       - backup/scripts/restore-staging.sh
@@ -100,6 +103,7 @@
           - >-
             python3 -m py_compile
             {{ backup_candidate.path }}/backup/scripts/common.py
+            {{ backup_candidate.path }}/backup/scripts/backup-couchdb.py
             {{ backup_candidate.path }}/backup/scripts/backup-postgres.py
             {{ backup_candidate.path }}/backup/scripts/run-database-backup.py
             {{ backup_candidate.path }}/backup/scripts/run-instance-backup.py
@@ -115,10 +119,12 @@
             {{ backup_candidate.path }}/backup/scripts/cleanup-local-runs.sh
             {{ backup_candidate.path }}/backup/scripts/restic-lib.sh
             {{ backup_candidate.path }}/backup/scripts/upload-restic.sh
+            {{ backup_candidate.path }}/backup/scripts/stream-couchdb.py
             {{ backup_candidate.path }}/backup/scripts/verify-retention.sh
             {{ backup_candidate.path }}/backup/scripts/run-integrity-check.sh
             {{ backup_candidate.path }}/backup/scripts/restore-staging.sh
             {{ backup_candidate.path }}/backup/scripts/check-backup-health.sh
+            && bash -n {{ backup_candidate.path }}/backup/scripts/upload-couchdb-stream.sh
             && python3 {{ backup_candidate.path }}/backup/scripts/validate_inventory.py
             {{ backup_candidate.path }}/backup/inventory.yaml
             {{ backup_candidate.path }}/backup/policies.yaml

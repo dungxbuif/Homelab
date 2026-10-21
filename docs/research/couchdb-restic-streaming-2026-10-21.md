@@ -29,6 +29,11 @@ uploader now have source tests. The uploader records a stream checksum and
 Restic snapshot ID without staging the payload. The multi-artifact restore
 drill is not implemented yet, so this remains an experimental boundary.
 
+The VM100 runtime deployment contract now stages the adapter, exporter and
+uploader together and validates Python/shell syntax. This makes a later
+approved acceptance run reproducible; it does not enable the scheduled
+`databases` timer or change the production transport.
+
 For the isolated gate only, `BACKUP_STREAM_RESTIC_REPOSITORY` may select a
 local Restic repository and `RESTIC_LOCAL_REPOSITORY_DIR` mounts it at
 `/restic-repo` inside the pinned client. These variables are deliberately not
