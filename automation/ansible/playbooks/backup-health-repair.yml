@@ -53,6 +53,48 @@
         backup: true
       when: inventory_hostname == 'pi5'
 
+    - name: Install the monitoring drift report on VM100
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../maintenance/run-monitoring-drift-report.sh'
+        dest: /opt/apps/homelab-backup/app/automation/maintenance/run-monitoring-drift-report.sh
+        mode: '0755'
+        backup: true
+      when: inventory_hostname == 'vm100'
+
+    - name: Install the monitoring target audit on VM100
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../maintenance/audit-monitoring-targets.py'
+        dest: /opt/apps/homelab-backup/app/automation/maintenance/audit-monitoring-targets.py
+        mode: '0755'
+        backup: true
+      when: inventory_hostname == 'vm100'
+
+    - name: Install the monitoring drift systemd units on VM100
+      vars:
+        ansible_become: true
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../../maintenance/systemd/{{ item }}'
+        dest: '/etc/systemd/system/{{ item }}'
+        mode: '0644'
+        backup: true
+      loop:
+        - homelab-monitoring-drift.service
+        - homelab-monitoring-drift.timer
+      become: true
+      when: inventory_hostname == 'vm100'
+      notify: Reload systemd definitions
+
+    - name: Enable the monitoring drift timer on VM100
+      vars:
+        ansible_become: true
+      ansible.builtin.systemd_service:
+        name: homelab-monitoring-drift.timer
+        enabled: true
+        state: started
+        daemon_reload: true
+      become: true
+      when: inventory_hostname == 'vm100'
+
     - name: Install only the corrected health service
       vars:
         ansible_become: true

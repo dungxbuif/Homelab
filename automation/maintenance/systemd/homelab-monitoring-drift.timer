@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily homelab monitoring target drift report
+
+[Timer]
+OnCalendar=*-*-* 11:30:00 Asia/Ho_Chi_Minh
+Persistent=true
+Unit=homelab-monitoring-drift.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,22 @@
+[Unit]
+Description=Homelab active monitoring target drift report
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/apps/homelab-backup/app
+EnvironmentFile=/etc/homelab-backup/runner.env
+Environment=VICTORIAMETRICS_URL=http://10.10.0.5:8428
+Environment=MEZON_WEBHOOK_URL_FILE=/etc/homelab-backup/secrets/mezon-webhook
+SyslogIdentifier=homelab-monitoring-drift
+StandardOutput=journal
+StandardError=journal
+ExecStart=/opt/apps/homelab-backup/app/automation/maintenance/run-monitoring-drift-report.sh
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ReadWritePaths=/tmp
+TimeoutStartSec=2min
