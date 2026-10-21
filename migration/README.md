@@ -22,7 +22,8 @@ stack is scheduled with the `edge=true` node label and uses the external
 | `gitlab-https-tunnel/docker-compose.yml` | VPS-local Docker-labeled GitLab HTTPS Rathole server; publishes only control `7002`, private backend `8085` on `gateway-network` | Temporary deployed |
 | `gitlab-https-tunnel/client-stack.yml` | Portless VM100 Rathole client to GitLab HTTP over Docker DNS | Temporary deployed |
 | `gitlab-https-tunnel/{server,client}.toml.template` | Secret-free Noise/token runtime templates; rendered with shared SSH-tunnel renderer | Current |
-| `gitlab-https-tunnel/patch_gateway.py` | Parser-checked one-term VPS HostSNI patch/restore that preserves Traefik's bind-mount inode | Executed; backup on VPS |
+| `gitlab-https-tunnel/patch_gateway.py` | Parser-checked GitLab-specific VPS HostSNI patch/restore that preserves Traefik's bind-mount inode | Legacy compatibility helper; use the generic guard for new edits |
+| `../automation/scripts/vps-hostsni-edit.py` | Hash-gated, one-term VPS HostSNI edit/restore with Traefik startup validation and inode-preserving rollback | Required guard for future VPS allow-list changes |
 | `gitlab-registry-trial/docker-compose.yml` | VPS-local Docker-labeled trial Registry Rathole server; only control `7003` published, private `8086` backend on `gateway-network` | Trial deployed |
 | `gitlab-registry-trial/client-stack.yml` | Portless VM100 client to GitLab Registry NGINX `tasks.gitlab_gitlab:5005` over Docker DNS | Trial deployed |
 | `gitlab-registry-trial/{server,client}.toml.template` | Secret-free Noise/token templates; rendered with shared SSH-tunnel renderer | Current |

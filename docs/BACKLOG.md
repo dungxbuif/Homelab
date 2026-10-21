@@ -17,7 +17,7 @@ Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`
 | ID | Item | Why | How / verify | Status |
 |---|---|---|---|---|
 | S1 | Public GitHub repo exposes credentials | Credentials in history are compromised regardless of repo state | Rotate every exposed secret, then purge or privatise; record in LOG | open (rotation deferred) |
-| S2 | Root cause of the VPS HostSNI edit outage | Removing one hostname from `/root/gateway/dynamic.yml` took sites down for 3 to 4 minutes | Reproduce on a copy or in a window with Traefik logs open; failing file kept at `/root/firewall-backup/dynamic.yml.broken-attempt` | open |
+| S2 | Root cause of the VPS HostSNI edit outage | Removing one hostname from `/root/gateway/dynamic.yml` took sites down for 3 to 4 minutes | Read-only forensic result classifies this as unsafe live file-provider mutation; generic guarded edit path is added and must be used for future changes. Exact historical watcher event remains unproven because no provider error was retained. Evidence: [VPS HostSNI incident](./deployments/vps-hostsni-incident-2026-10-21.md) | partial (guard implemented; historical reproduction pending) |
 
 ## P1 Network segmentation
 

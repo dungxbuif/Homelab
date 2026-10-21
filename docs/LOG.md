@@ -22,6 +22,15 @@ timestamp: 2026-07-03T15:14:00Z
 
 ## 2026-10-21 - Runtime audit continuation
 
+- **VPS HostSNI incident forensic result:** compared the live, known-good and
+  retained failed gateway files, checked the Traefik bind mount and watcher,
+  and reviewed the incident window without changing the VPS. The files differ
+  by exactly one allow-list term and both parse, so the evidence points to an
+  unsafe live file-provider mutation rather than malformed YAML. The exact
+  historical watcher event is not recoverable from retained logs; S2 is now
+  partial while the guarded edit path is implemented. See [VPS HostSNI
+  incident](./deployments/vps-hostsni-incident-2026-10-21.md).
+
 - **Image update watch:** added VM100 Diun in notify-only mode with a pinned
   image digest, read-only Docker socket, no published ports, and `0.25 CPU /
   256 MiB` limits. It checks running-container images every 12 hours and sends
