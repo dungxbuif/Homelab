@@ -50,6 +50,14 @@ change clients. Current request pressure is therefore low; historical source-IP
 log analysis remains optional evidence work rather than a reason to change
 production polling or rate limits.
 
+## Follow-up spot check: 2026-10-21
+
+The live `couchdb:3.3.3` container reported 0.40% CPU and 123.3 MiB RSS.
+`/_active_tasks` was empty. A bounded 24-hour log scan found 14 `_changes`
+mentions, 12 HTTP 401 responses, 3 HTTP 404 responses and no HTTP 5xx
+responses. This does not show a current tight-polling incident, so no
+rate-limit or LiveSync configuration change was made.
+
 ## Findings
 
 Most Pi5 containers currently have no Docker CPU or memory limit. This includes
