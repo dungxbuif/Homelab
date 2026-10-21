@@ -33,6 +33,11 @@ timestamp: 2026-10-17T00:00:00+07:00
 * [Backup and Restore Runbook](./runbooks/backup-restore.md) - native CLI/API backup rules, post-check verification, Mezon status reporting, Google Drive retention, and restore boundaries.
 * [Database Provisioning Runbook](./runbooks/db-provisioning.md) - validated database/user creation contract, secret boundary, and staging workflow.
 * [Backup Runner](../automation/backup-runner/README.md) - serial export/upload/post-check flow, retention lock, and schedule contract.
+* [Native Backup Pull Transport](./deployments/backup-native-pull-transport-2026-10-21.md) - private-network PostgreSQL/RustFS transport and staged CouchDB proxy boundary.
+* [CouchDB Backup Proxy](./deployments/couchdb-backup-proxy-2026-10-21.md) - GET-only VM100-to-Pi5 proxy, credential boundary, restore evidence, and current cutover gate.
+* [RustFS Native Pull Cutover](./deployments/rustfs-native-pull-cutover-2026-10-21.md) - production S3 network, read-only key, export and restore evidence.
+* [VM100 Vzdump Preflight](./deployments/vm100-vzdump-preflight-2026-10-21.md) - current Proxmox capacity and the separate-failure-domain requirement.
+* [GitLab CI Homepage Approval](./deployments/gitlab-ci-homepage-approval-2026-10-21.md) - manual release contract and live enrollment gate.
 * [Backup Control-Plane Plan](./superpowers/plans/2026-10-04-homelab-backup-control-plane.md) - historical design record for the now-active Ansible/backup architecture.
 * [Homelab Automation Control Plane Plan](./superpowers/plans/2026-10-13-homelab-automation-control-plane.md) - staged plan for Semaphore, Ansible, OpenTofu, private execution, route generation, app deployment, drift audit, and removal of direct agent-to-host operations.
 * [Semaphore Control Plane](./deployments/semaphore-backup-ui-2026-10-04.md) - private Pi5 UI/provisioner deployment, route, secret boundary, verification, and rollback; current metadata recovery is recorded in the runtime inventory.
