@@ -27,6 +27,12 @@ timestamp: 2026-07-03T15:14:00Z
   256 MiB` limits. It checks running-container images every 12 hours and sends
   Mezon warnings without pulling or restarting workloads. See
   [Diun image watch](./deployments/diun-image-watch-2026-10-21.md).
+- **GitLab CI approval boundary:** added a protected manual production job for
+  the catalog-approved Homepage digest. The job uses the existing fixed
+  forced-command account on Pi5, pinned host identity, serialized release
+  execution, and the existing Mezon receipt path; it fails closed until the
+  protected GitLab file variables and production environment are enrolled. See
+  [GitLab CI Homepage approval](./deployments/gitlab-ci-homepage-approval-2026-10-21.md).
 - **Backup failure reconciliation:** correlated the recent database and
   monitoring-drift failures with their journals. The database failure was an
   older deployed-script syntax error and the monitoring failure was the

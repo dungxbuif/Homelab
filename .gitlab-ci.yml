@@ -1,6 +1,7 @@
 stages:
   - validate
   - build
+  - deploy
 
 workflow:
   rules:
@@ -213,3 +214,27 @@ build:provisioner:
     - sh automation/scripts/scan-image.sh "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-arm64" provisioner-arm64
     - docker push "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-arm64"
     - docker image inspect "$CI_REGISTRY_IMAGE/provisioner:$CI_COMMIT_SHA-arm64" --format 'published={{index .RepoDigests 0}}'
+
+deploy:homepage-production:
+  stage: deploy
+  image:
+    name: registry-gitlab.dungxbuif.com/dungxbuif/homelab-automation/automation-ee@sha256:835cce544bde8fba8a381929d2e59dd8a95019c83c83f7ebb84e090cdd76c0a6
+    entrypoint: [""]
+  needs:
+    - validate:automation-ee
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: manual
+    - if: '$CI_COMMIT_TAG'
+      when: manual
+    - when: never
+  allow_failure: false
+  environment:
+    name: production
+    deployment_tier: production
+    action: start
+  resource_group: homepage-production
+  variables:
+    HOMEPAGE_IMAGE_DIGEST: 'sha256:c128afca4e026cfc4f33d4cf1c77adc8cb08f01215a3f2bde76a1ecca12b79fd'
+  script:
+    - bash automation/scripts/gitlab-homepage-release.sh
