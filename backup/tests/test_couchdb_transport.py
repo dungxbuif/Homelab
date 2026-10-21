@@ -70,6 +70,18 @@ class CouchDBTransportTests(unittest.TestCase):
         self.assertIn("--retry-max-time 900", script)
         self.assertIn("--retry-connrefused", script)
 
+    def test_free_space_floor_fails_closed(self):
+        with mock.patch.dict(MODULE.os.environ, {"BACKUP_COUCHDB_MIN_FREE_BYTES": "100"}), \
+             mock.patch.object(MODULE.shutil, "disk_usage", return_value=MODULE.shutil._ntuple_diskusage(1000, 901, 99)):
+            with self.assertRaisesRegex(RuntimeError, "disk floor"):
+                MODULE.enforce_free_space(Path("/tmp"))
+
+    def test_free_space_floor_is_opt_in(self):
+        with mock.patch.dict(MODULE.os.environ, {}, clear=True), \
+             mock.patch.object(MODULE.shutil, "disk_usage") as disk_usage:
+            MODULE.enforce_free_space(Path("/tmp"))
+        disk_usage.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

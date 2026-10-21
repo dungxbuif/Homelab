@@ -8,6 +8,7 @@ import gzip
 import json
 import os
 import shlex
+import shutil
 import sys
 from urllib.parse import quote
 from pathlib import Path
@@ -36,6 +37,24 @@ def open_docs_file(path: Path):
     if path.name.endswith(".gz"):
         return gzip.open(path, "wt", encoding="utf-8", compresslevel=6)
     return path.open("w", encoding="utf-8")
+
+
+def enforce_free_space(path: Path) -> None:
+    """Stop a staged export before it crosses an opt-in disk safety floor."""
+    raw_floor = os.environ.get("BACKUP_COUCHDB_MIN_FREE_BYTES", "")
+    if not raw_floor:
+        return
+    try:
+        floor = int(raw_floor)
+    except ValueError as exc:
+        raise RuntimeError("BACKUP_COUCHDB_MIN_FREE_BYTES must be an integer") from exc
+    if floor < 0:
+        raise RuntimeError("BACKUP_COUCHDB_MIN_FREE_BYTES must be non-negative")
+    free = shutil.disk_usage(path).free
+    if free < floor:
+        raise RuntimeError(
+            f"CouchDB staged export stopped before disk floor: free={free} floor={floor}"
+        )
 
 
 def curl_db(container: str, database: str, suffix: str) -> bytes:
@@ -93,6 +112,7 @@ def create_backup(inventory: dict, output: Path) -> dict:
         last_id: str | None = None
         with open_docs_file(docs_path_for_db) as docs_file:
             while True:
+                enforce_free_space(output)
                 query = f"/_all_docs?include_docs=true&attachments=true&limit={PAGE_SIZE}"
                 if last_id is not None:
                     query += f"&startkey_docid={quote(last_id, safe='')}&skip=1"

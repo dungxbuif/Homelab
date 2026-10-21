@@ -171,7 +171,10 @@ single response larger than 128 MiB. This keeps attachment-heavy exports
 practical without allowing an unexpectedly large response to consume
 unbounded memory. `BACKUP_COUCHDB_COMPRESSION=gzip` stores document streams as
 `.docs.ndjson.gz`; it is optional and defaults to uncompressed `.ndjson` for
-backward compatibility. The native restore helper reads either form.
+backward compatibility. The native restore helper reads either form. For a
+VM100 staging experiment, set `BACKUP_COUCHDB_MIN_FREE_BYTES` to a safety
+floor; the exporter checks it before each page and fails closed. It is unset
+by default.
 
 Run this check from VM100 without printing the token:
 

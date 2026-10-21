@@ -70,6 +70,11 @@ uncompressed for compatibility. A staged performance check returned a
 1,000-document page of about 13 MiB promptly; compression changes local
 staging size only, not the allowed database paths or credential boundary.
 
+For native-pull experiments, set `BACKUP_COUCHDB_MIN_FREE_BYTES` to a
+host-specific safety floor. The exporter checks the output filesystem before
+each page and fails closed before crossing that floor. The variable is unset
+by default and is not enabled for the scheduled Pi5 path.
+
 This is a staged transport. The scheduled `databases` class still uses the
 existing Pi5 export path. The representative export/restore passed, but the
 full `homelab` inventory comparison remains open because it was intentionally
