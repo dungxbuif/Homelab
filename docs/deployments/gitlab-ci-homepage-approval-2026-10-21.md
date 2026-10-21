@@ -42,7 +42,7 @@ The environment named `production` must also be protected so only the intended
 maintainer can click the manual job.
 
 Until those variables and the protected environment are enrolled, the job is
-intentionally fail-closed and A1 remains pending live acceptance.
+intentionally fail-closed and A8 remains pending live acceptance.
 
 ## Verification
 
@@ -50,3 +50,11 @@ The 27 focused GitLab CI/deploy contract tests pass in an isolated Python
 environment with `PyYAML`, and the release script passes `bash -n`. Live
 acceptance still requires one successful manual job and one same-digest no-op,
 with the Homepage route and Mezon receipt verified after each run.
+
+## Live enrollment audit
+
+On 2026-10-21 the local GitLab credential candidates were tested against the
+project API without printing or changing any secret. All returned `401`, so the
+project variables and protected-environment state could not be read. No manual
+pipeline was triggered. A maintainer must provide or enroll a valid scoped
+GitLab API credential before this acceptance gate can proceed.
