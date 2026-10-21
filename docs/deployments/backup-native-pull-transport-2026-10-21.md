@@ -87,15 +87,17 @@ The read-only audit on 2026-10-21 found:
 - VM100 service membership is consistent with the preflight: application
   consumers use `pg-net`/`s3-net`; CouchLoom remains the documented
   `homelab-net` exception.
-- A live VM100 network audit found no RustFS service/container attached to
-  `s3-net` or `homelab-net`. A live Pi5 audit confirmed that `rustfs` is up,
-  attached only to Pi5-local Docker networks (`s3-net`, `homelab-net`,
-  `proxy_net`, `edge-http-net`), exposes only internal `9000/9001` ports and
-  has no host port binding. The RustFS network transport is therefore
-  source-ready but not deployable until a private VM100-reachable endpoint,
-  source restriction, and read-only access key are provisioned and verified.
-  VM100 must not be attached to Pi5-local Docker networks, and RustFS must not
-  be exposed through the public edge for backup traffic.
+- A live Pi5 and VM100 audit confirmed that `s3-net` is a shared, attachable
+  Swarm overlay. From a disposable VM100 client, `rustfs` resolved to
+  `10.0.31.2` and its S3 API returned the expected unauthenticated `403`.
+  RustFS is also attached to Pi5's `homelab-net`, `proxy_net` and
+  `edge-http-net`, exposes only internal `9000/9001` ports and has no host port
+  binding. The RustFS network transport is therefore endpoint-ready but not
+  production-ready until a bucket-scoped read-only access key is provisioned,
+  the native pull is compared with the Pi5 export, and an isolated restore
+  passes. VM100 must use only `s3-net`; backup traffic must not use the public
+  edge.
+  Evidence: [RustFS network preflight](./rustfs-network-preflight-2026-10-21.md).
 
 The source adapter and PostgreSQL credential are deployed on VM100, but the
 production runner is intentionally still on the original Pi5 transport. The

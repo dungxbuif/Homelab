@@ -35,10 +35,11 @@ cold recovery, not the scheduled mechanism.
 
 The default transport uses the inventory endpoint and the existing Pi5 Docker
 network. The VM100 network mode is source-ready but **not currently enabled**:
-the Pi5 RustFS container is on Pi5-local Docker networks and publishes no host
-S3 port, so VM100 cannot reach `s3-net` directly. Before enabling this mode,
-provision a private, source-restricted endpoint and a read-only key. Do not use
-the public `storage.dungxbuif.com` route for backup traffic.
+the Pi5 RustFS container publishes no host S3 port, while the shared attachable
+Swarm overlay `s3-net` provides the private `rustfs:9000` endpoint to VM100.
+The endpoint preflight passed unauthenticated with HTTP `403`. Before enabling
+this mode, provision a private, bucket-scoped read-only key. Do not use the
+public `storage.dungxbuif.com` route for backup traffic.
 
 Once that endpoint has passed object-listing, manifest-parity and isolated
 restore checks, VM100 may opt in with these runtime-only values:
