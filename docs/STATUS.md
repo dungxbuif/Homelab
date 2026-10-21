@@ -36,8 +36,10 @@ incident and rollback context.
   enabled.
 - Host-config backup, health/dead-man checks, Pi5 backup resource caps, VM100
   disk maintenance and manager-side Swarm inventory are deployed.
-- RustFS and PostgreSQL native-pull paths are verified. Pi5 remains the
-  rollback path for the database class while CouchDB is being evaluated.
+- RustFS and PostgreSQL native-pull paths are verified. The experimental
+  CouchDB stream exporter now has a per-page free-space guard and source
+  contract coverage, but Pi5 remains the rollback path for the database class
+  while the full CouchDB stream restore is being evaluated.
 - Current VM100 resource limits, AI selector rollout, monitoring target
   cleanup and retired-service cleanup are documented in dated evidence records.
 

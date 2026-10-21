@@ -1211,6 +1211,14 @@ timestamp: 2026-07-03T15:14:00Z
 - **CouchDB native-pull comparison 2026-10-21:** increased the staged adapter page size to 1,000 documents while retaining its 128 MiB response ceiling. A complete `obsidian_vault` export returned 49,210 documents and restored into an isolated CouchDB 3.3.3 container with an exact count match. A full inventory probe reached the large `homelab` database but was stopped at about 83% VM100 disk usage before the payload could threaten the health threshold; all partial/scratch files were removed. The scheduled `databases` class remains on the Pi5 path and B9 remains partial.
 # 2026-10-21 — Remaining backlog audit
 
+- **CouchDB stream disk guard 2026-10-21:** added a fail-closed
+  `BACKUP_COUCHDB_MIN_FREE_BYTES` check before every streamed page, so the
+  experimental VM100-to-Pi5 stream stops before disk pressure can worsen and
+  does not write a checksum for an incomplete stream. Shell syntax, Restic
+  contract, stream, lifecycle and transport tests passed (`19/19` related
+  tests); commit `6053209` was pushed to the GitLab working branch. Production
+  CouchDB scheduler and the Pi5 rollback path were unchanged.
+
 - **S2 VPS HostSNI guard:** reran `automation/tests/test_vps_hostsni_edit.py` in an isolated Python environment with PyYAML; all 6 tests passed. This confirms the local guard contract only. Live VPS dry-run, current-hash approval, and bounded route smoke still require approved VPS access.
 - **A8 GitLab CI enrollment:** read-only project, variables, and runner checks still return HTTP 401 with the stored bootstrap credential. No enrollment or mutation was attempted; protected variables/environment and live acceptance remain unverified.
 - **B3 VM100 vzdump:** Proxmox remains at version 8.3.5 with VM100 running on `local-lvm`; `local` and `local-lvm` are the only backup-capable targets. No separate PBS/NAS/failure-domain target exists, so no production vzdump was started.
