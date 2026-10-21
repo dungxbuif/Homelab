@@ -44,6 +44,13 @@ returned HTTP 200. MezonHook is now capped at 512 MiB/0.50 CPU with
 `start-first`; its public health route returned HTTP 200. The snapshot is not
 a safe limit recommendation for the remaining workloads by itself.
 
+CouchLoom's application was already bounded at 2 GiB/2 CPU. A source/runtime
+drift audit found its PostgreSQL and Ollama containers uncapped; these are now
+bounded at 2 GiB/1 CPU and 4 GiB/2 CPU respectively, with memory-swap equal to
+the memory limit. All three containers remained healthy and their volumes were
+not recreated. CouchLoom intentionally has no public route; a public 404 is
+therefore expected.
+
 ## Next controlled step
 
 1. Capture a short canary window for one workload at a time, including request

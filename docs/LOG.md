@@ -51,6 +51,11 @@ timestamp: 2026-07-03T15:14:00Z
   Compose containers without rebuilding images. Backend, feature-worker,
   collab, MCP and frontend became healthy; public `/` and `/healthz` returned
   200. See [Whiteboard resource canary](./deployments/whiteboard-resource-canary-2026-10-21.md).
+- **CouchLoom resource reconciliation:** corrected source/runtime drift by
+  bounding PostgreSQL at `1 CPU/2 GiB` and Ollama at `2 CPU/4 GiB` with equal
+  memory-swap limits. All CouchLoom containers stayed healthy and volumes were
+  preserved; its intentional lack of a public route remains documented. See
+  [CouchLoom reconciliation](./deployments/couchloom-resource-reconciliation-2026-10-21.md).
 - **NetBird dashboard resource canary:** capped the stateless dashboard at
   `0.50 CPU/512 MiB` with `start-first`. The Swarm update completed and the
   public dashboard returned HTTP 200. The stateful NetBird server was left
