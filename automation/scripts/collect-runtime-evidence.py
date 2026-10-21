@@ -17,7 +17,7 @@ import yaml
 MAX_AGE_SECONDS = 900
 REQUIRED_PROBES = {
     "kernel", "memory", "swap", "disk", "listeners", "containers",
-    "container_inventory", "resource_limits", "networks", "resources",
+    "container_inventory", "resource_limits", "networks", "swarm_services", "resources",
 }
 
 

@@ -30,6 +30,9 @@ PROBES = {
                             '"project":{{json (.Label "com.docker.compose.project")}}}'),
     'networks': ('/usr/bin/docker', 'network', 'ls', '--format',
                  '{{.ID}}\t{{.Name}}\t{{.Driver}}\t{{.Scope}}'),
+    'swarm_services': ('/usr/bin/docker', 'service', 'ls', '--format',
+                       '{"name":{{json .Name}},"image":{{json .Image}},'
+                       '"replicas":{{json .Replicas}},"ports":{{json .Ports}}}'),
     'resources': ('/usr/bin/docker', 'stats', '--no-stream', '--format',
                   '{{.ID}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.PIDs}}'),
 }
@@ -77,6 +80,21 @@ def collect_limits(inventory):
     return execute_probe(('/usr/bin/docker', 'inspect', '--format', template, *ids))
 
 
+def collect_swarm_services():
+    manager = execute_probe(('/usr/bin/docker', 'info', '--format', '{{.Swarm.ControlAvailable}}'))
+    if 'error' in manager:
+        return manager
+    if manager['output'].strip().lower() != 'true':
+        return {'output': json.dumps({'manager': False, 'services': []}, sort_keys=True) + '\n'}
+    services = execute_probe(PROBES['swarm_services'])
+    if 'error' in services:
+        return services
+    return {'output': json.dumps({
+        'manager': True,
+        'services': [json.loads(line) for line in services['output'].splitlines() if line.strip()],
+    }, sort_keys=True) + '\n'}
+
+
 def collect():
     probes = {}
     for name, argv in PROBES.items():
@@ -90,6 +108,9 @@ def collect():
                 if (probes['resource_limits'].get('reason') != 'object_disappeared'
                         or attempt == 2):
                     break
+            continue
+        if name == 'swarm_services':
+            probes[name] = collect_swarm_services()
             continue
         probes[name] = execute_probe(argv)
     return {

@@ -4,7 +4,7 @@ import test from 'node:test';
 const moduleUrl = new URL('../export-host-audit.mjs', import.meta.url);
 const now = Date.parse('2026-10-15T04:40:00Z');
 const probeNames = ['kernel', 'memory', 'swap', 'disk', 'listeners', 'containers',
-  'container_inventory', 'resource_limits', 'networks', 'resources'];
+  'container_inventory', 'resource_limits', 'networks', 'swarm_services', 'resources'];
 function fixture() {
   const report = {schema_version: 1, scope: 'host_runtime_only', collection_complete: true,
     inventory_complete: false, observed_at: '2026-10-15T04:39:00+00:00',

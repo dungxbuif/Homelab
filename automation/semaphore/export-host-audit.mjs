@@ -10,7 +10,7 @@ export async function safeJson(response) {
 
 const templates = {vm100: 4, pi5: 5};
 const probes = ['kernel', 'memory', 'swap', 'disk', 'listeners', 'containers',
-  'container_inventory', 'resource_limits', 'networks', 'resources'];
+  'container_inventory', 'resource_limits', 'networks', 'swarm_services', 'resources'];
 
 export function extractObservation(task, rows, host, now = Date.now()) {
   if (!Object.hasOwn(templates, host) || !Number.isSafeInteger(task?.id) || task.id < 1

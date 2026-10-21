@@ -19,7 +19,7 @@ def artifact(host, name="homepage", service=None):
            "ports": ""}
     probes = {name: {"output": ""} for name in {
         "kernel", "memory", "swap", "disk", "listeners", "containers",
-        "container_inventory", "resource_limits", "networks", "resources",
+        "container_inventory", "resource_limits", "networks", "swarm_services", "resources",
     }}
     probes["container_inventory"]["output"] = json.dumps(row) + "\n"
     now = datetime.now(timezone.utc).isoformat()

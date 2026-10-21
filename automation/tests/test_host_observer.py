@@ -146,6 +146,22 @@ class HostObserverTests(unittest.TestCase):
         for forbidden in ['.Command', '.Env', '.Labels', '.Mounts', '{{json .}}']:
             self.assertNotIn(forbidden, template)
 
+    def test_swarm_probe_is_read_only_and_worker_safe(self):
+        module = self.module()
+        calls = []
+
+        def run(argv, **kwargs):
+            calls.append(argv)
+            if argv[1:3] == ('info', '--format'):
+                return subprocess.CompletedProcess(argv, 0, 'false\n', '')
+            return subprocess.CompletedProcess(argv, 0, '', '')
+
+        with patch.object(module.subprocess, 'run', side_effect=run):
+            result = module.collect_swarm_services()
+        self.assertEqual(json.loads(result['output']), {'manager': False, 'services': []})
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0][:3], ('/usr/bin/docker', 'info', '--format'))
+
 
 if __name__ == '__main__':
     unittest.main()
