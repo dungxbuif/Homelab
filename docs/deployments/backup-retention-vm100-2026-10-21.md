@@ -37,6 +37,8 @@ The weekly integrity runner on VM100 covers `databases`, `rustfs`,
   after confirming no Restic/rclone process was alive, unlocked, and then
   rechecked/pruned successfully. The health service passed afterward with a
   free global lock.
+- GitLab local staging now keeps one complete run after restore acceptance;
+  removing the older 8.2 GiB run reduced VM100 from 86% to 82% used.
 
 ## Compatibility repair
 

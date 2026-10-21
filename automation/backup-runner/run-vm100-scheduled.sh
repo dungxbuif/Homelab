@@ -124,6 +124,7 @@ case "$class" in
       BACKUP_STATUS_ROOT="$status_root" \
       bash "$script_dir/run-instance-retention.sh"
     BACKUP_STAGING_ROOT="$staging_root" \
+      BACKUP_LOCAL_RUN_KEEP="${BACKUP_GITLAB_LOCAL_RUN_KEEP:-1}" \
       bash "$backup_scripts/cleanup-local-runs.sh" gitlab
     if [[ -f "$status_root/configs.success" ]]; then
       BACKUP_APP_ROOT="$app_root" \
