@@ -74,7 +74,7 @@ Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`
 |---|---|---|
 | L1 | Decide on a data VM after measuring Proxmox capacity | decision |
 | L2 | pgBackRest with WAL archiving to a VM100 repo host (PITR) | decision, P2 now that Pi5 is a data server with a 24 h RPO |
-| L3 | Postgres collation-version warning (`ALTER DATABASE ... REFRESH COLLATION VERSION`, then reindex) | open |
+| L3 | Postgres collation-version warning (`ALTER DATABASE ... REFRESH COLLATION VERSION`, then reindex) | Refreshed and reindexed maintenance database `postgres` only. Stored and actual versions now match at `2.36`; all application databases remained connectable. Evidence: [collation reconciliation](./deployments/postgres-collation-reconciliation-2026-10-21.md) | done 2026-10-21 |
 | L4 | Decommission legacy Pi `/ssd-data/backup/simple-backup.sh` after B1 passes | done 2026-10-21: verified its cron entry is commented/disabled, no legacy process is running, and the obsolete script was removed after B1 restore acceptance; current systemd backup timers remain the sole scheduler |
 
 Detailed phased plan for B1 to B8: [backup-hardening-plan-2026-10-20.md](./deployments/backup-hardening-plan-2026-10-20.md).

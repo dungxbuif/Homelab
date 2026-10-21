@@ -22,6 +22,13 @@ timestamp: 2026-07-03T15:14:00Z
 
 ## 2026-10-21 - Runtime audit continuation
 
+- **PostgreSQL collation warning resolved:** refreshed collation metadata and
+  reindexed only the maintenance database `postgres` after the read-only audit
+  found its stored version at `2.41` while the runtime was `2.36`. All
+  application databases remained at `2.36` and returned `SELECT 1`; no service
+  restart was required. See
+  [PostgreSQL collation reconciliation](./deployments/postgres-collation-reconciliation-2026-10-21.md).
+
 - **Pi5 backup cgroup enforcement:** installed a root-owned, class allow-listed
   systemd wrapper and argument-specific sudoers rules. The Pi executor now
   defaults to transient scopes with `CPUQuota=100%`, `MemoryMax=1G`, and
