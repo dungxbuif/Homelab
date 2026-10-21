@@ -1234,3 +1234,10 @@ timestamp: 2026-07-03T15:14:00Z
   scratch files/processes were removed. The scratch repository itself was only
   28 KiB; no Google Drive or production repository was touched. This gate is
   intentionally recorded as failed-safe, not passed.
+- **VM100 disk pressure recheck:** the approved seven-day Docker maintenance
+  policy ran with the backup lock free, removed no containers or volumes and
+  reclaimed `0B` from image/build-cache pruning. Docker reported about
+  `46.19 GB` of images and `10.83 GB` of BuildKit cache; the active Ollama
+  image is about `9.18 GB` and was preserved. VM100 remained at `84%` used
+  with about `32 GiB` free. VM100 is a Swarm worker, so manager-side service
+  inventory could not be obtained there; no image tag was removed manually.
