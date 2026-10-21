@@ -182,9 +182,11 @@ docker run --rm --network homelab-net \
 ```
 
 Expected results are a non-empty `200` response with the valid token and
-`401` with an intentionally incorrect token. A full export probe was stopped
-before completion because `homelab` is large; it did not modify CouchDB or the
-production backup marker.
+`401` with an intentionally incorrect token. A complete staged export and
+isolated restore of `obsidian_vault` matched `49,210` documents. The full
+inventory probe was stopped while exporting the large `homelab` database at
+about 83% VM100 disk usage; it did not modify CouchDB or the production backup
+marker.
 
 To roll back the staged proxy without touching CouchDB:
 

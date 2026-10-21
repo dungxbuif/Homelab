@@ -47,9 +47,13 @@ The deployment was verified from VM100:
 1. Valid bearer token returned a non-empty HTTP `200` response.
 2. Invalid bearer token returned HTTP `401`.
 3. The container was running as UID/GID `65532:65532` with zero restarts.
-4. A large export probe was stopped before completion because the `homelab`
-   database would take an extended time; it did not write CouchDB data or a
-   production completion marker.
+4. A complete staged export of `obsidian_vault` produced `49,210` documents;
+   its payload was restored into an isolated CouchDB 3.3.3 container and the
+   restored count matched.
+5. A full inventory probe entered the large `homelab` database and was stopped
+   at about 330,000 documents when VM100 reached 83% disk usage. The partial
+   payload and all scratch files were removed; no production marker or
+   database was changed.
 
 The exporter now requests 1,000 documents per page and keeps the existing
 128 MiB response ceiling. A staged performance check returned a 1,000-document
@@ -57,8 +61,9 @@ page of about 13 MiB promptly; this changes throughput only, not the allowed
 database paths or credential boundary.
 
 This is a staged transport. The scheduled `databases` class still uses the
-existing Pi5 export path until a complete export, manifest comparison and
-isolated restore comparison pass.
+existing Pi5 export path. The representative export/restore passed, but the
+full `homelab` inventory comparison remains open because it was intentionally
+stopped by the VM100 disk-safety guard.
 
 ## Rollback
 

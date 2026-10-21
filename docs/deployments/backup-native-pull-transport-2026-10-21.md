@@ -112,7 +112,10 @@ Live verification completed:
 - valid VM100 request: non-empty HTTP `200` response;
 - invalid proxy token: HTTP `401` response;
 - proxy container: running as non-root with zero restarts;
-- no production CouchDB data or backup marker was changed by the probe.
+- `obsidian_vault` export and isolated restore matched `49,210` documents;
+- the full inventory probe was stopped by the VM100 disk-safety guard at about
+  83% usage while entering the large `homelab` database;
+- no production CouchDB data or backup marker was changed by either probe.
 
 The exact deployment and rollback details are in
 [`couchdb-backup-proxy-2026-10-21.md`](./couchdb-backup-proxy-2026-10-21.md).
@@ -125,7 +128,8 @@ passes for the adapters and new tests. The live direct PostgreSQL probe and
 `pg_restore --list` check pass. RustFS native export covered 7 buckets and
 3,115 checksum entries; no key/size object was missing against the latest Pi5
 run, and a scratch `mac-ocr` restore verified 62 objects. The remaining
-comparison is the CouchDB read-only transport. The
+comparison is the full CouchDB inventory, especially the large `homelab`
+database. The
 full local backup suite still has unrelated workstation
 baseline failures: macOS has no `flock`, the local interpreter lacks `jinja2`,
 and two health fixtures expect the enrolled Pi runner/marker setup. Those
