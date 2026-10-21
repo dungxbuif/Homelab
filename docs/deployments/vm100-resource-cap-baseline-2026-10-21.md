@@ -10,6 +10,9 @@ Semaphore task `#150` (`Inspect VM100 runtime (read only)`) completed with
 visible memory and 8 GiB swap. The snapshot was taken without restarting or
 mutating a service.
 
+Homepage is now bounded at 512 MiB/0.50 CPU after its canary update; its
+approved image digest stayed unchanged and the public route returned HTTP 200.
+
 Already bounded workloads include GitLab (10 GiB/4 CPU), KubeKosh (4 GiB/2
 CPU), Stirling PDF (2 GiB/2 CPU), the Semaphore runner (1 GiB/1 CPU),
 CouchLoom (2 GiB/2 CPU), the GitLab tunnels (128 MiB/0.5 CPU each), K8s

@@ -29,8 +29,7 @@ services:
     networks: [edge-http-net]
     routes: [homepage]
     health: {path: /, expected_status: [200]}
-    resources: {}
-    proposed_resources: {cpus: '0.50', memory_mb: 512}
+    resources: {cpus: '0.50', memory_mb: 512}
     release_template_id: 6
     rollback_image: homelab/homepage:vm100-20261007-stirling
     deployable: true

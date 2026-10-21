@@ -87,7 +87,7 @@ class DeployContractTests(unittest.TestCase):
         self.assertEqual(homepage['image']['repository'], 'registry-gitlab.dungxbuif.com/dungxbuif/homepage')
         self.assertEqual(homepage['image']['digest'], DIGEST)
         self.assertEqual(homepage['networks'], ['edge-http-net'])
-        self.assertEqual(homepage['resources'], {})
+        self.assertEqual(homepage['resources'], {'cpus': '0.50', 'memory_mb': 512})
         self.assertEqual(homepage['release_template_id'], 6)
 
 
