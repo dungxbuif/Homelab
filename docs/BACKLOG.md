@@ -52,7 +52,7 @@ Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`
 
 | ID | Item | Why | How / verify | Status |
 |---|---|---|---|---|
-| E1 | `homelab` CouchDB (5.9 GB, admin-only) | LiveSync copy of this repo; not exposed on `sync-db` | If remote sync is needed, create a non-admin `_security` member and add `PathPrefix(/homelab)` to the `sync-db` rule; review size or compact | decision |
+| E1 | `homelab` CouchDB (5.9 GB, admin-only) | LiveSync copy of this repo; not exposed on `sync-db` | Decision 2026-10-21: keep private/admin-only and do not add a public or remote `sync-db` route. Reopen only with a named non-admin consumer, `_security` policy, path restriction and restore test. | closed (2026-10-21 decision) |
 | E2 | Catalog vs live drift | `catalog.yml` marked `couchdb`/`pgadmin` as `exposure: lan`; live file did not | Catalog regenerated and atomically published to Pi5; route smoke checks passed | done |
 | E3 | `couchdb.` and `sync-db.` share a backend with split routers | Hand edit lives only on Pi5 | Split is now declared in the catalog with path restriction and shared service name; `sync-db/` 401 and `/_utils/` 404 verified | done |
 
@@ -72,7 +72,7 @@ Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`
 
 | ID | Item | Status |
 |---|---|---|
-| L1 | Decide on a data VM after measuring Proxmox capacity | decision |
+| L1 | Decide on a data VM after measuring Proxmox capacity | Decision 2026-10-21: keep Pi5 as the DB/data host; VM100 remains the production compute and backup/restore worker. Reconsider only after a separately funded failure-domain host or storage target exists. | closed (2026-10-21 decision) |
 | L2 | pgBackRest with WAL archiving to a VM100 repo host (PITR) | Keep daily logical backup only for now; PITR is deliberately out of scope | closed (2026-10-21 decision) |
 | L3 | Postgres collation-version warning (`ALTER DATABASE ... REFRESH COLLATION VERSION`, then reindex) | done 2026-10-21: refreshed and reindexed maintenance database `postgres` only; stored and actual versions now match at `2.36`, and all application databases remained connectable. Evidence: [collation reconciliation](./deployments/postgres-collation-reconciliation-2026-10-21.md) |
 | L4 | Decommission legacy Pi `/ssd-data/backup/simple-backup.sh` after B1 passes | done 2026-10-21: verified its cron entry is commented/disabled, no legacy process is running, and the obsolete script was removed after B1 restore acceptance; current systemd backup timers remain the sole scheduler |

@@ -11,6 +11,12 @@ timestamp: 2026-10-13T00:00:00+07:00
 
 > **Current runtime source:** [Runtime Inventory and Deployment Reconciliation](./deployments/runtime-inventory-2026-10-13.md). This file contains the Pi5 architecture and runbook; the linked audit contains current image IDs, replica state, and backup markers.
 
+## Placement decision
+
+Pi5 remains the authoritative database/data host. VM100 is the production compute
+and backup/restore worker, not a replacement data VM. A future move requires a
+separate failure-domain host or storage target and an explicit restore drill.
+
 This workspace houses the complete configuration, provisioning scripts, security policies, and orchestration definitions for the **Home Gateway Infrastructure** running as a self-hosted single-board server on a **Raspberry Pi 5**. The entire infrastructure state is stored on a high-speed external SSD mounted at `/ssd-data`.
 
 ---
