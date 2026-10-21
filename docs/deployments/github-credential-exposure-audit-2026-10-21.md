@@ -21,6 +21,12 @@ public reachable history. The four non-token matches were placeholders in
 deprecated documentation/configuration, including `GOOGLE_CLIENT_SECRET` and
 the AWS example key `AKIAIOSFODNN7EXAMPLE`.
 
+A fresh read-only mirror check on 2026-10-21 found the same two refs and 13
+reachable commits. The history-pattern scan found no match for the repository's
+credential patterns, and the tracked-file scanner passed. `trufflehog` was not
+installed in the workstation environment, so this is not claimed as a
+TruffleHog result.
+
 ## Interpretation
 
 This is a clean result for the patterns and refs scanned today. It does **not**
