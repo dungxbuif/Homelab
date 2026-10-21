@@ -155,10 +155,11 @@ not an automatic consequence of setting these variables.
 
 The operator receives one message only after each class passes its post-check:
 
-- `[HOMELAB BACKUP] [OK] databases: ...`
-- `[HOMELAB BACKUP] [OK] database-instances: ...`
-- `[HOMELAB BACKUP] [OK] gitlab: ...`
-- `[HOMELAB BACKUP] [OK] rustfs: ...`
+- Success notifications are short and human-readable, for example
+  `✅ Backup thành công: PostgreSQL + CouchDB` followed by a confirmation
+  that the backup was saved and verified.
+- Failure and warning notifications add only the relevant reason and readable
+  disk sizes; run IDs are retained for troubleshooting.
 - `[HOMELAB BACKUP] [FAIL] <kind>: post-check failed ...`
 
 The message must contain no passwords, OAuth tokens, webhook URLs, database

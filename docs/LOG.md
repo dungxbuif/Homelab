@@ -201,6 +201,10 @@ timestamp: 2026-07-03T15:14:00Z
   Mezon notifications only for warnings and failures. Success notifications
   are disabled by default; `BACKUP_HEALTH_NOTIFY_SUCCESS=true` is reserved for
   a temporary, explicitly requested observation window.
+- **Backup notification readability:** success messages now name the backed-up
+  component (for example, PostgreSQL + CouchDB, RustFS, or GitLab) and omit
+  raw snapshot/byte diagnostics. Warnings and failures keep a short readable
+  reason and a run ID for follow-up.
 - **Backup schedule separation:** `database-instances` was moved from 01:30 to
   03:00 Asia/Ho_Chi_Minh (20:00 UTC). The previous 30-minute offset overlapped
   the normal 92-104 minute `databases` run and caused lock contention; the

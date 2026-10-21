@@ -68,6 +68,7 @@ export MEZON_BACKUP_DRY_RUN="$dry_run"
 python3 <<'PY'
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -80,13 +81,79 @@ details = os.environ['MEZON_BACKUP_DETAILS'].strip()
 run_id = os.environ['MEZON_BACKUP_RUN_ID'].strip()
 snapshot_id = os.environ['MEZON_BACKUP_SNAPSHOT_ID'].strip()
 
-lines = [f'[HOMELAB BACKUP] [{icon}] {kind}: {summary}']
-if run_id:
-    lines.append(f'Run: {run_id}')
-if snapshot_id:
-    lines.append(f'Snapshot: {snapshot_id}')
-if details:
-    lines.extend(['', details[:2400]])
+labels = {
+    'databases': 'PostgreSQL + CouchDB',
+    'database-instances': 'PostgreSQL instance trên VM100',
+    'rustfs': 'RustFS object storage',
+    'gitlab': 'GitLab',
+    'configs': 'Cấu hình Pi5 + VM100',
+    'retention': 'Dọn bản backup cũ',
+    'restore-drill': 'Kiểm tra khôi phục backup',
+    'health': 'Tình trạng hệ thống backup',
+}
+label = labels.get(kind, kind)
+status_words = {
+    'success': 'Backup thành công',
+    'failure': 'Backup gặp lỗi',
+    'warning': 'Backup cần chú ý',
+}
+
+def human_bytes(value):
+    try:
+        number = float(value)
+    except ValueError:
+        return value
+    units = ('B', 'KB', 'MB', 'GB', 'TB')
+    index = 0
+    while abs(number) >= 1024 and index < len(units) - 1:
+        number /= 1024
+        index += 1
+    return f'{number:.1f} {units[index]}'
+
+def friendly_details(value):
+    output = []
+    for raw in value.splitlines():
+        line = raw.strip()
+        if not line or line.startswith('[backup-health]'):
+            continue
+        match = re.search(r'free_bytes=(\d+)', line)
+        if match:
+            output.append(f"Dung lượng còn trống: {human_bytes(match.group(1))}")
+            continue
+        match = re.search(r'disk_used_percent=(\d+)', line)
+        if match:
+            output.append(f"Đã sử dụng: {match.group(1)}% dung lượng đĩa")
+            continue
+        if line.startswith('low free space:'):
+            output.append('Dung lượng đĩa sắp đầy')
+        elif line.startswith('disk usage is '):
+            output.append(line.replace('disk usage is ', 'Dung lượng đĩa đang ở mức ')
+                          .replace('% (warning threshold 85%)', '%'))
+        elif line.startswith('missing success marker:'):
+            output.append('Chưa thấy dấu hiệu hoàn tất của một lượt backup')
+        elif line.startswith('stale success marker:'):
+            output.append('Dấu hiệu backup đã cũ, cần kiểm tra lịch chạy')
+        elif line.startswith('failed unit:'):
+            output.append('Một tác vụ backup bị lỗi')
+        elif line.startswith('stage=') or line.startswith('runner exit code='):
+            continue
+        elif line.startswith('Pi backup health'):
+            continue
+        else:
+            output.append(line)
+    return output[:5]
+
+lines = [f'{icon} {status_words[status]}: {label}']
+if status == 'success':
+    lines.append('Đã lưu và kiểm tra bản backup thành công.')
+else:
+    friendly = friendly_details(details)
+    if friendly:
+        lines.extend(f'• {item}' for item in friendly)
+    if run_id:
+        lines.append(f'Mã kiểm tra: {run_id}')
+    if snapshot_id and status == 'failure':
+        lines.append(f'Mã bản lưu: {snapshot_id}')
 text = '\n'.join(lines)
 payload = {
     'type': 'hook',

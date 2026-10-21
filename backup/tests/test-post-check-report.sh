@@ -20,7 +20,12 @@ output=$(
 )
 
 grep -q '"type": "hook"' <<<"$output"
-grep -q 'database post-check passed' <<<"$output"
+grep -q 'PostgreSQL + CouchDB' <<<"$output"
+grep -q 'Đã lưu và kiểm tra bản backup thành công' <<<"$output"
+if grep -q 'Snapshot:' <<<"$output"; then
+  echo 'success notification should not expose snapshot details' >&2
+  exit 1
+fi
 
 rm "$tmp/COMPLETE"
 if "$root/scripts/post-check-report.sh" \
