@@ -113,8 +113,10 @@ Live verification completed:
 - invalid proxy token: HTTP `401` response;
 - proxy container: running as non-root with zero restarts;
 - `obsidian_vault` export and isolated restore matched `49,210` documents;
-- the full inventory probe was stopped by the VM100 disk-safety guard at about
-  83% usage while entering the large `homelab` database;
+- the full inventory probe with 3,000-document pages and gzip reached about
+  1.1 GiB of staged output and was stopped by the VM100 disk-safety guard at
+  83% usage while entering the large `homelab` database; its partial payload
+  was removed;
 - no production CouchDB data or backup marker was changed by either probe.
 
 The exact deployment and rollback details are in

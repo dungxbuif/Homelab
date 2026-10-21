@@ -1215,3 +1215,10 @@ timestamp: 2026-07-03T15:14:00Z
 - **A8 GitLab CI enrollment:** read-only project, variables, and runner checks still return HTTP 401 with the stored bootstrap credential. No enrollment or mutation was attempted; protected variables/environment and live acceptance remain unverified.
 - **B3 VM100 vzdump:** Proxmox remains at version 8.3.5 with VM100 running on `local-lvm`; `local` and `local-lvm` are the only backup-capable targets. No separate PBS/NAS/failure-domain target exists, so no production vzdump was started.
 - **OpenTofu VM100 contract:** replaced the retired Kubernetes-era SSH-key comment that triggered a false-positive `k8s` scan. The contract now passes without changing key material or VM access; commit `efdb932`.
+- **CouchDB native-pull safety recheck:** reran the full staged inventory probe
+  with 3,000-document pages and gzip through the private VM100-to-Pi5 proxy. It
+  reached about 1.1 GiB while VM100 was at 83% disk usage and still had no
+  manifest, so it was terminated before the 85% warning threshold. The partial
+  payload and probe markers were removed; VM100 returned to 82% usage with
+  about 36 GiB free. The scheduled `databases` class remains on Pi5 and B9 is
+  still partial.

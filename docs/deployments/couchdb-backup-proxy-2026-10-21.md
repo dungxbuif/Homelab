@@ -56,7 +56,14 @@ The deployment was verified from VM100:
    database was changed.
 
 The exporter now requests 3,000 documents per page and keeps the existing
-128 MiB response ceiling. VM100 staged runs may set
+128 MiB response ceiling. A second full-inventory probe using this page size
+and gzip reached about `1.1 GiB` of staged output at `83%` VM100 disk usage
+without producing a manifest; it was stopped before the `85%` warning
+threshold and all partial files were removed. This confirms that increasing
+page size does not make a complete local staging run safe on the current
+VM100 disk.
+
+VM100 staged runs may set
 `BACKUP_COUCHDB_COMPRESSION=gzip`, which stores the NDJSON stream compressed
 and is understood by the native restore helper; the default remains
 uncompressed for compatibility. A staged performance check returned a
@@ -66,7 +73,8 @@ staging size only, not the allowed database paths or credential boundary.
 This is a staged transport. The scheduled `databases` class still uses the
 existing Pi5 export path. The representative export/restore passed, but the
 full `homelab` inventory comparison remains open because it was intentionally
-stopped by the VM100 disk-safety guard.
+stopped by the VM100 disk-safety guard. The scheduled `databases` class
+therefore remains on the Pi5 export path.
 
 ## Rollback
 
