@@ -266,8 +266,15 @@ add its password to VM100's backup env and to PgBouncer's `auth_file`/direct pg_
 (`postgres-pg`). `pg_dumpall --globals-only` needs elevated rights: use `--no-role-passwords` or keep a single narrow forced command on Pi5 for globals.
 Compare dump sizes and `pg_restore --list` with the current Pi-side export for one week before cutover.
 
-7.2 RustFS: VM100 already sees `rustfs` on `s3-net`; read objects with a read-only RustFS access key through the S3 API (rclone or `mc mirror` to
-staging, then restic), instead of exporting on Pi5.
+7.2 RustFS: VM100 does **not** currently see the Pi5-local `rustfs` service on
+`s3-net`. The live container is attached to Pi5's `s3-net`, `homelab-net`,
+`proxy_net` and `edge-http-net`, with only internal `9000/9001` ports and no
+host port binding. Before cutover, provide a private, source-restricted S3
+endpoint reachable from VM100 and a read-only RustFS access key; verify object
+listing, manifest parity and restore parity for one week. Use the S3 API (AWS
+CLI/rclone or `mc mirror` to staging, then restic), instead of exporting the
+live volume on Pi5. Do not attach VM100 to Pi5's local Docker networks and do
+not publish RustFS through Traefik, Rathole or a public domain.
 
 7.3 CouchDB: attach CouchDB to a dedicated `couch-net` visible to VM100 (same anchor pattern as `pg-net-anchor`); replicate or `_all_docs` export from VM100 with
 a read-only `_security` member, not the admin account.
