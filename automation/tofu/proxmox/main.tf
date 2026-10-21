@@ -49,7 +49,7 @@ resource "proxmox_virtual_environment_vm" "vm100" {
     user_account {
       username = "ubuntu"
       keys = [
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJrm7NEwiBT2A6gSbt+hiUBq4gRHWE94dxsAwFiz5eIp homelab-k8s-iac",
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJrm7NEwiBT2A6gSbt+hiUBq4gRHWE94dxsAwFiz5eIp homelab-vm100-iac",
       ]
     }
   }

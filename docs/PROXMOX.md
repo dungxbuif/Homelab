@@ -43,6 +43,11 @@ status and `lvs` before another resize or allocation cleanup.
 
 ## Active OpenTofu Boundary
 
+The VM100 import module uses the current `homelab-vm100-iac` SSH-key comment;
+the former Kubernetes-era comment was removed because it caused the module's
+retired-target contract test to report a false positive. This is a comment-only
+identity cleanup and does not change the public key material or VM access.
+
 The active module is
 [`automation/tofu/proxmox/`](../automation/tofu/proxmox/). It models only the
 existing VM ID `100` and uses an explicit import block. The module has
