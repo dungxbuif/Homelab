@@ -37,3 +37,6 @@ object counts and an isolated restore before changing the scheduled transport.
 
 RustFS's built-in `readonly` policy does not include `s3:ListBucket`, so it is
 not sufficient for this exporter without a bucket-scoped custom policy.
+
+The enrollment procedure is documented in
+[`rustfs-backup-key-enrollment-2026-10-21.md`](./rustfs-backup-key-enrollment-2026-10-21.md).
