@@ -1,0 +1,14 @@
+watch:
+  workers: 2
+  schedule: "0 */12 * * *"
+  jitter: 30s
+  firstCheckNotif: false
+
+providers:
+  docker:
+    watchByDefault: true
+    watchStopped: false
+
+notif:
+  script:
+    cmd: /usr/local/bin/diun-mezon-notify.sh

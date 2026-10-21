@@ -22,6 +22,11 @@ timestamp: 2026-07-03T15:14:00Z
 
 ## 2026-10-21 - Runtime audit continuation
 
+- **Image update watch:** added VM100 Diun in notify-only mode with a pinned
+  image digest, read-only Docker socket, no published ports, and `0.25 CPU /
+  256 MiB` limits. It checks running-container images every 12 hours and sends
+  Mezon warnings without pulling or restarting workloads. See
+  [Diun image watch](./deployments/diun-image-watch-2026-10-21.md).
 - **Backup failure reconciliation:** correlated the recent database and
   monitoring-drift failures with their journals. The database failure was an
   older deployed-script syntax error and the monitoring failure was the
