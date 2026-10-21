@@ -28,6 +28,14 @@ The stream exporter, opt-in Restic stdin wrapper and experimental per-database
 uploader now have source tests. The uploader records a stream checksum and
 Restic snapshot ID without staging the payload. The multi-artifact restore
 drill is not implemented yet, so this remains an experimental boundary.
+
+## Live source gate
+
+On 2026-10-21, VM100 streamed `obsidian_vault` through the private Pi5 proxy
+with gzip to `/dev/null`. The exporter exited `0`, reported `49,210` documents
+and page size `3,000`, and left only a small metadata file; the transferred
+source files and metadata were removed after the check. No Google Drive upload,
+production scheduler or database mutation occurred.
 The scheduled `databases` class remains unchanged during this work.
 
 ## Non-negotiable gates

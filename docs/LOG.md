@@ -1222,3 +1222,9 @@ timestamp: 2026-07-03T15:14:00Z
   payload and probe markers were removed; VM100 returned to 82% usage with
   about 36 GiB free. The scheduled `databases` class remains on Pi5 and B9 is
   still partial.
+- **CouchDB stream source gate:** ran the new stream exporter on VM100 against
+  `obsidian_vault` through the private Pi5 proxy, with gzip directed to
+  `/dev/null`. It exited `0` and reported `49,210` documents using 3,000-row
+  pages. Only metadata was written and then removed; no Drive upload,
+  scheduler change or database mutation occurred. The Restic stream uploader
+  remains experimental pending an isolated repository and restore drill.
