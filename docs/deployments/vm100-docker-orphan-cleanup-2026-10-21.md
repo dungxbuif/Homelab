@@ -47,6 +47,19 @@ docker volume ls -qf dangling=true
 
 The Swarm service inventory was not changed by this cleanup.
 
+## Maintenance policy decision
+
+The deployed daily maintenance unit is now the accepted policy for B6:
+
+- remove images and BuildKit entries only when older than seven days;
+- retain at least 5GB of BuildKit cache when Docker supports the setting;
+- never prune volumes automatically;
+- skip or warn on a hung `docker system df` report without turning safe cleanup
+  into a failed run.
+
+The 2026-10-21 recheck reclaimed `0B`, which is the expected safe result when
+the apparent reclaimable cache is recent or still referenced.
+
 ## Follow-up image review
 
 The VM100 image inventory was checked after the volume cleanup. One old
