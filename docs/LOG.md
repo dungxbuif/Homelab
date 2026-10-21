@@ -22,6 +22,13 @@ timestamp: 2026-07-03T15:14:00Z
 
 ## 2026-10-21 - Runtime audit continuation
 
+- **Backup failure reconciliation:** correlated the recent database and
+  monitoring-drift failures with their journals. The database failure was an
+  older deployed-script syntax error and the monitoring failure was the
+  pre-repair missing-helper invocation; corrected runs succeeded afterward.
+  A fresh health run passed with VM100 at `81%` used and Pi5 at `35%` used,
+  both locks free and no failed systemd units. See
+  [backup failure reconciliation](./deployments/backup-failure-reconciliation-2026-10-21.md).
 - **PostgreSQL collation warning resolved:** refreshed collation metadata and
   reindexed only the maintenance database `postgres` after the read-only audit
   found its stored version at `2.41` while the runtime was `2.36`. All
