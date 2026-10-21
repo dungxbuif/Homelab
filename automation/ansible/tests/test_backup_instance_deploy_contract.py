@@ -17,6 +17,7 @@ class BackupInstanceDeployContractTests(unittest.TestCase):
         self.assertIn("backup/scripts/stream-couchdb.py", source)
         self.assertIn("backup/scripts/upload-couchdb-stream.sh", source)
         self.assertIn("backup/scripts/restore-couchdb-stream.py", source)
+        self.assertIn("backup/scripts/restore-couchdb-stream-snapshots.sh", source)
         self.assertIn("bash -n {{ backup_candidate.path }}/backup/scripts/upload-couchdb-stream.sh", source)
         self.assertIn("homelab-backup-database-instances.timer", source)
         self.assertIn("homelab-backup-configs.timer", source)

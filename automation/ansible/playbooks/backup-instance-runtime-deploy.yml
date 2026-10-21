@@ -22,6 +22,7 @@
       - backup/scripts/stream-couchdb.py
       - backup/scripts/upload-couchdb-stream.sh
       - backup/scripts/restore-couchdb-stream.py
+      - backup/scripts/restore-couchdb-stream-snapshots.sh
       - backup/scripts/verify-retention.sh
       - backup/scripts/run-integrity-check.sh
       - backup/scripts/restore-staging.sh
@@ -110,6 +111,7 @@
             {{ backup_candidate.path }}/backup/scripts/run-instance-backup.py
             {{ backup_candidate.path }}/backup/scripts/validate_inventory.py
             {{ backup_candidate.path }}/backup/scripts/restore-couchdb-stream.py
+            {{ backup_candidate.path }}/backup/scripts/restore-couchdb-stream-snapshots.sh
             {{ backup_candidate.path }}/backup/scripts/run-configs-backup.py
             {{ backup_candidate.path }}/backup/scripts/validate-config-sources.py
             {{ backup_candidate.path }}/automation/backup-runner/wait-retention-prerequisites.py

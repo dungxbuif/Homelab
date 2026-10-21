@@ -28,11 +28,12 @@ compression does not remove the need to hold the whole payload locally.
 
 The stream exporter, opt-in Restic stdin wrapper and experimental per-database
 uploader now have source tests. The uploader records a stream checksum, stream
-snapshot ID and metadata snapshot ID without staging the payload. The new
-restore helper consumes the recovered stream and metadata files, restores in
-batches and verifies the target document count. Multi-artifact Restic restore
-orchestration is not implemented yet, so this remains an experimental
-boundary.
+snapshot ID and metadata snapshot ID without staging the payload. The restore
+helper consumes the recovered stream and metadata files, restores in batches
+and verifies the target document count. A separate manual orchestrator now
+discovers both snapshots by `run_id`, restores them into a new target and
+invokes that helper. It is not attached to the scheduled restore drill yet,
+so this remains an experimental boundary.
 
 The VM100 runtime deployment contract now stages the adapter, exporter and
 uploader together and validates Python/shell syntax. This makes a later

@@ -1249,6 +1249,12 @@ timestamp: 2026-07-03T15:14:00Z
   Source tests cover a 251-document two-batch restore and a count mismatch.
   Multi-snapshot orchestration remains outside the production restore drill.
 
+- **CouchDB stream snapshot restore orchestration 2026-10-21:** added a manual
+  orchestrator that discovers the stream and metadata snapshots by database
+  and `run_id`, restores both into a new private target, and invokes the
+  count-verifying restore helper. It is packaged and contract-tested but is
+  not scheduled or pointed at the production repository by default.
+
 - **Backup test regression fixes 2026-10-21:** full macOS discovery exposed
   two real compatibility defects: the Pi health-only command incorrectly
   required the bounded runner, and Bash 3.2 expanded an empty Restic option

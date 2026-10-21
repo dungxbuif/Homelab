@@ -70,6 +70,7 @@ export RESTIC_INPUT_DIR="$stream_dir"
 metadata_snapshot_id=$(restic_run backup --json \
   --tag "class=databases" \
   --tag "run_id=$run_id" \
+  --tag "database=$database" \
   --tag "stream_metadata=true" \
   "/backup-run/$(basename -- "$metadata")" \
   >"$metadata_restic_output" && python3 - "$metadata_restic_output" <<'PY'
