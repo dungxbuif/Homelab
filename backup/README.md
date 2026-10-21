@@ -165,6 +165,11 @@ not routed through Traefik, Rathole or a public domain. It is restricted to the
 VM100 source address and the allow-listed backup databases/paths. The upstream
 connection stays inside Pi5's Docker network at `couchdb:5984`.
 
+The exporter requests `_all_docs` in 1,000-document pages and rejects any
+single response larger than 128 MiB. This keeps attachment-heavy exports
+practical without allowing an unexpectedly large response to consume
+unbounded memory.
+
 Run this check from VM100 without printing the token:
 
 ```bash

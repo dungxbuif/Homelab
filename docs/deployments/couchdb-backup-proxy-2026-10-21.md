@@ -51,6 +51,11 @@ The deployment was verified from VM100:
    database would take an extended time; it did not write CouchDB data or a
    production completion marker.
 
+The exporter now requests 1,000 documents per page and keeps the existing
+128 MiB response ceiling. A staged performance check returned a 1,000-document
+page of about 13 MiB promptly; this changes throughput only, not the allowed
+database paths or credential boundary.
+
 This is a staged transport. The scheduled `databases` class still uses the
 existing Pi5 export path until a complete export, manifest comparison and
 isolated restore comparison pass.

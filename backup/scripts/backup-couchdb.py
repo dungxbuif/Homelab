@@ -17,7 +17,9 @@ sys.path.insert(0, str(SCRIPT_DIR))
 from common import docker_exec, docker_run, load_document, select_backup_entries, validate_name, write_json  # noqa: E402
 
 
-PAGE_SIZE = 100
+# Keep pages large enough for practical exports while bounding the maximum
+# response accepted from the proxy/client.
+PAGE_SIZE = 1000
 MAX_PAGE_BYTES = 128 * 1024 * 1024
 
 
