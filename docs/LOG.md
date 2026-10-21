@@ -56,6 +56,11 @@ timestamp: 2026-07-03T15:14:00Z
   memory-swap limits. All CouchLoom containers stayed healthy and volumes were
   preserved; its intentional lack of a public route remains documented. See
   [CouchLoom reconciliation](./deployments/couchloom-resource-reconciliation-2026-10-21.md).
+- **VM100 resource inventory closeout:** the final live query found no running
+  container with an unset CPU or memory limit. The orphan BDS tunnel was removed
+  after confirming there was no BDS origin container, service, or source tree;
+  its empty private network was removed too. See
+  [resource inventory closeout](./deployments/vm100-resource-inventory-2026-10-21.md).
 - **NetBird dashboard resource canary:** capped the stateless dashboard at
   `0.50 CPU/512 MiB` with `start-first`. The Swarm update completed and the
   public dashboard returned HTTP 200. The stateful NetBird server was left
