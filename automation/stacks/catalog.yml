@@ -104,8 +104,7 @@ services:
     networks: [homelab-net]
     routes: [openclaw]
     health: {path: /, expected_status: [200, 401, 403]}
-    resources: {}
-    proposed_resources: {cpus: '1.00', memory_mb: 2048}
+    resources: {cpus: '1.00', memory_mb: 2048}
     rollback_image: homelab/openclaw:vm100-20260912
     deployable: false
   - id: n8n

@@ -22,6 +22,13 @@ timestamp: 2026-07-03T15:14:00Z
 
 ## 2026-10-21 - Runtime audit continuation
 
+- **OpenClaw resource canary:** bounded the VM100 Swarm service at `1 CPU/2 GiB`
+  with `stop-first`, preserving its persistent state/auth/workspace mounts and
+  rollback policy. The update completed, the new task became healthy, and the
+  public route plus `/healthz` and `/readyz` returned 200. A brief 502 during
+  warm-up cleared without rollback. See
+  [OpenClaw resource canary](./deployments/openclaw-resource-canary-2026-10-21.md).
+
 - **Backup and capacity check:** VM100 has no failed `homelab-backup` units and
   retains `39G` free (`81%` used). The constrained Docker maintenance service
   completed with `Result=success`; there are no Dead containers. The stopped
