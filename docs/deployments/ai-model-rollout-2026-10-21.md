@@ -22,7 +22,7 @@ The VM100 container audit found:
 | `openclaw` | `DeepSeek-V4.1-Flash` | Already compliant |
 | `whiteboard-backend` | `DeepSeek-V4.1-Flash` for fast/reasoning | Already compliant |
 | `mypocket-api` | `DeepSeek-V4.1-Flash` | Already compliant |
-| `mypocket-worker` | `qwen/qwen3.6-35b-a3b` | Requires Swarm service update |
+| `mypocket-worker` | `DeepSeek-V4.1-Flash` | Updated on the Pi5 Swarm manager |
 | OmniScan source template | `qwen/qwen3.6-35b-a3b` | Updated production template and docs |
 
 The MyPocket local MLX example remains a local-development profile, not a
@@ -34,32 +34,26 @@ and `MYPOCKET_SECRETS.AI_MODEL` in `local_vars.json` both select
 values are untouched.
 
 The repeatable read-only audit is installed on VM100 as
-`/usr/local/lib/homelab-maintenance/audit-ai-models.sh`. Its first live run
-confirmed three compliant services and one mismatch: `mypocket-worker` still
-reports `qwen/qwen3.6-35b-a3b`.
-
-The follow-up audit on 2026-10-21 confirmed the same result after source
-configuration reconciliation. Backup units were healthy and VM100 had `39G`
-free, so the model mismatch is isolated from the current backup and capacity
-state.
+`/usr/local/lib/homelab-maintenance/audit-ai-models.sh`. The post-release live
+audit reports all five selectors as compliant, including `mypocket-worker`.
+The MyPocket health endpoint also returned HTTP `200` after the rolling update.
 
 ## Deployment boundary
 
 `mypocket-worker` is a Swarm service managed from Pi5. VM100 is a worker and
-cannot mutate the service spec. The Pi5 SSH endpoint currently resets the SSH
-key exchange, so the production worker update is pending manager access. No
-worker restart or speculative change was made from VM100.
+cannot mutate the service spec. The approved manager-side release command
+changed only `AI_MODEL`, used the existing `start-first` policy, and recorded a
+mode-0600 rollback receipt. No worker image or endpoint was changed.
 
-Semaphore task `#139` was also tested as the controlled manager path. The
-playbook reached the Pi5 approval assertion, then failed at the first remote
-installation task with `UNREACHABLE`; this confirms the issue is the Pi5
-transport/SSH path rather than the model-update playbook. No retry loop was
-left running.
+The manager-side command completed with Docker's `update completed` result and
+the replacement worker task is running with the expected selector.
 
-## Verification plan
+## Verification
 
-1. Read the manager service spec and record the current image/update policy.
-2. Apply only `AI_MODEL=DeepSeek-V4.1-Flash` with the existing rolling-update policy.
-3. Verify the replacement worker environment, health, logs, and MyPocket API
-   smoke path.
-4. Record the result and rollback command in this document.
+1. Contract tests for the fixed release command pass.
+2. The live model audit passes all five selectors.
+3. The replacement worker task is running after the rolling update.
+4. `https://money.dungxbuif.com/api/v1/health` returned HTTP `200`.
+
+Remaining work is business-quality UAT for representative MyPocket inference;
+the selector rollout itself is complete.
