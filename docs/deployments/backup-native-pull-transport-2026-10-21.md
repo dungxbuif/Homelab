@@ -24,9 +24,9 @@ not enough.
 - `BACKUP_POSTGRES_GLOBALS_TRANSPORT=network` keeps globals on the same private
   `pg-net` path and uses `backup_ro` with `--no-role-passwords`; no admin
   credential leaves PostgreSQL or enters the VM100 credential file.
-- `BACKUP_COUCHDB_TRANSPORT=network` runs the curl client image on
-  `homelab-net`, connecting to the Docker service name `couchdb`. It uses a
-  dedicated read-only CouchDB credential file and never exposes port 5984.
+- `BACKUP_COUCHDB_TRANSPORT=network` is reserved for the approved GET-only
+  proxy design below. It will run the curl client image on `homelab-net` and
+  never expose port 5984 directly to VM100.
 - Client image, network, endpoint and credential-file settings are runtime
   inputs in `/etc/homelab-backup/runner.env`; they are not committed.
 - The source transport refuses network mode when any required setting is
@@ -54,6 +54,17 @@ but native backup does not depend on that auth path. The `backup_ro` role is
 created directly in PostgreSQL with no login-administration, database-creation,
 superuser, replication, or write-data privileges and is tested through
 `postgres-pg:5432` on `pg-net`. No application credential is changed.
+
+### CouchDB ACL limitation and pending design
+
+CouchDB has no native database-level read-only member role: a non-admin member
+can also write documents. A live enrollment probe confirmed that `_users`
+security cannot be changed for this purpose (`403`), so direct member
+enrollment is rejected. The selected next design is a Pi5-local GET-only
+proxy that keeps CouchDB admin credentials inside the data host, accepts a
+separate VM100 token, allows only the backup `GET` paths, and rejects all
+mutating methods. This design is pending explicit approval and has not been
+deployed.
 
 ## Current runtime inventory
 
