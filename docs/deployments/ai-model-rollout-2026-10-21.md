@@ -56,4 +56,14 @@ the replacement worker task is running with the expected selector.
 4. `https://money.dungxbuif.com/api/v1/health` returned HTTP `200`.
 
 Remaining work is business-quality UAT for representative MyPocket inference;
-the selector rollout itself is complete.
+the selector rollout itself is complete. The repository's synthetic evaluation
+pack was also verified on 2026-10-21 with:
+
+```text
+go test ./internal/usecase -run 'Test(AIEvalFixtures|AdvisorReliabilityFixtureSchema|AdvisorReview)' -count=1
+ok
+```
+
+This proves deterministic safety and reliability boundaries only. The opt-in
+live provider matrix remains separate and must use synthetic input plus an
+approved UAT receipt before the quality item can close.
