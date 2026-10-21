@@ -42,8 +42,9 @@ This workspace houses the complete configuration, provisioning scripts, security
 
 ## 📐 System Architecture & Service Connections
 
-Pi5 supplies datastore and HTTP backend services to VM100 over the attachable
-`homelab-net` Swarm overlay and is also the active home edge. The normal public
+Pi5 supplies datastore and HTTP backend services to VM100 over purpose-specific
+attachable Swarm overlays (`pg-net`, `s3-net`, and `homelab-net`) and is also the
+active home edge. The normal public
 path is VPS `gateway-traefik` -> shared Rathole -> Pi5 standalone
 `edge-traefik-pi5`. Pi5 `edge-adguardhome-pi5` resolves active split-horizon
 names to the Pi5 edge on the LAN. The old Orange Pi edge is down and the old
@@ -114,12 +115,12 @@ listed in the [resource audit](./research/resource-limit-audit-2026-09-15.md).
 
 |Service|Container Name|Docker Image & Version|Port Mapping (Host / Container)|Subdomain Routing / Ingress Target|Core Purpose & Technical Parameters|
 |---|---|---|---|---|---|
-|**RustFS Storage**|`rustfs`|`rustfs/rustfs:1.0.1`|**Portless** on `proxy_net` and `homelab-net`|`storage.dungxbuif.com` (S3 API) <br>`cdn.dungxbuif.com` (Console)|ARM64 S3 storage; ports 9000/9001 internal.|
-|**Private Registry**|`docker-registry`|`registry:2`|**Portless** on `proxy_net` and `homelab-net`|`registry.dungxbuif.com`|Docker image registry on Pi5 SSD.|
-|**Librespeed**|`librespeed`|`lscr.io/linuxserver/librespeed`|**Portless** on `proxy_net` and `homelab-net`|`speed.dungxbuif.com`|LAN/WAN speedtest backend.|
-|**Centralized PostgreSQL**|`postgres`|`pgvector/pgvector:pg16`|**Portless** on `proxy_net` and `homelab-net`; PgBouncer maps LAN `:5432` to pooler `:6432`|Direct container DNS `postgres:5432` only for approved clients such as GitLab; LAN `10.10.0.5:5432` is PgBouncer, not raw PostgreSQL; no edge route|Pinned backend DB serving Pi5 apps and approved VM100 services.|
-|**pgAdmin 4**|`pgadmin`|`dpage/pgadmin4:latest`|**Portless** on `proxy_net` and `homelab-net`|`pgadmin.dungxbuif.com`|PostgreSQL administration UI.|
-|**CouchDB**|`couchdb`|`couchdb:3.3.3`|**Portless** on `proxy_net` and `homelab-net`|`couchdb.dungxbuif.com` <br>`sync-db.dungxbuif.com`|Obsidian sync and document databases.|
+|**RustFS Storage**|`rustfs`|`rustfs/rustfs:1.0.1`|**Portless** on `edge-http-net`, `homelab-net`, `proxy_net`, and `s3-net`|`storage.dungxbuif.com` (S3 API) <br>`cdn.dungxbuif.com` (Console)|ARM64 S3 storage; ports 9000/9001 internal. `s3-net` is the VM100 native-backup path.|
+|**Private Registry**|`docker-registry`|`registry:2`|**Portless** on `edge-http-net`, `homelab-net`, and `proxy_net`|`registry.dungxbuif.com`|Docker image registry on Pi5 SSD.|
+|**Librespeed**|`librespeed`|`lscr.io/linuxserver/librespeed`|**Portless** on `edge-http-net`, `homelab-net`, and `proxy_net`|`speed.dungxbuif.com`|LAN/WAN speedtest backend.|
+|**Centralized PostgreSQL**|`postgres`|`pgvector/pgvector:pg16`|**Portless** on `pg-net` and `proxy_net`; PgBouncer maps LAN `:5432` to pooler `:6432`|Direct container DNS `postgres:5432` only for approved clients such as GitLab; LAN `10.10.0.5:5432` is PgBouncer, not raw PostgreSQL; no edge route|Pinned backend DB serving Pi5 apps and approved VM100 services. Raw PostgreSQL is no longer on `homelab-net`.|
+|**pgAdmin 4**|`pgadmin`|`dpage/pgadmin4:latest`|**Portless** on `edge-http-net`, `homelab-net`, and `proxy_net`|`pgadmin.dungxbuif.com`|PostgreSQL administration UI.|
+|**CouchDB**|`couchdb`|`couchdb:3.3.3`|**Portless** on `edge-http-net`, `homelab-net`, and `proxy_net`|`couchdb.dungxbuif.com` <br>`sync-db.dungxbuif.com`|Obsidian sync and document databases; the backup proxy is private and separate from the public routes.|
 
 The retired `my-cv` container is not part of the running Pi5 inventory.
 The Pi5 `docker-registry` is still the production image registry. GitLab's
