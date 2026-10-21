@@ -1242,6 +1242,13 @@ timestamp: 2026-07-03T15:14:00Z
   remotely before writing `status=complete`. The large document stream remains
   stdin-based; production scheduling is unchanged.
 
+- **CouchDB stream restore helper 2026-10-21:** added a standalone restore
+  helper for recovered gzip-NDJSON plus metadata files. It restores security
+  settings and documents in batches, strips mutable revision fields, and
+  fails closed unless stream count, metadata count and target count match.
+  Source tests cover a 251-document two-batch restore and a count mismatch.
+  Multi-snapshot orchestration remains outside the production restore drill.
+
 - **Backup test regression fixes 2026-10-21:** full macOS discovery exposed
   two real compatibility defects: the Pi health-only command incorrectly
   required the bounded runner, and Bash 3.2 expanded an empty Restic option

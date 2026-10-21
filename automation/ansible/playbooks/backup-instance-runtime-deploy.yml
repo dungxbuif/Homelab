@@ -21,6 +21,7 @@
       - backup/scripts/upload-restic.sh
       - backup/scripts/stream-couchdb.py
       - backup/scripts/upload-couchdb-stream.sh
+      - backup/scripts/restore-couchdb-stream.py
       - backup/scripts/verify-retention.sh
       - backup/scripts/run-integrity-check.sh
       - backup/scripts/restore-staging.sh
@@ -108,6 +109,7 @@
             {{ backup_candidate.path }}/backup/scripts/run-database-backup.py
             {{ backup_candidate.path }}/backup/scripts/run-instance-backup.py
             {{ backup_candidate.path }}/backup/scripts/validate_inventory.py
+            {{ backup_candidate.path }}/backup/scripts/restore-couchdb-stream.py
             {{ backup_candidate.path }}/backup/scripts/run-configs-backup.py
             {{ backup_candidate.path }}/backup/scripts/validate-config-sources.py
             {{ backup_candidate.path }}/automation/backup-runner/wait-retention-prerequisites.py
@@ -120,6 +122,7 @@
             {{ backup_candidate.path }}/backup/scripts/restic-lib.sh
             {{ backup_candidate.path }}/backup/scripts/upload-restic.sh
             {{ backup_candidate.path }}/backup/scripts/stream-couchdb.py
+            {{ backup_candidate.path }}/backup/scripts/restore-couchdb-stream.py
             {{ backup_candidate.path }}/backup/scripts/verify-retention.sh
             {{ backup_candidate.path }}/backup/scripts/run-integrity-check.sh
             {{ backup_candidate.path }}/backup/scripts/restore-staging.sh
