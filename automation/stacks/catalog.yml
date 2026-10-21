@@ -42,8 +42,7 @@ services:
     networks: [relayhub-net, homelab-net]
     routes: [relayhub]
     health: {path: /readyz, expected_status: [200]}
-    resources: {}
-    proposed_resources: {cpus: '1.00', memory_mb: 1024}
+    resources: {cpus: '1.00', memory_mb: 1024}
     rollback_image: homelab/relayhub:prod-eee9e7c
     deployable: false
   - id: gitlab

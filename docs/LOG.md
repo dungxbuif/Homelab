@@ -32,6 +32,11 @@ timestamp: 2026-07-03T15:14:00Z
   with `stop-first`; the worker remains uncapped pending queue metrics. The API
   task became healthy and `/api/v1/health` returned 200 after a brief warm-up
   502. See [MyPocket API resource canary](./deployments/mypocket-api-resource-canary-2026-10-21.md).
+- **RelayHub resource canary:** added persistent Compose limits of `1 CPU/1 GiB`
+  to both API and worker. Compose recreated the dependency containers while
+  retaining the NATS volume; all four containers became healthy and public
+  `/readyz`, `/healthz`, and `/docs/` returned 200. See
+  [RelayHub resource canary](./deployments/relayhub-resource-canary-2026-10-21.md).
 
 - **Backup and capacity check:** VM100 has no failed `homelab-backup` units and
   retains `39G` free (`81%` used). The constrained Docker maintenance service

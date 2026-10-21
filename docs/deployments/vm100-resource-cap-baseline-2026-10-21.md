@@ -21,7 +21,11 @@ at 2 GiB/1 CPU with `stop-first`; its task became healthy after warm-up and
 the public route briefly returned 502 while the task was starting; no rollback
 was needed. MyPocket API is now bounded at 1 GiB/1 CPU with `stop-first`;
 `/api/v1/health` returned HTTP 200 after warm-up. Its worker remains uncapped
-until queue latency and memory high-water marks are captured.
+until queue latency and memory high-water marks are captured. RelayHub API and
+worker are now each bounded at 1 GiB/1 CPU in their persistent Compose source;
+`/readyz`, `/healthz`, and `/docs/` returned HTTP 200 after recreate. RelayHub
+NATS and Redis were recreated by Compose but their persistent volumes were
+retained and their limits remain unchanged.
 
 Already bounded workloads include GitLab (10 GiB/4 CPU), KubeKosh (4 GiB/2
 CPU), Stirling PDF (2 GiB/2 CPU), the Semaphore runner (1 GiB/1 CPU),
@@ -29,9 +33,9 @@ CouchLoom (2 GiB/2 CPU), the GitLab tunnels (128 MiB/0.5 CPU each), K8s
 Syntax (128 MiB/0.25 CPU), and the pg-net anchor (16 MiB/0.05 CPU).
 
 The following production workloads were running without a Docker limit in the
-snapshot: MyPocket worker, RelayHub API, RelayHub worker, NetBird server and
-NetBird dashboard. MyPocket API is now capped, while the snapshot is not a
-safe limit recommendation for the remaining workloads by itself.
+snapshot: MyPocket worker, NetBird server and NetBird dashboard. MyPocket API
+and RelayHub API/worker are now capped; the snapshot is not a safe limit
+recommendation for the remaining workloads by itself.
 
 ## Next controlled step
 
