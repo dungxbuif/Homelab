@@ -55,7 +55,7 @@ The deployment was verified from VM100:
    payload and all scratch files were removed; no production marker or
    database was changed.
 
-The exporter now requests 1,000 documents per page and keeps the existing
+The exporter now requests 3,000 documents per page and keeps the existing
 128 MiB response ceiling. VM100 staged runs may set
 `BACKUP_COUCHDB_COMPRESSION=gzip`, which stores the NDJSON stream compressed
 and is understood by the native restore helper; the default remains

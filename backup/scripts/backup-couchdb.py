@@ -20,7 +20,7 @@ from common import docker_exec, docker_run, load_document, select_backup_entries
 
 # Keep pages large enough for practical exports while bounding the maximum
 # response accepted from the proxy/client.
-PAGE_SIZE = 1000
+PAGE_SIZE = 3000
 MAX_PAGE_BYTES = 128 * 1024 * 1024
 
 
