@@ -19,6 +19,8 @@ grep -q 'run-class.sh.*database-instances' "$vm_runner"
 grep -q 'run-instance-retention.sh' "$vm_runner"
 grep -q 'run-retention.sh' "$vm_runner"
 grep -q 'run_pi markers' "$vm_runner"
+grep -q 'BACKUP_RUSTFS_TRANSPORT:-container' "$vm_runner"
+grep -q 'run-class.sh" rustfs' "$vm_runner"
 if grep -q 'run_pi retention' "$vm_runner"; then
   echo 'VM100 retention must not invoke Pi5 restic retention' >&2
   exit 1

@@ -17,6 +17,9 @@ RESTORE_SPEC.loader.exec_module(RESTORE_MODULE)
 
 
 class RustFSManifestTests(unittest.TestCase):
+    def test_export_helper_resolves_source_layout(self):
+        self.assertTrue((MODULE.SCRIPT_DIR / "common.py").is_file())
+
     def test_restore_helper_resolves_source_layout(self):
         self.assertTrue((RESTORE_MODULE.SCRIPT_DIR / "common.py").is_file())
 

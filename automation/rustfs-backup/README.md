@@ -34,7 +34,7 @@ cold recovery, not the scheduled mechanism.
 ## Optional VM100 network transport
 
 The default transport uses the inventory endpoint and the existing Pi5 Docker
-network. The VM100 network mode is source-ready but **not currently enabled**:
+network. VM100 production uses the explicit `network` mode:
 the Pi5 RustFS container publishes no host S3 port, while the shared attachable
 Swarm overlay `s3-net` provides the private `rustfs:9000` endpoint to VM100.
 The endpoint preflight passed unauthenticated with HTTP `403`. Before enabling
@@ -52,9 +52,20 @@ BACKUP_RUSTFS_CLIENT_IMAGE=amazon/aws-cli:2.17.60
 RUSTFS_CREDENTIALS_FILE=/etc/homelab-backup/secrets/rustfs-readonly.env
 ```
 
+The credential file is passed directly to the AWS CLI container, so it uses
+the AWS variable names below. The endpoint is supplied separately with
+`--endpoint-url`:
+
+```text
+AWS_ACCESS_KEY_ID=<RustFS read-only access key>
+AWS_SECRET_ACCESS_KEY=<RustFS read-only secret key>
+```
+
+Keep the file `root:ubuntu 0640`; never commit it or print it in a job log.
+
 Network mode fails closed if the endpoint, network, client image or credential
 file is missing. It never publishes an S3 port or falls back to a host IP.
 The RustFS key must be read-only and the Docker network must be reachable from
-VM100; no production cutover is implied by setting source defaults. The
-scheduled runner continues using the Pi5 transport until endpoint reachability,
-manifest comparison and isolated restore acceptance are recorded.
+VM100. The scheduled runner uses this mode when
+`BACKUP_RUSTFS_TRANSPORT=network`; removing that setting rolls back to the Pi5
+transport.

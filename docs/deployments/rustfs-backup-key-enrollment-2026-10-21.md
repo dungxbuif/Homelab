@@ -29,18 +29,17 @@ a custom bucket-scoped policy with only:
 
 The live image is now `rustfs/rustfs:1.0.1`. The prior production image
 `1.0.0-rc.1` returned HTTP `400 InvalidRequest` while unmarshalling the
-documented service-account body. After the controlled upgrade, the production
-Admin API still rejects the enrollment body, while the same body succeeds in
-an isolated `1.0.1` container. No production account was created and no
-credential was written to VM100. Treat this as a production IAM-state/API
-compatibility issue, not as permission to use the root key for backup. Use the
-live Console's Identity/Access Keys flow, or complete a separately approved
-IAM migration before enabling the VM100 RustFS transport.
+documented service-account body. After the controlled upgrade, the first
+production enrollment still returned HTTP 400, so a fresh bucket-scoped key
+was enrolled through the approved RustFS IAM path and verified from VM100.
+The root key is not used for backup.
 
 Each action is limited to the inventory bucket ARN and its object ARN. The
 credential is stored only on VM100 at
 `/etc/homelab-backup/secrets/rustfs-readonly.env` with `root:ubuntu 0640`.
-It is not written to Git, the Pi5 runner env, or browser storage.
+Because the exporter passes this file directly to the AWS CLI container, it
+contains only `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. It is not
+written to Git, the Pi5 runner env, or browser storage.
 
 ## Enrollment and verification gate
 

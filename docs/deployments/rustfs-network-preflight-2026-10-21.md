@@ -27,13 +27,13 @@ RustFS remains internal to the overlay for backup traffic. The public
 `storage.dungxbuif.com` route is not part of this path and must not be used by
 the backup runner. No host port is required.
 
-## Remaining gate
+## Cutover result
 
-Create a dedicated RustFS read-only service account/key with a custom policy
-that grants `s3:GetBucketLocation`, `s3:ListBucket` and `s3:GetObject` only for
-the inventory buckets. Store the resulting credential file only on VM100,
-then run one native pull beside the current Pi5 export and compare manifests,
-object counts and an isolated restore before changing the scheduled transport.
+A dedicated bucket-scoped read-only key is stored only on VM100. The native
+pull covered all seven inventory buckets, the key/size comparison found no
+missing object against the latest Pi5 run, and an isolated `mac-ocr` restore
+verified 62 objects. The scheduled RustFS transport is now VM100 `s3-net`;
+remove `BACKUP_RUSTFS_TRANSPORT=network` to roll back.
 
 RustFS's built-in `readonly` policy does not include `s3:ListBucket`, so it is
 not sufficient for this exporter without a bucket-scoped custom policy.
@@ -42,6 +42,6 @@ The enrollment procedure is documented in
 [`rustfs-backup-key-enrollment-2026-10-21.md`](./rustfs-backup-key-enrollment-2026-10-21.md).
 The production image is now `1.0.1`; the controlled upgrade is recorded in
 [`rustfs-upgrade-2026-10-21.md`](./rustfs-upgrade-2026-10-21.md). The production
-Admin API still returns HTTP 400 for the documented service-account body, while
-the same body succeeds in an isolated `1.0.1` container. No key was created and
-the scheduled transport was not changed.
+Admin API enrollment initially returned HTTP 400 for the documented body, so a
+fresh key was created through the approved RustFS IAM enrollment path. The
+scheduled transport now uses that key only through the private `s3-net` path.

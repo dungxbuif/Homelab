@@ -72,8 +72,20 @@ case "$class" in
   health)
     run_pi health
     ;;
-  databases|rustfs)
+  databases)
     run_pi "$class"
+    ;;
+  rustfs)
+    if [[ "${BACKUP_RUSTFS_TRANSPORT:-container}" == network ]]; then
+      rm -f "$status_root/rustfs.success"
+      run_id="rustfs-$(date -u +%Y%m%d-%H%M%S)"
+      BACKUP_APP_ROOT="$app_root" \
+        BACKUP_STAGING_ROOT="$staging_root" \
+        BACKUP_STATUS_ROOT="$status_root" \
+        bash "$app_root/automation/backup-runner/run-class.sh" rustfs "$run_id"
+    else
+      run_pi rustfs
+    fi
     ;;
   configs)
     run_id="configs-$(date -u +%Y%m%d-%H%M%S)"

@@ -27,10 +27,10 @@ not enough.
 - `BACKUP_COUCHDB_TRANSPORT=network` is reserved for the approved GET-only
   proxy design below. It will run the curl client image on `homelab-net` and
   never expose port 5984 directly to VM100.
-- `BACKUP_RUSTFS_TRANSPORT=network` is now an opt-in source contract. It runs
-  the pinned AWS CLI client on the declared private network and uses the
-  declared endpoint and read-only credential file. It never publishes an S3
-  port or falls back to a host IP. The default remains the Pi5 container path.
+- `BACKUP_RUSTFS_TRANSPORT=network` is now the production RustFS path. It runs
+  the pinned AWS CLI client on `s3-net` and uses the private endpoint plus the
+  read-only credential file. It never publishes an S3 port or falls back to a
+  host IP. The Pi5/container path remains the explicit rollback mode.
 - Client image, network, endpoint and credential-file settings are runtime
   inputs in `/etc/homelab-backup/runner.env`; they are not committed.
 - The source transport refuses network mode when any required setting is
@@ -38,15 +38,16 @@ not enough.
 
 ## Rollout gate
 
-This source change is not the cutover. Before enabling it on VM100:
+The rollout gates are split by datastore. Before enabling the remaining
+database transport on VM100:
 
 1. create and verify the least-privilege PostgreSQL/CouchDB backup identities;
 2. enroll the reviewed client image digests and root-owned credential files on
    VM100;
-3. run one native pull beside the current Pi5 export and compare manifests,
-   object/document counts and restore results for one week; and
-4. only then disable Pi5 `databases`/`rustfs` export and remove its Restic and
-   Drive secrets.
+3. run the CouchDB proxy export beside the current Pi5 export and compare
+   document/attachment counts and restore results; and
+4. only then retire the Pi5 `databases` export and remove its Restic/Drive
+   secrets. RustFS has already passed its own cutover gate.
 
 No production service is stopped by the source transport. No live runtime was
 changed by this document or its implementation.
@@ -92,21 +93,19 @@ The read-only audit on 2026-10-21 found:
   `10.0.31.2` and its S3 API returned the expected unauthenticated `403`.
   RustFS is also attached to Pi5's `homelab-net`, `proxy_net` and
   `edge-http-net`, exposes only internal `9000/9001` ports and has no host port
-  binding. The RustFS network transport is therefore endpoint-ready but not
-  production-ready until a bucket-scoped read-only access key is provisioned,
-  the native pull is compared with the Pi5 export, and an isolated restore
-  passes. VM100 must use only `s3-net`; backup traffic must not use the public
-  edge.
+  binding. RustFS has passed its production gate: a bucket-scoped read-only
+  key was provisioned, the native pull was compared with the Pi5 export, and
+  an isolated restore passed. VM100 uses only `s3-net`; backup traffic does
+  not use the public edge.
   Evidence: [RustFS network preflight](./rustfs-network-preflight-2026-10-21.md).
 
-The source adapter and PostgreSQL credential are deployed on VM100, but the
-production runner is intentionally still on the original Pi5 transport. The
-Pi5-side proxy is live on private port `10.10.0.5:15984`, restricted to VM100
-and the backup paths. A real export probe was started and stopped before
-completion because the large `homelab` database would have continued for an
-extended period; production cutover is still intentionally pending. The
-runtime native PostgreSQL variables remain rolled back so the combined
-`databases` class cannot enter a partial-failure state.
+The source adapter and PostgreSQL credential are deployed on VM100. The
+RustFS class now runs locally on VM100 when
+`BACKUP_RUSTFS_TRANSPORT=network`; removing that setting rolls back to the
+Pi5 path. The Pi5-side CouchDB proxy is live on private port
+`10.10.0.5:15984`, restricted to VM100 and the backup paths. The combined
+`databases` class remains on the Pi5 path until its CouchDB comparison gate
+passes.
 
 Live verification completed:
 
@@ -123,8 +122,10 @@ The exact deployment and rollback details are in
 The native-transport and RustFS transport contract tests pass, including
 private-network and file-backed credential assertions. Python compilation
 passes for the adapters and new tests. The live direct PostgreSQL probe and
-`pg_restore --list` check pass. The combined comparison remains pending on the
-CouchDB read-only transport and the unavailable RustFS network endpoint. The
+`pg_restore --list` check pass. RustFS native export covered 7 buckets and
+3,115 checksum entries; no key/size object was missing against the latest Pi5
+run, and a scratch `mac-ocr` restore verified 62 objects. The remaining
+comparison is the CouchDB read-only transport. The
 full local backup suite still has unrelated workstation
 baseline failures: macOS has no `flock`, the local interpreter lacks `jinja2`,
 and two health fixtures expect the enrolled Pi runner/marker setup. Those
