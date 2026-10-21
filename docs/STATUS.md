@@ -9,9 +9,10 @@ timestamp: 2026-10-21T00:00:00+07:00
 
 **Last reconciled:** 2026-10-21 (Asia/Ho_Chi_Minh)
 
-**Documentation check:** 168 active Markdown files under `docs/` have no
-missing relative links. Remaining link-check warnings are confined to archived
-historical pages and illustrative paths in `OKF_SPEC.md`.
+**Documentation check:** 170 active Markdown files under `docs/` were checked.
+There are no missing operational relative links; the four remaining warnings
+are illustrative URL examples in `OKF_SPEC.md`. Archived historical pages are
+excluded from the current-runtime check.
 
 This is the short operational index. It summarizes the latest evidence; it does
 not replace dated deployment records or the [backlog](./BACKLOG.md). Historical
@@ -53,7 +54,6 @@ incident and rollback context.
 | A8 | GitLab CI Homepage release | Source contract and tests pass; protected variables, runner enrollment and live positive/no-op runs remain | GitLab pipeline receipts |
 | B3 | VM100 image backup | Proxmox has no separate failure-domain target | PBS/NAS/other target and a verified `vzdump` restore |
 | B9 | Passive Pi5 backups | RustFS/PostgreSQL are native-pull; CouchDB full `homelab` comparison is still pending | Complete export, representative restore, scheduler cutover and rollback test |
-| D1 | Documentation finalization | This page is the current index; dated history is intentionally retained | Reconcile this page and top-level docs after each change |
 
 ## Operator rules
 

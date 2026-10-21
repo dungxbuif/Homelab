@@ -1211,6 +1211,12 @@ timestamp: 2026-07-03T15:14:00Z
 - **CouchDB native-pull comparison 2026-10-21:** increased the staged adapter page size to 1,000 documents while retaining its 128 MiB response ceiling. A complete `obsidian_vault` export returned 49,210 documents and restored into an isolated CouchDB 3.3.3 container with an exact count match. A full inventory probe reached the large `homelab` database but was stopped at about 83% VM100 disk usage before the payload could threaten the health threshold; all partial/scratch files were removed. The scheduled `databases` class remains on the Pi5 path and B9 remains partial.
 # 2026-10-21 — Remaining backlog audit
 
+- **Documentation finalization 2026-10-21:** rescanned 170 active Markdown
+  files under `docs/`. No operational relative links are missing; the four
+  remaining warnings are intentional illustrative URLs in `OKF_SPEC.md`.
+  Reconciled `STATUS.md`, `BACKLOG.md`, and the CouchDB streaming research
+  record after commit `6736615`; D1 is now complete.
+
 - **CouchDB stream disk guard 2026-10-21:** added a fail-closed
   `BACKUP_COUCHDB_MIN_FREE_BYTES` check before every streamed page, so the
   experimental VM100-to-Pi5 stream stops before disk pressure can worsen and
