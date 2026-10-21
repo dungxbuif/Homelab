@@ -30,3 +30,24 @@ run-rustfs-backup.sh \
 Restore tests must use a new isolated bucket name and must delete only that
 test bucket after verification. A stopped-volume `rsync` copy is break-glass
 cold recovery, not the scheduled mechanism.
+
+## Optional VM100 network transport
+
+The default transport uses the inventory endpoint and the existing Pi5 Docker
+network. A future VM100 pull may opt in to a private Docker-network endpoint
+with all of these runtime-only values:
+
+```text
+BACKUP_RUSTFS_TRANSPORT=network
+BACKUP_RUSTFS_ENDPOINT=http://rustfs:9000
+BACKUP_RUSTFS_NETWORK=s3-net
+BACKUP_RUSTFS_CLIENT_IMAGE=amazon/aws-cli:2.17.60
+RUSTFS_CREDENTIALS_FILE=/etc/homelab-backup/secrets/rustfs-readonly.env
+```
+
+Network mode fails closed if the endpoint, network, client image or credential
+file is missing. It never publishes an S3 port or falls back to a host IP.
+The RustFS key must be read-only and the Docker network must be reachable from
+VM100; no production cutover is implied by setting source defaults. The
+scheduled runner continues using the Pi5 transport until endpoint reachability,
+manifest comparison and isolated restore acceptance are recorded.

@@ -1,7 +1,7 @@
 ---
 type: Deployment
 title: "Native backup pull transport"
-description: "Source contract for moving PostgreSQL and CouchDB export work from Pi5 to VM100"
+description: "Source contract for moving PostgreSQL, CouchDB and RustFS export work from Pi5 to VM100"
 timestamp: 2026-10-21T00:00:00Z
 ---
 
@@ -27,6 +27,10 @@ not enough.
 - `BACKUP_COUCHDB_TRANSPORT=network` is reserved for the approved GET-only
   proxy design below. It will run the curl client image on `homelab-net` and
   never expose port 5984 directly to VM100.
+- `BACKUP_RUSTFS_TRANSPORT=network` is now an opt-in source contract. It runs
+  the pinned AWS CLI client on the declared private network and uses the
+  declared endpoint and read-only credential file. It never publishes an S3
+  port or falls back to a host IP. The default remains the Pi5 container path.
 - Client image, network, endpoint and credential-file settings are runtime
   inputs in `/etc/homelab-backup/runner.env`; they are not committed.
 - The source transport refuses network mode when any required setting is
@@ -83,6 +87,10 @@ The read-only audit on 2026-10-21 found:
 - VM100 service membership is consistent with the preflight: application
   consumers use `pg-net`/`s3-net`; CouchLoom remains the documented
   `homelab-net` exception.
+- A live VM100 network audit found no RustFS service/container attached to
+  `s3-net` or `homelab-net`. The RustFS network transport is therefore source-
+  ready but not deployable until a reachable endpoint, attachable network and
+  read-only access key are provisioned and verified.
 
 The source adapter and PostgreSQL credential are deployed on VM100, but the
 production runner is intentionally still on the original Pi5 transport. The
@@ -105,11 +113,12 @@ The exact deployment and rollback details are in
 
 ## Verification
 
-The three native-transport contract tests pass, including private network and
-file-backed credential assertions. Python compilation passes for both adapters
-and the new tests. The live direct PostgreSQL probe and `pg_restore --list`
-check pass. The combined comparison remains pending on the CouchDB read-only
-transport. The full local backup suite still has unrelated workstation
+The native-transport and RustFS transport contract tests pass, including
+private-network and file-backed credential assertions. Python compilation
+passes for the adapters and new tests. The live direct PostgreSQL probe and
+`pg_restore --list` check pass. The combined comparison remains pending on the
+CouchDB read-only transport and the unavailable RustFS network endpoint. The
+full local backup suite still has unrelated workstation
 baseline failures: macOS has no `flock`, the local interpreter lacks `jinja2`,
 and two health fixtures expect the enrolled Pi runner/marker setup. Those
 failures do not exercise the new transport path; the pinned automation

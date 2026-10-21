@@ -23,21 +23,44 @@ def payload_prefix(bucket: str) -> str:
     return f"rustfs/{bucket}/objects"
 
 
-def aws_command(endpoint: str, credentials_file: Path, args: list[str], *, output: bytes | None = None, mount_root: Path | None = None) -> bytes:
-    command = ["docker", "run", "--rm", "--network", "homelab-net"]
+def transport_config(inventory: dict) -> tuple[str, str, str]:
+    """Resolve the endpoint, Docker network and client image fail-closed."""
+    transport = os.environ.get("BACKUP_RUSTFS_TRANSPORT", "container")
+    if transport == "container":
+        return inventory["rustfs"]["endpoint"], "homelab-net", AWS_IMAGE
+    if transport != "network":
+        raise RuntimeError(f"unsupported BACKUP_RUSTFS_TRANSPORT: {transport}")
+    endpoint = os.environ.get("BACKUP_RUSTFS_ENDPOINT")
+    network = os.environ.get("BACKUP_RUSTFS_NETWORK")
+    image = os.environ.get("BACKUP_RUSTFS_CLIENT_IMAGE")
+    missing = [
+        name for name, value in (
+            ("BACKUP_RUSTFS_ENDPOINT", endpoint),
+            ("BACKUP_RUSTFS_NETWORK", network),
+            ("BACKUP_RUSTFS_CLIENT_IMAGE", image),
+        ) if not value
+    ]
+    if missing:
+        raise RuntimeError(f"network RustFS transport requires: {', '.join(missing)}")
+    return endpoint, network, image
+
+
+def aws_command(endpoint: str, credentials_file: Path, args: list[str], *, network: str, image: str,
+                output: bytes | None = None, mount_root: Path | None = None) -> bytes:
+    command = ["docker", "run", "--rm", "--network", network]
     if mount_root:
         # Staging must remain writable by the host retention account.
         command.extend(["--user", f"{os.getuid()}:{os.getgid()}", "--env", "HOME=/tmp"])
         command.extend(["--volume", f"{mount_root.resolve()}:/export"])
-    command.extend(["--env-file", str(credentials_file), AWS_IMAGE, "--endpoint-url", endpoint, *args])
+    command.extend(["--env-file", str(credentials_file), image, "--endpoint-url", endpoint, *args])
     result = subprocess.run(command, input=output, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
     return result.stdout
 
 
-def optional_aws(endpoint: str, credentials_file: Path, args: list[str]) -> dict | None:
+def optional_aws(endpoint: str, credentials_file: Path, args: list[str], *, network: str, image: str) -> dict | None:
     command = [
-        "docker", "run", "--rm", "--network", "homelab-net",
-        "--env-file", str(credentials_file), AWS_IMAGE,
+        "docker", "run", "--rm", "--network", network,
+        "--env-file", str(credentials_file), image,
         "--endpoint-url", endpoint, *args,
     ]
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
@@ -51,15 +74,15 @@ def optional_aws(endpoint: str, credentials_file: Path, args: list[str]) -> dict
         raise RuntimeError(f"RustFS returned invalid JSON for {' '.join(args)}") from exc
 
 
-def export_bucket(endpoint: str, credentials_file: Path, bucket: dict, output: Path) -> dict:
+def export_bucket(endpoint: str, credentials_file: Path, bucket: dict, output: Path, *, network: str, image: str) -> dict:
     name = validate_name(bucket["name"], "bucket")
     bucket_dir = output / "rustfs" / name
     payload_dir = bucket_dir / "objects"
     bucket_dir.mkdir(parents=True, exist_ok=True)
-    versioning = optional_aws(endpoint, credentials_file, ["s3api", "get-bucket-versioning", "--bucket", name]) or {}
-    objects = optional_aws(endpoint, credentials_file, ["s3api", "list-object-versions", "--bucket", name]) or {}
+    versioning = optional_aws(endpoint, credentials_file, ["s3api", "get-bucket-versioning", "--bucket", name], network=network, image=image) or {}
+    objects = optional_aws(endpoint, credentials_file, ["s3api", "list-object-versions", "--bucket", name], network=network, image=image) or {}
     if not objects:
-        objects = optional_aws(endpoint, credentials_file, ["s3api", "list-objects-v2", "--bucket", name]) or {}
+        objects = optional_aws(endpoint, credentials_file, ["s3api", "list-objects-v2", "--bucket", name], network=network, image=image) or {}
     metadata = {
         "bucket": name,
         "application": bucket["application"],
@@ -69,7 +92,7 @@ def export_bucket(endpoint: str, credentials_file: Path, bucket: dict, output: P
         "delete_markers": objects.get("DeleteMarkers", []),
     }
     write_json(bucket_dir / "bucket-metadata.json", metadata)
-    aws_command(endpoint, credentials_file, ["s3", "sync", f"s3://{name}", f"/export/{payload_prefix(name)}", "--no-progress"], mount_root=output)
+    aws_command(endpoint, credentials_file, ["s3", "sync", f"s3://{name}", f"/export/{payload_prefix(name)}", "--no-progress"], network=network, image=image, mount_root=output)
     exported_files = []
     for path in sorted(payload_dir.rglob("*")):
         if path.is_file():
@@ -100,10 +123,10 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     inventory = load_document(args.inventory)
-    endpoint = inventory["rustfs"]["endpoint"]
+    endpoint, network, image = transport_config(inventory)
     args.credentials_file.stat()
     buckets, excluded_retired = select_backup_entries(inventory["rustfs"]["buckets"])
-    manifests = [export_bucket(endpoint, args.credentials_file, bucket, args.output) for bucket in buckets]
+    manifests = [export_bucket(endpoint, args.credentials_file, bucket, args.output, network=network, image=image) for bucket in buckets]
     write_json(args.output / "rustfs-adapter.json", {"buckets": manifests, "excluded_retired": excluded_retired})
     # stdout is reserved for machine-readable wrapper output. The VM100
     # runner captures the completed run path from stdout for Restic.

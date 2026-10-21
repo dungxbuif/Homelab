@@ -33,6 +33,21 @@ RUSTFS_CREDENTIALS_FILE  # required for the rustfs class
 BACKUP_STATUS_ROOT       # optional; defaults to <staging-root>/.state
 ```
 
+RustFS remains on the default Pi5/container transport unless all of these
+runtime-only values are deliberately set for a VM100 comparison run:
+
+```text
+BACKUP_RUSTFS_TRANSPORT=network
+BACKUP_RUSTFS_ENDPOINT=http://rustfs:9000
+BACKUP_RUSTFS_NETWORK=s3-net
+BACKUP_RUSTFS_CLIENT_IMAGE=amazon/aws-cli:2.17.60
+```
+
+Network mode fails closed when any value is absent. The credential file is
+still supplied through `RUSTFS_CREDENTIALS_FILE`; it must contain a read-only
+RustFS access key. This mode does not publish a host port and is not enabled
+by the scheduled production runner.
+
 The runner does not stop, scale, recreate, or remove production services. Exit
 code `75` means another class already owns the global lock and the scheduler
 should retry later without overlapping it. VM100 scheduled classes wait up to
