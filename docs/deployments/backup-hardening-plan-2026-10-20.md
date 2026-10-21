@@ -215,7 +215,7 @@ URLs live in the existing secret env file, never in git.
 3.2 Kuma on VM100 also watches Pi5 from outside (TCP 5432 via PgBouncer, HTTP to CouchDB and RustFS, ping), so Pi5 needs no agent. Add one external heartbeat: a single daily `curl` from VM100 to a
 free external check service after health passes, with its own email or push channel. This covers Pi5 or LAN loss.
 
-3.3 Add a Mezon message on **every** failed class (exists) and a daily one-line success summary from health. **Implemented 2026-10-21:** the scheduled health service sets `BACKUP_HEALTH_NOTIFY_SUCCESS=true`; ad-hoc checks stay quiet by default.
+3.3 Add a Mezon message on **every** failed class (exists). Health notifications are warning/failure-only as of 2026-10-21; success summaries are disabled to avoid alert noise. A temporary observation window may explicitly set `BACKUP_HEALTH_NOTIFY_SUCCESS=true`; ad-hoc checks stay quiet by default.
 
 Acceptance: disable one timer for a day in a test window; both Kuma and the external check alert. Rollback: remove the `curl` lines.
 

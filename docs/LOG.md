@@ -197,10 +197,10 @@ timestamp: 2026-07-03T15:14:00Z
   failure without changing the four-hour SSH safety timeout; the current run
   remains allowed to finish and will be checked at idle.
 
-- **Daily backup health summary:** the scheduled health service now sends a
-  successful one-line Mezon notification in addition to failure alerts. The
-  script defaults to quiet success for ad-hoc checks; only the systemd service
-  enables `BACKUP_HEALTH_NOTIFY_SUCCESS=true`.
+- **Backup health notification noise:** the scheduled health service now sends
+  Mezon notifications only for warnings and failures. Success notifications
+  are disabled by default; `BACKUP_HEALTH_NOTIFY_SUCCESS=true` is reserved for
+  a temporary, explicitly requested observation window.
 - **Backup schedule separation:** `database-instances` was moved from 01:30 to
   03:00 Asia/Ho_Chi_Minh (20:00 UTC). The previous 30-minute offset overlapped
   the normal 92-104 minute `databases` run and caused lock contention; the

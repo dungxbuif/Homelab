@@ -84,8 +84,9 @@ recognized in-limit backup is reported as `state=running` and does not create
 a false failure; a held lock without an active backup unit is a failure. The
 scheduled health timer runs after the retention window and sends a Mezon
 warning only when a problem is found; it never deletes a run. The scheduled
-service also sends a daily success summary; ad-hoc checks stay quiet on
-success unless `BACKUP_HEALTH_NOTIFY_SUCCESS=true` is set.
+service is quiet on success and sends Mezon notifications only for health
+warnings or failures. Set `BACKUP_HEALTH_NOTIFY_SUCCESS=true` only for a
+temporary, explicitly requested observation window.
 
 Health also warns at 85% filesystem usage and fails at 92%, in addition to the
 10 GiB minimum-free-space gate. Override with `BACKUP_HEALTH_DISK_WARN_PERCENT`

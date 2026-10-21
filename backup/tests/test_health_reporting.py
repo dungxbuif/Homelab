@@ -89,6 +89,7 @@ esac
             root = Path(directory)
             (root / '.state').mkdir()
             (root / '.state/gitlab.success').write_text(f'completed_at={int(time.time())}\n')
+            (root / '.state/restore-drill.success').write_text(f'completed_at={int(time.time())}\n')
             (root / 'uptime').write_text('12345.00 20000.00\n')
             flock = root / 'flock'
             flock.write_text('#!/bin/sh\nexit 1\n')
@@ -130,6 +131,7 @@ esac
             root = Path(directory)
             (root / '.state').mkdir()
             (root / '.state/gitlab.success').write_text(f'completed_at={int(time.time())}\n')
+            (root / '.state/restore-drill.success').write_text(f'completed_at={int(time.time())}\n')
             (root / 'uptime').write_text('12345.00 20000.00\n')
             notify = root / 'notify.sh'
             notify.write_text('#!/bin/sh\nprintf "%s\\n" "$*" > "$NOTIFY_OUTPUT"\n')
@@ -150,6 +152,32 @@ esac
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn('--status success', (root / 'notification.txt').read_text())
             self.assertIn('daily backup health passed', (root / 'notification.txt').read_text())
+
+    def test_success_notification_is_silent_when_disabled(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / '.state').mkdir()
+            (root / '.state/gitlab.success').write_text(f'completed_at={int(time.time())}\n')
+            (root / '.state/restore-drill.success').write_text(f'completed_at={int(time.time())}\n')
+            (root / 'uptime').write_text('12345.00 20000.00\n')
+            notify = root / 'notify.sh'
+            notify.write_text('#!/bin/sh\nprintf "%s\\n" "$*" > "$NOTIFY_OUTPUT"\n')
+            notify.chmod(0o700)
+            env = {**os.environ,
+                   'BACKUP_STAGING_ROOT': str(root),
+                   'BACKUP_HEALTH_EXPECTED_CLASSES': 'gitlab',
+                   'BACKUP_HEALTH_SKIP_LOCK': 'true',
+                   'BACKUP_HEALTH_MIN_FREE_BYTES': '0',
+                   'BACKUP_HEALTH_DISK_WARN_PERCENT': '100',
+                   'BACKUP_HEALTH_DISK_FAIL_PERCENT': '101',
+                   'BACKUP_HEALTH_UPTIME_FILE': str(root / 'uptime'),
+                   'BACKUP_HEALTH_NOTIFY_SUCCESS': 'false',
+                   'BACKUP_NOTIFY_SCRIPT': str(notify),
+                   'NOTIFY_OUTPUT': str(root / 'notification.txt')}
+            result = subprocess.run(['bash', str(ROOT / 'backup/scripts/check-backup-health.sh'), '--notify'],
+                                    env=env, capture_output=True, text=True, timeout=15)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertFalse((root / 'notification.txt').exists())
 
     def test_disk_usage_warning_threshold(self):
         with tempfile.TemporaryDirectory() as directory:
