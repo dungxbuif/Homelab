@@ -232,10 +232,11 @@ GitLab has a 10 GiB/4 CPU limit; each GitLab tunnel client has a 128 MiB/
 0.5 CPU limit. Do not infer other apps have limits simply because the host
 allocation is bounded; see the dated resource audit. One-time GitLab backup
 and separate config snapshots exist per the trial report. The scheduled/off-host
-backup path is active: VM100 timers orchestrate native database, GitLab, and
-RustFS jobs, while Pi5 remains the datastore/object executor. The planned boundary is
-PostgreSQL/CouchDB database backup, a separate native GitLab backup, and a
-separate RustFS object backup. Redis and NATS are excluded. See [the backup
+backup path is active: VM100 timers orchestrate native PostgreSQL, GitLab, and
+RustFS jobs. RustFS export/upload/retention now runs on VM100 over private
+`s3-net`; Pi5 remains the RustFS data source and explicit rollback path. The
+combined PostgreSQL/CouchDB class still exports from Pi5 while the CouchDB
+comparison gate is open. Redis and NATS are excluded. See [the backup
 runbook](./runbooks/backup-restore.md); a database dump does not replace
 GitLab repository/configuration or RustFS object recovery. Online adapters and
 local restore rehearsal were verified on 2026-10-05; the latest class markers
