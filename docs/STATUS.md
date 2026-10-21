@@ -9,6 +9,10 @@ timestamp: 2026-10-21T00:00:00+07:00
 
 **Last reconciled:** 2026-10-21 (Asia/Ho_Chi_Minh)
 
+**Documentation check:** 168 active Markdown files under `docs/` have no
+missing relative links. Remaining link-check warnings are confined to archived
+historical pages and illustrative paths in `OKF_SPEC.md`.
+
 This is the short operational index. It summarizes the latest evidence; it does
 not replace dated deployment records or the [backlog](./BACKLOG.md). Historical
 documents may describe an earlier state and are intentionally retained for
