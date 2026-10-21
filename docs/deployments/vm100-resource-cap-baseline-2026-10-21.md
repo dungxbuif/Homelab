@@ -34,8 +34,11 @@ Syntax (128 MiB/0.25 CPU), and the pg-net anchor (16 MiB/0.05 CPU).
 
 The following production workloads were running without a Docker limit in the
 snapshot: MyPocket worker, NetBird server and NetBird dashboard. MyPocket API
-and RelayHub API/worker are now capped; the snapshot is not a safe limit
-recommendation for the remaining workloads by itself.
+and RelayHub API/worker are now capped. NetBird dashboard is now capped at
+512 MiB/0.50 CPU with `start-first`; its public dashboard returned HTTP 200.
+NetBird server remains uncapped because it owns persistent control-plane state.
+The snapshot is not a safe limit recommendation for the remaining workloads
+by itself.
 
 ## Next controlled step
 

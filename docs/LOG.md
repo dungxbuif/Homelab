@@ -37,6 +37,10 @@ timestamp: 2026-07-03T15:14:00Z
   retaining the NATS volume; all four containers became healthy and public
   `/readyz`, `/healthz`, and `/docs/` returned 200. See
   [RelayHub resource canary](./deployments/relayhub-resource-canary-2026-10-21.md).
+- **NetBird dashboard resource canary:** capped the stateless dashboard at
+  `0.50 CPU/512 MiB` with `start-first`. The Swarm update completed and the
+  public dashboard returned HTTP 200. The stateful NetBird server was left
+  unchanged. See [NetBird dashboard resource canary](./deployments/netbird-dashboard-resource-canary-2026-10-21.md).
 
 - **Backup and capacity check:** VM100 has no failed `homelab-backup` units and
   retains `39G` free (`81%` used). The constrained Docker maintenance service
