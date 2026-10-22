@@ -1,0 +1,129 @@
+---
+- name: Enroll the private DB operations worker
+  hosts: db_ops_worker
+  gather_facts: true
+  become: true
+  serial: 1
+  vars:
+    db_ops_bootstrap_approved: false
+    db_ops_enable_scheduler: false
+    db_ops_packages:
+      - qemu-guest-agent
+      - ca-certificates
+      - cloud-guest-utils
+      - curl
+      - git
+      - restic
+      - rclone
+  pre_tasks:
+    - name: Require an explicit bootstrap approval
+      ansible.builtin.assert:
+        that:
+          - db_ops_bootstrap_approved | bool or ansible_check_mode | bool
+        fail_msg: >-
+          Refusing to mutate VM110. Run a reviewed apply with
+          db_ops_bootstrap_approved=true, or use Ansible check mode.
+
+    - name: Keep scheduler disabled during enrollment
+      ansible.builtin.assert:
+        that:
+          - not (db_ops_enable_scheduler | bool)
+        fail_msg: >-
+          Scheduler migration is a separate, one-class-at-a-time change and
+          cannot be enabled by the bootstrap playbook.
+
+  tasks:
+    - name: Restore passwordless sudo for the managed bootstrap user
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/99-homelab-ubuntu
+        content: "ubuntu ALL=(ALL) NOPASSWD:ALL\n"
+        owner: root
+        group: root
+        mode: '0440'
+        validate: '/usr/sbin/visudo -cf %s'
+
+    - name: Remove empty dpkg update fragments from the base image
+      ansible.builtin.find:
+        paths: /var/lib/dpkg/updates
+        file_type: file
+        size: 0
+      register: empty_dpkg_updates
+
+    - name: Delete empty dpkg update fragments
+      ansible.builtin.file:
+        path: '{{ item.path }}'
+        state: absent
+      loop: '{{ empty_dpkg_updates.files }}'
+
+    - name: Repair an interrupted package transaction from the base image
+      ansible.builtin.command: /usr/bin/dpkg --configure -a
+      changed_when: true
+
+    - name: Refresh the Ubuntu package catalog after repairing dpkg
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 0
+
+    - name: Bound package mirror connection timeouts
+      ansible.builtin.copy:
+        dest: /etc/apt/apt.conf.d/99-homelab-network-timeouts
+        content: |
+          Acquire::http::Timeout "30";
+          Acquire::https::Timeout "30";
+          Acquire::Retries "2";
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Install private worker prerequisites
+      ansible.builtin.apt:
+        name: '{{ db_ops_packages }}'
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Enable the QEMU guest agent
+      ansible.builtin.systemd:
+        name: qemu-guest-agent
+        enabled: true
+        state: started
+
+    - name: Grow the root partition when the Proxmox disk was expanded
+      ansible.builtin.command: /usr/bin/growpart /dev/sda 1
+      register: root_partition_growth
+      changed_when: "'NOCHANGE' not in (root_partition_growth.stdout | upper)"
+      failed_when: root_partition_growth.rc not in [0, 1]
+
+    - name: Grow the root filesystem online
+      ansible.builtin.command: /usr/sbin/resize2fs /dev/sda1
+      register: root_filesystem_growth
+      changed_when: "'Nothing to do' not in root_filesystem_growth.stdout"
+
+    - name: Create operations directories
+      ansible.builtin.file:
+        path: '{{ item.path }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '{{ item.mode }}'
+      loop:
+        - { path: /opt/apps/homelab-backup, mode: '0755' }
+        - { path: /etc/homelab-backup, mode: '0700' }
+        - { path: /var/lib/homelab-backup, mode: '0750' }
+
+    - name: Install a migration guard marker
+      ansible.builtin.copy:
+        dest: /etc/homelab-backup/db-ops-worker
+        content: |
+          role=db-operations
+          scheduler=vm100
+          scheduler_migration=not-enabled
+          production_data_host=pi5
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Lock the temporary bootstrap password
+      ansible.builtin.user:
+        name: ubuntu
+        password_lock: true

@@ -49,7 +49,8 @@ and the [current status page](./STATUS.md).
 | Pi5 | `10.10.0.5` | Swarm manager, active Traefik/Rathole/AdGuard edge, PostgreSQL/PgBouncer, Redis, RustFS, CouchDB and persistent backend services |
 | VM100 | `10.10.0.31` | Production compute, Swarm worker, BDS Compose runtime, persistent GitLab filesystem |
 | Mac | `10.10.0.6` documented LAN; roaming via VPS Rathole | Native OCR and LM Studio; separate local development checkouts |
-| Proxmox | `10.10.0.20` | Production hypervisor for VM100; optional experiments must use a separate lifecycle |
+| Proxmox | `10.10.0.20` | Production hypervisor for VM100 and DB-operations VM110; each has a separate IAC state/lifecycle |
+| VM110 DB operations | `10.10.0.32` | Backup/restore and database-operations worker; no public ports; Pi5 remains the production data host |
 
 ## Runtime Catalog
 

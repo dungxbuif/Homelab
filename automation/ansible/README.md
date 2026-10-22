@@ -2,7 +2,13 @@
 
 This tree is the active production inventory for the homelab control plane.
 It intentionally contains only the public gateway, Pi5 manager/datastore, and
-VM100 production worker. Kubernetes is not an active lab target.
+VM100 production worker, and the private VM110 DB-operations worker.
+Kubernetes is not an active lab target.
+
+VM110 is intentionally a private worker, not a database host. Pi5 remains the
+production data host. Its first enrollment only installs the guest agent and
+operations prerequisites; backup scheduler ownership is migrated separately,
+one class at a time.
 
 ## Safety boundary
 
@@ -41,5 +47,5 @@ docker run --rm --entrypoint ansible-playbook \
 ```
 
 The first production run is audit-only. Baseline application follows the
-approved order `vm100`, `pi5`, then `vps-gateway`, one host at a time, after
+approved order `vm100`, `pi5`, `db-ops`, then `vps-gateway`, one host at a time, after
 the restricted account and transport path have been verified.

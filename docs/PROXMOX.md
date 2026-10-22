@@ -9,12 +9,13 @@ ephemeral. Current VM100 service/storage details are in [VM100.md](./VM100.md).
 | Field | Current documented state |
 |---|---|
 | Production VM | `100`, `vm100-prod`, LAN `10.10.0.31` |
+| DB operations VM | `110`, `db-ops`, LAN `10.10.0.32` |
 | VM100 allocation | 6 vCPU, 16 GB RAM, 200 GiB disk per deployment record |
 | Guest filesystem | ext4 root ~194 GiB; 65 GiB used, 130 GiB free in the 2026-09-16 SSH sample |
 | Guest persistent state | GitLab config/data/repositories/Registry trial, app bind mounts and runtime volumes |
 | Database placement | Pi5; never infer GitLab DB is on Proxmox from its application placement |
 | Retired VMs | `101/102` removed per migration record; no hypervisor-side confirmation in this audit |
-| Current recovery target | Only `local` (directory, 89.8 GB free) and `local-lvm` (104.8 GB free, 72.0% thin-pool usage); no PBS/NAS target |
+| Current recovery target | Only `local` (directory, ~89 GB free) and `local-lvm` (~85 GB free at VM110 creation, ~77% thin-pool usage); no PBS/NAS target |
 | Historical design | HA K8s, kube-vip, Longhorn and old workload topology; no such cluster or VM is active |
 
 The Proxmox metadata name remains the legacy `k8s-cp-1`; the guest and
@@ -66,6 +67,15 @@ No Kubernetes or other practice VM is part of the current lab inventory. A
 future practice VM requires an explicit request, a dedicated VM ID, isolated
 OpenTofu state, and a separate automation inventory; it must not share VM100's
 production lifecycle.
+
+## DB operations boundary
+
+VM110 is the dedicated backup/restore and database-operations worker. It does
+not host production PostgreSQL, CouchDB, Redis or RustFS data. It is on the
+same Proxmox/local-lvm failure domain as VM100, so it isolates workload CPU,
+RAM and IO but does not replace an external backup target. Its active OpenTofu
+module is `automation/tofu/proxmox-db-ops/`; import and no-op plan evidence are
+required before Ansible owns its runtime.
 
 ## Historical Context
 

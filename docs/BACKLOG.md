@@ -76,6 +76,7 @@ Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`
 | L2 | pgBackRest with WAL archiving to a VM100 repo host (PITR) | Keep daily logical backup only for now; PITR is deliberately out of scope | closed (2026-10-21 decision) |
 | L3 | Postgres collation-version warning (`ALTER DATABASE ... REFRESH COLLATION VERSION`, then reindex) | done 2026-10-21: refreshed and reindexed maintenance database `postgres` only; stored and actual versions now match at `2.36`, and all application databases remained connectable. Evidence: [collation reconciliation](./deployments/postgres-collation-reconciliation-2026-10-21.md) |
 | L4 | Decommission legacy Pi `/ssd-data/backup/simple-backup.sh` after B1 passes | done 2026-10-21: verified its cron entry is commented/disabled, no legacy process is running, and the obsolete script was removed after B1 restore acceptance; current systemd backup timers remain the sole scheduler |
+| L5 | DB operations worker VM | VM110 `db-ops` at `10.10.0.32` now has 4 vCPU/8 GiB/80 GiB, SSH, passwordless sudo, guest agent, restic/rclone and no scheduler; production backup runtime has not moved | Import/no-op IAC proof, package the existing runtime, then migrate one backup class at a time with rollback observation |
 
 Detailed phased plan for B1 to B8: [backup-hardening-plan-2026-10-20.md](./deployments/backup-hardening-plan-2026-10-20.md).
 

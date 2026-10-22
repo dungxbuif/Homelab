@@ -24,7 +24,7 @@ incident and rollback context.
 | Area | Current state | Evidence |
 |---|---|---|
 | Public edge | VPS HostSNI gateway -> Rathole -> Pi5 Traefik | [system playbook](./MAIN.md) |
-| Compute | VM100 (`10.10.0.31`) runs user-facing workloads and backup/restore worker jobs | [VM100 reference](./VM100.md) |
+| Compute | VM100 (`10.10.0.31`) runs user-facing workloads; VM110 (`10.10.0.32`) is the new backup/DB-operations worker | [VM100 reference](./VM100.md), [Proxmox reference](./PROXMOX.md) |
 | Data | Pi5 (`10.10.0.5`) remains the authoritative PostgreSQL, Redis, CouchDB and RustFS host | [Pi5 specification](./PI.md) |
 | Automation | Semaphore/Ansible handles reviewed host operations; VM100 systemd owns backup schedules | [automation runbook](./runbooks/automation-operations.md) |
 | Backups | Google Drive is the single off-site target; database-instances, databases, GitLab, RustFS, configs and restore-drill classes are active | [backup runbook](./runbooks/backup-restore.md) |
