@@ -20,6 +20,17 @@ timestamp: 2026-07-03T15:14:00Z
 > Every significant change appends to this log; the current version marker also
 > lives in [`index.md`](../index.md) and [`MAIN.md`](./MAIN.md).
 
+## 2026-10-23 - NetBird control-plane update
+
+- **NetBird control plane updated on Pi5 Swarm:** `netbird_netbird-server` now
+  runs upstream `0.81.3` at digest
+  `sha256:541ecef7e98a66b17411d44e9d4dcfdb65913415f39b3b944b8e7e748f997f1d`;
+  `netbird_netbird-dashboard` now runs `v2.95.0` at digest
+  `sha256:3d6adfee19dd8d34d795af51daee69d27d2081d2076a5a304cfdd14acc67d6f4`.
+  Both Swarm services converged to `1/1`, PostgreSQL remained the store, and
+  public root/API smoke checks returned HTTP 200. No VM100 host ports or relay
+  routes were changed.
+
 ## 2026-10-21 - Runtime audit continuation
 
 - **VPS HostSNI incident forensic result:** compared the live, known-good and
