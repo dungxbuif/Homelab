@@ -29,7 +29,10 @@ timestamp: 2026-07-03T15:14:00Z
   `sha256:3d6adfee19dd8d34d795af51daee69d27d2081d2076a5a304cfdd14acc67d6f4`.
   Both Swarm services converged to `1/1`, PostgreSQL remained the store, and
   public root/API smoke checks returned HTTP 200. No VM100 host ports or relay
-  routes were changed.
+  routes were changed. The VPS relay was then recreated from the same upstream
+  release channel at digest
+  `sha256:721a15a9de4817b142134b5e039bfc3559b0c80db8054408d3723bc52ccba4ec`;
+  TCP `443`, UDP `3478`, and the expected relay `404` probe remained healthy.
 
 ## 2026-10-21 - Runtime audit continuation
 
