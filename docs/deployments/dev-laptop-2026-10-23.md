@@ -22,8 +22,8 @@ routes or database workloads.
 - Go and Rust user-local toolchains
 - Starship, Codex CLI, Claude Code and OpenCode
 - NetBird client `0.81.3` installed on the ThinkPad; enrollment remains an
-  explicit user action. The Mac client is still `0.78.2` until its macOS
-  installer is authorized with an administrator password.
+  explicit user action. The Mac client is also updated to `0.81.3` and remains
+  connected with its existing profile.
 
 ## Transfer rules
 
