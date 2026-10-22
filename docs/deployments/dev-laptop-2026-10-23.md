@@ -37,6 +37,17 @@ routes or database workloads.
 - The existing nvm, Bun, Cargo, Go, local-bin and Starship initialization is
   preserved in `~/.zshrc`.
 
+## RustDesk
+
+- The ThinkPad RustDesk ID is `201182481`.
+- Both the user and system-service profiles use the self-hosted ID server
+  `103.82.21.202:21116` and relay `103.82.21.202`.
+- The gateway public key is configured locally; passwords and private client
+  material are intentionally excluded from this document.
+- `rustdesk.service` is active after restart. TCP `21115–21117` are reachable
+  from the ThinkPad, while `21118–21119` remain blocked as designed.
+- The remote session still needs one real end-to-end test from outside the LAN.
+
 ## Transfer rules
 
 Workspace Git history and source files were copied to the laptop without
