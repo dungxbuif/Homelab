@@ -50,6 +50,8 @@ from each active project before treating the workstation as ready.
   `1.3.14`, Go `1.26.3`, Rust `1.99.1`, Codex `0.157.1`, Claude Code
   `2.1.308`, OpenCode `1.18.32`, and NetBird `0.81.3` resolve in fresh SSH
   sessions.
-- Fingerprint enrollment still requires a physical touch on the ThinkPad.
+- Fingerprint enrollment is complete for `right-index-finger`, and the
+  `fprintd` PAM profile is enabled while password authentication remains
+  available as fallback.
 - No NetBird setup key or other production credential is copied into this
   workstation document or transfer.
