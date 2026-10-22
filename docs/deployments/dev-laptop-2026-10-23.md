@@ -29,6 +29,16 @@ routes or database workloads.
 - RustDesk `1.5.0`, enabled as a system service for remote access
 - NetBird client `0.81.3`, enrolled with the self-hosted management service
 
+## Desktop cleanup
+
+- Firefox was intentionally removed because this laptop is used for coding,
+  light office work and basic media playback. The Firefox Snap, Ubuntu
+  transitional package, wrapper binary and user profile/cache were removed.
+- No other non-essential GUI applications were found during the audit; Snap
+  runtime components and desktop security packages were retained.
+- AppArmor and `snapd.apparmor` were re-enabled and verified active after the
+  cleanup.
+
 ## Shell
 
 - `/usr/bin/zsh` is the login shell for `dungxbuif`.
