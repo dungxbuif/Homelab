@@ -27,7 +27,7 @@ routes or database workloads.
 - Starship, Codex CLI `0.163.0`, Claude Code `2.1.308` and OpenCode `2.1.3`
 - GitHub CLI `2.45.0` and standard CLI utilities
 - RustDesk `1.5.0`, enabled as a system service for remote access
-- NetBird client `0.81.3`, with the daemon enabled but not enrolled yet
+- NetBird client `0.81.3`, enrolled with the self-hosted management service
 
 ## Shell
 
@@ -84,6 +84,8 @@ each active project before treating the workstation as ready.
   `fprintd` PAM profile is enabled while password authentication remains
   available as fallback.
 - The old local NetBird setup key was rejected as invalid. The daemon is
-  healthy and reports `NeedsLogin`; enrollment still requires a fresh setup
-  key or interactive SSO on the ThinkPad. No NetBird setup key or other
+  healthy and the ThinkPad is now enrolled with a one-off replacement key.
+  Management, signal and relay are connected; the assigned NetBird address is
+  `100.69.32.183/16`. The setup key was passed through a mode-`600` temporary
+  file and removed immediately after enrollment. No NetBird setup key or other
   production credential is copied into this workstation document or transfer.
