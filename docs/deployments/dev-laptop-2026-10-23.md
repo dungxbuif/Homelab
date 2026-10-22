@@ -40,12 +40,16 @@ from each active project before treating the workstation as ready.
 
 ## Current verification blockers
 
-- The transfer process is no longer running, but the final remote audit has
-  not completed because the SSH host key for `10.10.0.13` changed after the
-  initial bootstrap. Confirm the new ED25519 fingerprint on the laptop before
-  replacing the old entry in the operator's `known_hosts`.
-- Until that confirmation, Docker access, workspace size, excluded runtime
-  volumes, and excluded environment files remain unverified on the laptop.
+- The workspace transfer and remote audit are complete: the copy is `8.4G`,
+  no excluded runtime directories or exact environment files were found, and
+  Docker Engine `29.1.3` with Compose v2 is accessible by the operator.
+- The SSH host-key change was verified against the laptop's own
+  `/etc/ssh/ssh_host_ed25519_key.pub` (`SHA256:EA4G3ch9BWv/loC14ejsSDbshIRL6Wf3a5B9hAunlW8`)
+  before updating the local `known_hosts` entry.
+- The login-shell PATH was repaired so Node.js `24.0.2`, npm `11.3.0`, Bun
+  `1.3.14`, Go `1.26.3`, Rust `1.99.1`, Codex `0.157.1`, Claude Code
+  `2.1.308`, OpenCode `1.18.32`, and NetBird `0.81.3` resolve in fresh SSH
+  sessions.
 - Fingerprint enrollment still requires a physical touch on the ThinkPad.
 - No NetBird setup key or other production credential is copied into this
   workstation document or transfer.
