@@ -28,6 +28,26 @@ is live, but its denial-test requirements and a real non-admin identity remain
 open in the [RBAC boundary review](../research/semaphore-rbac-boundary-2026-10-15.md).
 No fine-grained authorization has been enabled by this document.
 
+## Live templates vs design specs, 2026-10-19
+
+Only these are real Semaphore templates, created by `automation/semaphore/bootstrap-*.mjs`:
+`db-provision`, `host-audit` (VM100/Pi5 observers), `backup-health`,
+`homepage-release` and `backup-client-release`. Everything else that was in
+`automation/semaphore/templates/` (`ansible-check`, `ansible-apply`, `tofu-plan`,
+`tofu-apply-approved`, `route-publish`, `backup-audit`, `app-deploy`, `rollback`)
+was a design-only contract that Semaphore Community never consumes, and has moved
+to `automation/semaphore/specs/`. Semaphore Community cannot enforce the approval
+gates, per-template roles or per-template images those specs describe, and
+`app-deploy`/`rollback` reference executor scripts that do not exist. Treat the
+specs as documentation; run apply-type changes through reviewed CI/CLI procedures.
+`templates/host-audit.yaml` is still a generic design-only record
+(`availability: design_only`) and is not the live observer template.
+
+CI discovers tests rather than listing them: `validate:automation-ee` runs
+`python -m unittest discover` over the test directories plus every
+`test_*.sh`/`test-*.sh`/`test_*.rb`/`test-*.rb` it finds. One-off repair and
+upgrade playbooks live in `automation/ansible/playbooks/archive/`.
+
 ## What you can run in the UI
 
 Open [Semaphore project 1](https://semaphore.dungxbuif.com/project/1/templates)
@@ -160,7 +180,8 @@ idempotent and must abort on resource drift rather than delete or repair it.
 ## Change gates
 
 1. Edit the catalog or playbook in Git and run CI lint/policy tests.
-2. Run `host-audit`, then `ansible-check` or `tofu-plan`.
+2. Run the live host-audit templates (4/5), then the Ansible check or OpenTofu plan
+   as a reviewed local/CI step (`ansible-check` and `tofu-plan` are specs, see below).
 3. For OpenTofu, use the controlled environment contract: `vm_name` is an
    explicit input and the executor must inject the Proxmox token, state
    encryption passphrase and trusted CA file. Review the private plan bundle:

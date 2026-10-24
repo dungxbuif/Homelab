@@ -53,61 +53,31 @@ validate:automation-ee:
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'python -c "import pathlib, yaml; root=pathlib.Path(\"/workspace\"); files=[root/\".gitlab-ci.yml\"]+list((root/\"automation\").rglob(\"*.yml\"))+list((root/\"automation\").rglob(\"*.yaml\")); [list(yaml.safe_load_all(p.read_text())) for p in files]"'
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'find /workspace/automation /workspace/backup -name "*.sh" -type f -print0 | xargs -0 -r shellcheck --severity=error'
     - docker run --rm --env ANSIBLE_CONFIG=/workspace/automation/ansible/ansible.cfg --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'ansible-lint /workspace/automation/ansible /workspace/automation/semaphore/playbooks'
-    - docker run --rm --env ANSIBLE_CONFIG=/workspace/automation/ansible/ansible.cfg --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_inventory_resolution.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_runner_boundary.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_baseline_observation.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_backup_health_guard.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_backup_instance_deploy_contract.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_host_audit_guard.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_host_observer.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_homepage_release.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_deploy_contract.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_homepage_release_guard.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_homepage_release_enrollment.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_provisioner_release.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/ansible/tests/test_audit_artifact.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/semaphore/tests/test_control_network.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/semaphore/tests/test_runner_stack.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'python /workspace/automation/tests/test_policy_contract.py && python /workspace/automation/tests/test_route_contract.py'
+    # Tests are discovered, not listed: add test_*.py / test_*.sh / test-*.sh / test_*.rb files
+    # under the directories below and they run automatically. Every runner executes all tests
+    # and the job fails if any failed. test-runner-image.sh (needs a built runner image) runs in
+    # build:semaphore-runner-candidate; execution-environment/tests/test-toolchain.sh is the image
+    # entrypoint run above.
+    - |
+      docker run --rm --env ANSIBLE_CONFIG=/workspace/automation/ansible/ansible.cfg --volume "$CI_PROJECT_DIR:/workspace:ro" --workdir /workspace --entrypoint sh "$EE_IMAGE:$EE_TAG" -c '
+        rc=0
+        for dir in automation/tests automation/ansible/tests automation/semaphore/tests backup/tests automation/tofu/proxmox/tests; do
+          echo "== python unittest discover $dir"
+          python -m unittest discover -s "$dir" -p "test_*.py" || rc=1
+        done
+        for file in $(find automation backup -type f \( -name "test_*.sh" -o -name "test-*.sh" \) -not -path "automation/execution-environment/*" -not -name test-runner-image.sh | sort); do
+          echo "== bash $file"
+          bash "$file" || rc=1
+        done
+        for file in $(find automation backup -type f \( -name "test_*.rb" -o -name "test-*.rb" \) | sort); do
+          echo "== ruby $file"
+          ruby "$file" || rc=1
+        done
+        exit "$rc"'
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'bash /workspace/automation/scripts/verify-routes.sh'
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'ruby /workspace/automation/ansible/tests/test-inventory-contract.rb && ruby /workspace/automation/semaphore/tests/test-template-contract.rb'
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'if find /workspace/automation/tofu -name "*.tf" -type f -print -quit 2>/dev/null | grep -q .; then tofu -chdir=/workspace/automation/tofu fmt -check -recursive; fi'
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint sh "$EE_IMAGE:$EE_TAG" -c 'ruby /workspace/automation/scripts/validate-runtime-policy.rb --active /workspace/automation/policies/active-runtime.yaml --retired /workspace/automation/policies/retired-runtime.yaml'
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_secret_scan.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_image_security.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_toolchain_security.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_provisioner_crossbuild.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_drift_evidence.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_private_artifact.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_family_network.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_release_notification.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_runtime_network_drift.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_runtime_evidence_collector.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tests/test_route_paths.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_rustfs_writer_identity.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" -m unittest discover -s /workspace/backup/tests -p 'test_provisioner*.py'
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_catalog_registration.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_health_reporting.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_retention_prerequisites.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_scheduler_generation.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_database_instances.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_instance_backup.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_instance_registration.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_instance_enrollment.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_restore_staging.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_verify_database_payload.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_rclone_workdir.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_restic_lifecycle.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_backup_client_release.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint bash "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_upload_manifest.sh
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint bash "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_restic_contract.sh
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint bash "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_schedule_contract.sh
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint bash "$EE_IMAGE:$EE_TAG" /workspace/backup/tests/test_scheduler_contract.sh
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tofu/proxmox/tests/test_import_plan.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tofu/proxmox/tests/test_observed_baseline.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tofu/proxmox/tests/test_ca_trust.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tofu/proxmox/tests/test_encryption.py
-    - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint python "$EE_IMAGE:$EE_TAG" /workspace/automation/tofu/proxmox/tests/test_module_validation.py
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint bash "$EE_IMAGE:$EE_TAG" /workspace/automation/scripts/validate-proxmox-module.sh
     - docker run --rm --volume "$CI_PROJECT_DIR:/workspace:ro" --entrypoint bash "$EE_IMAGE:$EE_TAG" /workspace/automation/scripts/check-secrets.sh /workspace
 

@@ -1,6 +1,7 @@
+# DESIGN SPEC ONLY - not a live Semaphore template. See specs/README.md.
 ---
-name: rollback
-description: Roll one allow-listed application back to a recorded immutable image digest.
+name: app-deploy
+description: Deploy one allow-listed application image through its declared private networks.
 availability: design_only
 repository: homelab-automation
 revision: main
@@ -15,16 +16,20 @@ variables:
     type: enum
     required: true
     values: [homepage, relayhub, gitlab, macocr-proxy, mypocket, stirling-pdf, openclaw, n8n]
-  - name: rollback_image_digest
+  - name: image_digest
     type: image_digest
     required: true
+  - name: environment
+    type: enum
+    required: true
+    values: [staging, production]
   - name: change_message
     type: string
     required: true
 approval:
   required: true
   roles: [Manager]
-command: automation/scripts/rollback-service --service ${service_id} --image ${rollback_image_digest}
+command: automation/scripts/deploy-service --service ${service_id} --image ${image_digest} --environment ${environment}
 post_check:
-  command: automation/scripts/smoke-service --service ${service_id} --environment production
-  artifact: artifacts/${service_id}-rollback-post-check.json
+  command: automation/scripts/smoke-service --service ${service_id} --environment ${environment}
+  artifact: artifacts/${service_id}-post-check.json

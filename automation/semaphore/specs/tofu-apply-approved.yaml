@@ -1,3 +1,4 @@
+# DESIGN SPEC ONLY - not a live Semaphore template. See specs/README.md.
 ---
 name: tofu-apply-approved
 description: Apply only the reviewed VM100 OpenTofu plan artifact.

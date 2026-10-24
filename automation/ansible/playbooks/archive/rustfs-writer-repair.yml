@@ -26,7 +26,7 @@
 
     - name: Install writer with rollback copy
       ansible.builtin.copy:
-        src: '{{ playbook_dir }}/../../rustfs-backup/export-buckets.py'
+        src: '{{ playbook_dir }}/../../../rustfs-backup/export-buckets.py'
         dest: '{{ rustfs_exporter_target }}'
         mode: '0755'
         backup: true

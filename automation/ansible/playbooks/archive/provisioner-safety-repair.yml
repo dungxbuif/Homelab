@@ -26,11 +26,11 @@
             provisioner_before.stat.checksum in
             ['9249a252fb5f3bf109cdf051877fab499a0c06a4d85a98790498eefce39b8a95',
             'bd1caec661356534025f7f67c2a7df918cffc82529389e99716d861451f27216',
-            lookup('file', playbook_dir ~ '/../../../backup/scripts/provisioner.py', rstrip=false) | hash('sha256')]
+            lookup('file', playbook_dir ~ '/../../../../backup/scripts/provisioner.py', rstrip=false) | hash('sha256')]
 
     - name: Install reviewed module with rollback copy
       ansible.builtin.copy:
-        src: '{{ playbook_dir }}/../../../backup/scripts/provisioner.py'
+        src: '{{ playbook_dir }}/../../../../backup/scripts/provisioner.py'
         dest: '{{ provisioner_module }}'
         mode: '0644'
         backup: true

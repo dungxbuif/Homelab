@@ -35,7 +35,7 @@ Semaphore is intended to become the operator entry point for host audits, Ansibl
 applies, OpenTofu plans and approved applies, route publication, application
 deployment, and rollback. The declarative catalog is in
 [`project-resources.yaml`](./project-resources.yaml) and the template contracts
-are in [`templates/`](./templates/).
+are in [`templates/`](./templates/) (live) and [`specs/`](./specs/) (design-only, never consumed by Semaphore Community).
 
 The proposed roles are deliberately narrow, but Semaphore Community does not
 enforce them as per-template roles. The live boundary is therefore split into
