@@ -1,9 +1,9 @@
 authentik:
-    secret_key: "vmtlT+jTyV2v19rx2raeTt1vDHWpOiYqoGuV6Trsy7RdpFucOdGBOIBJFEmtgl6VDMsLs9h9a8fecc5W"
+    secret_key: "REDACTED"
     error_reporting:
         enabled: true
     postgresql:
-        password: "63nUqDh1gu2hkIECaBtIYEPhaet4tcZB465HRhM87FtUKsLPiKBTDwX9NZtisb6ZoCLY0YjqA2E7BUNr"
+        password: "REDACTED"
     replicaCount: 1
 
 server:
@@ -34,7 +34,7 @@ postgresql:
         tag: "17.5.0-debian-12-r3"
         pullPolicy: IfNotPresent
     auth:
-        password: "63nUqDh1gu2hkIECaBtIYEPhaet4tcZB465HRhM87FtUKsLPiKBTDwX9NZtisb6ZoCLY0YjqA2E7BUNr"
+        password: "REDACTED"
     primary:
         persistence:
             size: 1Gi

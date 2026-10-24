@@ -30,3 +30,5 @@ credentials/
 # Python bytecode
 __pycache__/
 *.pyc
+__pycache__/
+*.pyc

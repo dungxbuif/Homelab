@@ -84,9 +84,9 @@ The GoClaw service is configured inside `/ssd-data/infra/docker-compose.yml` on 
       - GOCLAW_CONFIG=/app/data/config.json
       - GOCLAW_SKILLS_DIR=/app/data/skills
       - GOCLAW_ALLOW_INSECURE_NO_AUTH=0
-      - GOCLAW_GATEWAY_TOKEN=2d75aad76505df8c3cb0077263f04a7f4912f183f08a114831d7f30acb3c82e0
-      - GOCLAW_ENCRYPTION_KEY=7f648fc45bef1f1b9a2422f116e3deab1e35030ebbf9fd6a80a9e7f3a0171368
-      - GOCLAW_POSTGRES_DSN=postgres://goclaw_user:a2983158cae75314cddd5d6a0d421745@postgres:5432/goclaw?sslmode=disable
+      - GOCLAW_GATEWAY_TOKEN=REDACTED
+      - GOCLAW_ENCRYPTION_KEY=REDACTED
+      - GOCLAW_POSTGRES_DSN=postgres://goclaw_user:REDACTED@postgres:5432/goclaw?sslmode=disable
     volumes:
       - ./goclaw/data:/app/data
       - ./goclaw/workspace:/app/workspace

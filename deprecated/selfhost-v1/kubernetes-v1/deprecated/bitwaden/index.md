@@ -22,9 +22,9 @@ metadata:
   namespace: bitwarden
 type: Opaque
 data:
-  globalSettings__installation__id: ODZmOTZmYmItMzE3Ny00ZjNiLWIzZjUtYjI0ZjAxMDFlYjlh
-  globalSettings__installation__key: ektFd3ZuY2tzeFVkMjlDMHR4Rkk=
-  adminSettings__admins: ZHVuZ2J1aS5kdW5nYnVpLjAwQGdtYWlsLmNvbQ==
+  globalSettings__installation__id: REDACTED
+  globalSettings__installation__key: REDACTED
+  adminSettings__admins: REDACTED
 ```
 
 ---

@@ -1015,8 +1015,8 @@ postgresql:
   auth:
     ## These need to be set, for the sake of bitnami/postgresql upgrade patterns.
     ## They are overridden by use of `existingSecret`
-    password: bogus-satisfy-upgrade
-    postgresPassword: bogus-satisfy-upgrade
+    password: REDACTED
+    postgresPassword: REDACTED
     ##
     usePasswordFiles: false
     existingSecret: '{{ include "gitlab.psql.password.secret" . }}'

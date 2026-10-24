@@ -865,7 +865,7 @@ spec:
     - dns01:
         route53:
           region: us-east-1
-          accessKeyID: AKIAIOSFODNN7EXAMPLE
+          accessKeyID: REDACTED
           secretAccessKeySecretRef:
             name: route53-credentials
             key: secret-access-key

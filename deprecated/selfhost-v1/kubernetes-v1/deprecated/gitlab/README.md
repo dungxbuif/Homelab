@@ -52,7 +52,7 @@ Create the Kubernetes secret containing the access and secret keys for your MinI
 
 **MinIO Credentials:**
 - Access Key: `gitlab`
-- Secret Key: `rdh-FRN3qjh4pwv_ztp`
+- Secret Key: `REDACTED`
 
 ```bash
 kubectl apply -f /root/selfhost/kubernetes-v1/gitlab/gitlab-minio-creds.yaml -n gitlab

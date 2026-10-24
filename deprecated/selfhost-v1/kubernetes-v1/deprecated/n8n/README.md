@@ -24,7 +24,7 @@ This setup utilizes n8n's queue mode for enhanced scalability and reliability:
 ## Deployment Steps
 
 1.  **Review Secrets:**
-    *   Update placeholder values (`changeUser`, `changePassword`) in `postgres-secret.yaml` for keys: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_NON_ROOT_USER`, `POSTGRES_NON_ROOT_PASSWORD`.
+    *   Update placeholder values (`changeUser`, `REDACTED`) in `postgres-secret.yaml` for keys: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_NON_ROOT_USER`, `POSTGRES_NON_ROOT_PASSWORD`.
     *   Update placeholder value (`changeRedisPassword`) in `redis-secret.yaml` for key: `REDIS_PASSWORD`.
     *   Review/change the `N8N_ENCRYPTION_KEY` in `n8n-encryption-secret.yaml`. **This key is critical for credential encryption - back it up securely!**
 2.  **Apply Namespace:**
