@@ -2,7 +2,7 @@
 type: Deployment
 title: "DB-management project and Homelab context"
 description: "Canonical map of the DB-management application, operations repository, runtime placement, backup boundary, and acceptance status"
-timestamp: 2026-10-25T00:00:00+07:00
+timestamp: 2026-10-26T02:46:00+07:00
 ---
 
 # DB-management project context
@@ -73,7 +73,7 @@ Redis is currently monitor-only and is not included in db-management backup
 ownership. Config, GitLab, RustFS and other non-database payloads remain outside
 this worker boundary.
 
-## Current evidence — 2026-10-25
+## Current evidence — 2026-10-26
 
 - Live Swarm services observed `1/1`: API, worker, web, CloudBeaver and
   Databasus.
@@ -83,27 +83,55 @@ this worker boundary.
   PostgreSQL and CouchDB Homelab. Each had completion marker, manifest,
   checksums, payload and remote Drive evidence; completed local staging was
   absent after upload.
-- GitLab pipeline [#501](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/501)
-  passed quality, ops-contract, image build, digest scan and release-manifest.
-  Its deploy job remained manual and was not run.
+- GitLab tag pipeline [#537](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/537)
+  passed quality, ops-contract, immutable image build, digest scan and
+  release-manifest. Deploy retry [#1668](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/jobs/1668)
+  returned a successful receipt with requested/observed app digests equal.
+- The Pi5 forced-command release identity is enrolled for the reviewed ops
+  SHA `20d1f69256619751665a0182524125a0fcb34f02`; the protected GitLab deploy
+  approval is `false` after deployment. The normal release boundary updates
+  only API/worker/web images; the source stack's five digest pins are a
+  bootstrap baseline and its renderer accepts existing digest pins.
+- VM100's legacy backup timers are disabled and its three stale failed unit
+  states were reset after recording their causes; this does not retire the
+  scripts or Semaphore consumers.
+- Authenticated Semaphore inventory found the current read-only audit projects
+  and a still-used Manager-approved `backup-client-release` template with
+  recent successful tasks; it is a separate control-plane consumer, not proof
+  that the old DB scheduler is active.
+- Isolated restore acceptance now covers all four fresh native source runs:
+  PostgreSQL production `13/13` dumps, Couchloom PostgreSQL `2/2` dumps,
+  CouchDB Obsidian `49,229/49,229` documents, and CouchDB Homelab
+  `1,519,950/1,519,950` documents. All restore targets were disposable and
+  removed after verification.
+- CloudBeaver's functional GraphQL probe is now part of the ops healthcheck;
+  the service was restarted after its expired configuration was detected.
+  Anonymous access is disabled, the local admin authenticates as
+  `ADMINISTRATOR`, and a private PostgreSQL `testConnection` passed over
+  `pg-net` without saving credentials.
+- Databasus `v3.60.0` is healthy and its supported CLI confirms an active
+  bootstrap administrator, but no password rotation, authenticated workspace,
+  provider or restore evidence is claimed.
+- Branch CI pipeline `#559` and MR pipeline `#560` passed quality and
+  ops-contract validation for the current ops SHA; these validation pipelines
+  did not deploy production.
 
 Detailed evidence and exact job identifiers are in the
 [DB-management core audit](./2026-10-25-db-management-core-audit.md).
+The gate-by-gate acceptance matrix is in
+[DB-management production gates](./2026-10-26-db-management-production-gates.md).
 
 ## Acceptance status
 
-The project is operational for the observed backup path, but not fully
-accepted as production-ready. The remaining gates are:
+The project is operational for the observed backup and protected deployment
+paths, but not fully accepted as production-ready. The remaining gates are:
 
-1. enroll the dedicated Pi5 release identity and add protected GitLab key and
-   pinned `known_hosts` file variables;
-2. run and verify one protected release plus its receipt/observed image
-   digests, then verify rollback;
-3. perform isolated PostgreSQL and CouchDB restore exercises;
-4. if Databasus is kept, configure and verify its authenticated workspace,
+1. if Databasus is kept, configure and verify its authenticated workspace,
    provider/storage, retention and isolated restore;
-5. inventory and separately approve retirement of old Restic/rclone scripts
-   and Semaphore resources.
+2. record protected CI provenance for the companion stack revision and
+   exercise the documented rollback path;
+3. inventory and separately approve retirement of old Restic/rclone scripts
+   and Semaphore resources;
 
 Until those gates are evidenced, `live_verified` stays false in the ops lock
 file and this page must not be read as a blanket production-ready statement.

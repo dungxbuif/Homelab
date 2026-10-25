@@ -2,7 +2,7 @@
 type: Reference
 title: "Local Project Workspace Inventory"
 description: "Summary-only project inventory for source checkouts kept outside the Homelab repo"
-timestamp: 2026-09-16T00:00:00+07:00
+timestamp: 2026-10-26T00:00:00+07:00
 ---
 
 # Local Project Workspace Inventory
@@ -45,6 +45,7 @@ to the source checkouts.
 | `code-challenge` | `/Users/dungxbuif/workspace/code-challenge/` | `git@github.com:dungxbuif/code-challenge.git` | Git checkout |
 | `cortex` | `/Users/dungxbuif/workspace/cortex/` | `git@github.com:dungxbuif/cortex.git` | Git checkout |
 | `couchloom` | `/Users/dungxbuif/workspace/couchloom/` | `git@github.com:dungxbuif/couchloom.git` | Git checkout |
+| `db-management` | `/home/dungxbuif/workspace/db-management/` | `ssh://git@gitlab.dungxbuif.com:2222/dungxbuif/db-management.git` | NestJS/Bun database operations UI, adapter-based backups and Drive upload; runtime/acceptance status in [dated context](./deployments/2026-10-25-db-management-project-context.md) |
 | `datcom-clone` | `/Users/dungxbuif/workspace/datcom-clone/` | `git@github.com:dungxbuif/komu-foward.git` | Git checkout |
 | `devtool` | `/Users/dungxbuif/workspace/devtool/` | none recorded | Git checkout without origin |
 | `doino` | `/Users/dungxbuif/workspace/doino/` | `git@github-dungxbuif:dungxbuif/mezon-doino.git` | Git checkout |
@@ -54,8 +55,8 @@ to the source checkouts.
 | `goclaw` | `/Users/dungxbuif/workspace/goclaw/` | `git@github.com:dungxbuif/goclaw.git` | Git checkout |
 | `harness` | `/Users/dungxbuif/workspace/harness/` | `git@github.com:dungxbuif/harness.git` | Git checkout |
 | `harness-experimental` | `/Users/dungxbuif/workspace/harness-experimental/` | `https://github.com/hoangnb24/harness-experimental.git` | Git checkout |
-| `homelab-ops` | `/Users/dungxbuif/workspace/homelab-ops/` | `ssh://gitlab.dungxbuif.com:2222/dungxbuif/homelab-ops.git` | Git checkout |
-| `homelab-tunnel` | `/Users/dungxbuif/workspace/homelab-tunnel/` | none recorded | Local directory |
+| `homelab-ops` | `/home/dungxbuif/workspace/homelab-ops-task1/` | `ssh://gitlab.dungxbuif.com:2222/dungxbuif/homelab-ops.git` | Git checkout; active task worktree |
+| `homelab-tunnel` | `/Users/dungxbuif/workspace/vaults/homelab-tunnel/` | none recorded | Local directory |
 | `homepage` | `/Users/dungxbuif/workspace/homepage/` | `ssh://gitlab.dungxbuif.com:2222/dungxbuif/homepage.git` | Git checkout |
 | `learn` | `/Users/dungxbuif/workspace/learn/` | none recorded | Git checkout without origin |
 | `mac-ocr` | `/Users/dungxbuif/workspace/mac-ocr/` | `git@github.com:dungxbuif/mac-ocr.git` | Git checkout |
@@ -79,6 +80,6 @@ to the source checkouts.
 ## Migration Note
 
 On 2026-09-16, project source directories were moved out of
-`/Users/dungxbuif/workspace/homelab/projects/` and back to
+`/Users/dungxbuif/workspace/vaults/homelab/projects/` and back to
 `/Users/dungxbuif/workspace/`. This keeps Homelab focused on infrastructure
 documentation while preserving local and remote references for future work.

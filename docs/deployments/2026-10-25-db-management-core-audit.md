@@ -1,6 +1,95 @@
 # DB-management core audit — 2026-10-25 (updated)
 
-## Production-readiness recheck — 2026-10-26 00:46 ICT
+## Restore acceptance recheck — 2026-10-26 02:30 ICT
+
+- A fresh PostgreSQL Drive artifact (`0615effb-947c-4a33-bc49-fc6ef385fdae`)
+  passed `14/14` checksum verification and restored all `13/13` database
+  dumps into disposable PostgreSQL `17.11` databases. Production globals,
+  roles and passwords were deliberately excluded.
+- A fresh CouchDB Obsidian artifact
+  (`f2fe3ca8-afdb-4ca9-81a2-b875c2bc7f12`) restored `49,229/49,229` documents
+  and security metadata into a disposable CouchDB 3.3.3 target. The source
+  contained no attachment documents.
+- A fresh Couchloom PostgreSQL artifact (`7b96b3d1-8042-492c-9279-845233a0a8e9`)
+  passed checksum verification and restored both dumps on PostgreSQL `17.11`;
+  the `couchloom` database contained 15 user tables.
+- A fresh CouchDB Homelab artifact (`c5fce5b0-50fe-43af-83da-7eee0949985a`)
+  passed checksum verification and restored `1,519,950/1,519,950` documents,
+  matching security metadata, and zero attachment documents.
+- All four required native source artifacts now have isolated restore evidence.
+  Temporary targets and downloaded scratch artifacts were removed. The
+  Databasus, CloudBeaver authenticated-session, rollback, and legacy-retirement
+  gates remain open.
+
+## Component verifier recheck — 2026-10-26 02:42 ICT
+
+- `/status` alone was insufficient for CloudBeaver: it returned `200` while
+  `/api/gql` reported an expired server configuration. The manager restarted
+  only the CloudBeaver service, preserving its workspace volume and digest.
+- The post-restart GraphQL schema probe returned `200` and a valid `Query`
+  type. The ops healthcheck and release verifier now use that functional probe.
+- The configured CloudBeaver admin secret did not authenticate the `admin`
+  user. No workspace/password reset was attempted, so authenticated DB
+  session acceptance remains open.
+- Branch pipeline [#559](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/559)
+  and merge-request pipeline [#560](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/560)
+  passed quality and ops-contract validation for the GraphQL probe and restore
+  evidence. Neither pipeline deployed a release.
+
+## CloudBeaver authentication recheck — 2026-10-26 03:00 ICT
+
+- The supported server configuration mutation created a new local admin and
+  disabled anonymous access without deleting or replacing the workspace
+  volume.
+- A login using the mounted CloudBeaver secret still returned
+  `Invalid user credentials`. No password value was written to evidence and
+  no volume reset was attempted.
+- The functional `/api/gql` schema probe remains healthy, but this does not
+  close authenticated private database connectivity or permission acceptance.
+
+## CloudBeaver private acceptance — 2026-10-26 03:10 ICT
+
+- The native local-provider login using the mounted secret returned `SUCCESS`.
+  The session was non-anonymous with `ADMINISTRATOR` role, and
+  `serverConfig` reported anonymous access disabled.
+- A read-only `testConnection` through that session resolved `postgres` over
+  `pg-net` and returned PostgreSQL 16.14. The connection was not saved and no
+  credential value was recorded.
+- The companion stack revision is ops commit `f52a1dd`; it is pushed to the
+  ops branch and applied to the manager, but protected CI deployment
+  provenance for this companion change remains a separate open gate.
+
+## Production-readiness recheck — 2026-10-26 01:55 ICT
+
+This is the newest live evidence. It records deployment and backup-path health;
+it intentionally does not close restore, Databasus, or legacy-retirement gates.
+
+- GitLab tag pipeline [#537](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/537)
+  passed quality, ops-contract, image build, container scan, and
+  release-manifest. The manifest recorded app commit
+  `41314f6bc0069ca75f72baff76c6534ea375880c`, ops commit
+  `20d1f69256619751665a0182524125a0fcb34f02`, and three immutable app image
+  digests.
+- Deploy retry [job 1668](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/jobs/1668)
+  returned a successful receipt. Requested and observed API, worker, and web
+  digests matched; the Pi5 approval file is enrolled for the same ops SHA and
+  the GitLab protected deploy approval was reset to `false`.
+- Live Swarm verification found API, worker, web, CloudBeaver, and Databasus at
+  `1/1`. HTTPS readiness returned `200` for the db-management, CloudBeaver,
+  and Databasus LAN routes. The live app images are the release-manifest
+  digests; CloudBeaver and Databasus remain their separately pinned companion
+  images.
+- The source stack remains a digest-pinned bootstrap baseline. The normal
+  release boundary changes only the three app image references, so the live
+  receipt is the authoritative app image set and the Ansible renderer accepts
+  either the old tag form or an existing digest form.
+
+`live_verified` remains `false`: authenticated Databasus workspace/provider/
+retention/restore acceptance, CloudBeaver authenticated-session evidence, a
+controlled rollback drill, and an approved legacy script/Semaphore consumer
+retirement inventory are still open.
+
+## Production-readiness recheck — 2026-10-26 01:01 ICT
 
 This section supersedes the older rehearsal notes below where they describe
 the release boundary as pending. It records the latest observed state; it does
@@ -34,14 +123,15 @@ not close the restore, Databasus, or legacy-retirement gates.
   `dbeaver/cloudbeaver:25.3.5@sha256:f3cca49f00cab1c8878cf9d0431620ee51a7d52f8ece72b49d60195fdc709747`
   and Databasus
   `databasus/databasus:v3.60.0@sha256:2e9aec567de7ed3f0c8f360ea72abe6a8425704d9272232dae4325ad920b9204`.
-- A fresh four-source backup rehearsal was started through the API. PostgreSQL
+- A fresh four-source backup rehearsal was completed through the API. PostgreSQL
   (`0615effb-947c-4a33-bc49-fc6ef385fdae`), CouchDB Obsidian
   (`f2fe3ca8-afdb-4ca9-81a2-b875c2bc7f12`), and Couchloom PostgreSQL
-  (`7b96b3d1-8042-492c-9279-845233a0a8e9`) reached `succeeded`. CouchDB
-  Homelab (`c5fce5b0-50fe-43af-83da-7eee0949985a`) was still `running` with
-  active worker heartbeat at this audit timestamp; its final result is not
-  claimed here. The large staging payload was approximately 6.08 GB and the
-  worker remained running without OOM/restart.
+  (`7b96b3d1-8042-492c-9279-845233a0a8e9`), and CouchDB Homelab
+  (`c5fce5b0-50fe-43af-83da-7eee0949985a`) all reached `succeeded`. The
+  large CouchDB staging payload was approximately 6.08 GB; after the verified
+  Drive upload, the worker's staging table had no rows for that job and the
+  current staging directory was removed. The worker remained running without
+  OOM/restart.
 
 ## Current deployment
 
@@ -125,9 +215,10 @@ written:
   issue; Pi5-local normal-DNS acceptance remains open until its resolver source
   is fixed and verified without `--resolve`.
 
-This recheck strengthens current availability and monitoring evidence only. It
-does not close protected release/rollback, isolated restore, or Databasus
-provider acceptance gates.
+This older recheck strengthens availability and monitoring evidence only. The
+newer 02:30 ICT section above records the completed native restore acceptance;
+protected rollback, CloudBeaver/Databasus authenticated acceptance, and legacy
+retirement remain separate gates.
 
 ## Boundaries and remaining gates
 
@@ -210,10 +301,10 @@ provider acceptance gates.
 1. Enroll the dedicated Pi5 release identity with the exact reviewed ops SHA,
    add the two protected file variables, then run the manual M1 deploy and
    verify its receipt and observed digests.
-2. Complete isolated restore acceptance for each required native source and
-   retain only secret-free evidence.
-3. If Databasus is retained, configure and verify its private workspace,
+2. If Databasus is retained, configure and verify its private workspace,
    provider/storage, backup, and isolated restore separately.
+3. Authenticate CloudBeaver for a private connectivity/permission smoke check
+   and perform the documented rollback drill.
 4. Inventory consumers of the old scripts and Semaphore, then approve their
    retirement independently; do not infer global deletion from the new worker
    image.
