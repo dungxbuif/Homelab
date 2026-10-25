@@ -5,7 +5,7 @@
 - Swarm stack `db-management` runs on VM110 (`10.10.0.32`); Pi5 remains the
   data and LAN edge host.
 - The live application release observed on the Swarm manager is
-  `edacb10-drivefix-20261025T1120Z`. API, worker, web, CloudBeaver, and Databasus
+  `6a382fe-drivefix2-20261025T1135Z`. API, worker, web, CloudBeaver, and Databasus
   were all `1/1` at the read-only check.
 - The worker uses direct, resumable Google Drive SDK uploads. It does not run
   Restic or rclone.
