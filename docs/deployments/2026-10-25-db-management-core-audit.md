@@ -1,5 +1,44 @@
 # DB-management core audit — 2026-10-25 (updated)
 
+## Production-readiness recheck — 2026-10-26 00:46 ICT
+
+This section supersedes the older rehearsal notes below where they describe
+the release boundary as pending. It records the latest observed state; it does
+not close the restore, Databasus, or legacy-retirement gates.
+
+- GitLab tag pipeline [#516](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/516)
+  passed quality, ops-contract, image build, container scan, and
+  release-manifest. The manifest recorded app commit
+  `5f300d5619c8c782d404ecc259dd860e9cc01ba9`, ops commit
+  `7f2b868136b7e55fe706bf1a8342d6dbc98d4eb6`, and the three immutable API,
+  worker, and web image digests.
+- Manual deploy job `1590` completed successfully. Its receipt verified the
+  manifest, service allowlist, Swarm convergence, and HTTPS readiness; the
+  observed service image references matched the requested digests. The
+  protected `DB_MANAGEMENT_DEPLOY_APPROVED` variable was reset to `false`
+  immediately after the deployment.
+- The dedicated Pi5 release identity is enrolled with a forced command,
+  root-owned helper, host lock, private receipts, and strict known-hosts
+  verification. The enrolled ops SHA is the same immutable SHA recorded by
+  pipeline `516`; the identity has no shell, forwarding, TTY, or Docker-group
+  access.
+- Pi5 LAN DNS was corrected to use AdGuard at `10.10.0.5` through Netplan.
+  From Pi5, `db-management.dungxbuif.com` now resolves to `10.10.0.5` and
+  `/health/ready` returns API and worker `ok`; the previous public-VPS
+  certificate mismatch is no longer observed on that host.
+- After deployment, all five stack services were `1/1`: API, worker, web,
+  CloudBeaver, and Databasus. Strict HTTPS checks from the workstation
+  returned HTTP `200` for all three private routes and resolved them to
+  `10.10.0.5`.
+- A fresh four-source backup rehearsal was started through the API. PostgreSQL
+  (`0615effb-947c-4a33-bc49-fc6ef385fdae`), CouchDB Obsidian
+  (`f2fe3ca8-afdb-4ca9-81a2-b875c2bc7f12`), and Couchloom PostgreSQL
+  (`7b96b3d1-8042-492c-9279-845233a0a8e9`) reached `succeeded`. CouchDB
+  Homelab (`c5fce5b0-50fe-43af-83da-7eee0949985a`) was still `running` with
+  active worker heartbeat at this audit timestamp; its final result is not
+  claimed here. The large staging payload was approximately 6.08 GB and the
+  worker remained running without OOM/restart.
+
 ## Current deployment
 
 - Swarm stack `db-management` runs on VM110 (`10.10.0.32`); Pi5 remains the
