@@ -169,3 +169,21 @@ production restore target. Restore exercises are separately authorized,
 isolated operator actions. Databasus is not treated as a provider API until its
 versioned authenticated workflow is configured and independently evidenced.
 
+## CI availability recheck — 2026-10-26
+
+- The db-management services remain `1/1` on the Pi5 Swarm manager; this check
+  did not mutate or redeploy them.
+- GitLab's `gitlab_gitlab` service is constrained to `vm100-prod` (`10.10.0.31`).
+  Proxmox reports VM100 `running` (`vmid 100`, `k8s-cp-1`), but the Swarm node is
+  `Down` with `heartbeat failure`, the guest agent is unavailable, and the VM
+  does not answer ICMP/SSH. The GitLab HTTPS endpoint returns `502`; SSH `:2222`
+  resets after TCP connect.
+- The security fix commit `d20b3da` is present locally but is not pushed or
+  deployed. It pins Docker CLI `29.9.2` (verified locally to contain Go
+  `1.26.10`) and Trivy `0.76.1` after pipeline `#579` still reported the
+  vulnerable Docker CLI `29.9.1` binary. The next proof is a successful push and
+  protected CI rerun after VM100/GitLab recovery.
+- VM100 restart remains an operator-approved maintenance action because it also
+  hosts GitLab and other services; no reset or reboot was issued during this
+  read-only recheck.
+
