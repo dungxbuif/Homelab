@@ -65,14 +65,15 @@ prove a full isolated restore for every source.
   `DB_MANAGEMENT_SSH_KNOWN_HOSTS` file required by the new no-1Password deploy
   path are not yet present. The app commit `5727abd` now calls the restricted
   Pi5 release client instead of the Ansible normal-release path; ops commit
-  `c224e1a` adds the root-owned forced-command helper, host lock, private
-  receipts, stale-pipeline check and bounded manual rollback. These changes are
-  pushed but not enrolled or run against production.
+  `d0e456f` adds the root-owned forced-command helper, host lock, private
+  receipts, stale-pipeline check, bounded manual rollback, and HTTPS API/worker
+  readiness probe. These changes are pushed but not enrolled or run against
+  production.
 - Branch rehearsal [#493](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/493)
   passed quality and ops contracts. Tag rehearsal [#496](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/496)
   was created with `OPS_REF=codex/task1-migration-inventory` to exercise the
-  build/scan/manifest path; its live status must be checked before using it as
-  evidence. No deploy job has been started.
+  build/scan/manifest path and is currently pending on the project runner; it
+  is not evidence of a completed release. No deploy job has been started.
 
 - CloudBeaver is the PostgreSQL administration tool boundary/bookmark. Its
   container being healthy is not proof of a verified PostgreSQL session,
