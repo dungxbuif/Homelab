@@ -74,6 +74,12 @@ written:
   against the old `15432` relay and one large CouchDB run that hit worker
   `ENOMEM`. They remain visible as historical evidence; later runs succeeded
   after the relay correction and large-run follow-up.
+- AdGuard itself answers all three local names with `10.10.0.5`, but the Pi5
+  host's static `/etc/resolv.conf` still points at `1.1.1.1`. A strict curl
+  from Pi5 therefore resolves the public VPS certificate and fails hostname
+  verification. This is a host/DHCP resolver issue, not an application TLS
+  issue; normal-DNS acceptance remains open until the resolver source is fixed
+  and verified without `--resolve`.
 
 This recheck strengthens current availability and monitoring evidence only. It
 does not close protected release/rollback, isolated restore, or Databasus
