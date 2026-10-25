@@ -30,6 +30,10 @@ not close the restore, Databasus, or legacy-retirement gates.
   CloudBeaver, and Databasus. Strict HTTPS checks from the workstation
   returned HTTP `200` for all three private routes and resolved them to
   `10.10.0.5`.
+- The live companion images were also verified by full digest: CloudBeaver
+  `dbeaver/cloudbeaver:25.3.5@sha256:f3cca49f00cab1c8878cf9d0431620ee51a7d52f8ece72b49d60195fdc709747`
+  and Databasus
+  `databasus/databasus:v3.60.0@sha256:2e9aec567de7ed3f0c8f360ea72abe6a8425704d9272232dae4325ad920b9204`.
 - A fresh four-source backup rehearsal was started through the API. PostgreSQL
   (`0615effb-947c-4a33-bc49-fc6ef385fdae`), CouchDB Obsidian
   (`f2fe3ca8-afdb-4ca9-81a2-b875c2bc7f12`), and Couchloom PostgreSQL
