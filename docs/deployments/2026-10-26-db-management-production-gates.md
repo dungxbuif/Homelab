@@ -110,8 +110,11 @@ production database and the temporary containers were removed after the checks.
   non-persisted PostgreSQL `testConnection` still pass after the Databasus
   network update.
 - The app CI source now pins the ops contract to
-  `0763f2ba8b92a764f186333b1d8f6962ce26d756`; this audit does not claim a
-  completed GitLab pipeline for that new pin yet.
+  `0763f2ba8b92a764f186333b1d8f6962ce26d756`. Pipeline
+  [#569](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/569)
+  passed `quality` and `ops-contract` for app commit
+  `bb0793b94ce450f7da92df87d39421fb831b6b5b`; it did not build or
+  deploy production.
 - This recheck does not close Databasus authenticated provider/retention/
   restore, controlled rollback, legacy retirement, or companion-stack
   protected-CI provenance.
