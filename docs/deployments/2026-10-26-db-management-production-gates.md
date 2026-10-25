@@ -109,6 +109,9 @@ production database and the temporary containers were removed after the checks.
 - The ops contract suite passed `189` tests. CloudBeaver private login and
   non-persisted PostgreSQL `testConnection` still pass after the Databasus
   network update.
+- The app CI source now pins the ops contract to
+  `0763f2ba8b92a764f186333b1d8f6962ce26d756`; this audit does not claim a
+  completed GitLab pipeline for that new pin yet.
 - This recheck does not close Databasus authenticated provider/retention/
   restore, controlled rollback, legacy retirement, or companion-stack
   protected-CI provenance.

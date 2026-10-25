@@ -115,6 +115,9 @@ this worker boundary.
 - Branch CI pipeline `#559` and MR pipeline `#560` passed quality and
   ops-contract validation for the current ops SHA; these validation pipelines
   did not deploy production.
+- The app CI pin has since moved to ops commit
+  `0763f2ba8b92a764f186333b1d8f6962ce26d756`; no completed pipeline for that
+  newer pin is claimed until GitLab reports it.
 
 Detailed evidence and exact job identifiers are in the
 [DB-management core audit](./2026-10-25-db-management-core-audit.md).
