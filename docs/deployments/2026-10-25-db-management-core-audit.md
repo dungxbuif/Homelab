@@ -43,7 +43,7 @@ The following evidence was observed without printing secret material:
 | Native backup jobs | `12867fd9` (PostgreSQL), `b532c3b3` (CouchDB Obsidian), `c6ad4d05` (Couchloom PostgreSQL), and `e39e79f6` (CouchDB homelab) all reached `succeeded`; each active Drive run has `COMPLETE`, `manifest.json`, `checksums.sha256`, and its payload directory |
 | Large CouchDB run | A manual full-image run completed with Drive receipt and no worker OOM/restart |
 | Local retention contract | Runtime configuration is seven-day remote retention and completed staging `keep=0`; the four verified staging directories were absent after upload |
-| LAN route check | Direct DNS query to Pi5 DNS (`10.10.0.5`) returns the LAN address and all three local HTTPS routes return `200`; this workstation's NetBird `tun0` DNS currently resolves the same names to the public address, where Traefik returns its default certificate/`404` |
+| LAN route check | Direct DNS query to Pi5 DNS (`10.10.0.5`) and this workstation's current resolver return the LAN address; strict HTTPS requests without `--resolve` return `200` for all three local routes. The Pi5 host resolver itself remains a separate exception described below |
 
 These checks prove deployment health and upload/receipt integrity. They do not
 prove a full isolated restore for every source.
@@ -74,12 +74,13 @@ written:
   against the old `15432` relay and one large CouchDB run that hit worker
   `ENOMEM`. They remain visible as historical evidence; later runs succeeded
   after the relay correction and large-run follow-up.
-- AdGuard itself answers all three local names with `10.10.0.5`, but the Pi5
-  host's static `/etc/resolv.conf` still points at `1.1.1.1`. A strict curl
-  from Pi5 therefore resolves the public VPS certificate and fails hostname
+- AdGuard itself answers all three local names with `10.10.0.5`, and the
+  workstation now passes strict HTTPS without `--resolve`. The Pi5 host's
+  static `/etc/resolv.conf` still points at `1.1.1.1`; a strict curl from Pi5
+  therefore resolves the public VPS certificate and fails hostname
   verification. This is a host/DHCP resolver issue, not an application TLS
-  issue; normal-DNS acceptance remains open until the resolver source is fixed
-  and verified without `--resolve`.
+  issue; Pi5-local normal-DNS acceptance remains open until its resolver source
+  is fixed and verified without `--resolve`.
 
 This recheck strengthens current availability and monitoring evidence only. It
 does not close protected release/rollback, isolated restore, or Databasus
