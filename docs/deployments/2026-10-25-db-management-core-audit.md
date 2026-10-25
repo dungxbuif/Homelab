@@ -1,56 +1,78 @@
-# DB-management core audit — 2026-10-25
+# DB-management core audit — 2026-10-25 (updated)
 
-## Deployed
+## Current deployment
 
-- Swarm stack `db-management` remains on VM110 (`db-ops`); no new service was
-  placed on Pi5.
-- API, worker and web were rebuilt and deployed from the current workspace.
-  The worker release is `core-20261025-db-audit`.
-- Bootstrap config `db-management-bootstrap-v2` now catalogs:
-  - CouchDB homelab, with the existing exclusions;
-  - PostgreSQL as a CloudBeaver bookmark;
-  - Redis production as a monitor-only source.
-- Swarm secrets were created from existing server-side sources for Redis and
-  the Mezon webhook. Values were not copied to git, images, logs or this file.
+- Swarm stack `db-management` runs on VM110 (`10.10.0.32`); Pi5 remains the
+  data and LAN edge host.
+- The live application release observed on the Swarm manager is
+  `edacb10-drivefix-20261025T1120Z`. API, worker, web, CloudBeaver, and Databasus
+  were all `1/1` at the read-only check.
+- The worker uses direct, resumable Google Drive SDK uploads. It does not run
+  Restic or rclone.
+- The worker-only external secret name is
+  `db-management-drive-credentials-v2`. No credential value is recorded here.
+- The active destination is documented by label only as
+  `Homelab Backup/databases`; the Drive folder ID is intentionally omitted.
+- The deployed retention policy is seven days for successful Drive run
+  folders. Completed local staging is configured with `keep=0` after verified
+  upload; failed, incomplete, and stale evidence is preserved.
 
-## Live evidence
+## Drive incident and correction
 
-Checked through the Pi5 LAN ingress with an explicit diagnostic address override
-(`db-management.dungxbuif.com -> 10.10.0.5`):
+The missing visible records were caused by the previous Drive destination
+resolving to the `homelab-backups` database folder, which had been moved to
+Trash. Upload attempts therefore did not land in the active operator-visible
+database backup path. The v2 worker secret now points at the active
+`Homelab Backup/databases` destination, and the runtime path is the native
+Drive SDK rather than the old Restic/rclone transport. A fresh PostgreSQL
+verification job (`12867fd9-7b71-4599-93f9-accc5ce32d23`) was observed
+`succeeded`; direct Drive API inspection found its source/run folder and
+top-level control files under the active destination.
+
+This note records the root cause and the path label only. It does not record a
+folder ID, OAuth value, token, or secret contents.
+
+## Verification evidence
+
+The following evidence was observed without printing secret material:
 
 | Check | Result |
 | --- | --- |
-| API liveness | `GET /health` returned `200` |
-| Worker readiness | `GET /health/ready` returned `200` with a fresh worker heartbeat |
-| CouchDB | Catalogued and existing status/database routes remain live |
-| Redis | `status`, bounded `INFO` and `metrics` returned `ok`; no key browsing or arbitrary command route |
-| UI | New monochrome DB-management page returned successfully |
-| Mezon | Durable notification probe changed outbox state `pending -> sent`, one attempt, no error |
-| Databasus | HTTPS system health returned `200`; local application storage is healthy |
+| API/worker health | API liveness and worker heartbeat were healthy on the VM110 deployment |
+| Swarm convergence | API, worker, web, CloudBeaver, and Databasus were each `1/1` |
+| Native backup jobs | Current PostgreSQL, CouchDB, Couchloom PostgreSQL, and CouchDB homelab jobs completed with local/remote receipt evidence |
+| Large CouchDB run | A manual full-image run completed with Drive receipt and no worker OOM/restart |
+| Local retention contract | Runtime configuration is seven-day remote retention and completed staging `keep=0` |
 
-## Backup status and migration boundary
+These checks prove deployment health and upload/receipt integrity. They do not
+prove a full isolated restore for every source.
 
-The legacy runner's Google Drive remote is readable. The `databases` Restic
-repository had 15 snapshots; the newest observed snapshot was
-`2026-10-20T23:38:08.925821092Z`. This proves remote read access only. Legacy
-backup timers remain disabled, so it is not current protection.
+## Boundaries and remaining gates
 
-Databasus still has no verified Google Drive OAuth/storage configuration,
-backup job, remote snapshot, or isolated restore evidence. The new app therefore
-keeps backup inventory explicitly `unsupported` instead of presenting an empty
-successful list. PostgreSQL remains a bookmark until Databasus is enrolled and
-its restore gate passes. CouchDB remains owned by the old native/Restic runner
-until a fixed provider bridge and restore verification exist.
+- CloudBeaver is the PostgreSQL administration tool boundary/bookmark. Its
+  container being healthy is not proof of a verified PostgreSQL session,
+  permission model, backup, or restore through db-management.
+- Databasus is a separate UI/provider boundary. Its service is healthy, but a
+  Databasus workspace, provider/storage configuration, backup, remote snapshot,
+  and isolated restore are not recorded as verified. db-management therefore
+  keeps Databasus inventory `unsupported` rather than claiming an empty
+  successful provider inventory.
+- Direct Drive upload and metadata checks are not an immutable backup or a
+  restore test. Run and record isolated restores for the required production
+  sources before calling the migration fully accepted.
+- Restic/rclone, the old backup scripts, and Semaphore were not globally
+  deleted in this update. They are outside the active db-management runtime,
+  but may still exist or run as separate legacy lab components until a
+  consumer inventory and approved retirement are completed.
+- The service remains LAN/NetBird scoped and has no application authentication
+  flow; broader exposure is not part of this deployment evidence.
 
-Next acceptance gate:
+## Next acceptance gates
 
-1. Configure Databasus from its private UI with the project-owned Google OAuth
-   client and redirect URI; do not import the old rclone token blindly.
-2. Enroll one disposable PostgreSQL database, run a backup, verify Drive remote
-   read and isolated restore.
-3. Decide the fixed CouchDB provider boundary, run one complete export/upload/
-   restore cycle, then map the source's `backupProviderId` and only then retire
-   the legacy owner.
-
-No production backup schedule, retention prune, or restore was enabled by this
- audit.
+1. Complete isolated restore acceptance for each required native source and
+   retain only secret-free evidence.
+2. If Databasus is retained, configure and verify its private workspace,
+   provider/storage, backup, and isolated restore separately.
+3. Inventory consumers of the old scripts and Semaphore, then approve their
+   retirement independently; do not infer global deletion from the new worker
+   image.
