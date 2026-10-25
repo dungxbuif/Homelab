@@ -48,6 +48,37 @@ The following evidence was observed without printing secret material:
 These checks prove deployment health and upload/receipt integrity. They do not
 prove a full isolated restore for every source.
 
+## Follow-up live recheck — 2026-10-25 23:40 ICT
+
+The read-only API and Swarm checks were repeated after the initial evidence was
+written:
+
+- `db-management_db-management-{api,worker,web}`, CloudBeaver and Databasus
+  were all `1/1`.
+- `health/ready`, CloudBeaver `/status`, and Databasus
+  `/api/v1/system/health` each returned HTTP `200` through Pi5 LAN routing.
+- The worker reported `DB_MANAGEMENT_BACKUP_STORAGE_REQUIRED=true`, seven-day
+  Drive retention, and completed staging `keep=0`; the Drive, backup and Mezon
+  credentials were mounted as worker-only Swarm secrets.
+- The latest successful native jobs remained PostgreSQL
+  `12867fd9-7b71-4599-93f9-accc5ce32d23`, CouchDB Obsidian
+  `b532c3b3-a6f7-447e-bedf-84750a3dea17`, Couchloom PostgreSQL
+  `c6ad4d05-bb0f-41ae-b8ef-1dd16d206ef8`, and CouchDB Homelab
+  `e39e79f6-9275-4116-83a4-ff1aa9363637`.
+- The API currently exposes five catalog sources. CouchDB Homelab, CouchDB
+  Obsidian and Redis returned live `status: ok`; Redis metrics reported Redis
+  `7.2.15`, no rejected connections and no evicted keys at the check. The two
+  PostgreSQL sources returned the intentional CloudBeaver bookmark result
+  (`unsupported`) rather than an unverified direct database claim.
+- The job history still contains earlier failures: Couchloom authentication
+  against the old `15432` relay and one large CouchDB run that hit worker
+  `ENOMEM`. They remain visible as historical evidence; later runs succeeded
+  after the relay correction and large-run follow-up.
+
+This recheck strengthens current availability and monitoring evidence only. It
+does not close protected release/rollback, isolated restore, or Databasus
+provider acceptance gates.
+
 ## Boundaries and remaining gates
 
 ### CI provenance rehearsal
