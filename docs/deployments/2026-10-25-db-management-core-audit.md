@@ -73,9 +73,12 @@ prove a full isolated restore for every source.
   passed quality and ops contracts. Tag rehearsals [#496](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/496)
   and [#501](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/501)
   were created with `OPS_REF=codex/task1-migration-inventory` to exercise the
-  build/scan/manifest path; #496 was canceled and #501 is pending on the
-  project runner, so neither is evidence of a completed release. No deploy job
-  has been started.
+  build/scan/manifest path; #496 was canceled, while #501 passed quality,
+  ops-contract (including the release/verifier suite), image build, digest scan,
+  and manifest creation. Its manifest records app `9d62b05c8b36a79c52d448c942eb1ced70f1a544`,
+  ops `42b52d3eb0a8b5061d292c43f8b853a37931a449`, pipeline `501`, and three
+  registry digests. #501 stopped at `deploy-vm110: manual`; no deploy job has
+  been started.
 
 - CloudBeaver is the PostgreSQL administration tool boundary/bookmark. Its
   container being healthy is not proof of a verified PostgreSQL session,
