@@ -40,9 +40,10 @@ The following evidence was observed without printing secret material:
 | --- | --- |
 | API/worker health | API liveness and worker heartbeat were healthy on the VM110 deployment |
 | Swarm convergence | API, worker, web, CloudBeaver, and Databasus were each `1/1` |
-| Native backup jobs | Current PostgreSQL, CouchDB, Couchloom PostgreSQL, and CouchDB homelab jobs completed with local/remote receipt evidence |
+| Native backup jobs | `12867fd9` (PostgreSQL), `b532c3b3` (CouchDB Obsidian), `c6ad4d05` (Couchloom PostgreSQL), and `e39e79f6` (CouchDB homelab) all reached `succeeded`; each active Drive run has `COMPLETE`, `manifest.json`, `checksums.sha256`, and its payload directory |
 | Large CouchDB run | A manual full-image run completed with Drive receipt and no worker OOM/restart |
-| Local retention contract | Runtime configuration is seven-day remote retention and completed staging `keep=0` |
+| Local retention contract | Runtime configuration is seven-day remote retention and completed staging `keep=0`; the four verified staging directories were absent after upload |
+| LAN route check | Direct DNS query to Pi5 DNS (`10.10.0.5`) returns the LAN address and all three local HTTPS routes return `200`; this workstation's NetBird `tun0` DNS currently resolves the same names to the public address, where Traefik returns its default certificate/`404` |
 
 These checks prove deployment health and upload/receipt integrity. They do not
 prove a full isolated restore for every source.
@@ -66,6 +67,10 @@ prove a full isolated restore for every source.
   consumer inventory and approved retirement are completed.
 - The service remains LAN/NetBird scoped and has no application authentication
   flow; broader exposure is not part of this deployment evidence.
+- On clients with a higher-priority NetBird `~.` DNS route, use the lab DNS
+  path or fix DNS route priority before treating the public/default-Traefik
+  response as an application failure. This is a client DNS/routing gate, not
+  a db-management container failure.
 
 ## Next acceptance gates
 
