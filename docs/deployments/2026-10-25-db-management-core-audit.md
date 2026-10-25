@@ -122,6 +122,14 @@ provider acceptance gates.
   ref `codex/task1-migration-inventory`, including the private-DNS verifier
   contract. It was intentionally unprotected, so it did not build release
   images or create a deploy job.
+- App merge-request pipeline [#507](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/507)
+  passed `quality` but its `ops-contract` failed because the automatic MR
+  context resolved the project default `OPS_REF=main`, which predates the
+  release-contract files on the ops feature branch. This is a cross-repository
+  MR wiring issue, not evidence that the feature ops contract passed in that
+  pipeline; the passing #506 branch pipeline used the explicit ops ref. The
+  subsequent automatic branch/MR pipelines #508 and #509 reproduced the same
+  default-ops-ref failure.
 
 - CloudBeaver is the PostgreSQL administration tool boundary/bookmark. Its
   container being healthy is not proof of a verified PostgreSQL session,
