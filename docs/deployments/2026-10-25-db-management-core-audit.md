@@ -130,6 +130,15 @@ provider acceptance gates.
   pipeline; the passing #506 branch pipeline used the explicit ops ref. The
   subsequent automatic branch/MR pipelines #508 and #509 reproduced the same
   default-ops-ref failure.
+- Commit `d2df9b7b161bf5583b53c5a1f9f3967edf96dc11` fixes that wiring at the
+  source: `.gitlab-ci.yml`, the release-manifest contract test, and the CI
+  runbook now require a full immutable ops SHA. The GitLab project variable
+  `OPS_REF` was updated to the same reviewed ops commit
+  `8df7d0c5626973eb810a42526ab89d0bbcc454bb`, so it cannot override the pin
+  with `main`. Push pipeline [#510](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/510)
+  and MR pipeline [#511](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/511)
+  both passed `quality` and `ops-contract`; the ops job fetched that exact SHA,
+  ran 59 tests, and completed `verify-routes.sh`.
 
 - CloudBeaver is the PostgreSQL administration tool boundary/bookmark. Its
   container being healthy is not proof of a verified PostgreSQL session,
