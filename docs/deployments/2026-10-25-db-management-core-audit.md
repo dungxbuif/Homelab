@@ -63,17 +63,19 @@ prove a full isolated restore for every source.
   currently contain the older VM110 key and inventory, but the dedicated
   `DB_MANAGEMENT_RELEASE_PRIVATE_KEY` and pinned
   `DB_MANAGEMENT_SSH_KNOWN_HOSTS` file required by the new no-1Password deploy
-  path are not yet present. The app commit `5727abd` now calls the restricted
+  path are not yet present. The app commit `1b7c02e` now calls the restricted
   Pi5 release client instead of the Ansible normal-release path; ops commit
-  `d0e456f` adds the root-owned forced-command helper, host lock, private
+  `42b52d3` adds the root-owned forced-command helper, host lock, private
   receipts, stale-pipeline check, bounded manual rollback, and HTTPS API/worker
   readiness probe. These changes are pushed but not enrolled or run against
   production.
 - Branch rehearsal [#493](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/493)
-  passed quality and ops contracts. Tag rehearsal [#496](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/496)
-  was created with `OPS_REF=codex/task1-migration-inventory` to exercise the
-  build/scan/manifest path and is currently pending on the project runner; it
-  is not evidence of a completed release. No deploy job has been started.
+  passed quality and ops contracts. Tag rehearsals [#496](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/496)
+  and [#501](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/501)
+  were created with `OPS_REF=codex/task1-migration-inventory` to exercise the
+  build/scan/manifest path; #496 was canceled and #501 is pending on the
+  project runner, so neither is evidence of a completed release. No deploy job
+  has been started.
 
 - CloudBeaver is the PostgreSQL administration tool boundary/bookmark. Its
   container being healthy is not proof of a verified PostgreSQL session,
