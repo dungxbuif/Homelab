@@ -60,10 +60,19 @@ prove a full isolated restore for every source.
   exactly three registry `sha256` image digests. No secret or command output was
   included in the artifact.
 - The deploy job remained manual and was not started. GitLab project variables
-  currently contain the VM110 key and inventory, but the dedicated Pi5 key and
-  pinned known-hosts file required by the new no-1Password deploy path are not
-  yet present. This is an explicit configuration gate, not a successful live
-  CD acceptance.
+  currently contain the older VM110 key and inventory, but the dedicated
+  `DB_MANAGEMENT_RELEASE_PRIVATE_KEY` and pinned
+  `DB_MANAGEMENT_SSH_KNOWN_HOSTS` file required by the new no-1Password deploy
+  path are not yet present. The app commit `5727abd` now calls the restricted
+  Pi5 release client instead of the Ansible normal-release path; ops commit
+  `c224e1a` adds the root-owned forced-command helper, host lock, private
+  receipts, stale-pipeline check and bounded manual rollback. These changes are
+  pushed but not enrolled or run against production.
+- Branch rehearsal [#493](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/493)
+  passed quality and ops contracts. Tag rehearsal [#496](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/496)
+  was created with `OPS_REF=codex/task1-migration-inventory` to exercise the
+  build/scan/manifest path; its live status must be checked before using it as
+  evidence. No deploy job has been started.
 
 - CloudBeaver is the PostgreSQL administration tool boundary/bookmark. Its
   container being healthy is not proof of a verified PostgreSQL session,
@@ -89,10 +98,13 @@ prove a full isolated restore for every source.
 
 ## Next acceptance gates
 
-1. Complete isolated restore acceptance for each required native source and
+1. Enroll the dedicated Pi5 release identity with the exact reviewed ops SHA,
+   add the two protected file variables, then run the manual M1 deploy and
+   verify its receipt and observed digests.
+2. Complete isolated restore acceptance for each required native source and
    retain only secret-free evidence.
-2. If Databasus is retained, configure and verify its private workspace,
+3. If Databasus is retained, configure and verify its private workspace,
    provider/storage, backup, and isolated restore separately.
-3. Inventory consumers of the old scripts and Semaphore, then approve their
+4. Inventory consumers of the old scripts and Semaphore, then approve their
    retirement independently; do not infer global deletion from the new worker
    image.
