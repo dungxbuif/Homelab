@@ -16,8 +16,8 @@ gates below must be closed independently.
 | Gate | Current evidence | Status | Required proof to close |
 | --- | --- | --- | --- |
 | GitLab provenance | Pipeline `537`, deploy job `1668`, immutable app/ops SHAs, successful receipt | passed | Keep the protected deploy approval `false` outside an approved release |
-| Swarm convergence | API, worker, web, CloudBeaver and Databasus are `1/1` on VM110 | passed | Recheck after each release |
-| Private routing | API, CloudBeaver and Databasus routes return HTTP `200` through Pi5 LAN routing | passed | Keep DNS/edge routes LAN/NetBird scoped |
+| Swarm convergence | Last known good check had API, worker, web, CloudBeaver and Databasus at `1/1`; current VM110 node is down | degraded | Recover VM110, then recheck all tasks |
+| Private routing | Last known good check returned HTTP `200`; current db-management routes return HTTP `502` because VM110 is unreachable | degraded | Restore VM110 network/service reachability and repeat route probes |
 | Companion stack provenance | Source commit `f52a1dd` is pushed to the ops branch and the live stack contains the CloudBeaver/Databasus PostgreSQL network changes; the apply was a controlled manager-side stack update, not a protected CI deployment | partial | Record the approved CI/ops deployment receipt for this companion-stack revision |
 | Native Drive backup | Four fresh PostgreSQL/CouchDB source jobs succeeded with local markers, remote receipt and verified upload metadata | passed for backup path | Continue scheduled observation and retain secret-free evidence |
 | Local staging cleanup | Completed verified staging is removed; failed/stale evidence is preserved | passed for current policy | Verify retention/prune behavior over one seven-day cycle |
@@ -186,4 +186,18 @@ versioned authenticated workflow is configured and independently evidenced.
 - VM100 restart remains an operator-approved maintenance action because it also
   hosts GitLab and other services; no reset or reboot was issued during this
   read-only recheck.
+
+## Runtime outage recheck — 2026-10-26 04:16 ICT
+
+- Proxmox reports VM110 (`db-ops`, vmid `110`) as `running`, but its guest has
+  no ICMP or SSH response. The Swarm manager reports `db-ops Down`; the API,
+  worker, web, CloudBeaver and Databasus tasks are pending because no eligible
+  node is available, and the public LAN routes return `502`.
+- The Proxmox QEMU guest agent is unavailable. A graceful Proxmox `reboot` task
+  and then an ACPI `shutdown` task were issued for VM110; neither changed its
+  uptime or restored networking. No hard reset, stop, data deletion or stack
+  redeploy was performed.
+- This supersedes the earlier `1/1` live observation as current runtime state;
+  the earlier backup/restore evidence remains valid historical evidence, but no
+  new backup or restore claim is made during this outage.
 
