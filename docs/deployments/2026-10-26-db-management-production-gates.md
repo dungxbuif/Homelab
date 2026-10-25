@@ -195,8 +195,9 @@ versioned authenticated workflow is configured and independently evidenced.
   node is available, and the public LAN routes return `502`.
 - The Proxmox QEMU guest agent is unavailable. A graceful Proxmox `reboot` task
   and then an ACPI `shutdown` task were issued for VM110; neither changed its
-  uptime or restored networking. No hard reset, stop, data deletion or stack
-  redeploy was performed.
+  uptime or restored networking. A controlled QEMU `reset` task also completed
+  successfully, but VM110 remained unreachable and Pi5 ARP stayed incomplete.
+  No hard power-off/stop, data deletion or stack redeploy was performed.
 - This supersedes the earlier `1/1` live observation as current runtime state;
   the earlier backup/restore evidence remains valid historical evidence, but no
   new backup or restore claim is made during this outage.
