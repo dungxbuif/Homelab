@@ -50,6 +50,21 @@ prove a full isolated restore for every source.
 
 ## Boundaries and remaining gates
 
+### CI provenance rehearsal
+
+- GitLab pipeline [#489](https://gitlab.dungxbuif.com/dungxbuif/db-management/-/pipelines/489)
+  passed quality, the reviewed ops branch contract (`43` tests plus `29` route
+  checks), image build, digest-pinned Trivy scan and release-manifest creation.
+- Its manifest recorded app commit `0bc381d352bf4cb07fbbfc993658241d67c819f2`,
+  ops commit `0c10c331f7d5a9bfc5bf0205928e32b1309a937a`, pipeline `489`, and
+  exactly three registry `sha256` image digests. No secret or command output was
+  included in the artifact.
+- The deploy job remained manual and was not started. GitLab project variables
+  currently contain the VM110 key and inventory, but the dedicated Pi5 key and
+  pinned known-hosts file required by the new no-1Password deploy path are not
+  yet present. This is an explicit configuration gate, not a successful live
+  CD acceptance.
+
 - CloudBeaver is the PostgreSQL administration tool boundary/bookmark. Its
   container being healthy is not proof of a verified PostgreSQL session,
   permission model, backup, or restore through db-management.
