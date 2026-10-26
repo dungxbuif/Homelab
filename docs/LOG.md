@@ -1350,3 +1350,13 @@ timestamp: 2026-07-03T15:14:00Z
   image is about `9.18 GB` and was preserved. VM100 remained at `84%` used
   with about `32 GiB` free. VM100 is a Swarm worker, so manager-side service
   inventory could not be obtained there; no image tag was removed manually.
+- **CouchLoom retrieval recovery 2026-10-26:** restored the stopped service by
+  temporarily anchoring `homelab-net` on VM100, then deployed CouchLoom
+  `ae9d28c`. Semantic search now returns at most one chunk per note and uses a
+  production-compatible vault filter. Exact-commit tests passed (187 unit,
+  2 pgvector integration), readiness reports coverage 1/backlog 0/failed 0,
+  n8n health routing passes, and unauthenticated MCP initialize returns 401.
+  The six-case probe remains weak at 2/6 known-note hit@5; model/chunk changes
+  remain gated on a larger frozen evaluation set. `homelab-ops` commit
+  `dc8b606` now deploys a pinned, resource-capped Swarm network anchor on
+  VM100; a forced CouchLoom recreate passed without the temporary repair task.

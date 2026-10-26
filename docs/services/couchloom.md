@@ -8,11 +8,10 @@ turns those documents into an authenticated MCP surface for agents and maintains
 a local semantic index. It does not replace Obsidian, CouchDB, or the Markdown
 files as the source of truth.
 
-Production was last validated on **2026-10-13** on VM100 (`10.10.0.31`). The
-running CouchLoom release is Git commit/image tag `8f7a8e0`, stored as the
-immutable release `/opt/apps/couchloom/releases/8f7a8e0`. The corresponding
-hardening and documentation changes are merged into the local CouchLoom `main`
-branch at `f5e322c`.
+Production was last validated on **2026-10-26** on VM100 (`10.10.0.31`). The
+running CouchLoom release is Git commit/image tag `ae9d28c`, stored as the
+immutable release `/opt/apps/couchloom/releases/ae9d28c`. It adds per-note
+semantic-result diversity and a production-compatible vault SQL filter.
 
 | Field | Current value |
 | --- | --- |
@@ -24,8 +23,8 @@ branch at `f5e322c`.
 | Embedding runtime | `ollama/ollama:0.34.0`, CPU on VM100 |
 | Embedding model | `nomic-embed-text`, 768 dimensions |
 | Host/public ports | None |
-| Current steady state | 1,357/1,357 documents, 6,074 chunks, coverage 1, backlog 0, failed 0 |
-| Runtime health | CouchLoom, PostgreSQL, and Ollama healthy; zero restarts at validation |
+| Current steady state | 1,365/1,365 documents, 6,099 chunks, coverage 1, backlog 0, failed 0 |
+| Runtime health | CouchLoom, PostgreSQL, and Ollama healthy at validation |
 
 The model remains hosted on VM100. Note bodies are embedded through the private
 `couchloom-ollama:11434` endpoint and are not sent to an external embedding
@@ -53,10 +52,13 @@ PostgreSQL/pgvector queue --> reread current note --> local Ollama embedding
                                +--> semantic search over MCP
 ```
 
-Only `couchloom` joins both networks. PostgreSQL and the long-running Ollama
+Only `couchloom` joins the shared networks. PostgreSQL and the long-running Ollama
 server are isolated on the private `couchloom-internal` bridge. CouchLoom joins
-the existing attachable `homelab-net` to reach CouchDB and to serve MCP clients.
-No service publishes a host port.
+the existing attachable `homelab-net` to reach CouchDB and `knowledge-hub-net`
+for n8n/Knowledge Hub clients. No service publishes a host port. The pinned
+`couchloom-network_anchor` Swarm service keeps `homelab-net` materialized on
+VM100 while standalone Compose recreates CouchLoom; its source is
+`homelab-ops` commit `dc8b606`.
 
 The endpoint is suitable for OpenClaw, but this runbook does not claim that the
 current OpenClaw registry entry has been verified. Treat client registration as
@@ -129,8 +131,8 @@ From VM100, use commands that do not print `.env`, `vaults.json`, note bodies,
 or job payloads:
 
 ```bash
-cd /opt/apps/couchloom/releases/8f7a8e0
-COUCHLOOM_IMAGE_TAG=8f7a8e0 docker compose \
+cd /opt/apps/couchloom/releases/ae9d28c
+COUCHLOOM_IMAGE_TAG=ae9d28c docker compose \
   -f deploy/vm100/compose.yml \
   --env-file /opt/apps/couchloom/run/.env ps
 
@@ -304,23 +306,25 @@ role: markdown_second_brain_mcp_and_local_semantic_index
 host: vm100-prod
 host_ip: 10.10.0.31
 runtime: docker_compose
-release_commit: 8f7a8e0
-merged_main_commit: f5e322c
-release_path: /opt/apps/couchloom/releases/8f7a8e0
+release_commit: ae9d28c
+release_path: /opt/apps/couchloom/releases/ae9d28c
 mcp_endpoint: http://couchloom:8787/mcp
 public_ports: []
 networks:
   - couchloom-internal
   - homelab-net
+  - knowledge-hub-net
 source_of_truth: couchdb_livesync
 queue_and_vector_store: couchloom-postgres
 embedding_runtime: couchloom-ollama
 embedding_model: nomic-embed-text
 embedding_dimensions: 768
 external_embedding_provider: false
-documents_expected: 1357
-documents_indexed: 1357
-chunks: 6074
+network_anchor_service: couchloom-network_anchor
+network_anchor_ops_commit: dc8b606
+documents_expected: 1365
+documents_indexed: 1365
+chunks: 6099
 coverage: 1
 backlog: 0
 failed: 0
