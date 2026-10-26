@@ -200,6 +200,11 @@ versioned authenticated workflow is configured and independently evidenced.
   Proxmox `stop` followed by `start`. Both VMs remain `running` at Proxmox but
   their guest IPs still do not answer, and GitLab/db-management remain HTTP
   `502`. No volume deletion or stack redeploy was performed.
+- Proxmox now reports `qmpstatus=io-error` for both VMs. The `local-lvm` thin
+  pool is `100%` used with `0` bytes available; its inventory includes the
+  200-GiB VM100 disk, 80-GiB VM110 disk, the 20-GiB base template and a VM100
+  rollback snapshot named `pre-docker-ce-20261014`. Snapshot removal or any
+  other storage deletion is intentionally not performed without approval.
 - This supersedes the earlier `1/1` live observation as current runtime state;
   the earlier backup/restore evidence remains valid historical evidence, but no
   new backup or restore claim is made during this outage.
