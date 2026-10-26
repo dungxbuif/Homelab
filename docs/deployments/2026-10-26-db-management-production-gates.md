@@ -183,9 +183,8 @@ versioned authenticated workflow is configured and independently evidenced.
   `1.26.10`) and Trivy `0.76.1` after pipeline `#579` still reported the
   vulnerable Docker CLI `29.9.1` binary. The next proof is a successful push and
   protected CI rerun after VM100/GitLab recovery.
-- VM100 restart remains an operator-approved maintenance action because it also
-  hosts GitLab and other services; no reset or reboot was issued during this
-  read-only recheck.
+- VM100 also hosts GitLab and other services; its controlled power-cycle result
+  is recorded in the runtime outage recheck below and did not restore reachability.
 
 ## Runtime outage recheck — 2026-10-26 04:16 ICT
 
@@ -197,7 +196,10 @@ versioned authenticated workflow is configured and independently evidenced.
   and then an ACPI `shutdown` task were issued for VM110; neither changed its
   uptime or restored networking. A controlled QEMU `reset` task also completed
   successfully, but VM110 remained unreachable and Pi5 ARP stayed incomplete.
-  No hard power-off/stop, data deletion or stack redeploy was performed.
+- A controlled hard power-cycle was then performed for VM110 and VM100 using
+  Proxmox `stop` followed by `start`. Both VMs remain `running` at Proxmox but
+  their guest IPs still do not answer, and GitLab/db-management remain HTTP
+  `502`. No volume deletion or stack redeploy was performed.
 - This supersedes the earlier `1/1` live observation as current runtime state;
   the earlier backup/restore evidence remains valid historical evidence, but no
   new backup or restore claim is made during this outage.
