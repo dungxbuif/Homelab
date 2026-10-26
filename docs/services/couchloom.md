@@ -9,9 +9,11 @@ a local semantic index. It does not replace Obsidian, CouchDB, or the Markdown
 files as the source of truth.
 
 Production was last validated on **2026-10-26** on VM100 (`10.10.0.31`). The
-running CouchLoom release is Git commit/image tag `ae9d28c`, stored as the
-immutable release `/opt/apps/couchloom/releases/ae9d28c`. It adds per-note
-semantic-result diversity and a production-compatible vault SQL filter.
+running CouchLoom release is Git commit/image tag `9541933`, stored as the
+immutable release `/opt/apps/couchloom/releases/9541933`. It adds optional literal
+folder scope to semantic search and a reproducible authenticated MCP evaluation.
+The 12-case diagnostic scores 6/12 unrestricted and 9/12 with known `wiki` scope;
+these are different tasks, not a measured gain in unrestricted answer accuracy.
 
 | Field | Current value |
 | --- | --- |
@@ -131,8 +133,8 @@ From VM100, use commands that do not print `.env`, `vaults.json`, note bodies,
 or job payloads:
 
 ```bash
-cd /opt/apps/couchloom/releases/ae9d28c
-COUCHLOOM_IMAGE_TAG=ae9d28c docker compose \
+cd /opt/apps/couchloom/releases/9541933
+COUCHLOOM_IMAGE_TAG=9541933 docker compose \
   -f deploy/vm100/compose.yml \
   --env-file /opt/apps/couchloom/run/.env ps
 
@@ -306,8 +308,8 @@ role: markdown_second_brain_mcp_and_local_semantic_index
 host: vm100-prod
 host_ip: 10.10.0.31
 runtime: docker_compose
-release_commit: ae9d28c
-release_path: /opt/apps/couchloom/releases/ae9d28c
+release_commit: 9541933
+release_path: /opt/apps/couchloom/releases/9541933
 mcp_endpoint: http://couchloom:8787/mcp
 public_ports: []
 networks:
