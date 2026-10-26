@@ -45,7 +45,7 @@ to the source checkouts.
 | `code-challenge` | `/Users/dungxbuif/workspace/code-challenge/` | `git@github.com:dungxbuif/code-challenge.git` | Git checkout |
 | `cortex` | `/Users/dungxbuif/workspace/cortex/` | `git@github.com:dungxbuif/cortex.git` | Git checkout |
 | `couchloom` | `/Users/dungxbuif/workspace/couchloom/` | `git@github.com:dungxbuif/couchloom.git` | Git checkout |
-| `db-management` | `/home/dungxbuif/workspace/db-management/` | `ssh://git@gitlab.dungxbuif.com:2222/dungxbuif/db-management.git` | NestJS/Bun database operations UI, adapter-based backups and Drive upload; runtime/acceptance status in [dated context](./deployments/2026-10-25-db-management-project-context.md) |
+| `db-management` | `/home/dungxbuif/workspace/db-management/` | `ssh://git@gitlab.dungxbuif.com:2222/dungxbuif/db-management.git` | NestJS/Bun database operations UI, adapter-based backups and Drive upload; project/runtime map in [the 2026-10-26 reference](./deployments/2026-10-26-db-management-project-and-homelab-reference.md) and acceptance gates in [the production gate matrix](./deployments/2026-10-26-db-management-production-gates.md) |
 | `datcom-clone` | `/Users/dungxbuif/workspace/datcom-clone/` | `git@github.com:dungxbuif/komu-foward.git` | Git checkout |
 | `devtool` | `/Users/dungxbuif/workspace/devtool/` | none recorded | Git checkout without origin |
 | `doino` | `/Users/dungxbuif/workspace/doino/` | `git@github-dungxbuif:dungxbuif/mezon-doino.git` | Git checkout |

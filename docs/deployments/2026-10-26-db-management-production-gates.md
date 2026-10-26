@@ -16,8 +16,9 @@ gates below must be closed independently.
 | Gate | Current evidence | Status | Required proof to close |
 | --- | --- | --- | --- |
 | GitLab provenance | Pipeline `537`, deploy job `1668`, immutable app/ops SHAs, successful receipt | passed | Keep the protected deploy approval `false` outside an approved release |
-| Swarm convergence | Last known good check had API, worker, web, CloudBeaver and Databasus at `1/1`; current VM110 node is down | degraded | Recover VM110, then recheck all tasks |
-| Private routing | Last known good check returned HTTP `200`; current db-management routes return HTTP `502` because VM110 is unreachable | degraded | Restore VM110 network/service reachability and repeat route probes |
+| Swarm convergence | After storage recovery, `db-ops` and `vm100-prod` are Ready; API, worker, web, CloudBeaver and Databasus are `1/1` | passed for current runtime | Keep observing after GitLab/VM recovery |
+| Private routing | API readiness, Redis monitor status/metrics, CloudBeaver status and Databasus health returned HTTP `200` | passed for current runtime | Repeat after the next image or network change |
+| Proxmox storage safety | Thin pool was extended without deleting disks/snapshots; `local-lvm` is now approximately 96% used with 13.7 GiB free | open | Add capacity headroom and prove an autoextend/alert policy before calling the base fully reliable |
 | Companion stack provenance | Source commit `f52a1dd` is pushed to the ops branch and the live stack contains the CloudBeaver/Databasus PostgreSQL network changes; the apply was a controlled manager-side stack update, not a protected CI deployment | partial | Record the approved CI/ops deployment receipt for this companion-stack revision |
 | Native Drive backup | Four fresh PostgreSQL/CouchDB source jobs succeeded with local markers, remote receipt and verified upload metadata | passed for backup path | Continue scheduled observation and retain secret-free evidence |
 | Local staging cleanup | Completed verified staging is removed; failed/stale evidence is preserved | passed for current policy | Verify retention/prune behavior over one seven-day cycle |
@@ -208,4 +209,24 @@ versioned authenticated workflow is configured and independently evidenced.
 - This supersedes the earlier `1/1` live observation as current runtime state;
   the earlier backup/restore evidence remains valid historical evidence, but no
   new backup or restore claim is made during this outage.
+
+## Runtime recovery recheck — 2026-10-26 07:56 ICT
+
+- Proxmox now reports VM100 and VM110 as `running` with QEMU `qmpstatus=running`.
+  Swarm reports `vm100-prod` and `db-ops` as `Ready`; Orange Pi remains down.
+- The db-management API readiness route returned HTTP `200`. Redis monitor
+  status and metrics returned HTTP `200`; this confirms observation only and
+  does not add Redis to backup ownership.
+- All five db-management services (API, worker, web, CloudBeaver and
+  Databasus) are `1/1`. CloudBeaver status and Databasus health returned HTTP
+  `200`.
+- The recovery action extended the Proxmox thin pool with existing free
+  volume-group space and then restarted the affected VMs. No VM disk, backup
+  evidence or VM100 rollback snapshot was deleted.
+- `local-lvm` now has approximately 13.7 GiB free and is about 96% used. The
+  thin allocation remains overcommitted and automatic thin-pool growth has not
+  been proven, so storage safety remains an open gate.
+- GitLab remains a separate open incident: `gitlab_gitlab` is still `0/1` and
+  its HTTPS API returns `502`. No new GitLab pipeline or push is claimed by
+  this recovery recheck.
 
