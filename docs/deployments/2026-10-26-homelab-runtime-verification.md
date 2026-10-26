@@ -16,13 +16,13 @@ as history and rollback context.
 | Surface | Location | Ownership |
 |---|---|---|
 | Homelab record | `/home/dungxbuif/workspace/vaults/homelab` | topology, runtime evidence, decisions and runbooks |
-| Ops repository | `/home/dungxbuif/workspace/homelab-ops` | canonical GitLab repository for deployment/automation code |
-| Active migration worktree | `/home/dungxbuif/workspace/homelab-ops-task1` | branch `codex/task1-migration-inventory`, migration/cutover worktree of `homelab-ops` |
+| Ops repository | `/home/dungxbuif/workspace/homelab-ops` | canonical GitLab repository for deployment/automation code; migration merged to `main` at `a079e84`, README boundary at `01a8570` |
+| Migration worktree | `/home/dungxbuif/workspace/homelab-ops-task1` | branch `codex/task1-migration-inventory`, retained for migration history and evidence |
 | Application | `/home/dungxbuif/workspace/db-management` | NestJS/Bun application, adapters, UI and app CI |
 
-The migration branch contains the copied operational code and its evidence. The
-vault source was intentionally retained until old Semaphore/systemd consumers
-are formally retired. Do not create a second implementation under this vault.
+The copied operational code is now present in `homelab-ops/main`. The vault
+source was intentionally retained until old Semaphore/systemd consumers are
+formally retired. Do not create a second implementation under this vault.
 
 ## Topology
 
@@ -120,8 +120,8 @@ The db-management worker has no restore HTTP route.
    current parity verifier reports source/destination collisions and hash
    mismatches because the vault changed after the original copy. Refresh the
    reviewed manifest from the current source before declaring parity complete.
-2. Merge/activate the reviewed migration branch in the canonical `homelab-ops`
-   worktree; keep the current ArgoCD edits separate until reviewed.
+2. Publish the reviewed local `homelab-ops/main` commits to GitLab and run the
+   protected CI validation before treating the merge as remotely accepted.
 3. Authenticate Databasus and prove provider/storage configuration.
 4. Capture one Databasus Drive backup receipt and one controlled restore.
 5. Prove remote retention deletion with a disposable expired object.

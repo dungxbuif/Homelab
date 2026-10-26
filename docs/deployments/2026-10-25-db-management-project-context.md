@@ -16,7 +16,7 @@ every database workflow or restore has passed.
 | Area | Repository / path | Owns |
 | --- | --- | --- |
 | Application | `/home/dungxbuif/workspace/db-management/` | NestJS/Bun API, worker, adapter contracts, web UI, tests and GitLab pipeline |
-| Operations | `/home/dungxbuif/workspace/homelab-ops/` | canonical Swarm stack, VM110 bootstrap, Pi5 release boundary, secrets/config references and ops verification; migration branch currently checked out at `/home/dungxbuif/workspace/homelab-ops-task1/` |
+| Operations | `/home/dungxbuif/workspace/homelab-ops/` | canonical Swarm stack, VM110 bootstrap, Pi5 release boundary, secrets/config references and ops verification; migration merged to local `main` at `a079e84` and `01a8570` |
 | Homelab record | `/home/dungxbuif/workspace/vaults/homelab/` | Topology, deployment evidence, runtime inventory, decisions and rollback notes |
 
 Remotes:

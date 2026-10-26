@@ -55,7 +55,7 @@ to the source checkouts.
 | `goclaw` | `/Users/dungxbuif/workspace/goclaw/` | `git@github.com:dungxbuif/goclaw.git` | Git checkout |
 | `harness` | `/Users/dungxbuif/workspace/harness/` | `git@github.com:dungxbuif/harness.git` | Git checkout |
 | `harness-experimental` | `/Users/dungxbuif/workspace/harness-experimental/` | `https://github.com/hoangnb24/harness-experimental.git` | Git checkout |
-| `homelab-ops` | `/home/dungxbuif/workspace/homelab-ops/` | `ssh://gitlab.dungxbuif.com:2222/dungxbuif/homelab-ops.git` | Canonical checkout; migration branch worktree is `/home/dungxbuif/workspace/homelab-ops-task1/` |
+| `homelab-ops` | `/home/dungxbuif/workspace/homelab-ops/` | `ssh://gitlab.dungxbuif.com:2222/dungxbuif/homelab-ops.git` | Canonical checkout; migration merged to local `main`; branch worktree retained at `/home/dungxbuif/workspace/homelab-ops-task1/` |
 | `homelab-tunnel` | `/Users/dungxbuif/workspace/vaults/homelab-tunnel/` | none recorded | Local directory |
 | `homepage` | `/Users/dungxbuif/workspace/homepage/` | `ssh://gitlab.dungxbuif.com:2222/dungxbuif/homepage.git` | Git checkout |
 | `learn` | `/Users/dungxbuif/workspace/learn/` | none recorded | Git checkout without origin |
