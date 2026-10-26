@@ -7,7 +7,7 @@ Source khởi đầu, chưa phải provider MVP hoàn chỉnh. Go API chỉ có 
 Yêu cầu Go 1.26+, bản đã kiểm thử: Go 1.26.3 darwin/arm64. Module dùng standard library, không cần Docker hoặc external dependency ở bước này.
 
 ```sh
-cd /Users/dungxbuif/workspace/homelab/relayhub/src
+cd /Users/dungxbuif/workspace/vaults/homelab/relayhub/src
 rtk go run ./cmd/relayhub
 ```
 

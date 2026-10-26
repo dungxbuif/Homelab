@@ -23,7 +23,7 @@ recurring messages, deployments or production restarts changed during planning.
 
 ## Global Constraints
 
-- Canonical repository: `/Users/dungxbuif/workspace/homelab`; feature root
+- Canonical repository: `/Users/dungxbuif/workspace/vaults/homelab`; feature root
   `automation/knowledge-hub/`. Preserve unrelated staged/dirty changes.
 - Obsidian-first; automatic `raw/captures/` Inbox plus `ai-process` opt-in
   elsewhere. Both Mezon and Telegram support interactive chat through n8n nodes.

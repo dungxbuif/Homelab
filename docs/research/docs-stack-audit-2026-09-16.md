@@ -3,7 +3,7 @@
 ## Scope and intended changes
 
 Documentation-only audit requested by the operator. Canonical infrastructure
-repository: `/Users/dungxbuif/workspace/homelab`. The separate
+repository: `/home/dungxbuif/workspace/vaults/homelab`. The separate
 `/Users/dungxbuif/Documents/ChatGPT/Homelab` workspace contains RelayHub
 documentation/research; it is not the deployed infrastructure inventory.
 Do not deploy, change credentials, delete service data, or alter networks.

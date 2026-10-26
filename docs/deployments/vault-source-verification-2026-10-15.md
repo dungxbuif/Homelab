@@ -7,7 +7,7 @@ over the GitLab SSH endpoint through the VPS, without sharing or printing tokens
 
 | Project | Local source | Verified commit | Tracked entries |
 | --- | --- | --- | --- |
-| `dungxbuif/obsidian-vault` (3) | `/Users/dungxbuif/workspace/Obsidian Vault` | `3a71cabc3fdb93eef67a0f72ba1fb9095cdd873c` | 1954 |
+| `dungxbuif/obsidian-vault` (3) | `/Users/dungxbuif/workspace/vaults/secondbrain` | `3a71cabc3fdb93eef67a0f72ba1fb9095cdd873c` | 1954 |
 | `dungxbuif/note-vault` (4) | `/Users/dungxbuif/workspace/NoteVault` | `2b87c13dda45d0981d57e1ac93ab73f5f9185a32` | 6 |
 
 Fresh-clone `git fsck --full --strict` returned exit 0 for both repositories.

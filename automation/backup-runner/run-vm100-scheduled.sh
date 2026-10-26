@@ -73,7 +73,17 @@ case "$class" in
     run_pi health
     ;;
   databases)
-    run_pi "$class"
+    if [[ "${BACKUP_POSTGRES_TRANSPORT:-container}" == network \
+      && "${BACKUP_COUCHDB_TRANSPORT:-container}" == network-proxy ]]; then
+      rm -f "$status_root/databases.success"
+      run_id="databases-$(date -u +%Y%m%d-%H%M%S)"
+      BACKUP_APP_ROOT="$app_root" \
+        BACKUP_STAGING_ROOT="$staging_root" \
+        BACKUP_STATUS_ROOT="$status_root" \
+        bash "$app_root/automation/backup-runner/run-class.sh" databases "$run_id"
+    else
+      run_pi "$class"
+    fi
     ;;
   rustfs)
     if [[ "${BACKUP_RUSTFS_TRANSPORT:-container}" == network ]]; then

@@ -1,6 +1,6 @@
 # Current Homelab Stack
 
-Audit baseline: 2026-10-21, reconciled by dated records through 2026-10-21.
+Audit baseline: 2026-10-26, reconciled by dated records through 2026-10-26.
 This is the current navigation/catalog surface, not a claim that every
 application workflow passed. See the
 [audit evidence and limits](./research/docs-stack-audit-2026-09-16.md).
@@ -8,6 +8,11 @@ The point-in-time runtime and image-version source of truth is the
 [2026-10-13 runtime inventory](./deployments/runtime-inventory-2026-10-13.md),
 the [2026-10-15 catalog reconciliation](./deployments/runtime-catalog-reconciliation-2026-10-15.md),
 and the [current status page](./STATUS.md).
+
+The latest consolidated live verification is [Homelab Runtime Verification —
+2026-10-26](./deployments/2026-10-26-homelab-runtime-verification.md). It is
+authoritative for repository ownership and the db-management/CloudBeaver/
+Databasus acceptance boundary; older dated records remain rollback history.
 
 ## Current corrections, 2026-10-21
 
@@ -52,6 +57,19 @@ and the [current status page](./STATUS.md).
 | Proxmox | `10.10.0.20` | Production hypervisor for VM100 and DB-operations VM110; each has a separate IAC state/lifecycle |
 | VM110 DB operations | `10.10.0.32` | Backup/restore and database-operations worker; no public ports; Pi5 remains the production data host |
 
+### DB-management delivery boundary
+
+`db-management` is the database-operations project deployed on VM110 and
+routed through the Pi5 LAN edge. It owns PostgreSQL and CouchDB/Couchloom
+payload backups through adapters and the Google Drive SDK; it does not own
+Redis backup, general host configuration, GitLab/RustFS payloads, or the old
+Restic/Semaphore retirement. CloudBeaver is the PostgreSQL tool boundary and
+Databasus is a separate UI/provider boundary.
+
+The observed deployment, backup receipts, CI pipeline and remaining acceptance
+gates are recorded in the [2026-10-25 DB-management project context](./deployments/2026-10-25-db-management-project-context.md)
+and [core audit](./deployments/2026-10-25-db-management-core-audit.md).
+
 ## Runtime Catalog
 
 VM100, Pi5, and VPS inventories were observed through direct SSH on the audit
@@ -69,7 +87,8 @@ application readiness.
 | OpenClaw | VM100 `openclaw` | `openclaw.dungxbuif.com` -> `tasks.openclaw:18789` | Healthy task; do not confuse with retired GoClaw |
 | n8n | VM100 `n8n` | `n8n.dungxbuif.com` -> `tasks.n8n:5678` | Healthy task; public health probe 200 |
 | MyPocket | VM100 `mypocket-api`, `mypocket-worker` 1/1; `mypocket-web` 0/0 | `money.dungxbuif.com` -> `tasks.mypocket-api:8080` | API/worker `registry.dungxbuif.com/mypocket-api:release-20261016-7846945`; web image retained but service stopped. API health and Swagger UI return 200; root no longer serves web UI. See [API-only deployment](./deployments/mypocket-api-only-2026-10-13.md), [AI config sync](./deployments/mypocket-ai-config-2026-09-24.md), and [feedback/API-key rollout](./deployments/mypocket-feedback-api-key-2026-09-29.md) |
-| NetBird | VM100 `netbird_netbird-server`, `netbird_netbird-dashboard`; VPS `netbird-relay`; VM100 client prepared | `netbird.dungxbuif.com`; relay `netbird-relay.dungxbuif.com` / `3478/udp` | Control plane running, dashboard public 200; external relay/STUN active; Mac CLI currently needs reconnect/refresh; VM100 routing peer client installed but `NeedsLogin` until setup key enrollment |
+| NetBird | VM100 `netbird_netbird-server`, `netbird_netbird-dashboard`; VPS `netbird-relay`; enrolled VM100 routing peer | `netbird.dungxbuif.com`; relay `netbird-relay.dungxbuif.com` / `3478/udp` | Verified 2026-10-23: dashboard 200; relay Available via ws and STUN available on Mac/VM100; native Let's Encrypt renewal; VM100 `100.69.183.252` reports `10.10.0.0/24`, Mac `100.69.16.144`; LAN P2P verified, external-network access untested |
+| RustDesk OSS | VPS gateway `/root/rustdesk`: `hbbs` + `hbbr` with persistent `/root/rustdesk/data` | TCP `21115-21117`, UDP `21116`; browser WebSockets `21118-21119` blocked | Deployed 2026-10-23 with image digest `sha256:8ecdab65…`; P2P preferred, `hbbr` fallback; generated client key is gateway-local; external desktop session not yet tested |
 | RelayHub | VM100 Compose `relayhub-api`, `relayhub-worker`, `relayhub-nats`, `relayhub-redis`; old Swarm `relayhub` scaled to `0/0`; Pi5 local Compose now keeps only PostgreSQL running | `relayhub.dungxbuif.com` -> `relayhub-api:8080` | Production image live on VM100; public docs, OpenAPI, Admin UI and email/password login verified |
 | GitLab CE | VM100 `gitlab_gitlab` | `gitlab.dungxbuif.com`, Git SSH VPS `:2222` | Healthy Omnibus task; public web 200; Pi5 PostgreSQL/Redis |
 | GitLab tunnel clients | VM100 `gitlab-ssh-tunnel_client`, `gitlab-https-tunnel_client`, `gitlab-registry-trial_client` | Docker DNS GitLab `:22`, `:80`, `:5005` | All running; independent outbound Noise pairs to VPS |
@@ -80,8 +99,14 @@ application readiness.
 | Native LLM | Mac LM Studio through Mac Rathole client | `llm.dungxbuif.com` -> VPS `:18123` -> Mac `host.docker.internal:1234` | Tunnel established; backend must be started on Mac port `1234` |
 | KubeKosh LAN training app | VM100 standalone Docker Compose | LAN-only `kubekosh.dungxbuif.com` -> Pi5 Traefik -> `kubekosh:80` | Isolated training application only; not a managed Kubernetes cluster; no VM100 host port and no VPS HostSNI route |
 | Semaphore control plane | Pi5 Swarm `semaphore_semaphore` + `homelab-provisioner_provisioner` | LAN-only `semaphore.dungxbuif.com` -> Pi5 Traefik -> `tasks.semaphore_semaphore:3000`; provisioner stays internal on `homelab-net:8787` | Private DB/user provisioning and backup-catalog enrollment; no host ports; backup scheduling remains owned by VM100 systemd |
+| DB-management | VM110 Swarm worker `db-management` stack; Pi5 manager/data/edge | `db-management.dungxbuif.com`, `cloudbeaver.dungxbuif.com`, `databasus.dungxbuif.com` via Pi5 LAN routing | API/worker/web, CloudBeaver and Databasus observed 1/1; backup path has fresh Drive evidence; protected release, isolated restore and Databasus provider gates remain open |
 
 ### Automation control plane
+
+Operational implementation code belongs in the separate `homelab-ops`
+repository. This vault records topology, runtime evidence, deployment
+receipts, resource limits, and rollback notes; do not add a parallel Ansible,
+OpenTofu, CI, or service implementation here.
 
 The active operator boundary is the private Semaphore UI. Its versioned
 resource and template contract is in
@@ -137,8 +162,9 @@ Swarm labels. VPS GitLab labels belong to its local Docker provider only.
 GitLab Web/Registry TLS currently terminates on VPS; normal shared-edge TLS
 terminates on Pi5. VPS GitLab private backend ports `8085/8086` are
 not published. Public SSH `2222`, GitLab/Rathole control ports `7000-7003`,
-and NetBird STUN `3478/udp` are intentional transport listeners, not VM100 app
-publications.
+NetBird STUN `3478/udp`, and RustDesk signaling/relay ports
+`21115-21117/tcp` plus `21116/udp` are intentional transport listeners, not
+VM100 app publications.
 
 NetBird management stays on VM100 behind the Pi5 edge. NetBird relay/STUN is
 the one deliberate VPS-side NetBird runtime: TCP `443` is routed by a dedicated

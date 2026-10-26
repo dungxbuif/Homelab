@@ -23,7 +23,9 @@ VM100 backup client
   -> couchdb:5984 on Pi5
 ```
 
-- Source restriction: VM100 only (`10.10.0.31/32`).
+- Source restriction: approved backup workers only (`10.10.0.31/32` and
+  `10.10.0.32/32`). The live Pi5 deployment must be reconciled before VM110
+  can run the scheduled CouchDB class.
 - Public ingress: none. Traefik, Rathole and public DNS are not involved.
 - Allowed methods: `GET` and `HEAD` only.
 - Allowed resources: database metadata/security and `_all_docs` for the

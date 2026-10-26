@@ -29,7 +29,7 @@ Do not upload this archive, which includes historical credentials.
 
 | Vault | Local path | Branch | GitLab project |
 | --- | --- | --- | --- |
-| Obsidian Vault | `/Users/dungxbuif/workspace/Obsidian Vault` | `main` | `dungxbuif/obsidian-vault` |
+| Obsidian Vault | `/Users/dungxbuif/workspace/vaults/secondbrain` | `main` | `dungxbuif/obsidian-vault` |
 | NoteVault | `/Users/dungxbuif/workspace/NoteVault` | `main` | `dungxbuif/note-vault` |
 
 Obsidian workspace state, LiveSync data, local databases, caches, environment
@@ -58,7 +58,7 @@ every possible secret. No scheduled auto-sync was configured by this step.
 ## Subsequent pushes
 
 ```bash
-git -C '/Users/dungxbuif/workspace/Obsidian Vault' push -u origin main
+git -C '/Users/dungxbuif/workspace/vaults/secondbrain' push -u origin main
 git -C '/Users/dungxbuif/workspace/NoteVault' push -u origin main
 ```
 

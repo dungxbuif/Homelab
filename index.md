@@ -1,9 +1,22 @@
 # Homelab Infrastructure
 
 Current architecture: **v3.3, VM100 compute + Pi5 edge/datastore + Mac service tunnel**.
-Canonical repository: `/Users/dungxbuif/workspace/homelab`.
+Canonical repository: `/home/dungxbuif/workspace/vaults/homelab`.
 Documentation audited on 2026-09-16; verification coverage is recorded in
 [the audit report](./docs/research/docs-stack-audit-2026-09-16.md).
+
+Latest live reconciliation: [Homelab Runtime Verification — 2026-10-26](./docs/deployments/2026-10-26-homelab-runtime-verification.md).
+
+## Operational Code Ownership
+
+This vault is the operational documentation and evidence surface. When a task
+requires code, deployment manifests, OpenTofu, Ansible, CI/Semaphore changes,
+or other runtime automation, first look in the separate `homelab-ops`
+repository and make the code change there. Do not create a second implementation
+inside this vault. The canonical checkout is `/home/dungxbuif/workspace/homelab-ops`;
+the migration branch currently has a worktree at
+`/home/dungxbuif/workspace/homelab-ops-task1`. After deployment, record the observed result, resource
+allocation, rollback path, and exact `homelab-ops` revision in this vault.
 
 ## Start Here
 
@@ -47,6 +60,8 @@ private administration and ACL-based access.
 1. Read this entry point and relevant runbook before changing infrastructure.
    Record intended behavior and verification before implementation, reconcile
    docs afterward, and append significant decisions to the changelog.
+   For implementation work, follow the `homelab-ops` source-of-truth rule
+   above; this vault receives the resulting operational evidence.
 2. Keep Pi5 as the datastore and Swarm manager; place production application
    compute on VM100. VM100 `100` is production, not a disposable AWS lab VM.
    VMs `101/102` were removed per the migration record; audit hypervisor state

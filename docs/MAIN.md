@@ -193,11 +193,13 @@ reusing it; the proposed Mac private access layer is NetBird.
 * **Current runtime:** VM100 container `bds-app` on `homelab-net`; current
   database is Pi5 PostgreSQL `bds_prod`.
 
-#### Retired VPS access/relay services
-Headscale, Headscale UI, NetBird server/dashboard, Coturn, RustDesk `hbbs`, and
-RustDesk `hbbr`, node-exporter, and Tailscale were removed on 2026-09-13. Their
-ports are closed: `3478`, `8080`, `8081`, `21115-21119`, `9100`, and
-`41641/udp`.
+#### VPS access and relay services
+Headscale, Headscale UI, NetBird server/dashboard, node-exporter, and Tailscale
+were removed on 2026-09-13. NetBird's external relay/STUN was later restored on
+the gateway. RustDesk `hbbs`/`hbbr` were reintroduced on 2026-10-23 at
+`/root/rustdesk` for remote desktop signaling and fallback relay. Public
+RustDesk listeners are TCP `21115-21117` and UDP `21116`; unused browser
+WebSockets `21118-21119` are blocked by a persistent gateway firewall unit.
 
 NetBird was reintroduced as a new VM100 bootstrap on 2026-09-13, not as a VPS
 service. NetBird runs as Swarm services on `homelab-net` with no VM100 host
@@ -260,8 +262,12 @@ the Mac service tunnel, not direct public/LAN upstreams.
 ### 2. Admin Remote Access
 Headscale is no longer active. The old VPS-hosted NetBird stack was removed,
 and the current NetBird control plane now runs on VM100 at
-`netbird.dungxbuif.com`. Until peers and setup keys are explicitly provisioned,
-admin access should still prefer LAN/local paths or approved one-off tunnels.
+`netbird.dungxbuif.com`. As verified 2026-10-23, Mac `100.69.16.144` and
+`vm100-router` `100.69.183.252` are enrolled and connect P2P on demand.
+VM100 reports route `10.10.0.0/24`; route access from an external client remains
+untested. The VPS relay now uses native Let's Encrypt automatic renewal, and
+both clients report relay Available via ws. See the
+[TLS repair and verification record](./deployments/netbird-relay-tls-2026-10-23.md).
 
 ### 3. Failover Backup Tunnel (Cloudflared)
 Cloudflared connects to the Cloudflare edge over HTTPS/WebSockets (TCP 443),
@@ -412,9 +418,9 @@ configuration assertions. Current verification scope is in [STACK.md](./STACK.md
 ### 5. RustDesk Black Screen (historical)
 * **Root cause:** host UFW blocked relay ports.
 * **Fix:** `sudo ufw allow 21115:21119/tcp && sudo ufw allow 21116/udp`.
-* **Current state:** RustDesk `hbbs`/`hbbr` were removed from the VPS on
-  2026-09-13; do not reopen these ports unless RustDesk is intentionally
-  reintroduced.
+* **Current state:** RustDesk `hbbs`/`hbbr` were reintroduced on the gateway on
+  2026-10-23. Clients should use the generated public key and leave
+  `ALWAYS_USE_RELAY` disabled so P2P is preferred.
 
 ### 6. WireGuard NAT Session Timeout (SSH unreachable outside LAN)
 * **Root cause:** the Pi5 sits behind a double-NAT/ISP firewall; without a

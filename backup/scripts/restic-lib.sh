@@ -40,7 +40,9 @@ restic_run() {
   # explicit override for quota-sensitive operations.
   local drive_pacer_min_sleep=${RCLONE_DRIVE_PACER_MIN_SLEEP:-100ms}
   local drive_pacer_burst=${RCLONE_DRIVE_PACER_BURST:-1}
-  local drive_chunk_size=${RCLONE_DRIVE_CHUNK_SIZE:-64Mi}
+  # rclone uses its own SizeSuffix grammar; `Mi` is a Kubernetes-style unit
+  # and is rejected by rclone. Keep the equivalent decimal value explicit.
+  local drive_chunk_size=${RCLONE_DRIVE_CHUNK_SIZE:-64M}
   local low_level_retries=${RCLONE_LOW_LEVEL_RETRIES:-10}
   local retries=${RCLONE_RETRIES:-10}
   local retries_sleep=${RCLONE_RETRIES_SLEEP:-30s}
@@ -61,6 +63,15 @@ restic_run() {
   fi
   if [[ -n "${RESTIC_CONTAINER_USER:-}" ]]; then
     volumes+=(--user "$RESTIC_CONTAINER_USER")
+  fi
+  # Debian/Ubuntu packages ship a dynamically linked rclone binary, while the
+  # pinned Restic image is intentionally minimal. Mount only the two runtime
+  # objects needed by that binary when the host explicitly provides them.
+  if [[ -n "${RCLONE_DYNAMIC_LINKER:-}" ]]; then
+    volumes+=(--volume "$RCLONE_DYNAMIC_LINKER:/lib64/ld-linux-x86-64.so.2:ro")
+  fi
+  if [[ -n "${RCLONE_LIBC:-}" ]]; then
+    volumes+=(--volume "$RCLONE_LIBC:/lib/x86_64-linux-gnu/libc.so.6:ro")
   fi
   local restic_lifecycle_args=(--timeout "$restic_command_timeout")
   if [[ "${RESTIC_INTERACTIVE_STDIN:-false}" == true ]]; then

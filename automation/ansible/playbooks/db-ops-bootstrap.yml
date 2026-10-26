@@ -12,6 +12,7 @@
       - ca-certificates
       - cloud-guest-utils
       - curl
+      - docker.io
       - git
       - restic
       - rclone
@@ -87,6 +88,18 @@
         name: qemu-guest-agent
         enabled: true
         state: started
+
+    - name: Enable Docker for private backup client containers
+      ansible.builtin.systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Grant the managed service account access to Docker client sockets
+      ansible.builtin.user:
+        name: ubuntu
+        groups: docker
+        append: true
 
     - name: Grow the root partition when the Proxmox disk was expanded
       ansible.builtin.command: /usr/bin/growpart /dev/sda 1

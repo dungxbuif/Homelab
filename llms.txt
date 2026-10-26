@@ -1,7 +1,8 @@
 # Homelab infrastructure documentation
 
-Canonical checkout: /Users/dungxbuif/workspace/homelab
-Audit date: 2026-09-16
+Canonical checkout: /home/dungxbuif/workspace/vaults/homelab
+Ops checkout: /home/dungxbuif/workspace/homelab-ops
+Audit date: 2026-10-26
 Scope: infrastructure documentation; do not load secret files for navigation.
 Automation operator guidance verified: 2026-10-15 (not a whole-lab recertification).
 

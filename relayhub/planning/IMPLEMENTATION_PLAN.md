@@ -20,7 +20,7 @@
 - TypeScript SDK trước; worker riêng cho handler tin cậy, không arbitrary-code runtime.
 - Ghim version/digest, ARM64 compatibility khi dùng Mac/Pi; không dùng latest.
 - Không triển khai Kubernetes, Kafka, Redis, billing hoặc tunnel riêng trong MVP.
-- Các lệnh build/test dưới đây chạy từ `/Users/dungxbuif/workspace/homelab/relayhub/src`, luôn prefix `rtk`.
+- Các lệnh build/test dưới đây chạy từ `/Users/dungxbuif/workspace/vaults/homelab/relayhub/src`, luôn prefix `rtk`.
 
 ## Trạng thái và thứ tự
 

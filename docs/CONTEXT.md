@@ -8,7 +8,7 @@ timestamp: 2026-07-03T15:14:00Z
 # Homelab Network Trace Context
 
 Date: 2026-06-02
-Workspace: `/Users/dungxbuif/workspace/homelab`
+Workspace: `/home/dungxbuif/workspace/vaults/homelab`
 
 Current local source project checkouts live under
 `/Users/dungxbuif/workspace/`; see [PROJECTS.md](./PROJECTS.md) for the

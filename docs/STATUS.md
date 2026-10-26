@@ -2,12 +2,20 @@
 type: Dashboard
 title: "Homelab Current Status"
 description: "Single-page current status, verified boundaries, and remaining gates for operators and agents"
-timestamp: 2026-10-21T00:00:00+07:00
+timestamp: 2026-10-26T22:42:21+07:00
 ---
 
 # Homelab Current Status
 
-**Last reconciled:** 2026-10-21 (Asia/Ho_Chi_Minh)
+**Last reconciled:** 2026-10-26 22:42 (Asia/Ho_Chi_Minh)
+
+**Latest runtime snapshot:** [Homelab Runtime Verification — 2026-10-26](./deployments/2026-10-26-homelab-runtime-verification.md)
+
+The latest read-only check found db-management API, worker, web, CloudBeaver
+and Databasus at `1/1`. db-management completed a real CouchDB
+export/upload/verify operation to Google Drive. Databasus health and schedulers
+are running, but authenticated provider configuration, a Databasus Drive backup,
+remote retention deletion, and Databasus restore are not proven.
 
 **Documentation check:** 170 active Markdown files under `docs/` were checked.
 There are no missing operational relative links; the four remaining warnings

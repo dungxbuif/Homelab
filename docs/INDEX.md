@@ -8,6 +8,7 @@ timestamp: 2026-10-21T00:00:00+07:00
 # Homelab Core Infrastructure (v3.5)
 
 * [Current Homelab Status](./STATUS.md) — short operational truth, verified boundaries, and remaining gates.
+* [Homelab Runtime Verification — 2026-10-26](./deployments/2026-10-26-homelab-runtime-verification.md) — latest repository ownership, topology, live services, backup evidence, retention boundary and open gates.
 * [DB-management Project and Homelab Reference](./deployments/2026-10-26-db-management-project-and-homelab-reference.md) — project ownership, adapter boundary, runtime placement, release path, current evidence and open gates.
 
 * [Runtime Inventory and Deployment Reconciliation](./deployments/runtime-inventory-2026-10-13.md) — historical 2026-10-13 baseline; use the later 2026-10-15/16 reconciliation notes for current runtime state.
