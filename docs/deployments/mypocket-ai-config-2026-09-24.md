@@ -3,7 +3,7 @@
 After OCR authentication and model-provider failures, the MyPocket production
 AI configuration was aligned with the working local development configuration.
 The source values are in
-`/Users/dungxbuif/workspace/MyPocket/backend/.env.local`; the homelab operational
+`/home/dungxbuif/workspace/projects/MyPocket/backend/.env.local`; the homelab operational
 copy is `local_vars.json` under `MYPOCKET_SECRETS` (gitignored). Keep both in
 sync when rotating credentials. Never copy secret values into this document,
 version control, or shell output.

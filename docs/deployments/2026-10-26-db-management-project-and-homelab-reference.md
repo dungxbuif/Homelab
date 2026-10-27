@@ -15,7 +15,7 @@ evidence without copying the implementation into the Homelab vault.
 
 | Repository | Local checkout | Owns |
 | --- | --- | --- |
-| `db-management` | `/home/dungxbuif/workspace/db-management/` | NestJS/Bun API, worker, shadcn web UI, adapter contracts, Drive upload and GitLab CI |
+| `db-management` | `/home/dungxbuif/workspace/projects/db-management/` | NestJS/Bun API, worker, shadcn web UI, adapter contracts, Drive upload and GitLab CI |
 | `homelab-ops` | `/home/dungxbuif/workspace/homelab-ops-task1/` | Swarm stack, VM placement, external secrets/config references, release boundary and ops contract tests |
 | `homelab` | `/home/dungxbuif/workspace/vaults/homelab/` | topology, decisions, live evidence, runbooks and acceptance gates |
 

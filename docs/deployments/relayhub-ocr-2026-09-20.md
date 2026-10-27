@@ -1,6 +1,6 @@
 # RelayHub and OCR release
 
-RelayHub source: `/Users/dungxbuif/workspace/RelayHub`, commit `eee9e7c`.
+RelayHub source: `/home/dungxbuif/workspace/projects/RelayHub`, commit `eee9e7c`.
 Build context on VM100: `/opt/apps/relayhub/releases/eee9e7c`.
 Image: `homelab/relayhub:prod-eee9e7c`.
 Rollback image: `homelab/relayhub:prod-20260920-152029`.
@@ -90,7 +90,7 @@ RelayHub commit `c1c51ca`; deployed API/worker image remains
 
 ## OCR candidate
 
-Commit `31b3013` in `/Users/dungxbuif/workspace/mac-ocr` contains the reviewed proxy-only
+Commit `31b3013` in `/home/dungxbuif/workspace/projects/mac-ocr` contains the reviewed proxy-only
 integration. Image build on VM100: `homelab/macocr-proxy:relay-31b3013`, context
 `/opt/apps/macocr-proxy/releases/31b3013`, exported from the commit, not the dirty
 working tree. Native and unrelated scan/admin changes are not included.

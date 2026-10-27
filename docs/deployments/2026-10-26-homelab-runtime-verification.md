@@ -16,9 +16,9 @@ as history and rollback context.
 | Surface | Location | Ownership |
 |---|---|---|
 | Homelab record | `/home/dungxbuif/workspace/vaults/homelab` | topology, runtime evidence, decisions and runbooks |
-| Ops repository | `/home/dungxbuif/workspace/homelab-ops` | canonical GitLab repository for deployment/automation code; migration merged to `main` at `a079e84`, README boundary at `01a8570` |
+| Ops repository | `/home/dungxbuif/workspace/projects/homelab-ops` | canonical GitLab repository for deployment/automation code; migration merged to `main` at `a079e84`, README boundary at `01a8570` |
 | Migration worktree | `/home/dungxbuif/workspace/homelab-ops-task1` | branch `codex/task1-migration-inventory`, retained for migration history and evidence |
-| Application | `/home/dungxbuif/workspace/db-management` | NestJS/Bun application, adapters, UI and app CI |
+| Application | `/home/dungxbuif/workspace/projects/db-management` | NestJS/Bun application, adapters, UI and app CI |
 
 The copied operational code is now present in `homelab-ops/main`. The vault
 source was intentionally retained until old Semaphore/systemd consumers are

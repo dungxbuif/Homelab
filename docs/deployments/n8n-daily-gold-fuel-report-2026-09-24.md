@@ -96,11 +96,11 @@ Expected operator response:
 The generator used to create/import the workflow lives outside this homelab
 repo:
 
-`/Users/dungxbuif/workspace/n8n-nodes-mezon/examples/generate-price-workflow.cjs`
+`/home/dungxbuif/workspace/projects/n8n-nodes-mezon/examples/generate-price-workflow.cjs`
 
 The standalone parser POC lives at:
 
-`/Users/dungxbuif/workspace/n8n-nodes-mezon/examples/prod-price-report.cjs`
+`/home/dungxbuif/workspace/projects/n8n-nodes-mezon/examples/prod-price-report.cjs`
 
 The generator contains only the n8n credential reference; the webhook URL is
 stored encrypted in the n8n credential store.

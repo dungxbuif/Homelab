@@ -26,7 +26,7 @@ The Mac still provides:
 |---|---|---|---|
 | Native OCR app | Outbound WSS/HTTPS to `ocr.dungxbuif.com`; no local OCR listener | VM100 multi-node `macocr-proxy` | Universal manually shared app, host fingerprint, shared Bearer key; node/routing visible to admin |
 | LM Studio | Mac host port `1234`; public via VPS `:18123` | `llm.dungxbuif.com` | active dependency; tunnel ready, backend must be running |
-| MyPocket development checkout | `/Users/dungxbuif/workspace/MyPocket/` | Local development | Source intentionally unmoved; production web/API/worker are on VM100; local dev container health not audited here |
+| MyPocket development checkout | `/home/dungxbuif/workspace/projects/MyPocket/` | Local development | Production web/API/worker are on VM100; local dev container health not audited here |
 
 GoClaw is intentionally not public-routed in the current topology. Its previous
 `goclaw.dungxbuif.com` Traefik router was removed on 2026-09-11 pending a new
@@ -58,7 +58,7 @@ Rathole server and retains only the LLM backend mapping after the OCR cutover on
 
 - `mac-llm`: VPS `103.82.21.202:18123` -> Mac `host.docker.internal:1234`
 
-Pi5 Traefik routes `ocr.dungxbuif.com` to VM100 `macocr-proxy`; Mac OCR apps now connect directly to this public domain using WSS. The old app was removed from `/Users/dungxbuif/Applications/Mac OCR Native.app`; the operator then installed the final 2.0.0 (build 7) DMG at `/Applications/Mac OCR Native.app`. TCP 8787 remains closed. The manual Universal build is retained under `/Users/dungxbuif/workspace/mac-ocr/native/dist/` as an app, ZIP, and DMG. Pi5 Traefik routes
+Pi5 Traefik routes `ocr.dungxbuif.com` to VM100 `macocr-proxy`; Mac OCR apps now connect directly to this public domain using WSS. The old app was removed from `/Users/dungxbuif/Applications/Mac OCR Native.app`; the operator then installed the final 2.0.0 (build 7) DMG at `/Applications/Mac OCR Native.app`. TCP 8787 remains closed. The manual Universal build is retained under `/home/dungxbuif/workspace/projects/mac-ocr/native/dist/` as an app, ZIP, and DMG. Pi5 Traefik routes
 `llm.dungxbuif.com` directly to the LLM VPS listener. The Rathole token lives
 only in the Mac-local `.env` and rendered runtime config; do not commit either
 file.

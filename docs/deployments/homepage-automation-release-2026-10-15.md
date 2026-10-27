@@ -9,7 +9,7 @@ Production rollout requires a separate restricted Semaphore release action,
 previous service-spec receipt, post-check and rollback. No live service was
 changed during source/CI adoption.
 
-The local app is `/Users/dungxbuif/workspace/homepage`. Its uncommitted legacy
+The local app is `/home/dungxbuif/workspace/projects/homepage`. Its uncommitted legacy
 single-production CI was preserved in local commit b40e428. The old main remains
 at archive/pre-automation-main, and codex/automation-delivery preserves migration
 work. Current main tracks a clean private GitLab history to avoid publishing old

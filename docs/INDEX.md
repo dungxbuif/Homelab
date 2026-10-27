@@ -29,7 +29,8 @@ timestamp: 2026-10-21T00:00:00+07:00
 * [Proxmox IaC Prerequisites](./PRE_REQUIRE.md) — Proxmox API tokens & SSH keys for Terraform/Ansible (generic; now used for lab VMs).
 * [Network Diagnostic Trace](./CONTEXT.md) — benchmarks, bandwidth, latency, and DNS troubleshooting history.
 * [CouchDB Obsidian Sync](./COUCHDB_OBSIDIAN_SYNC.md) — deployment, client settings, and recovery notes for the vault sync backend.
-* [Local Project Workspace Inventory](./PROJECTS.md) — summary-only source checkout inventory; project folders live under `/Users/dungxbuif/workspace/`.
+* [Local Project Workspace Inventory](./PROJECTS.md) — summary-only source checkout inventory; project folders live under `/home/dungxbuif/workspace/projects/`.
+* [Code ownership rule](../index.md#operational-code-ownership) — executable homelab code belongs to `projects/homelab-ops`; this vault stores documentation and evidence.
 * [NetBird Deployment Note](./deployments/netbird-2026-09-13.md) — VM100 control plane, Pi5 PostgreSQL, VPS relay/STUN, deployed public allow-list, and pending LAN-routing peer enrollment.
 * [n8n Daily Gold And Fuel Mezon Report](./deployments/n8n-daily-gold-fuel-report-2026-09-24.md) — 08:00 deterministic price report workflow, Mezon webhook config, sources, idempotency, and failure policy.
 * [GitLab Runbook](./services/gitlab.md) - Omnibus components, Pi5 DB/Redis, public SSH and temporary VPS HTTPS; includes agent-readable facts.

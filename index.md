@@ -1,7 +1,7 @@
 # Homelab Infrastructure
 
 Current architecture: **v3.3, VM100 compute + Pi5 edge/datastore + Mac service tunnel**.
-Canonical repository: `/home/dungxbuif/workspace/vaults/homelab`.
+Canonical vault: `/home/dungxbuif/workspace/vaults/homelab`.
 Documentation audited on 2026-09-16; verification coverage is recorded in
 [the audit report](./docs/research/docs-stack-audit-2026-09-16.md).
 
@@ -13,9 +13,9 @@ This vault is the operational documentation and evidence surface. When a task
 requires code, deployment manifests, OpenTofu, Ansible, CI/Semaphore changes,
 or other runtime automation, first look in the separate `homelab-ops`
 repository and make the code change there. Do not create a second implementation
-inside this vault. The canonical checkout is `/home/dungxbuif/workspace/homelab-ops`;
-the migration branch currently has a worktree at
-`/home/dungxbuif/workspace/homelab-ops-task1`. After deployment, record the observed result, resource
+inside this vault. The canonical code checkout is
+`/home/dungxbuif/workspace/projects/homelab-ops`; the migration branch currently
+has a worktree at `/home/dungxbuif/workspace/homelab-ops-task1`. After deployment, record the observed result, resource
 allocation, rollback path, and exact `homelab-ops` revision in this vault.
 
 ## Start Here
@@ -82,12 +82,18 @@ private administration and ACL-based access.
 7. `projects/mac-ocr/` source is read-only for behavior changes; use approved
    build/deployment mechanisms. Pi5 images must support `linux/arm64`;
    VM100 images must support `linux/amd64`.
-8. MyPocket source remains `/Users/dungxbuif/workspace/MyPocket/`; do not move
-   it. Its production web/API/worker **are deployed on VM100**. Project
-   checkout placement is not deployment placement.
+8. All project checkouts live under `/home/dungxbuif/workspace/projects/`.
+   `MyPocket` is now `/home/dungxbuif/workspace/projects/MyPocket/`; project
+   checkout placement is not deployment placement. Its production web/API/worker
+   **are deployed on VM100**.
 9. GitLab stateful updates must not overlap tasks sharing the same bind
    mount. Back up DB/config/data, scale to zero, confirm the old container
    exited, then start the replacement; see its service runbook.
+
+10. Keep this vault for documentation, evidence, rules, and rollback notes.
+    Do not add new executable infrastructure code here. Use the canonical
+    `projects/homelab-ops` checkout; the remaining code trees in this vault are
+    migration-source material until the H→O consumer cutover is accepted.
 
 ## Verification Limits
 

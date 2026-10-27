@@ -11,9 +11,9 @@ Date: 2026-06-02
 Workspace: `/home/dungxbuif/workspace/vaults/homelab`
 
 Current local source project checkouts live under
-`/Users/dungxbuif/workspace/`; see [PROJECTS.md](./PROJECTS.md) for the
+`/home/dungxbuif/workspace/projects/`; see [PROJECTS.md](./PROJECTS.md) for the
 summary inventory and remote origins. `MyPocket` intentionally remains at
-`/Users/dungxbuif/workspace/MyPocket/` while under active development.
+`/home/dungxbuif/workspace/projects/MyPocket/` while under active development.
 
 > [!IMPORTANT]
 > This file is a dated diagnostic record. Container inventories, benchmarks,

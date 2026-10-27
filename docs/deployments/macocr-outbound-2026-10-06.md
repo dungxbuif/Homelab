@@ -33,9 +33,9 @@ The Mac no longer exposes an OCR listener and the OCR Rathole mapping remains re
 
 ## Manual artifacts
 
-- App: `/Users/dungxbuif/workspace/mac-ocr/native/dist/Mac OCR Native.app`
-- DMG: `/Users/dungxbuif/workspace/mac-ocr/native/dist/Mac-OCR-Native-2.0.0-universal.dmg`
-- ZIP: `/Users/dungxbuif/workspace/mac-ocr/native/dist/Mac-OCR-Native-2.0.0-universal.zip`
+- App: `/home/dungxbuif/workspace/projects/mac-ocr/native/dist/Mac OCR Native.app`
+- DMG: `/home/dungxbuif/workspace/projects/mac-ocr/native/dist/Mac-OCR-Native-2.0.0-universal.dmg`
+- ZIP: `/home/dungxbuif/workspace/projects/mac-ocr/native/dist/Mac-OCR-Native-2.0.0-universal.zip`
 
 The binary is ad-hoc signed and Universal (`arm64`, `x86_64`) with macOS 13 as its minimum system. Apple Silicon was accepted on physical hardware; the Intel slice was build/signature verified without a physical Intel acceptance machine.
 
