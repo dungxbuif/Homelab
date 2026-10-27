@@ -13,7 +13,7 @@ or provisioning credentials.
 ## Live resources
 
 The idempotent bootstrap is
-[`automation/semaphore/bootstrap-audit-project.mjs`](../../../../projects/homelab-ops/automation/semaphore/bootstrap-audit-project.mjs).
+[`automation/semaphore/bootstrap-audit-project.mjs`](../../../../projects/homelab-legacy/automation/semaphore/bootstrap-audit-project.mjs).
 It created project 2, `Homelab Audit`, with `max_parallel_tasks=1` and exactly
 one member: `admin` with role `owner`.
 
