@@ -515,7 +515,7 @@ timestamp: 2026-07-03T15:14:00Z
 ## v3.2 — 2026-10-04 · Backup runbook and post-check reporting
 
 - Added the [backup and restore runbook](./runbooks/backup-restore.md) and
-  agent-readable [backup automation README](../backup/README.md). The contract
+  agent-readable [backup automation README](../../../projects/homelab-ops/backup/README.md). The contract
   prioritizes native application CLI/API mechanisms, excludes Redis/NATS, keeps
   scheduled backups online, and separates PostgreSQL/CouchDB, GitLab, and
   RustFS recovery workflows.
@@ -938,7 +938,7 @@ timestamp: 2026-07-03T15:14:00Z
 
 ## 2026-07-09
 
-- **Kubernetes/AWS Lab**: Added a LAN-only LocalStack deployment for AWS SAA practice under [iac/k8s/localstack/README.md](../iac/k8s/localstack/README.md). The deployment uses namespace `localstack`, ClusterIP service, Traefik Ingress host `localstack.dungxbuif.com`, Longhorn PVC persistence, and no NodePort/direct LoadBalancer. Lab endpoints are `https://localstack.dungxbuif.com` from LAN clients, `http://localstack.localstack.svc.cluster.local:4566` inside K8s, and `http://localhost:4566` through `kubectl port-forward` as fallback. Docker-in-Docker and privileged mode are disabled by default; Lambda/container-runtime behavior must be enabled only by a separate security decision. The image is pinned to `localstack/localstack:3.8.1` because current latest/stable images require `LOCALSTACK_AUTH_TOKEN`.
+- **Kubernetes/AWS Lab**: Added a LAN-only LocalStack deployment for AWS SAA practice under [iac/k8s/localstack/README.md](../../../projects/homelab-ops/iac/k8s/localstack/README.md). The deployment uses namespace `localstack`, ClusterIP service, Traefik Ingress host `localstack.dungxbuif.com`, Longhorn PVC persistence, and no NodePort/direct LoadBalancer. Lab endpoints are `https://localstack.dungxbuif.com` from LAN clients, `http://localstack.localstack.svc.cluster.local:4566` inside K8s, and `http://localhost:4566` through `kubectl port-forward` as fallback. Docker-in-Docker and privileged mode are disabled by default; Lambda/container-runtime behavior must be enabled only by a separate security decision. The image is pinned to `localstack/localstack:3.8.1` because current latest/stable images require `LOCALSTACK_AUTH_TOKEN`.
 
 ## 2026-07-08
 

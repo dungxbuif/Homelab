@@ -1,5 +1,0 @@
----
-automation_host_role: production_worker
-automation_expected_swarm: true
-automation_swap_path: /swapfile
-automation_expected_private_address: 10.10.0.31

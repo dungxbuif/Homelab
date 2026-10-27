@@ -52,8 +52,8 @@ is a fallback and consumes VPS bandwidth only when P2P cannot be established.
 
 ## Deployment record
 
-Compose source: [`automation/rustdesk-gateway/docker-compose.yml`](../../automation/rustdesk-gateway/docker-compose.yml).
-Firewall source: [`automation/rustdesk-gateway/rustdesk-websocket-firewall.service`](../../automation/rustdesk-gateway/rustdesk-websocket-firewall.service).
+Compose source: [`automation/rustdesk-gateway/docker-compose.yml`](../../../../projects/homelab-ops/automation/rustdesk-gateway/docker-compose.yml).
+Firewall source: [`automation/rustdesk-gateway/rustdesk-websocket-firewall.service`](../../../../projects/homelab-ops/automation/rustdesk-gateway/rustdesk-websocket-firewall.service).
 
 Status: deployed. The gateway runs `hbbs` and `hbbr` from image digest
 `sha256:8ecdab65deb7c84652a626380e31d11a8f1fbafd97916d57f95c20628f943c00`.

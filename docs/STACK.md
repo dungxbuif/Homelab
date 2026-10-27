@@ -110,13 +110,13 @@ OpenTofu, CI, or service implementation here.
 
 The active operator boundary is the private Semaphore UI. Its versioned
 resource and template contract is in
-[`automation/semaphore/`](../automation/semaphore/). Host audits, Ansible
+[`automation/semaphore/`](../../../projects/homelab-ops/automation/semaphore/). Host audits, Ansible
 check mode, and OpenTofu plans are non-mutating. Host/app changes, route
 publication, rollback, and OpenTofu apply require a reviewed artifact and
 `Manager` approval. Semaphore has no Docker socket mount and no public route.
 
 The job executor is the pinned image described in
-[`automation/execution-environment/`](../automation/execution-environment/).
+[`automation/execution-environment/`](../../../projects/homelab-ops/automation/execution-environment/).
 Jobs resolve it by registry digest via `AUTOMATION_EE_IMAGE_DIGEST`; no
 production template may use `latest` or a free-form image tag. The existing
 systemd backup runner remains the owner of backup schedules, so Semaphore does

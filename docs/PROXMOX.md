@@ -50,7 +50,7 @@ retired-target contract test to report a false positive. This is a comment-only
 identity cleanup and does not change the public key material or VM access.
 
 The active module is
-[`automation/tofu/proxmox/`](../automation/tofu/proxmox/). It models only the
+[`automation/tofu/proxmox/`](../../../projects/homelab-ops/automation/tofu/proxmox/). It models only the
 existing VM ID `100` and uses an explicit import block. The module has
 `prevent_destroy = true`; it does not contain VM IDs `101`/`102`, Kubernetes
 nodes, kube-vip, or a cluster target. The first Semaphore plan must be

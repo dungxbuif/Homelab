@@ -1,5 +1,0 @@
----
-automation_host_role: edge_datastore_swarm_manager
-automation_expected_swarm: true
-automation_swap_path: /ssd-data/infra/swapfile
-automation_expected_private_address: 10.10.0.5

@@ -56,6 +56,7 @@ to the source checkouts.
 | `harness` | `/home/dungxbuif/workspace/projects/harness/` | `git@github.com:dungxbuif/harness.git` | Git checkout |
 | `harness-experimental` | `/home/dungxbuif/workspace/projects/harness-experimental/` | `https://github.com/hoangnb24/harness-experimental.git` | Git checkout |
 | `homelab-ops` | `/home/dungxbuif/workspace/projects/homelab-ops/` | `ssh://gitlab.dungxbuif.com:2222/dungxbuif/homelab-ops.git` | Canonical checkout; migration merged to local `main`; branch worktree retained at `/home/dungxbuif/workspace/homelab-ops-task1/` |
+| `homelab-legacy` | `/home/dungxbuif/workspace/projects/homelab-legacy/` | none | Retained source snapshot; rollback/migration history only, never the deployment source |
 | `homelab-tunnel` | `/home/dungxbuif/workspace/projects/homelab-tunnel/` | none recorded | Local directory |
 | `homepage` | `/home/dungxbuif/workspace/projects/homepage/` | `ssh://gitlab.dungxbuif.com:2222/dungxbuif/homepage.git` | Git checkout |
 | `learn` | `/home/dungxbuif/workspace/projects/learn/` | none recorded | Git checkout without origin |

@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-export BACKUP_APP_ROOT="${BACKUP_APP_ROOT:-/opt/apps/homelab-backup/app}"
-exec /bin/bash '{{ scheduler_release_dir }}/run-vm100-scheduled.sh' "$@"

@@ -86,7 +86,7 @@ LAN-bound at `10.10.0.5:9093` and `10.10.0.5:8428`. See the
 ### 2. Edge Routing Boundary
 
 TLS and route ownership live on the Pi5 standalone Traefik. The canonical
-router and service definitions are in [`../migration/traefik/dynamic.yml`](../migration/traefik/dynamic.yml).
+router and service definitions are in [`../migration/traefik/dynamic.yml`](../../../projects/homelab-ops/migration/traefik/dynamic.yml).
 Pi5-backed routes currently include:
 
 - Dynamic subdomain mapping routes requests as follows:

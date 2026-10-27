@@ -92,8 +92,8 @@ private administration and ACL-based access.
 
 10. Keep this vault for documentation, evidence, rules, and rollback notes.
     Do not add new executable infrastructure code here. Use the canonical
-    `projects/homelab-ops` checkout; the remaining code trees in this vault are
-    migration-source material until the H→O consumer cutover is accepted.
+    `projects/homelab-ops` checkout. The former in-vault source snapshot is
+    retained at `projects/homelab-legacy` for migration history only.
 
 ## Verification Limits
 

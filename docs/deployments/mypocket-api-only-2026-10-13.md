@@ -39,6 +39,6 @@ credentials were rotated as part of turning off the web service.
 ## Source of truth
 
 The matching Homelab source config is
-[`migration/traefik/dynamic.yml`](../../migration/traefik/dynamic.yml). Its
+[`migration/traefik/dynamic.yml`](../../../../projects/homelab-ops/migration/traefik/dynamic.yml). Its
 MyPocket upstream was updated without staging or reverting any other pending
 worktree changes.

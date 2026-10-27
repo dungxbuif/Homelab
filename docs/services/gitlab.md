@@ -43,8 +43,8 @@ limits are described below.
 
 ## Operator workflow
 
-1. Edit the secret-free [stack manifest](../../migration/gitlab-stack.yml)
-   and [Omnibus config](../../migration/gitlab-omnibus.rb) in this repo.
+1. Edit the secret-free [stack manifest](../../../../projects/homelab-ops/migration/gitlab-stack.yml)
+   and [Omnibus config](../../../../projects/homelab-ops/migration/gitlab-omnibus.rb) in this repo.
    Validate with `docker stack config -c migration/gitlab-stack.yml` and
    `ruby -c migration/gitlab-omnibus.rb`.
 2. Copy those files to Pi5 `/ssd-data/infra/gitlab/deploy/`. Deploy from
@@ -72,22 +72,22 @@ limits are described below.
 
 VPS Traefik has Docker provider enabled only for containers on VPS; this is
 **not** an Orange Pi Swarm-label route. The new VPS
-[Compose server](../../migration/gitlab-https-tunnel/docker-compose.yml)
+[Compose server](../../../../projects/homelab-ops/migration/gitlab-https-tunnel/docker-compose.yml)
 joins only `gateway-network`. Its `traefik.*` container labels create
 `Host(gitlab.dungxbuif.com)` on `websecure`, TLS via the existing
 `letsencrypt` Cloudflare DNS-01 resolver, and backend port `8085` inside the
 VPS Docker network. Only Rathole control `7002/tcp` is host-published. The
-portless [VM100 client](../../migration/gitlab-https-tunnel/client-stack.yml)
+portless [VM100 client](../../../../projects/homelab-ops/migration/gitlab-https-tunnel/client-stack.yml)
 forwards from that service to `tasks.gitlab_gitlab:80` on `homelab-net`.
 Token/Noise keys were generated outside the repo with the shared
-[renderer](../../migration/gitlab-ssh-tunnel/render-runtime.py). VPS source
+[renderer](../../../../projects/homelab-ops/migration/gitlab-ssh-tunnel/render-runtime.py). VPS source
 is `/root/gitlab-https-tunnel/runtime/server.toml` (mode 0600, image UID
 1000); Pi5 client source is
 `/ssd-data/infra/gitlab/secrets/https-tunnel-client.toml`, and an ignored
 local copy is `credentials/gitlab-https-tunnel-client.toml`.
 
 The VPS shared `/root/gateway/dynamic.yml` was changed **in place** with the
-[guarded helper](../../migration/gitlab-https-tunnel/patch_gateway.py): only
+[guarded helper](../../../../projects/homelab-ops/migration/gitlab-https-tunnel/patch_gateway.py): only
 the GitLab term was removed from `rathole-passthrough` HostSNI, leaving all
 other rules intact and the bind-mount inode unchanged. Backup:
 `/root/gateway/dynamic.yml.bak-gitlab-temp-20260915-171055-839423`.
@@ -104,7 +104,7 @@ observed under this temporary topology.
 
 ## Container Registry trial
 
-The bundled Registry is enabled in [Omnibus config](../../migration/gitlab-omnibus.rb)
+The bundled Registry is enabled in [Omnibus config](../../../../projects/homelab-ops/migration/gitlab-omnibus.rb)
 with `registry_external_url 'https://registry-gitlab.dungxbuif.com'`, legacy
 filesystem metadata (`registry['database']['enabled']=false`), and private
 HTTP NGINX port `5005`. Its storage lives under the VM100 GitLab data bind
@@ -112,11 +112,11 @@ mount. GitLab's versioned Swarm config is
 `gitlab_gitlab_omnibus_registry_trial_20260916`; the old config remains for
 rollback. No GitLab host port was added.
 
-The [trial VPS Compose server](../../migration/gitlab-registry-trial/docker-compose.yml)
+The [trial VPS Compose server](../../../../projects/homelab-ops/migration/gitlab-registry-trial/docker-compose.yml)
 publishes only authenticated Rathole control `7003/tcp`; its `8086/tcp`
 backend is private on VPS Docker `gateway-network`. VPS Traefik Docker
 labels terminate TLS for only the trial domain. The portless
-[VM100 client](../../migration/gitlab-registry-trial/client-stack.yml) uses
+[VM100 client](../../../../projects/homelab-ops/migration/gitlab-registry-trial/client-stack.yml) uses
 Docker DNS `tasks.gitlab_gitlab:5005` on `homelab-net` and Swarm secret
 `gitlab_registry_trial_client`. Separate Noise credentials were generated
 outside the repo and held at VPS
@@ -148,8 +148,8 @@ internal DNS/edge route and native Docker pull test pass.
 ## Public SSH tunnel
 
 The SSH path is separate from the existing Orange Pi HTTPS Rathole tunnel.
-The VPS source is [server Compose](../../migration/gitlab-ssh-tunnel/docker-compose.yml)
-and the VM100 source is [client stack](../../migration/gitlab-ssh-tunnel/client-stack.yml).
+The VPS source is [server Compose](../../../../projects/homelab-ops/migration/gitlab-ssh-tunnel/docker-compose.yml)
+and the VM100 source is [client stack](../../../../projects/homelab-ops/migration/gitlab-ssh-tunnel/client-stack.yml).
 The VPS project is `/root/gitlab-ssh-tunnel`; its `runtime/server.toml` is
 mode 0600 and owned by the image UID 1000. The matching client TOML is a
 Swarm secret mounted read-only in `gitlab-ssh-tunnel_client`; its Pi5 source
@@ -157,7 +157,7 @@ is `/ssd-data/infra/gitlab/secrets/ssh-tunnel-client.toml`. A local ignored
 copy lives under `credentials/gitlab-ssh-tunnel-client.toml`. The secret
 contains a dedicated token and the server's Noise public key; the server's
 Noise private key stays on the VPS. New runtime configs are generated with
-[render-runtime.py](../../migration/gitlab-ssh-tunnel/render-runtime.py) and
+[render-runtime.py](../../../../projects/homelab-ops/migration/gitlab-ssh-tunnel/render-runtime.py) and
 are never committed. The external VPS address in the client config is a
 deliberate exception to internal Docker DNS: split DNS would resolve the
 gateway hostname to Orange Pi on the LAN.

@@ -328,7 +328,7 @@ path once the intended permanent edge path is selected and verified.
 ### Step 2: Route through Traefik
 
 Use the existing router/service pattern in
-[`migration/traefik/dynamic.yml`](../migration/traefik/dynamic.yml). The live
+[`migration/traefik/dynamic.yml`](../../../projects/homelab-ops/migration/traefik/dynamic.yml). The live
 Pi5 copy is `/home/dungxbuif/edge/traefik/dynamic.yml`. Its service URL must use
 `http://tasks.<service>:<port>` on `homelab-net`; do not point at VM100's LAN
 IP. For public exposure, add the hostname to the VPS

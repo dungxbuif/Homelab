@@ -1,5 +1,0 @@
-services:
-  relayhub-api:
-    image: homelab/relayhub:prod-eee9e7c
-  relayhub-worker:
-    image: homelab/relayhub:prod-eee9e7c

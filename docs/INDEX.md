@@ -25,7 +25,7 @@ timestamp: 2026-10-21T00:00:00+07:00
 * [MyPocket API-only Runtime](./deployments/mypocket-api-only-2026-10-13.md) — production web shutdown, direct API route, service state, verification and rollback.
 * [MikroTik Router Hardening](./MIKROTIK.md) — PPPoE, local DHCP, WireGuard return-path routing, security hardening.
 * [Proxmox Production Hypervisor](./PROXMOX.md) — VM100 production storage/lifecycle; no Kubernetes VM or cluster is active, and any future practice VM must be isolated from production.
-* [VM100 OpenTofu import module](../automation/tofu/proxmox/README.md) — import-only boundary for VM ID 100 with destroy protection and no historical K8s targets.
+* [VM100 OpenTofu import module](../../../projects/homelab-ops/automation/tofu/proxmox/README.md) — import-only boundary for VM ID 100 with destroy protection and no historical K8s targets.
 * [Proxmox IaC Prerequisites](./PRE_REQUIRE.md) — Proxmox API tokens & SSH keys for Terraform/Ansible (generic; now used for lab VMs).
 * [Network Diagnostic Trace](./CONTEXT.md) — benchmarks, bandwidth, latency, and DNS troubleshooting history.
 * [CouchDB Obsidian Sync](./COUCHDB_OBSIDIAN_SYNC.md) — deployment, client settings, and recovery notes for the vault sync backend.
@@ -38,7 +38,7 @@ timestamp: 2026-10-21T00:00:00+07:00
 * [Backup and Restore Runbook](./runbooks/backup-restore.md) - native CLI/API backup rules, post-check verification, Mezon status reporting, Google Drive retention, and restore boundaries.
 * [Secret Rotation and History Purge Runbook](./runbooks/secret-rotation-and-history-purge.md) - ordered credential rotation, verification, and history-purge plan for the public mirror (commands documented, not executed).
 * [Database Provisioning Runbook](./runbooks/db-provisioning.md) - validated database/user creation contract, secret boundary, and staging workflow.
-* [Backup Runner](../automation/backup-runner/README.md) - serial export/upload/post-check flow, retention lock, and schedule contract.
+* [Backup Runner](../../../projects/homelab-ops/automation/backup-runner/README.md) - serial export/upload/post-check flow, retention lock, and schedule contract.
 * [Native Backup Pull Transport](./deployments/backup-native-pull-transport-2026-10-21.md) - private-network PostgreSQL/RustFS transport and staged CouchDB proxy boundary.
 * [CouchDB Backup Proxy](./deployments/couchdb-backup-proxy-2026-10-21.md) - GET-only VM100-to-Pi5 proxy, credential boundary, restore evidence, and current cutover gate.
 * [CouchDB Restic Streaming Research](./research/couchdb-restic-streaming-2026-10-21.md) - experimental no-staging design and restore gates; not scheduled production.
