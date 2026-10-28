@@ -74,7 +74,16 @@ evidence.
 Databasus creates and manages its own `databasus_backups` folder using the
 `drive.file` scope. The supplied Homelab Drive folder is the native worker's
 target; Databasus does not currently expose a folder-ID field in its storage
-editor, so do not assume the two backup trees are the same.
+editor, so do not assume the two backup trees are the same. The completed
+Databasus artifact observed on 2026-10-28 was in the Drive-root
+`databasus_backups` folder, outside the supplied Homelab Backup folder; this
+target-alignment issue remains open.
+
+The Databasus backup list showed one `Successful` encrypted logical backup at
+20:03 and the corresponding payload plus metadata files were visible in
+Drive. This proves the dump/upload path, not a restore. Databasus currently
+has no verification agent registered, no restore checks, and scheduled
+verification is disabled; do not call this a restore-verified backup.
 
 ### Notification path
 
@@ -82,9 +91,11 @@ The `Mezon Homelab` webhook notifier is configured in Databasus and attached
 to `PostgreSQL production`. The notifier accepts all supported event types;
 the production backup config currently emits `Backup failed` notifications,
 and healthcheck-unavailable notifications remain enabled. The test
-notification completed successfully on 2026-10-28. The webhook URL is
-intentionally not recorded here; retrieve it from the `Homelab Secret`
-credential mapping when rotating or recreating the notifier.
+notification completed successfully on 2026-10-28. That test proves webhook
+delivery only; no deliberate backup failure has been injected to test the
+event path. The webhook URL is intentionally not recorded here; retrieve it
+from the `Homelab Secret` credential mapping when rotating or recreating the
+notifier.
 
 ## Adding a new database
 
