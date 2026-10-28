@@ -20,6 +20,13 @@ timestamp: 2026-07-03T15:14:00Z
 > Every significant change appends to this log; the current version marker also
 > lives in [`index.md`](../index.md) and [`MAIN.md`](./MAIN.md).
 
+## 2026-10-28 - Databasus Mezon notifier
+
+- Created the `Mezon Homelab` webhook notifier in Databasus, sent one approved
+  test notification successfully, and attached it to `PostgreSQL production`.
+  The notifier is configured for all supported Databasus events; its secret
+  URL is not written to the vault.
+
 ## 2026-10-28 - RelayHub stray PostgreSQL retirement
 
 - Audited the Pi5 `relayhub-relayhub-postgres-1` PostgreSQL 17 instance. Its

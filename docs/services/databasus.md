@@ -76,6 +76,16 @@ Databasus creates and manages its own `databasus_backups` folder using the
 target; Databasus does not currently expose a folder-ID field in its storage
 editor, so do not assume the two backup trees are the same.
 
+### Notification path
+
+The `Mezon Homelab` webhook notifier is configured in Databasus and attached
+to `PostgreSQL production`. The notifier accepts all supported event types;
+the production backup config currently emits `Backup failed` notifications,
+and healthcheck-unavailable notifications remain enabled. The test
+notification completed successfully on 2026-10-28. The webhook URL is
+intentionally not recorded here; retrieve it from the `Homelab Secret`
+credential mapping when rotating or recreating the notifier.
+
 ## Adding a new database
 
 Databasus does not discover new PostgreSQL databases automatically. Every new
