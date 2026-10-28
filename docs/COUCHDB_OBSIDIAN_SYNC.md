@@ -58,6 +58,19 @@ Use a dedicated non-admin sync user.
 
 Do not store the password directly in vault notes.
 
+The homelab vault is documentation-only for LiveSync. Keep the plugin
+`syncOnlyRegEx` setting at `^docs(?:/|$)` so project runbooks and evidence under
+`docs/` sync, while source checkouts and generated files outside `docs/` do not.
+
+The homelab vault uses the restricted `homelab_sync` user and database path:
+
+| Setting | Value |
+| ------- | ----- |
+| Remote database URI | `https://sync-db.dungxbuif.com` |
+| Database name | `homelab` |
+| Username | `homelab_sync` |
+| Allowed remote path | `/homelab` only |
+
 ## Credentials
 
 Credential files on the Pi:
@@ -109,17 +122,19 @@ docker logs --tail 80 couchdb
 
 Since 2026-10-20 `couchdb.dungxbuif.com` is LAN-only (`lan-only` middleware) and
 `sync-db.dungxbuif.com` is the Internet endpoint for LiveSync, limited to `/`,
-`/_session` and `/obsidian_vault…`. Configure the plugin with the `sync-db` host.
+`/_session`, and `/obsidian_vault…`, and `/homelab…`. Configure the plugin with the
+ `sync-db` host.
 
 Database audit 2026-10-20 (`_all_dbs`): `_users`, `_replicator`, `_global_changes`
 (system), `obsidian_vault` (49k docs, member `obsidian_sync`, the only database
 with remote traffic in the previous 72 h) and `homelab` (1.5M docs, 5.9 GB
 external size, last written 2026-10-17). `homelab` is a LiveSync copy of this
-repository (doc ids are repo file paths), is admin-only, and is **not** exposed on
+repository (doc ids are repo file paths), uses the dedicated non-admin
+`homelab_sync` member, and is exposed only through the path-restrictedis admin-only, and is **not** exposed on
 `sync-db`; use it from the LAN through `couchdb.dungxbuif.com`. To sync it from
 outside, first create a dedicated non-admin user as a `_security` member, then add
 `PathPrefix(/homelab)` to the `sync-db` router rule. The earlier note that
-`homelab` is empty is obsolete.
+`/homelab` route on `sync-db`is empty is obsolete.
 
 Test public path through the VPS gateway:
 

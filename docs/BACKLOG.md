@@ -12,6 +12,26 @@ Sources: [network, workload and automation audit](./research/network-workload-au
 [backup runbook](./runbooks/backup-restore.md), and the 2026-10-21 operating session.
 Status values: `open`, `ready` (script prepared, not run), `blocked`, `decision`.
 
+## Requested work — 2026-10-28
+
+These items were added from the latest operating request. They are intentionally
+backlog entries; production changes require a separate verification pass.
+
+| ID | Item | Scope / acceptance gate | Status |
+|---|---|---|---|
+| R1 | Audit and normalize all Pi databases | Inventory PostgreSQL, CouchDB, Redis, RustFS metadata and service-owned stores; document owner, host, backup class and retention. | open |
+| R2 | Move stray databases to Pi5 | Identify DBs outside the Pi5 data boundary, migrate one engine at a time, and pass application/read-only restore checks before cleanup. | partial (2026-10-28; legacy Pi5 RelayHub PostgreSQL was empty, production already used common Pi5 PostgreSQL, archived, validated, and removed after approval) |
+| R3 | CloudBeaver as the DB coordination UI | Configure CloudBeaver with least-privilege app connections, no public database exposure, and one smoke query per registered connection. | done |
+| R4 | Verify Databasus-to-Drive backups | Check every configured provider, recent artifacts, checksum/restore evidence, retention and alert path; close only after a real restore. | open |
+| R5 | Clean VM100 state | Inventory persistent volumes, runtime state and rollback artifacts; move state to the approved data/backup host, then remove only verified orphans. | open |
+| R6 | Homelab documentation organization | Reconcile `INDEX`, `PROJECTS`, `STACK`, `STATUS`, runbooks and dated deployment evidence after the workspace split; keep project docs, exclude source checkouts. | open |
+| R7 | Dual publication for project code | For each active project, create/verify one GitHub remote and one GitLab mirror, push a dedicated branch first, and record the result. | open |
+| R8 | SSH/API key migration | Inventory consumers, move keys to the approved password-manager boundary, rotate and revoke one key at a time, then verify each consumer. | open |
+| R9 | Keep source code out of the homelab vault | Confirm project checkouts live under `/workspace/projects`, LiveSync is `docs/**` only, and no `node_modules`/build output is in the vault or DB. | in progress |
+| R10 | GitLab/RustFS write-path review | Measure file growth and write frequency, classify durable data, and decide whether each workload can safely use a database without weakening restoreability. | open |
+| R11 | Review every sync mechanism | Map Obsidian LiveSync, CouchLoom changes feed, backups and any remaining replication; verify source of truth, delete propagation, auth and rollback. | open |
+| R12 | Fix n8n Mezon delivery path | Restored `daily-gold-fuel-mezon` from the verified pipeline backup. Its terminal node is `n8n-nodes-mezon.mezonWebhook` and the public endpoint host is `webhook.mezon.ai`; no bot node is in this workflow. | done (2026-10-28; Knowledge Hub bot workflows remain separate) |
+
 ## P0 Security
 
 | ID | Item | Why | How / verify | Status |
@@ -100,3 +120,4 @@ for VMs plus Backrest or Kopia over restic for files and dumps, with native dump
 - Done in this rollout: legacy tunnel ports blocked, SSH key-only, coturn limits, `pg-net` and
   `s3-net`, pgadmin and `couchdb.` LAN-only, `sync-db` path-restricted, pgbouncer, whiteboard and
   GitLab moved to `pg-net`.
+---

@@ -20,6 +20,17 @@ timestamp: 2026-07-03T15:14:00Z
 > Every significant change appends to this log; the current version marker also
 > lives in [`index.md`](../index.md) and [`MAIN.md`](./MAIN.md).
 
+## 2026-10-28 - RelayHub stray PostgreSQL retirement
+
+- Audited the Pi5 `relayhub-relayhub-postgres-1` PostgreSQL 17 instance. Its
+  RelayHub business tables were empty and production `relayhub-api`/
+  `relayhub-worker` already used the common Pi5 PostgreSQL through PgBouncer.
+- Created and validated custom-format dumps for both the legacy instance and
+  the common `relayhub` database. After explicit approval, removed the stopped
+  legacy container and its named volume; the validated dumps remain at the
+  Pi5 backup path for audit. Production readiness remained HTTP 200 and both
+  RelayHub containers stayed healthy.
+
 ## 2026-10-23 - NetBird control-plane update
 
 - **NetBird control plane updated on Pi5 Swarm:** `netbird_netbird-server` now
@@ -1360,3 +1371,10 @@ timestamp: 2026-07-03T15:14:00Z
   remain gated on a larger frozen evaluation set. `homelab-ops` commit
   `dc8b606` now deploys a pinned, resource-capped Swarm network anchor on
   VM100; a forced CouchLoom recreate passed without the temporary repair task.
+## 2026-10-28 — CloudBeaver clean workspace
+
+- Recreated CloudBeaver on workspace `db-management-cloudbeaver-workspace-v3`.
+- Created the new user account requested by the operator and verified login.
+- Added the private PostgreSQL connection to the common Pi5 PostgreSQL service with “Show all databases” enabled; the explorer lists the shared databases.
+- Updated the source stack to persist the v3 workspace, set `CLOUDBEAVER_FORCE_HTTPS=false`, and use the `/status` healthcheck. Old CloudBeaver workspaces, reset backup volume, and bootstrap secret were removed after the service check.
+- Runtime scan found only `db-management_db-management-worker` attached to the active Drive credential secret. Databasus has a separate stale Drive token and is failing its own PostgreSQL logical backup/storage-deletion attempts with Google HTTP 401; the native worker Drive receipts are a separate healthy path.

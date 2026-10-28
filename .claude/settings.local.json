@@ -1,0 +1,5 @@
+{
+  "permissions": {
+    "allow": ["Bash(ssh pi *)", "Bash(ssh vm100 *)", "Bash(ssh gateway *)"]
+  }
+}
