@@ -78,9 +78,9 @@ editor. The Databasus folder was moved into the supplied `Homelab Backup`
 folder on 2026-10-28 and the Drive breadcrumb plus new artifacts were verified
 there. Databasus will continue using the same child folder for later jobs.
 
-The Databasus backup list showed one `Successful` encrypted logical backup at
-20:03 and the corresponding payload plus metadata files were visible in
-Drive. This proves the dump/upload path, not a restore. Databasus currently
+The Databasus backup list showed a fresh `Successful` encrypted logical backup
+for each active PostgreSQL job and the corresponding payload plus metadata files
+were visible in Drive. This proves the dump/upload path, not a restore. Databasus currently
 has no verification agent registered, no restore checks, and scheduled
 verification is disabled; do not call this a restore-verified backup.
 
@@ -125,6 +125,9 @@ the Databasus job:
 Existing database schedules are independent. Changing the shared PostgreSQL
 cluster or creating a new database does not add a Databasus job; repeat the
 procedure above and record the database in the service inventory.
+
+For the full acceptance gate, verification checklist, new-database procedure,
+and artifact cleanup rules, use the [Databasus backup operations runbook](../runbooks/databasus-backup-operations.md).
 
 ## Credential mapping
 

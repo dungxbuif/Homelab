@@ -233,15 +233,16 @@ registry_trial_metadata_database: false
 pi5_registry_current_status: active
 lab_native_docker_pull_verified: false
 ```
-## Current backup status (2026-10-13)
+## Current backup status (2026-10-28)
 
 GitLab is a separate backup class; it is not covered by the generic PostgreSQL
-or CouchDB export. The VM100 `homelab-backup-gitlab.timer` is enabled and runs
+or CouchDB export. The VM100 `homelab-backup-gitlab.timer` unit exists but is
+currently inactive; re-enable it before relying on scheduled runs. It runs
 the native Omnibus command `gitlab-backup create` beside the GitLab container,
 then captures configuration/secrets and the local bundled Registry artifacts
 before uploading and checking the encrypted Restic repository.
 
-The latest verified run is `gitlab-20261012-193002` with snapshot ID
+The previous verified run was `gitlab-20261012-193002` with snapshot ID
 `0e4c88063586aece8b924c56422ee0272779bac7b5743cc517b7a858e18b0df3`. The run
 completed successfully; the warning that `/var/opt/gitlab/backups` may be
 readable by non-root users did not fail the job. Redis cache/session data is
@@ -249,4 +250,8 @@ deliberately excluded because it is rebuildable; Git repositories, uploads,
 CI artifacts, Registry layers, config, and secrets remain in the GitLab-native
 backup class. On 2026-10-13 the VM100 Mezon secret was corrected to match the
 Pi5 executor secret after the GitLab notification was found to target an old
-webhook; a warning-level delivery probe returned successfully.
+webhook; a warning-level delivery probe returned successfully. On 2026-10-28
+the local GitLab native payloads and staging archives were removed after
+explicit approval to reclaim VM100 disk. The staging manifest, checksums and
+`remote/snapshot-id` receipt remain, but a fresh scheduled backup must be run
+before this is considered current.
