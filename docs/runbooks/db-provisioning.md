@@ -31,6 +31,13 @@ planned gate, not a verified installed capability. Databases created outside
 this workflow must be reconciled explicitly; do not assume they were enrolled.
 Retiring a resource changes its lifecycle and preserves historical backups.
 
+For a PostgreSQL database in the shared Pi5 cluster, provisioning is incomplete
+until the operator also creates a dedicated Databasus job. The job must point to
+the exact database name, use the existing Google Drive storage and `Mezon
+Homelab` notifier, pass the connection test, and produce a successful first
+backup in the `Homelab Backup` Drive folder. Catalog enrollment does not create
+this Databasus job automatically.
+
 The current control plane is on Pi5: open `semaphore.dungxbuif.com` from LAN or
 NetBird, choose project 1 and run **Provision database and application owner**
 (template 1). The form fields `database_name` and `target_environment` are mapped
@@ -75,6 +82,10 @@ The first production use must run with a `staging` name and verify an
 authenticated `SELECT 1` plus the application connection before promotion.
 Rerunning the same request is allowed; destructive drop/rename operations are
 not part of this workflow.
+
+Keep the cluster-level roles and grants in the separate globals backup. After
+the first Databasus backup, verify the artifact and complete a restore check
+before marking the new database onboarded.
 
 ## CouchDB behavior
 

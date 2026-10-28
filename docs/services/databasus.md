@@ -74,16 +74,23 @@ evidence.
 Databasus creates and manages its own `databasus_backups` folder using the
 `drive.file` scope. The supplied Homelab Drive folder is the native worker's
 target; Databasus does not currently expose a folder-ID field in its storage
-editor, so do not assume the two backup trees are the same. The completed
-Databasus artifact observed on 2026-10-28 was in the Drive-root
-`databasus_backups` folder, outside the supplied Homelab Backup folder; this
-target-alignment issue remains open.
+editor. The Databasus folder was moved into the supplied `Homelab Backup`
+folder on 2026-10-28 and the Drive breadcrumb plus new artifacts were verified
+there. Databasus will continue using the same child folder for later jobs.
 
 The Databasus backup list showed one `Successful` encrypted logical backup at
 20:03 and the corresponding payload plus metadata files were visible in
 Drive. This proves the dump/upload path, not a restore. Databasus currently
 has no verification agent registered, no restore checks, and scheduled
 verification is disabled; do not call this a restore-verified backup.
+
+On 2026-10-28 the shared Pi5 PostgreSQL cluster was reconciled to 15
+Databasus jobs, each with a successful backup run: `bds_prod`, `family_tree`,
+`gitlabhq_production`, `goclaw`, `homelab`, `macocr`, `mypocket`, `n8n`,
+`netbird`, `netbird_activity`, `netbird_idp`, `omniscan`, `relayhub`,
+`whiteboard`, and `postgres` (`PostgreSQL production`). Databasus jobs do not
+replace a separate `pg_dumpall --globals-only` export for cluster roles and
+grants.
 
 ### Notification path
 
@@ -100,15 +107,20 @@ notifier.
 ## Adding a new database
 
 Databasus does not discover new PostgreSQL databases automatically. Every new
-database must be registered once:
+database must be registered once, and catalog enrollment alone does not create
+the Databasus job:
 
 1. Open **Databases → Add database** and select the engine and backup type.
 2. Enter the host, port, database name, and least-privilege backup user; run
    the connection test.
 3. In **Backup config**, enable backups, select `Google Drive backup`, choose
    the interval/time and retention, then save.
-4. Run **Backup now** and confirm the result is `COMPLETED` with no failure
-   message. The first successful run is the acceptance gate for the new DB.
+4. Select `Mezon Homelab` under **Notifiers settings** and save.
+5. Run **Backup now** and confirm the result is `COMPLETED` with no failure
+   message and a new artifact under `Homelab Backup/databasus_backups`.
+6. Record the database in the inventory and run restore verification once the
+   verification agent is available. The first successful backup is not a
+   restore acceptance gate by itself.
 
 Existing database schedules are independent. Changing the shared PostgreSQL
 cluster or creating a new database does not add a Databasus job; repeat the
