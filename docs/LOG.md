@@ -1378,3 +1378,12 @@ timestamp: 2026-07-03T15:14:00Z
 - Added the private PostgreSQL connection to the common Pi5 PostgreSQL service with “Show all databases” enabled; the explorer lists the shared databases.
 - Updated the source stack to persist the v3 workspace, set `CLOUDBEAVER_FORCE_HTTPS=false`, and use the `/status` healthcheck. Old CloudBeaver workspaces, reset backup volume, and bootstrap secret were removed after the service check.
 - Runtime scan found only `db-management_db-management-worker` attached to the active Drive credential secret. Databasus has a separate stale Drive token and is failing its own PostgreSQL logical backup/storage-deletion attempts with Google HTTP 401; the native worker Drive receipts are a separate healthy path.
+
+## 2026-10-28 — Homelab Mezon webhook inventory
+
+- Stored the requested Homelab channel webhook in 1Password as
+  `Homelab Secret/Mezon - Homelab channel webhook`; the URL is intentionally not
+  written to this vault or Git.
+- Compared it against the live `db-management_mezon_webhook` runtime secret:
+  the values do not match. No live secret rotation was performed in this pass;
+  backlog item R13 tracks the Swarm-secret replacement and delivery verification.

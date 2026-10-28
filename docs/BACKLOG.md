@@ -31,6 +31,7 @@ backlog entries; production changes require a separate verification pass.
 | R10 | GitLab/RustFS write-path review | Measure file growth and write frequency, classify durable data, and decide whether each workload can safely use a database without weakening restoreability. | open |
 | R11 | Review every sync mechanism | Map Obsidian LiveSync, CouchLoom changes feed, backups and any remaining replication; verify source of truth, delete propagation, auth and rollback. | open |
 | R12 | Fix n8n Mezon delivery path | Restored `daily-gold-fuel-mezon` from the verified pipeline backup. Its terminal node is `n8n-nodes-mezon.mezonWebhook` and the public endpoint host is `webhook.mezon.ai`; no bot node is in this workflow. | done (2026-10-28; Knowledge Hub bot workflows remain separate) |
+| R13 | Rotate Homelab Mezon notifications into a Swarm secret | The requested Homelab channel webhook is now stored in 1Password as `Homelab Secret/Mezon - Homelab channel webhook`. The live `db-management_mezon_webhook` secret does not match it yet; replace it through the release path, verify sanitized delivery, then remove the old secret. | backlog |
 
 ## P0 Security
 
