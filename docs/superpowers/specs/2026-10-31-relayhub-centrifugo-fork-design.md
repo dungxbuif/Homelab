@@ -67,7 +67,7 @@ Centrifugo remains Go. RelayHub remains Rust. JS/TS and Go remain the initial pu
 | Collaborative documents and awareness | Reuse a Yjs-compatible engine/provider through an adapter | Verify document interoperability; ordinary pub/sub is insufficient |
 | Idle room unloading and restore | Unload in-memory handlers; restore authoritative state on activation | Does not promise Durable Objects WebSocket hibernation |
 
-The collaboration engine is deliberately not selected yet. A bounded spike must compare an existing engine/library with a small companion service. Do not hand-write a CRDT implementation to keep the fork in one language. If one server binary with no companion process is required, settle that before selecting the engine. The requested collaboration feature remains a target, not a completed capability.
+The implementation plan proposes the existing JavaScript Yjs engine in a private companion container. Its first task must prove binary update interoperability, persistence/restore and resource bounds before integrating it. This avoids translating a CRDT implementation to Go. A single server binary would change this proposed design. The requested collaboration feature remains a target, not a completed capability.
 
 Room handlers should initially be registered server-side endpoints or trusted built-ins. Uploading arbitrary user JavaScript and executing PartyServer classes is a separate runtime and isolation requirement, pending an explicit decision.
 
@@ -151,6 +151,25 @@ A release needs immutable artifacts, passing compatibility/failure tests, an exe
 3. If collaboration needs an additional runtime, is a companion container acceptable, or is a single server binary a hard requirement?
 
 Questions 2 and 3 affect sequencing and engine selection; they do not prevent checking the baseline protocol and existing SDK contracts.
+
+## Planning defaults for review — 2026-10-31
+
+These are concrete engineering proposals for the requested implementation plan, not answers attributed to the user. Review the [foundation plan](../plans/2026-10-31-relayhub-centrifugo-foundation.md), [room plan](../plans/2026-10-31-relayhub-centrifugo-rooms.md), and [collaboration/release plan](../plans/2026-10-31-relayhub-centrifugo-collaboration.md) together. Execute with subagents as previously requested, after plan review; do not resume the separately paused Rust completion task implicitly.
+
+- Deliver Centrifugo compatibility first, room state/handlers/alarms second, Yjs collaboration third. Both feature groups are in the proposed release; unchanged PartyServer applications and PartySocket wire compatibility are outside it.
+- Code stays in `~/workspace/projects/RelayHub`, with fork source in its existing ignored `third_party` subdirectories. Operational automation belongs in `~/workspace/projects/homelab-ops`; this vault holds plans/runbooks/evidence.
+- Baseline toolchains: Go 1.27.1, Rust 1.99, Node 22 or newer. Resolve and record immutable build image digests at implementation time. Preserve upstream licenses and existing JSON/Protobuf transports.
+- New API: `POST /api/v1/apps/{app_id}/realtime/session`; discovery RPC: `relayhub.capabilities.v1`; room RPC namespace: `relayhub.rooms.v1`; document RPC namespace: `relayhub.docs.v1`. Keep old realtime and durable endpoints unchanged.
+- Connection and subscription JWTs expire after 60 seconds. Session grants are ephemeral Redis entries with the same TTL; they contain the source credential digest, never plaintext. Rust alone revalidates that digest against identity storage. Internal grant checks run every 250 ms, batch at most 128 distinct grants, and time out after 2 seconds. Failed validation denies new operations and disconnects affected sessions; healthy-path revocation must pass the existing 3-second acceptance window. This is a test target, not an outage SLA.
+- Room identifiers are 1–128 UTF-8 bytes, compared exactly without Unicode normalization. Channel names are computed server-side from workspace UUID, app UUID and base64url room bytes. Subscription credentials are bound to the exact channel and connection; automatic JWT subscriptions do not grant permission.
+- Room state is a JSON object limited to 64 KiB encoded UTF-8; command payloads are at most 16 KiB. Versions are unsigned decimal strings on the wire, including values above JavaScript's safe integer range. Command IDs are UUIDs; reuse with different request content is a conflict.
+- Room mutations use PostgreSQL compare-and-set with durable deduplication and a transactional outbox. State changes increment the version once. Outbox publication is at least once; SDKs deduplicate by event ID/version and reload snapshots on gaps. State conflict is explicit, not an automatic rerun of an external handler.
+- Custom handlers are initially configured HTTP endpoints, with a 2-second timeout and redirects disabled. No client-supplied handler URL. Handler calls carry an idempotency key and execute outside database transactions. Lifecycle hooks describe activation/clean leave/expiry; they do not promise a globally unique Durable Object actor.
+- Membership heartbeats run every 10 seconds, expire after 30 seconds, and carry a connection generation. Idle handler caches unload after 60 seconds without local members or work. State remains in PostgreSQL. Alarm leases last 30 seconds; callbacks are at least once and completion requires the current fencing generation. Cancellation prevents future claims but cannot undo an already running external effect.
+- Yjs companion dependencies start at `yjs@13.6.30`, `y-protocols@1.0.7`, and `lib0@0.2.117`, resolved in the pinned PartyKit lockfile. It performs stateless merge/diff operations; Go owns authorization, durable state and publication. No new durable service files on VM100.
+- Document updates are at most 256 KiB; full snapshots at most 1 MiB; companion HTTP bodies at most 2 MiB and requests time out after 2 seconds. Awareness entries are at most 8 KiB, expire after 30 seconds and are never durable. Reject oversize or malformed input before durable acceptance. Go exposes binary document operations, not a Yjs editing engine.
+- New service listeners use client port 8000 and private API/admin/metrics port 9000, with no published host ports. Public route prefix is `/realtime`, stripped before forwarding `/connection/websocket`; deny public access to internal APIs. The Yjs companion is private on port 8090. Production secrets use Swarm secrets with 1Password item/field mappings, never values in Git.
+- Release gate: every declared client/server combination passes, disposable backup restore proves room/document state, immutable images and packages are recoverable from both owned Git remotes, and a reviewed canary/rollback runbook exists. Production activation remains a separate operator-authorized step.
 
 ## Review evidence
 
