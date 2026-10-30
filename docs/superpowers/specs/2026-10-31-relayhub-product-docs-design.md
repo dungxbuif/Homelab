@@ -6,7 +6,9 @@ Date: 2026-10-31. Status: proposed design for review; no site, skill or package 
 
 The user explicitly chose Docusaurus and asked for product introduction, useful use cases, integration guides, core-code explanations, APIs, authentication and high-level design. They emphasized that the old docs do not explain clearly enough what users can build, and that users should not have to self-host or maintain RelayHub's internal components. They also requested `llms.txt`/full text, ready-to-install skills and SDK downloads that can be built together.
 
-The product promise is managed integration: a consumer connects their application or outbound agent to a RelayHub instance, while the RelayHub operator maintains the servers, messaging and storage. This does not assert a public commercial offering, pricing, uptime guarantee or unrestricted signup exists. V1 accounts/workspaces remain admin-created according to the approved product design. Self-hosting instructions serve operators and are not prerequisites in the application integration journey.
+Latest user direction: public documentation must conceal the technology behind RelayHub. This supersedes the earlier placement of core-code and infrastructure explanations in public docs. Public material describes RelayHub's product behavior and integration contracts; server implementation, component choices, topology and operator procedures stay in internal documentation outside the site/export inputs. This rule applies equally to legacy pages, text exports, skills and downloadable bundles.
+
+The product promise is managed integration: a consumer connects their application or outbound agent to RelayHub, while the operator maintains the service. This does not assert a public commercial offering, pricing, uptime guarantee or unrestricted signup exists. V1 accounts/workspaces remain admin-created according to the approved product design. Self-hosting and server architecture instructions are internal operator documents, not public site sections.
 
 ## Current evidence
 
@@ -20,7 +22,7 @@ The site currently uses English and Docusaurus 3.x from its committed lockfile. 
 2. Keep Docusaurus, use one canonical content manifest per product version, and generate text/download references from it. Add a release-aware Developer Kit using the existing deterministic packer. Recommended: existing tooling is reusable and compatibility becomes inspectable.
 3. Regenerate the whole site/SDK surface from OpenAPI. Useful for reference tables, insufficient for product use cases, architecture or WebSocket behavior; also depends on unfinished Rust route parity.
 
-Docusaurus is the user's explicit choice. Option 2 is the assistant's proposed implementation approach. Default version policy for review: v1 is the primary product narrative, with explicit preview/planned labels, and Go/v2 lives in a clearly marked Legacy section. No published contract is silently replaced by changing a navigation label.
+Docusaurus is the user's explicit choice. Option 2 is the assistant's proposed implementation approach. Default version policy for review: v1 is the primary product narrative, with explicit preview/planned labels; the previous Go/v2 implementation's public integration material uses the label `Legacy v2` and version ID `legacy-v2`, without naming its server language. No published contract is silently replaced by changing a navigation label.
 
 ## Reader journey and information architecture
 
@@ -32,20 +34,21 @@ Docusaurus is the user's explicit choice. Option 2 is the assistant's proposed i
 | Integrate | Separate Node, Go and browser paths; webhook sync/async, offline policy, retries, delivery status, replay and dashboard tests |
 | Auth and tenancy | User session vs application key vs agent key vs short-lived browser token; permissions, revocation, endpoint auth, CSRF and safe credential placement |
 | API and protocol | Versioned HTTP reference, WebSocket frames, errors, limits, receipt/ACK meaning, idempotency and runnable examples |
-| How it works | High-level architecture and request flows; ownership boundaries, durable vs ephemeral state, failures/recovery; core modules and source links at the release commit |
+| How it works | Product-level flow: application/provider → RelayHub → recipient/agent; delivery guarantees, durable vs ephemeral behavior, retries, failures and recovery visible to the integrator |
 | SDKs and agents | Supported versions, install/build commands, separate downloads, Developer Kit, skill usage and checksums |
-| Operate | Optional deployment and operational responsibilities for the RelayHub operator; generic examples without homelab secrets or topology |
-| Legacy and changes | Old Go/v2 contracts, migration notes and release compatibility; avoid mixing old signing examples into v1 quickstarts |
+| Legacy and changes | Previous v2 integration contracts, migration notes and release compatibility; avoid mixing old signing examples into v1 quickstarts |
 
 Every use case follows: the user's problem → what they can build → what RelayHub manages → what they implement → short working flow → relevant limitations → one next-step link. Lead with outcomes, not NATS/Redis/Centrifugo deployment instructions. Illustrate webhook delivery to a local app with an outbound agent, not a promise of arbitrary TCP/full-network tunneling. Clearly distinguish realtime's ephemeral behavior from durable queued delivery.
 
-Each capability record contains `id`, `product_version`, `status` (`released`, `preview`, `planned`, `legacy`), `source_commit`, `evidence_paths`, `api_contract`, `sdk_versions` and `limitations`. A completed implementation test is evidence of preview readiness; a recorded release is required for `released`. Planned features are excluded from install-ready skill instructions and runnable quickstarts. API reference generation may consume validated contracts; docs must not invent a route to fill a gap.
+Each internal capability record contains `id`, `product_version`, `status` (`released`, `preview`, `planned`, `legacy`), `source_commit`, `evidence_paths`, `api_contract`, `sdk_versions` and `limitations`. Only product/version/status/public contract/SDK compatibility/limitations are exported; source provenance and evidence paths remain internal build inputs. A completed implementation test is evidence of preview readiness; a recorded release is required for `released`. Planned features are excluded from install-ready skill instructions and runnable quickstarts. API reference generation may consume validated public contracts; docs must not invent a route to fill a gap.
+
+Public examples, diagrams and prose use product concepts such as RelayHub, event, delivery, retry, channel and agent. Do not expose backend languages/frameworks, database/broker/realtime-engine brands, internal service names, fork history, server source links or deployment topology. Keep necessary integration details accurate: HTTP/WebSocket contracts, auth/signature algorithms, limits, SDK languages/runtime requirements and client-visible behavior remain documented. Client SDK source/build dependencies and required licenses/notices remain intact; this is a documentation/publication boundary, not dependency obfuscation or removal of attribution.
 
 ## One source, multiple reading formats
 
-Canonical narrative lives in `web/docs/docs` as Markdown/MDX; a checked manifest determines version, ordering, public URL, text export and capability references. Preserve code fences and exact commands. Dynamic widgets require a text fallback; generation fails rather than leaving JSX/imports in `llms-full.txt`. Current URLs and `/docs/*.md` aliases receive an explicit redirect/compatibility map instead of disappearing accidentally.
+Canonical public narrative lives in `web/docs/docs` as Markdown/MDX; an explicit public-only manifest determines version, ordering, public URL, text export and capability references. Internal core-code/architecture/operator documents stay in the homelab vault, outside site/static/versioned-doc input trees. Preserve code fences and exact commands. Dynamic widgets require a public text fallback; generation fails rather than leaving JSX/imports in `llms-full.txt`. Preserve aliases for public integration material; old infrastructure/deployment/source-map URLs must be removed from public serving and return 404/410 or redirect to an appropriate safe product page. Merely hiding a sidebar entry is insufficient.
 
-Generate `/llms.txt` as a short version/status index and `/llms-full.txt` as the current primary guide. Also expose version-specific text so legacy instructions cannot be mistaken for v1. Include source URLs and release/commit metadata in the full file. These are useful machine-readable resources; they do not guarantee any agent will discover or obey them. OpenAPI and message schemas remain separate linked artifacts, with the same version identity.
+Generate `/llms.txt` as a short version/status index and `/llms-full.txt` as the current primary guide. Also expose version-specific public text so legacy instructions cannot be mistaken for v1. Include public documentation URLs and product release metadata, not backend commits or internal source URLs. These are useful machine-readable resources; they do not guarantee any agent will discover or obey them. Public OpenAPI and message schemas remain separate linked artifacts, with the same version identity; exclude internal service-to-service endpoints while documenting supported customer-facing management APIs.
 
 ## Skills, SDKs and Developer Kit
 
@@ -53,7 +56,7 @@ Keep a focused `relayhub-integration` skill with an installable directory, versi
 
 Keep individual Node/browser/Go source archives and JS package tarballs when built and tested. Go is a source/module distribution; do not invent a compiled universal Go SDK binary. Add a Developer Kit archive containing the compatible skill, available SDK artifacts, example projects, contracts, manifest and build instructions. CLI binaries can be linked if the release actually produces them; absent platform builds are marked unavailable, not fabricated.
 
-Manifest fields: `schema_version`, `product_version`, `status`, `source_commit`, `contracts`, `components[]` with name/version/source commit/upstream base where applicable/runtime floors/relative URL/SHA256/build and test commands, and a compatibility-report reference. Build the bundle from declared, verified artifacts, not from a recursive zip of the working directory. Include licenses; exclude real credentials, `.env`, caches, ignored local worktrees, `.git` and `node_modules`. Do not include a hash of an archive inside itself; the outer download manifest contains that archive's hash.
+Public download manifest fields: `schema_version`, `product_version`, `status`, public `contracts`, `components[]` with product SDK/CLI/skill name/version/runtime floors/public relative URL/SHA256/build and test commands. Public SDK source references are permitted when needed to build the distributed client. Keep server source/upstream pins, images, private remotes, infrastructure manifests and full compatibility reports in the internal release manifest; generate an allowlisted public projection rather than copying that manifest into the Kit. Build the bundle from declared, verified client artifacts, not from a recursive zip of the working directory. Include licenses; exclude server code/configuration, real credentials, `.env`, caches, ignored local worktrees, `.git` and `node_modules`. Do not include a hash of an archive inside itself; the outer download manifest contains that archive's hash.
 
 Building the Kit requires normal language dependency retrieval unless explicitly labeled offline-ready; source archives must contain lockfiles and required fixtures. Fresh extraction into a path containing spaces, outside the monorepo, must build and test without parent `go.work`, local `file:` dependencies or missing fork checkouts. Built fork packages may be vendored as declared artifacts; source-only SDKs must identify reachable pinned dependencies.
 
@@ -63,7 +66,7 @@ Building the Kit requires normal language dependency retrieval unless explicitly
 - Site, text, skill and downloads identify the same API/release; planned features never appear as working production examples.
 - Auth examples distinguish browser and backend secrets, with no operator-private values or addresses.
 - Docusaurus strict-link build, machine-readable drift checks, contract/example checks, archive checksum/reproducibility tests and clean-extraction SDK tests pass.
-- Public docs explain the core architecture; detailed homelab operations remain in the vault. No live docs deployment or package publication is performed by this design.
+- Public docs explain the integration model; core implementation and operator details remain internal. Verify final HTML, static text, search index, sitemap, versioned pages, skills and extracted archives against that boundary; hidden navigation is not a privacy control. Required client dependency metadata/licenses are an explicit narrow exception. No live docs deployment or package publication is performed by this design.
 
 ## Implementation sequence
 
@@ -72,3 +75,5 @@ See the [product docs plan](../plans/2026-10-31-relayhub-product-docs.md): D1 pr
 ## Design review evidence
 
 A separate Luna builder review read this design on 2026-10-31 and returned `nothing important left`. The main agent separately reviewed the implementation plan. This is review of design/planning, not evidence that the website or Developer Kit has been implemented or tested. The v1-primary/Legacy default remains a proposal until the user reviews it.
+
+The subsequent public/internal documentation boundary is an explicit user correction. It is incorporated into D1–D4 and does not require repeating the earlier product-scope questionnaire.
