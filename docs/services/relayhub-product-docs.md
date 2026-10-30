@@ -16,15 +16,16 @@ Internal architecture context stays in [`relayhub-internals.md`](relayhub-intern
 - D2: `ead627c` — manifest-driven versioned references and public static cleanup
 - D3: `a521fdd` — versioned skill, SDK archives, examples, kit and checksums
 - D4: `3aa0e9f` — browser journey, CI gates, release checklist and retired-asset removal
+- Review fixes: `dcbb222` — public contract boundary scan, safe generated output, versioned artifacts, corrected SDK example, CI build gate and legacy redirect
 
 All four commits are local feature-branch commits. No main merge is implied by this record.
 
 ## Verification recorded on 2026-10-31
 
-- `node --test web/docs/scripts/build-reference.test.mjs` — 3 passed.
+- `node --test web/docs/scripts/build-reference.test.mjs` — 7 passed, including stale-file, path-traversal, symlink and multiline-widget regressions.
 - `npm --prefix web/docs run test:product-docs` — 1 browser journey passed.
 - `npm --prefix web/docs run build` — strict Docusaurus build passed.
-- `.venv-docs/bin/python backend/scripts/check-docs.py --static` — catalog, contracts, generated artifacts, route parity and Admin snapshot passed.
+- `.venv-docs/bin/python backend/scripts/check-docs.py --static --self-test` — catalog, contracts, public asset/archive boundary scan, generated artifacts, route parity, Admin snapshot and negative controls passed.
 - `python3 backend/scripts/test-developer-kit.py --artifacts web/docs/static/downloads` — kit extraction/build/checksum/reproducibility gate passed.
 - `python3 /home/dungxbuif/.codex/skills/.system/skill-creator/scripts/quick_validate.py web/docs/static/skills/relayhub-integration` — skill valid.
 - `go test ./...` in backend — passed.
@@ -32,6 +33,7 @@ All four commits are local feature-branch commits. No main merge is implied by t
 - TypeScript SDK `typecheck`, `test`, size check and `npm pack --dry-run` — passed; 16 SDK tests passed.
 - Admin `typecheck`, Vitest and build — passed; 10 files / 19 tests passed.
 - `go -C backend generate ./web` — generated embed matches the public site build.
+- Public Skill and SDK downloads are now named with the `v1` contract version; `/sdk/relayhub-integration.zip` remains only as a redirect to the versioned Skill archive.
 
 The browser run used a locally installed Playwright Chromium. CI installs Chromium explicitly before the same smoke test.
 
