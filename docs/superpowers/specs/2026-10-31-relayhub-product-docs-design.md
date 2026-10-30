@@ -67,7 +67,7 @@ Building the Kit requires normal language dependency retrieval unless explicitly
 
 ## Implementation sequence
 
-See the [product docs plan](../plans/2026-10-31-relayhub-product-docs.md): D1 product/use-case rewrite and capability catalog; D2 shared text/contracts export; D3 skills/SDK Developer Kit; D4 cross-surface verification and release integration. The webhook plan supplies the exact webhook capability/evidence mapping; the realtime release manifest supplies fork compatibility. Independent prose work can start after review, but no feature is promoted to released before its own evidence exists.
+See the [product docs plan](../plans/2026-10-31-relayhub-product-docs.md): D1 product/use-case rewrite and capability catalog; D2 shared text/contracts export; D3 skills/SDK Developer Kit; D4 cross-surface verification and release integration. The [full webhook plan](../plans/2026-10-31-relayhub-full-webhooks.md) supplies the exact webhook capability/evidence mapping; the realtime release manifest supplies fork compatibility. Independent prose work can start after review, but no feature is promoted to released before its own evidence exists.
 
 ## Design review evidence
 
