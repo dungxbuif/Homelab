@@ -1,7 +1,7 @@
 # RelayHub realtime: Centrifugo and SDK forks
 
 Date: 2026-10-31
-Status: design draft for review; no fork, implementation, package publication or deployment has been performed.
+Status: architecture draft for review; nested source checkouts prepared and pinned on 2026-10-31. No feature implementation, package publication or deployment has been performed.
 
 ## User intent and decisions
 
@@ -28,18 +28,30 @@ This work is separate from the paused Rust v1 completion task. Uncommitted OpenA
 
 The recommendation within option 2 is to add independent modules and extension APIs, preserving upstream behavior when extensions are disabled. A fork is not a reason to rewrite existing connection or recovery code.
 
-## Proposed repository and runtime boundaries
+## Repository and runtime boundaries
 
-Proposed repository names (not created):
+The user explicitly corrected the layout: dependency repositories belong inside the existing RelayHub project directory, not as sibling projects. The following independent Git checkouts now exist:
 
-- `~/workspace/projects/centrifugo`: upstream history plus a `relayhub` development branch; Go room extensions in a dedicated internal package.
-- `~/workspace/projects/centrifuge-js`: upstream JS SDK history plus additive RelayHub extensions.
-- `~/workspace/projects/centrifuge-go`: upstream Go SDK history plus additive RelayHub extensions.
+- `~/workspace/projects/RelayHub/third_party/centrifugo`: server baseline, with a local `relayhub` branch for future extensions.
+- `~/workspace/projects/RelayHub/third_party/centrifuge-js`: browser/Node SDK baseline.
+- `~/workspace/projects/RelayHub/third_party/centrifuge-go`: Go SDK baseline.
+- `~/workspace/projects/RelayHub/third_party/partykit`: PartyServer/PartySocket/Yjs source reference.
 - `~/workspace/projects/RelayHub`: Rust identity/durable delivery, product SDK surface, dashboard and integration tests.
 
-Retain `upstream` remotes and record exact upstream tags/SHAs in a compatibility manifest. GitHub and GitLab mirrors follow the user's existing tracking policy. Keep upstream license/notice files. Use distinct package/module identities and immutable versioned artifacts for modified SDK releases; do not overwrite upstream packages.
+The parent ignores `third_party/*/`; these are nested Git repositories, not tracked submodules. It tracks `third_party/upstreams.lock.json` and `third_party/README.md` for source pins and restore/compare/upgrade procedures. Each nested checkout has full history, an `upstream` fetch remote with pushing disabled, and `refs/relayhub/upstream-base`. No dependency installation was performed. The existing default-deny Docker context excludes the nested source trees.
 
-The upstream releases discovered during research are Centrifugo `v6.10.2`, centrifuge-js `5.8.0`, and centrifuge-go `v0.13.0`. These are candidates, not a verified compatible set. Resolve immutable SHAs and image digests before implementation; do not build from floating `latest` or infer release behavior from documentation for `master`.
+The manifest separately records upstream-base and checked-out commits, which initially match. When custom commits exist, push them to owned GitHub/GitLab fork remotes and record those remotes before updating the parent pin to a fork-only commit. Parent commits do not back up ignored nested changes. Hosted fork remotes have not yet been created. Keep upstream license/notice files and use distinct package/module identities for modified SDK releases.
+
+Pinned source baselines:
+
+| Repository | Tag | Full upstream commit |
+|---|---|---|
+| Centrifugo | `v6.10.2` | `cf21c5de6be83a35e02b34e44ad40bdbc5556b9f` |
+| centrifuge-js | `5.8.0` | `163dcbab9d5e23f41d1142e4631bcbabc2e2f62f` |
+| centrifuge-go | `v0.13.0` | `b8ee54f4562141848b44b99125d2bfd69099e874` |
+| PartyKit | `partyserver@0.5.10` | `53f0c6819bd534d80152c6a1b324cd17c9ab4e6d` |
+
+The PartyKit snapshot contains PartyServer `0.5.10`, PartySocket `1.3.0`, and y-partyserver `2.2.0`. These are source baselines, not a verified runtime-compatible set. Pin build images when implementation starts; do not infer release behavior from floating `master` documentation.
 
 Centrifugo remains Go. RelayHub remains Rust. JS/TS and Go remain the initial public SDK languages. This is a component integration, not another rewrite of the Rust backend.
 
