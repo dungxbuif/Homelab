@@ -100,8 +100,10 @@ Pi5-backed routes currently include:
 n8n is no longer a Pi5-hosted edge route; it now runs on VM100 and uses Pi5
 PostgreSQL database `n8n` through the private `pgbouncer:6432` overlay
 endpoint (changed from the equivalent LAN PgBouncer mapping on 2026-09-15).
-RelayHub is likewise no longer a Pi5-hosted app; VM100 runs API/worker/NATS/Redis,
-while Pi5 keeps only PostgreSQL database `relayhub`.
+RelayHub is likewise no longer a Pi5-hosted app; VM100 runs the Rust API/Admin
+UI/NATS/Redis, while Pi5 keeps PostgreSQL database
+`relayhub_v1_staging_20261030` for the public v1 stack. Legacy database
+`relayhub` remains retained only for rollback of the old Go runtime.
 GitLab runs on VM100 and its public HTTPS/SSH routes are live through isolated
 VPS tunnels; no Orange Pi GitLab route is active. Grafana
 remains retired. See [GitLab service runbook](./services/gitlab.md) for the
