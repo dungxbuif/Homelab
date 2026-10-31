@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="960" viewBox="0 0 1400 960" role="img" aria-labelledby="title desc">
+  <title id="title">Project management and documentation reference flow</title>
+  <desc id="desc">Project source stays outside the Homelab vault, while the vault records project ownership, runtime evidence, release notes and backlog state. A separate reading path shows the authority order from the index and current status through dated evidence and runbooks, with archived notes retained only as history.</desc>
+  <defs>
+    <marker id="blue-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#2f6fed"/></marker>
+    <marker id="teal-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#1f9d8b"/></marker>
+    <marker id="muted-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#7b8798"/></marker>
+    <style>
+      .bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.small{font:14px sans-serif}.body{font:16px sans-serif}.head{font:700 22px sans-serif}.title{font:700 30px sans-serif}.card{stroke:#d8dee9;stroke-width:2}.source{fill:#eaf2ff;stroke:#2f6fed}.evidence{fill:#eafaf6;stroke:#1f9d8b}.reference{fill:#f1edff;stroke:#7c5cfc}.note{fill:#fff7e8;stroke:#d97706}.history{fill:#fff1f1;stroke:#c2413b}.white{fill:#fff;stroke:#d8dee9}.pill{font:700 13px sans-serif;letter-spacing:.5px}.blueflow{fill:none;stroke:#2f6fed;stroke-width:4;marker-end:url(#blue-arrow)}.tealflow{fill:none;stroke:#1f9d8b;stroke-width:4;marker-end:url(#teal-arrow)}.mutedflow{fill:none;stroke:#7b8798;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#muted-arrow)}.rule{stroke:#d8dee9;stroke-width:2}
+    </style>
+  </defs>
+  <rect class="bg" width="1400" height="960"/>
+  <text class="title ink" x="50" y="58">Project management + reference-note flow</text>
+  <text class="body muted" x="52" y="88">Keep source code in project workspaces; keep operational truth, evidence and decisions in the Homelab docs vault</text>
+
+  <rect class="source card" x="50" y="130" width="1300" height="330" rx="20"/>
+  <text class="pill" fill="#2f6fed" x="78" y="168">PROJECT LIFECYCLE</text>
+  <text class="head ink" x="78" y="205">From source checkout to an auditable runtime decision</text>
+
+  <rect class="white card" x="78" y="250" width="220" height="138" rx="14"/>
+  <text class="head ink" x="100" y="286">Source checkout</text>
+  <text class="small muted" x="100" y="316">/workspace/projects/&lt;project&gt;</text>
+  <text class="small muted" x="100" y="342">code, tests, lockfiles</text>
+  <text class="small muted" x="100" y="368">never copied into this vault</text>
+
+  <rect class="white card" x="342" y="250" width="220" height="138" rx="14"/>
+  <text class="head ink" x="364" y="286">PROJECTS.md</text>
+  <text class="small muted" x="364" y="316">owner, local path</text>
+  <text class="small muted" x="364" y="342">origin, scope, notes</text>
+  <text class="small muted" x="364" y="368">inventory reference only</text>
+
+  <rect class="white card" x="606" y="250" width="220" height="138" rx="14"/>
+  <text class="head ink" x="628" y="286">Change / release</text>
+  <text class="small muted" x="628" y="316">branch, CI, approval</text>
+  <text class="small muted" x="628" y="342">backup before stateful work</text>
+  <text class="small muted" x="628" y="368">rollback kept bounded</text>
+
+  <rect class="evidence card" x="870" y="250" width="220" height="138" rx="14"/>
+  <text class="head ink" x="892" y="286">Dated evidence</text>
+  <text class="small muted" x="892" y="316">deployment ledger</text>
+  <text class="small muted" x="892" y="342">health / restore receipt</text>
+  <text class="small muted" x="892" y="368">exact version + result</text>
+
+  <rect class="reference card" x="1134" y="250" width="188" height="138" rx="14"/>
+  <text class="head ink" x="1156" y="286">Status / backlog</text>
+  <text class="small muted" x="1156" y="316">current truth</text>
+  <text class="small muted" x="1156" y="342">open gate / owner</text>
+  <text class="small muted" x="1156" y="368">done only with proof</text>
+
+  <path class="blueflow" d="M298 319 H342"/>
+  <path class="blueflow" d="M562 319 H606"/>
+  <path class="blueflow" d="M826 319 H870"/>
+  <path class="tealflow" d="M1090 319 H1134"/>
+  <text class="small muted" x="80" y="428">Rule: source repositories are the implementation authority; Homelab docs record the operational contract and evidence.</text>
+
+  <rect class="reference card" x="50" y="500" width="1300" height="390" rx="20"/>
+  <text class="pill" fill="#7c5cfc" x="78" y="538">REFERENCE NOTE READING ORDER</text>
+  <text class="head ink" x="78" y="575">Start broad, then move toward dated proof and executable procedure</text>
+
+  <rect class="white card" x="78" y="625" width="190" height="150" rx="14"/>
+  <text class="head ink" x="100" y="662">INDEX.md</text>
+  <text class="small muted" x="100" y="692">entry point</text>
+  <text class="small muted" x="100" y="718">links to current docs</text>
+  <text class="small muted" x="100" y="744">and standards</text>
+
+  <rect class="white card" x="314" y="625" width="190" height="150" rx="14"/>
+  <text class="head ink" x="336" y="662">STATUS / STACK</text>
+  <text class="small muted" x="336" y="692">current topology</text>
+  <text class="small muted" x="336" y="718">verified boundaries</text>
+  <text class="small muted" x="336" y="744">remaining gates</text>
+
+  <rect class="evidence card" x="550" y="625" width="220" height="150" rx="14"/>
+  <text class="head ink" x="572" y="662">Dated deployment</text>
+  <text class="small muted" x="572" y="692">runtime/version proof</text>
+  <text class="small muted" x="572" y="718">backup + restore receipt</text>
+  <text class="small muted" x="572" y="744">newer evidence wins</text>
+
+  <rect class="note card" x="816" y="625" width="220" height="150" rx="14"/>
+  <text class="head ink" x="838" y="662">Runbook</text>
+  <text class="small muted" x="838" y="692">safe command path</text>
+  <text class="small muted" x="838" y="718">preflight / rollback</text>
+  <text class="small muted" x="838" y="744">secret boundary</text>
+
+  <rect class="history card" x="1082" y="625" width="240" height="150" rx="14"/>
+  <text class="head ink" x="1104" y="662">History / archived</text>
+  <text class="small muted" x="1104" y="692">incident context</text>
+  <text class="small muted" x="1104" y="718">rollback history only</text>
+  <text class="small muted" x="1104" y="744">never current by itself</text>
+
+  <path class="mutedflow" d="M268 700 H314"/>
+  <path class="mutedflow" d="M504 700 H550"/>
+  <path class="mutedflow" d="M770 700 H816"/>
+  <path class="mutedflow" d="M1036 700 H1082"/>
+
+  <line class="rule" x1="78" y1="820" x2="1322" y2="820"/>
+  <text class="small ink" x="78" y="852">Authority rule</text>
+  <text class="small muted" x="205" y="852">new dated live evidence → current STATUS/STACK catalog → runbook procedure → historical/archived notes</text>
+  <text class="small muted" x="78" y="878">When records conflict, do not silently merge them: keep the old note as history and link the newer evidence.</text>
+</svg>

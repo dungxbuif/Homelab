@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+  <title id="title">Current homelab system overview</title>
+  <desc id="desc">Public traffic enters the VPS gateway, crosses shared Rathole to the Pi5 edge, and reaches VM100 production workloads. Proxmox hosts VM100 and VM110. The Mac remains a separate roaming client and development host.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#2f6fed"/></marker>
+    <marker id="arrow-muted" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#7b8798"/></marker>
+    <style>
+      .bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.small{font:14px sans-serif}.body{font:16px sans-serif}.head{font:700 22px sans-serif}.title{font:700 30px sans-serif}.card{stroke:#d8dee9;stroke-width:2}.edge{fill:#eaf2ff;stroke:#2f6fed}.data{fill:#eafaf6;stroke:#1f9d8b}.compute{fill:#f1edff;stroke:#7c5cfc}.host{fill:#fff;stroke:#b8c2d1}.note{fill:#fff7e8;stroke:#d97706}.retired{fill:#fff1f1;stroke:#c2413b}.pill{font:700 13px sans-serif;letter-spacing:.5px}.flow{fill:none;stroke:#2f6fed;stroke-width:4;marker-end:url(#arrow)}.dashed{fill:none;stroke:#7b8798;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#arrow-muted)}
+    </style>
+  </defs>
+  <rect class="bg" width="1400" height="900"/>
+  <text class="title ink" x="50" y="58">Homelab system overview</text>
+  <text class="body muted" x="52" y="88">Current documented topology • reconciled 2026-10-31 • solid paths are live routing or data boundaries</text>
+
+  <rect class="edge card" x="50" y="145" width="300" height="500" rx="18"/>
+  <text class="pill" fill="#2f6fed" x="76" y="180">PUBLIC EDGE</text>
+  <text class="head ink" x="76" y="218">VPS gateway</text>
+  <text class="body muted" x="76" y="246">103.82.21.202</text>
+  <rect fill="#fff" class="card" x="76" y="275" width="248" height="76" rx="12"/>
+  <text class="body ink" x="94" y="304">gateway-traefik</text>
+  <text class="small muted" x="94" y="328">TCP 80 / 443 • HostSNI routes</text>
+  <rect fill="#fff" class="card" x="76" y="367" width="248" height="76" rx="12"/>
+  <text class="body ink" x="94" y="396">shared Rathole</text>
+  <text class="small muted" x="94" y="420">7000 + isolated GitLab 7001–7003</text>
+  <rect fill="#fff" class="card" x="76" y="459" width="248" height="76" rx="12"/>
+  <text class="body ink" x="94" y="488">NetBird relay / STUN</text>
+  <text class="small muted" x="94" y="512">TCP 443 • UDP 3478</text>
+  <text class="small muted" x="76" y="583">No application DB or image storage</text>
+  <text class="small muted" x="76" y="606">RustDesk + Coturn also terminate here</text>
+
+  <rect class="data card" x="410" y="145" width="330" height="500" rx="18"/>
+  <text class="pill" fill="#1f9d8b" x="436" y="180">HOME EDGE + DATA</text>
+  <text class="head ink" x="436" y="218">Pi5</text>
+  <text class="body muted" x="436" y="246">10.10.0.5 • Swarm manager</text>
+  <rect fill="#fff" class="card" x="436" y="275" width="278" height="98" rx="12"/>
+  <text class="body ink" x="454" y="305">edge-traefik-pi5</text>
+  <text class="small muted" x="454" y="329">normal TLS termination + LAN edge</text>
+  <text class="small muted" x="454" y="351">AdGuard split DNS / Rathole client</text>
+  <rect fill="#fff" class="card" x="436" y="389" width="278" height="116" rx="12"/>
+  <text class="body ink" x="454" y="419">Authoritative data</text>
+  <text class="small muted" x="454" y="445">PostgreSQL / PgBouncer • Redis</text>
+  <text class="small muted" x="454" y="467">CouchDB • RustFS • registries</text>
+  <text class="small muted" x="454" y="489">Portless by default; explicit LAN exceptions</text>
+  <rect fill="#fff" class="card" x="436" y="521" width="278" height="91" rx="12"/>
+  <text class="body ink" x="454" y="551">Overlay boundaries</text>
+  <text class="small muted" x="454" y="576">homelab-net • pg-net • s3-net</text>
+  <text class="small muted" x="454" y="598">edge-http-net / private service nets</text>
+
+  <rect fill="none" stroke="#7c5cfc" stroke-width="3" stroke-dasharray="11 8" x="805" y="120" width="525" height="590" rx="24"/>
+  <text class="pill" fill="#7c5cfc" x="835" y="158">PROXMOX 10.10.0.20</text>
+  <text class="small muted" x="835" y="183">separate IAC state and lifecycle per VM • no active Kubernetes cluster</text>
+  <rect class="compute card" x="835" y="215" width="465" height="240" rx="16"/>
+  <text class="pill" fill="#7c5cfc" x="861" y="249">VM100 • 10.10.0.31 • ID 100</text>
+  <text class="head ink" x="861" y="286">Production compute</text>
+  <text class="body muted" x="861" y="314">6 vCPU • 16 GB • Docker Swarm worker</text>
+  <text class="small ink" x="861" y="350">User-facing services: Homepage, n8n, NetBird,</text>
+  <text class="small ink" x="861" y="372">RelayHub, GitLab, OCR proxy, Family Tree,</text>
+  <text class="small ink" x="861" y="394">OpenClaw and other portless Swarm workloads</text>
+  <text class="small muted" x="861" y="428">Pi5 remains the database/object-storage host</text>
+  <rect class="note card" x="835" y="490" width="465" height="166" rx="16"/>
+  <text class="pill" fill="#d97706" x="861" y="525">VM110 • 10.10.0.32 • ID 110</text>
+  <text class="head ink" x="861" y="562">DB operations worker</text>
+  <text class="body muted" x="861" y="590">db-management • backup / restore UI and adapters</text>
+  <text class="small ink" x="861" y="622">No production PostgreSQL, CouchDB, Redis or RustFS</text>
+  <text class="small muted" x="861" y="644">Same Proxmox failure domain; not an off-site target</text>
+
+  <path class="flow" d="M350 380 C375 380 385 380 410 380"/>
+  <text class="small muted" x="356" y="365">public route / shared tunnel</text>
+  <path class="flow" d="M740 330 C780 330 795 330 835 330"/>
+  <text class="small muted" x="748" y="315">Swarm overlays / Pi5 edge</text>
+  <path class="dashed" d="M740 535 C780 560 795 565 835 565"/>
+  <text class="small muted" x="735" y="605">LAN-routed DB operations</text>
+
+  <rect class="host card" x="50" y="735" width="300" height="108" rx="16"/>
+  <text class="pill" fill="#64748b" x="76" y="768">ROAMING CLIENT / DEV</text>
+  <text class="head ink" x="76" y="803">Mac • 10.10.0.6</text>
+  <text class="small muted" x="76" y="827">Native OCR + LM Studio • may roam via VPS Rathole</text>
+  <path class="dashed" d="M220 735 C220 685 190 668 200 645"/>
+  <text class="small muted" x="230" y="684">client-initiated tunnel</text>
+
+  <rect class="retired card" x="410" y="735" width="920" height="108" rx="16"/>
+  <text class="pill" fill="#c2413b" x="436" y="768">EXPLICITLY OUT OF ACTIVE TOPOLOGY</text>
+  <text class="body ink" x="436" y="803">Orange Pi Zero 3 edge, old K8s / kube-vip / Longhorn, BDS connector and old public runtimes are historical or retired.</text>
+  <text class="small muted" x="436" y="827">Do not infer a live route or recreate a retired service from archived documentation.</text>
+</svg>

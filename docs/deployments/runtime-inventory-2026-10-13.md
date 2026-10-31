@@ -34,7 +34,7 @@ operator workflow; use enrolled read-only Semaphore templates where available.
 |---|---|---|---|
 | VPS `103.82.21.202` | Docker gateway | Public Traefik, shared Rathole, isolated GitLab tunnels, NetBird relay/STUN | Docker `29.3.0`; Traefik `v3.6`; Rathole server `rapiz1/rathole:latest`, image ID `sha256:a31b9178e985d4a84f46d4c3af6aa200ee0c5e7f821c7075a1f6669fb77392b1`; NetBird relay `netbirdio/relay:latest`, image ID `sha256:a845ba99641778b8e58df5abe5871ad374573f8b51c504691a5d7f406f477e93` |
 | Pi5 `10.10.0.5` / `rpivn` | Docker Swarm manager, ARM64 | Active LAN/public edge, DNS, PostgreSQL/PgBouncer, Redis, RustFS, CouchDB, registry, Semaphore/provisioner | Docker Engine `28.4.0`; Linux `7.0.0-1020-raspi`; Swarm leader |
-| VM100 `10.10.0.31` / `vm100-prod` | Docker Swarm worker plus Compose projects | Production application compute, GitLab, KubeKosh, CouchLoom, BDS connector | Docker Engine `29.1.3`; Ubuntu 22.04; 6 vCPU, 16 GB RAM, 200 GiB disk, 8 GiB swap |
+| VM100 `10.10.0.31` / `vm100-prod` | Docker Swarm worker plus Compose projects | Production application compute, GitLab, KubeKosh, CouchLoom; retired/absent BDS connector | Docker Engine `29.1.3`; Ubuntu 22.04; 6 vCPU, 16 GB RAM, 200 GiB disk, 8 GiB swap |
 | Orange Pi `10.10.0.2` | Swarm node | Retired/unavailable edge node; must remain out of active routing | Swarm `Down`; old `edge_*` services are `0/0` |
 
 The active edge is the Pi5 standalone trio. The old Swarm services named
@@ -49,14 +49,15 @@ inventory instead.
 
 | Component | Image tag | Image ID / runtime note |
 |---|---|---|
-| `edge-traefik-pi5` | `traefik:v3.6` | `sha256:68269702cdcb1643b456923f45379722d65fca7d71cb85d4daf6bf6038fae376`; host `80/443`; file provider |
+| `edge-traefik-pi5` | `traefik:v3.6` / OCI `v3.6.25` | `sha256:68269702cdcb1643b456923f45379722d65fca7d71cb85d4daf6bf6038fae376`; registry `v3.6.25` is already the running image; host `80/443`; file provider |
 | `edge-rathole-pi5` | `rathole:local` | `sha256:0a1c8a87fc0eab6d23ffa1b55e5018d229e9968eb320a0e36e159d2aad68dea9`; local build, no registry semantic version |
-| `edge-adguardhome-pi5` | `adguard/adguardhome:latest` | `sha256:e38d0ed0724eb284aa9e196359bd24cae4fff315b4550270cca948986b4b16b8`; `53/tcp+udp`, HTTP/HTTPS admin |
-| PostgreSQL | `pgvector/pgvector:pg16` | `sha256:af89eca7a846ab51eae829d24dacd674684fa9e86720fa124214f401d4db0127`; raw DB remains internal, PgBouncer is the approved client endpoint |
-| Redis production | `redis:7.2-alpine` | `sha256:9a79915a9511975e7aab6215229fed405cd3255a44c8daa5f08973fe16d82e3`; shared logical DB policy is documented in `STACK.md` |
-| RustFS | `rustfs/rustfs:1.0.1` | Production image upgraded and verified 2026-10-21; see [upgrade evidence](./rustfs-upgrade-2026-10-21.md). |
-| CouchDB | `couchdb:3.3.3` | Obsidian/LiveSync source of truth |
-| Semaphore | `semaphoreui/semaphore:v2.19.12` | `sha256:b85760f41eac1964a89b830aee9e6240a3bdee804b27ce689beeea49c6082103` |
+| `edge-adguardhome-pi5` | `adguard/adguardhome:latest` / v0.107.79 | `sha256:e38d0ed0724eb284aa9e196359bd24cae4fff315b4550270cca948986b4b16b8`; registry pull was up to date; `53/tcp+udp`, HTTP/HTTPS admin |
+| `cadvisor` | `gcr.io/cadvisor/cadvisor:v0.55.1@sha256:3de2bd52…` | healthy; `/metrics` reports cAdvisor `v0.55.1`; host metrics collector |
+| PostgreSQL | `pgvector/pgvector:pg16@sha256:7b822b0a…` | PostgreSQL 16.15; raw DB remains internal, PgBouncer is the approved client endpoint; upgraded and verified 2026-10-31 |
+| Redis production | `redis:7.2-alpine@sha256:2c933526…` | Redis 7.2.17; AOF enabled; shared logical DB policy is documented in `STACK.md`; upgraded and RDB-restored 2026-10-31 |
+| RustFS | `rustfs/rustfs:1.0.4@sha256:ed9210d6…` | Production image upgraded and verified 2026-10-31; see [controlled upgrade ledger](./version-upgrade-2026-10-31.md). |
+| CouchDB | `couchdb:3.5.3@sha256:bed314d1…` | Obsidian/LiveSync source of truth; upgraded and verified 2026-10-31 |
+| Semaphore | `semaphoreui/semaphore:v2.19.17@sha256:008dacd9…` | healthy; UI/executor verified in the 2026-10-31 upgrade ledger |
 | Provisioner | `homelab/provisioner:20261005` | `sha256:abe3fca933569bd9d43b568022c385f2316e63113b7d41ff8d7f602de491a1c5`; internal only |
 
 Pi5 Swarm Engine is `28.4.0`. Current one-replica application services in the
@@ -96,13 +97,13 @@ part of the production application catalog; investigate before removing it.
 |---|---|---|
 | `prod` / RelayHub API + worker | `homelab/relayhub:prod-eee9e7c` | API, worker, NATS and Redis healthy; private `relayhub-net`; public API through Pi5 edge |
 | `prod` / NATS | `nats:2.14.5-alpine` | private RelayHub network only; image ID `sha256:d4ac35882ac65aff236cd65b9d3fa4d24332c681e1a85f94eedccd3cdd65b1da` |
-| `prod` / Redis | `redis:7.4-alpine` | private RelayHub network only; image ID `sha256:520775a41a63e77e06c73e35d2fd9cc15921a609516818796b4ecbb813078bc7` |
+| `prod` / Redis | `redis:7.4-alpine@sha256:8da19c73…` | private RelayHub network only; active Swarm task and legacy Compose rollback path verified; no persistence by design |
 | `couchloom` | `couchloom:8f7a8e0` | healthy; image ID `sha256:cdca747d4df568004cfb02ec7477a3e77d8c33d11333693d0468c9a9b5307085` |
 | `couchloom-postgres` | `pgvector/pgvector:0.8.6-pg17-bookworm` | healthy; private CouchLoom data network |
-| `couchloom-ollama` | `ollama/ollama:0.34.0` | healthy; CPU embedding runtime |
+| `couchloom-ollama` | `ollama/ollama:0.40.13@sha256:b2f0122c…` | healthy; CPU embedding runtime; `nomic-embed-text` retained |
 | `kubekosh` | `zeborg/kubekosh:latest` | LAN-only, privileged learning lab; image ID `sha256:c623098b4cd4a7813a04e08d08ee14c6dff26f30f8ff5272a076ca07a03a2125` |
-| `bds-app` | `homelab/bds-app:vm100-20260913-static` | Cloudflare connector reaches it through isolated `bds-tunnel-net` |
-| `bds-cloudflared` | `cloudflare/cloudflared:2026.9.0` | tunnel connector only; not on `homelab-net` |
+| `bds-app` | retired/absent | older image entry; current audit found no matching container or `/opt/apps/bds` source |
+| `bds-cloudflared` | retired/absent | older VM100 connector entry; current audit found no container or `/opt/apps/bds` source. Pi5 native `cloudflared` is a separate systemd service |
 
 ### Additional Swarm tasks observed on VM100
 
@@ -139,10 +140,7 @@ NetBird
   -> VPS netbird-relay TCP 443 + UDP 3478
   -> VM100 control plane via Pi5 edge
 
-BDS
-  -> Cloudflare tunnel
-  -> bds-cloudflared
-  -> bds-app on bds-tunnel-net only
+BDS (historical only; current audit found no live connector or app source)
 ```
 
 Pi5 Traefik is file-provider driven. It does not infer routes from Swarm

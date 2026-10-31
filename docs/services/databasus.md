@@ -2,7 +2,7 @@
 type: Service
 title: Databasus
 description: Databasus deployment, authentication and backup operating notes
-timestamp: 2026-10-28T19:35:00+07:00
+timestamp: 2026-10-31T02:54:00+07:00
 ---
 
 # Databasus
@@ -11,7 +11,7 @@ timestamp: 2026-10-28T19:35:00+07:00
 
 - URL: `https://databasus.dungxbuif.com/`
 - Swarm service: `db-management_databasus`
-- Image: `databasus/databasus:v3.60.0`
+- Image: `databasus/databasus:v3.64.0@sha256:dca80ac1bf555b706d33cd9506a6422387a34fb22eea5ca1cacfc52babd58d2e`
 - Placement: `db-ops`
 - Internal port: `4005`
 - State volume: `db-management-databasus-data` mounted at `/databasus-data`
@@ -19,6 +19,73 @@ timestamp: 2026-10-28T19:35:00+07:00
 
 The service stays private behind the existing hostname and overlay networks.
 Do not reset `db-management-databasus-data` to solve a login problem.
+
+## Version maintenance — 2026-10-31
+
+- A fresh named-volume archive was captured before the maintenance retry at
+  `/ssd-data/infra/backups/version-upgrade-20261031/databasus/databasus-volume-before-retention-fix.tgz` (`29280340` bytes; SHA-256
+  `471f340e7b4a82877d7192e4d5c8cfad1e7cf668d8dcc0123948503f7c322748`).
+- The embedded PostgreSQL state contained `15` logical backup configs with the
+  invalid value `THREE_MONTH`. A transaction changed them to the upstream
+  supported value `3_MONTH`; no database, backup payload, storage credential or
+  encryption key was removed.
+- `v3.64.0` is now running `1/1`. `/api/v1/system/version` reports `3.64.0`,
+  the health endpoint reports the internal DB working, migrations report no
+  pending work, and the retention cleaner starts without a new panic.
+- This proves the release/runtime and metadata migration. It does not replace
+  the separate provider-authenticated backup and isolated restore gate below.
+
+## Restore verification agent — 2026-10-31
+
+- Registered the Databasus verification agent `pi-verifier-1` in the
+  `Homelab Production` workspace and installed the official ARM64 binary on
+  Pi5 at `/ssd-data/infra/services/databasus-verification/verification-agent`.
+- The agent is supervised by the host unit
+  `databasus-verification-agent.service`, enabled at boot, and runs as
+  `dungxbuif` with Docker-group access. Its private config file is
+  `/ssd-data/infra/services/databasus-verification/databasus-verification.json`
+  with mode `0600`; the agent token is not stored in this vault or emitted in
+  the service command line.
+- Capacity is deliberately bounded at `2` CPU, `2048` MB RAM, `20` GB scratch
+  disk and `1` concurrent restore. The agent reports `Online` in Databasus and
+  the unit is `active (running)` after installation.
+- The first manual verification used the latest PostgreSQL `n8n` backup and
+  completed `Successful`: `pg_restore` exit code `0`, one schema, `153`
+  tables, `52.58 MB` restored, and `2s` restore duration. This closes one real
+  restore path, not merely a checksum or upload check.
+- A second controlled n8n run after the `v3.64.0` upgrade also passed the
+  provider path: the 2026-10-31 02:53 backup completed `Successful` with a
+  `1.91 MB` payload for a `147.82 MB` database, then `After backup` queued an
+  automatic restore check that completed `Successful` with `pg_restore` exit
+  code `0`, one schema, `190` tables, `54.76 MB` restored and `2s` restore
+  duration.
+- Scheduled `After backup` verification is enabled for `n8n`, `homelab`,
+  `relayhub`, `netbird`, `netbird_activity`, and `netbird_idp`. GitLab's
+  verification schedule remains disabled because its maintenance and backup
+  set is intentionally skipped for size.
+- The agent needs Docker access to create disposable PostgreSQL containers;
+  its startup log reports that Docker `userns-remap` is disabled on Pi5. Keep
+  the agent single-job and treat enabling user namespace remapping as a
+  separate security-hardening change after compatibility testing.
+
+### Approved service database verification wave
+
+After the n8n proof, each approved service database was backed up again and
+its `After backup` restore verification was allowed to complete:
+
+| Database | New backup | Restore result |
+|---|---:|---|
+| `n8n` | `1.91 MB` payload / `147.82 MB` DB | `Successful`, `pg_restore 0`, `190` tables, `54.76 MB`, `2s` |
+| `homelab` | `0.18 MB` payload / `1.6 MB` DB | `Successful`, `pg_restore 0`, `63` tables, `10.16 MB`, `0s` |
+| `relayhub` | `0.1 MB` payload / `1.41 MB` DB | `Successful`, `pg_restore 0`, `30` tables, `9.15 MB`, `0s` |
+| `netbird` | `0.1 MB` payload / `1.79 MB` DB | `Successful`, `pg_restore 0`, `39` tables, `9.74 MB`, `0s` |
+| `netbird_activity` | `0.01 MB` payload / `0.08 MB` DB | `Successful`, `pg_restore 0`, `2` tables, `7.49 MB`, `0s` |
+| `netbird_idp` | `0.02 MB` payload / `0.37 MB` DB | `Successful`, `pg_restore 0`, `13` tables, `7.77 MB`, `0s` |
+
+Every row showed `Successful` and `Verified` in the Databasus backup list. The
+remaining Databasus jobs belong to other or retired applications and need a
+separate scope decision; they were not silently added to this maintenance
+wave.
 
 ## Google Drive target and OAuth project
 
@@ -80,9 +147,10 @@ there. Databasus will continue using the same child folder for later jobs.
 
 The Databasus backup list showed a fresh `Successful` encrypted logical backup
 for each active PostgreSQL job and the corresponding payload plus metadata files
-were visible in Drive. This proves the dump/upload path, not a restore. Databasus currently
-has no verification agent registered, no restore checks, and scheduled
-verification is disabled; do not call this a restore-verified backup.
+were visible in Drive. This proves the dump/upload path, not a restore. The
+verification agent is online and all six approved service databases now have
+post-upgrade `Successful` + `Verified` evidence; the remaining jobs still
+need an explicit restore-coverage decision.
 
 On 2026-10-28 the shared Pi5 PostgreSQL cluster was reconciled to 15
 Databasus jobs, each with a successful backup run: `bds_prod`, `family_tree`,
@@ -118,9 +186,9 @@ the Databasus job:
 4. Select `Mezon Homelab` under **Notifiers settings** and save.
 5. Run **Backup now** and confirm the result is `COMPLETED` with no failure
    message and a new artifact under `Homelab Backup/databasus_backups`.
-6. Record the database in the inventory and run restore verification once the
-   verification agent is available. The first successful backup is not a
-   restore acceptance gate by itself.
+6. Record the database in the inventory, enable the intended verification
+   interval, and run one restore verification. The first successful backup is
+   not a restore acceptance gate by itself.
 
 Existing database schedules are independent. Changing the shared PostgreSQL
 cluster or creating a new database does not add a Databasus job; repeat the

@@ -56,6 +56,8 @@ path is VPS `gateway-traefik` -> shared Rathole -> Pi5 standalone
 names to the Pi5 edge on the LAN. The old Orange Pi edge is down and the old
 Swarm edge services are scaled to zero.
 
+![NetBird server, relay and STUN boundaries](./assets/diagrams/netbird-relay.svg)
+
 ---
 
 ## 🔒 Portless Security & Ingress Invariants
@@ -93,8 +95,6 @@ Pi5-backed routes currently include:
     - `cdn.dungxbuif.com` →→ proxied internally to `rustfs:9001` (S3 Web Console)
     - `storage.dungxbuif.com` →→ proxied internally to `rustfs:9000` (S3 API)
     - `registry.dungxbuif.com` →→ proxied internally to `registry:5000` (Private Docker Registry)
-    - `speed.dungxbuif.com` →→ proxied internally to `librespeed:80`
-    - `pgadmin.dungxbuif.com` →→ proxied internally to `pgadmin:80`
     - `couchdb.dungxbuif.com` and `sync-db.dungxbuif.com` -> `couchdb:5984`
 
 n8n is no longer a Pi5-hosted edge route; it now runs on VM100 and uses Pi5
@@ -123,12 +123,10 @@ listed in the [resource audit](./research/resource-limit-audit-2026-09-15.md).
 
 |Service|Container Name|Docker Image & Version|Port Mapping (Host / Container)|Subdomain Routing / Ingress Target|Core Purpose & Technical Parameters|
 |---|---|---|---|---|---|
-|**RustFS Storage**|`rustfs`|`rustfs/rustfs:1.0.1`|**Portless** on `edge-http-net`, `homelab-net`, `proxy_net`, and `s3-net`|`storage.dungxbuif.com` (S3 API) <br>`cdn.dungxbuif.com` (Console)|ARM64 S3 storage; ports 9000/9001 internal. `s3-net` is the VM100 native-backup path.|
+|**RustFS Storage**|`rustfs`|`rustfs/rustfs:1.0.4@sha256:ed9210d6…`|**Portless** on `edge-http-net`, `homelab-net`, `proxy_net`, and `s3-net`|`storage.dungxbuif.com` (S3 API) <br>`cdn.dungxbuif.com` (Console)|ARM64 S3 storage; ports 9000/9001 internal. `s3-net` is the VM100 native-backup path.|
 |**Private Registry**|`docker-registry`|`registry:2`|**Portless** on `edge-http-net`, `homelab-net`, and `proxy_net`|`registry.dungxbuif.com`|Docker image registry on Pi5 SSD.|
-|**Librespeed**|`librespeed`|`lscr.io/linuxserver/librespeed`|**Portless** on `edge-http-net`, `homelab-net`, and `proxy_net`|`speed.dungxbuif.com`|LAN/WAN speedtest backend.|
-|**Centralized PostgreSQL**|`postgres`|`pgvector/pgvector:pg16`|**Portless** on `pg-net` and `proxy_net`; PgBouncer maps LAN `:5432` to pooler `:6432`|Direct container DNS `postgres:5432` only for approved clients such as GitLab; LAN `10.10.0.5:5432` is PgBouncer, not raw PostgreSQL; no edge route|Pinned backend DB serving Pi5 apps and approved VM100 services. Raw PostgreSQL is no longer on `homelab-net`.|
-|**pgAdmin 4**|`pgadmin`|`dpage/pgadmin4:latest`|**Portless** on `edge-http-net`, `homelab-net`, and `proxy_net`|`pgadmin.dungxbuif.com`|PostgreSQL administration UI.|
-|**CouchDB**|`couchdb`|`couchdb:3.3.3`|**Portless** on `edge-http-net`, `homelab-net`, and `proxy_net`|`couchdb.dungxbuif.com` <br>`sync-db.dungxbuif.com`|Obsidian sync and document databases; the backup proxy is private and separate from the public routes.|
+|**Centralized PostgreSQL**|`postgres`|`pgvector/pgvector:pg16@sha256:7b822b0a…` (PostgreSQL 16.15)|**Portless** on `pg-net` and `proxy_net`; PgBouncer maps LAN `:5432` to pooler `:6432`|Direct container DNS `postgres:5432` only for approved clients such as GitLab; LAN `10.10.0.5:5432` is PgBouncer, not raw PostgreSQL; no edge route|Pinned backend DB serving Pi5 apps and approved VM100 services. Raw PostgreSQL is no longer on `homelab-net`.|
+|**CouchDB**|`couchdb`|`couchdb:3.5.3@sha256:bed314d1…`|**Portless** on `edge-http-net`, `homelab-net`, and `proxy_net`|`couchdb.dungxbuif.com` <br>`sync-db.dungxbuif.com`|Obsidian sync and document databases; the backup proxy is private and separate from the public routes.|
 
 The retired `my-cv` container is not part of the running Pi5 inventory.
 The Pi5 `docker-registry` is still the production image registry. GitLab's
@@ -203,7 +201,8 @@ run and isolated restore rehearsal are recorded in
 VM100 systemd timers now own the schedule and Pi5 remains the online
 datastore/object executor. The latest database, RustFS, and GitLab success
 markers plus remote snapshot IDs are in the [runtime inventory](./deployments/runtime-inventory-2026-10-13.md).
-Redis and NATS remain excluded. The combined Semaphore health check passed as
+Redis uses a separate RDB/AOF service backup path; NATS remains excluded. The
+combined Semaphore health check passed as
 task 57 on 2026-10-15 with free space, lock state, and all three class markers
 within policy; remote Drive restore acceptance is recorded in the [restore-drill acceptance](./deployments/backup-restore-drill-acceptance-2026-10-21.md); monthly execution remains an operational observation item.
 
@@ -248,10 +247,11 @@ build-time:  postgres:5432
 runtime:     pgbouncer:6432
 ```
 
-Do not expose this database through Cloudflare Tunnel or host ports. BDS app
-uses Docker DNS on `homelab-net` for database access. The Cloudflare Tunnel
-container is isolated on VM100's `bds-tunnel-net` bridge and reaches only
-`bds-app:3000`; it must not join `homelab-net`.
+Do not expose this database through Cloudflare Tunnel or host ports. The former
+BDS app route and its VM100 tunnel container are retired/absent and were not
+recreated. Current Cloudflared runs natively as a Pi5 systemd unit, separate
+from the data plane; it is currently degraded because the Cloudflare control
+plane reports `Unauthorized: Tunnel not found`.
 
 ### NetBird databases
 
@@ -278,7 +278,7 @@ access from the Mac:
 | | |
 ---|---|
 Compose | `/ssd-data/infra/redis-prod/docker-compose.yml` |
-Image | `redis:7.2-alpine` (pinned, arm64) |
+Image | `redis:7.2-alpine@sha256:2c933526…` (pinned, arm64; Redis 7.2.17) |
 Bind | `10.10.0.5:16379` (uncommon port — avoids dev `6379` clashes) |
 Auth | password (`requirepass`) — see `local_vars.json` |
 Persistence | AOF (`appendonly yes`) |

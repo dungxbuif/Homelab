@@ -7,6 +7,23 @@ timestamp: 2026-07-03T15:14:00Z
 
 # Directory Update Log
 
+## 2026-10-31 - GitLab Redis/API root-cause repair
+
+- The GitLab API 500 was traced to Rails `Redis::CannotConnectError` while
+  updating Personal Access Token last-used state. The exact failure was DNS
+  resolution of `redis-prod:6379/2`, not a GitLab image or PAT-scope problem.
+- Pi5 `redis-prod` had been recreated from the base Compose file and retained
+  only `redis-prod_default`; the current GitLab task uses the selective
+  `gitlab-net` overlay. The running Redis container was attached to
+  `gitlab-net` with alias `redis-prod`, and the secret-free Pi5 override was
+  updated so the attachment survives the next controlled recreate.
+- Post-repair evidence: Redis resolved as `10.0.5.31`, authenticated DB2
+  `PONG`, GitLab internal health/readiness `200`, and public unauthenticated API
+  `401`. No Redis data or image was removed. Full evidence is in
+  [the dated repair record](./deployments/gitlab-redis-network-repair-2026-10-31.md).
+- The PAT used in the failed preflight was exposed in a shell error. Its value
+  is not recorded; revoke/rotate it before any GitLab project creation or push.
+
 > **Versioning scheme** (architecture evolution, newest first):
 > - **v3.4** — Pi5 active edge, VM100 production worker, active backup runner, and Semaphore provisioning control plane
 > - **v3.3** — VM100 production compute + Pi5 edge recovery
@@ -19,6 +36,159 @@ timestamp: 2026-07-03T15:14:00Z
 > Dated entries below are grouped under their architecture version heading.
 > Every significant change appends to this log; the current version marker also
 > lives in [`index.md`](../index.md) and [`MAIN.md`](./MAIN.md).
+
+## 2026-10-31 - Controlled Docker image upgrade ledger
+
+- Started the per-service upgrade runbook with explicit old-image/digest,
+  backup, smoke-test, and rollback fields. No image update is considered
+  complete until its row in [the upgrade ledger](./deployments/version-upgrade-2026-10-31.md)
+  has fresh evidence. The first stateless wave is applied; n8n and its
+  external-runner pair are now version-matched, with only authenticated
+  Code-node execution left as a follow-up smoke item. The fresh stateful
+  backup retry exported locally after a Pi executor runtime-path repair, but
+  remote upload failed; no stateful image has been changed. n8n was subsequently matched to its
+  `2.46.3` external runners using a GHCR image and a fresh local PostgreSQL
+  dump. Alertmanager, VictoriaMetrics,
+  and PostgreSQL exporter were then upgraded individually; the exporter also
+  required URL-encoding its existing DSN password so `pg_up` returned `1`.
+  The database backup export initially hit Drive `invalid_client`; the
+  retained OAuth config was then mapped to a newly created
+  `homelab-backups/databases` Restic repository and the complete run uploaded
+  successfully. VM100 passed the restore drill plus engine-level PostgreSQL
+  (`n8n`, `SELECT 1`) and CouchDB (`obsidian_vault`, `49341` docs) checks, so
+  the shared `databases` gate is now accepted. Redis still needs its own
+  RDB/AOF restore procedure, and RustFS/CouchDB/PostgreSQL still need
+  service-specific smoke checks before their image changes. NetBird server `0.82.0`
+  and dashboard `v2.96.0` were then upgraded as a backed-up pair; the first
+  dashboard attempt used the wrong GHCR prefix and auto-rolled back before the
+  correct Docker Hub reference passed public/API smoke.
+  Semaphore `v2.19.17` was then upgraded with a validated SQLite archive; its
+  private executor was refreshed without changing its image and reconnected
+  successfully.
+  CloudBeaver `26.2.3` was then upgraded with a validated workspace archive.
+  Its first Swarm attempt rolled back because the new image no longer shipped
+  `curl` while the old healthcheck required it; the source and live service
+  were corrected to a Bash TCP healthcheck, after which the service became
+  healthy and its public status endpoint returned HTTP 200.
+  PgBouncer was then pinned to the tested `latest` repository digest and
+  upgraded to PgBouncer `1.26.1`; Compose hit a fixed-name/external-network
+  recreate problem, so the old container was retained under a rollback name
+  and the candidate was recreated with the original networks and configuration.
+  Local `pg_isready` and n8n health returned successfully with no new fatal or
+  DNS errors after convergence.
+  Ollama `0.40.13` was then applied to VM100 CouchLoom after a validated
+  `ollama_data` archive; the embedding model remained present and both Ollama
+  and CouchLoom stayed healthy. The inventory audit also corrected Cloudflared:
+  it is a flapping native Pi5 systemd unit, not a live Docker service. The
+  native ARM64 binary was upgraded from `2026.2.0` to `2026.10.7` with a
+  rollback copy, but a direct launch still returns `Unauthorized: Tunnel not
+  found`; the existing token/tunnel must be repaired before accepting the
+  public route. The older VM100 BDS connector entry is retired/absent. GitLab
+  was intentionally skipped after its native backup grew too large for this
+  window, so its staged `18.11.14` → `19.2.10` → `19.5.3` path remains future
+  work. Databasus later passed its volume/key, provider-backup and restore
+  gates for the six approved service databases; non-service jobs remain a
+  separate scope decision.
+  cAdvisor `v0.55.1` was also upgraded on Pi5 with a Compose/spec backup; its
+  container stayed healthy and exposed the expected versioned metrics.
+  RustFS `1.0.4` was then upgraded from `1.0.1` after a validated 1.22 GB
+  data archive; its ARM64 binary, internal API/console health, and public S3/
+  console health routes returned successfully, with the old image retained for
+  rollback.
+  CouchDB `3.5.3` followed with a validated 702 MB data archive; the
+  authenticated root/database and `_changes` checks passed, the Obsidian
+  document count stayed at `49341`, and both public routes retained their
+  expected unauthenticated `401` boundary.
+  PostgreSQL/pgvector then moved from PostgreSQL `16.14` to `16.15` on a
+  pinned digest after a checksummed `59M` logical backup of all `17` databases;
+  a candidate scratch restore of `n8n` passed, the vector extension remained
+  present, PgBouncer accepted connections, and n8n health stayed `200`.
+  Pi5 Redis moved from `7.2.15` to `7.2.17` on a pinned digest after an RDB
+  snapshot, AOF/data archive and scratch RDB restore (`DBSIZE=10`); AOF and
+  `PING` remained healthy. RelayHub's active Swarm Redis was already on the
+  current `7.4.12` digest, and its legacy non-persistent Compose Redis was
+  recreated with the same pin; API/worker health and public HTTP 200 held.
+  GitLab CE was intentionally skipped after its native backup grew to a
+  multi-GB operation; no GitLab image changed. Databasus `v3.64.0` was first
+  rolled back after the existing `THREE_MONTH` retention value caused the
+  backup cleaner goroutine to panic on startup. A fresh 29.3 MB volume archive
+  was then taken, all 15 invalid logical retention values were changed in a
+  transaction to the source-supported `3_MONTH`, and the verified amd64
+  candidate digest was applied. Version `3.64.0`, internal health, public root,
+  migrations and the cleaner startup now pass without a fresh panic. A Pi5
+  `pi-verifier-1` restore-verification agent was registered and started under
+  `databasus-verification-agent.service` with a one-job limit; the first manual
+  n8n restore check passed (`pg_restore` exit `0`, `153` tables, `52.58 MB`,
+  `2s`). `After backup` verification is enabled for n8n, homelab, relayhub and
+  the three NetBird PostgreSQL databases. Provider-authenticated backup
+  evidence and remaining approved-service restore checks remain open. A new
+  n8n backup after the Databasus upgrade then completed successfully and its
+  automatic restore check passed with `pg_restore` exit `0`, `190` tables and
+  `54.76 MB` restored. The same provider + restore gate then passed for
+  homelab, relayhub, netbird, netbird_activity and netbird_idp; all six
+  approved service databases now show `Verified`.
+  The Pi5 Traefik tag `v3.6` was checked against `v3.6.25`; its OCI image label
+  already reports `v3.6.25`, so no edge restart was needed. AdGuard Home
+  `v0.107.79` was also pulled and reported up to date.
+  A two-agent read-only backlog audit then reconciled current evidence: U2/U3/U4/U6
+  and B13 were marked done; U1/U5/U7/U9 remain partial; B2/B4/B5/B8 were
+  reopened because the corresponding VM100 timers are disabled/inactive. GitLab
+  remains skipped and Cloudflared remains explicitly deferred by the operator.
+
+- **VPS gateway live audit 2026-10-31:** repaired the read-only audit path by
+  deriving the existing Gateway SSH key from 1Password into a mode-`0600`
+  temporary file; the server-accepted fingerprint matched and the temporary
+  file was removed after use. The host reported 4 vCPU, 7.8 GiB RAM with
+  7.0 GiB available, 38 GiB root with 20% used, Docker `29.3.0`, no failed
+  systemd unit, and nine running gateway containers with restart count `0`.
+  Local SNI smoke returned relay `404`, GitLab `302`, and homepage `200`; all
+  intended TCP listeners and host UDP bindings were present. No VPS mutation
+  was performed. None of the containers has a Docker healthcheck, UFW is
+  inactive, and authenticated NetBird/RustDesk session tests remain open. Full
+  evidence: [VPS gateway live audit](./deployments/vps-gateway-audit-2026-10-31.md).
+
+- **Documentation visual flow 2026-10-31:** added five validated SVG diagrams
+  for system topology, VPS gateway, data/backup ownership, NetBird relay
+  boundaries and upgrade/restore flow. Added a sixth project/reference-note
+  flow showing the source checkout → inventory → release evidence → status and
+  backlog path, plus the authority order from current status through dated
+  evidence and runbooks to historical notes. The diagrams are linked from
+  `INDEX.md`, `PROJECTS.md`, `STACK.md`, `PI.md`, the backup runbook, the VPS
+  audit and the version-upgrade ledger; no runtime or infrastructure changed.
+
+- **Project cleanup 2026-10-31:** moved the standalone
+  `/home/dungxbuif/workspace/projects/obsidian-livesync` checkout (22 MiB,
+  clean Git worktree) to the desktop Trash. The checkout was not listed in
+  `PROJECTS.md`; no CouchDB data, LiveSync runtime, Homelab note or other
+  project was deleted. The Trash move remains recoverable.
+
+- **Project cleanup 2 2026-10-31:** moved the clean local checkouts
+  `mezon` (238 MiB), `urbanx-sample` (7.3 MiB), and `harness-experimental`
+  (4.7 MiB) to the desktop Trash. `repository-harness` was not a separate
+  local folder; it was the redirected upstream name for `harness-experimental`.
+  No runtime service, Mezon webhook, or infrastructure state was changed.
+
+- **Project inventory reconciliation 2026-10-31:** reconciled `PROJECTS.md`
+  against `/home/dungxbuif/workspace/projects/`: added `MyPocket`, `RelayHub`,
+  `k8s-syntax`, `llm-flashcard`, `apps` and `n8n-nodes-mezon`; removed stale
+  rows for `goclaw`, `harness-experimental`, `mezon`, `open-design` and
+  `urbanx-sample`; and excluded the dangling `mezon-go-sdk` compatibility
+  symlink. The current table now represents 46 real directories.
+
+- **GitLab mirror preflight 2026-10-31:** the local GitLab API token reference
+  was found in the ignored `db-management/local_vars.json` file with mode
+  `0600`; its value was never printed or written to a remote URL. Authenticated
+  requests to `/api/v4/version`, `/api/v4/user` and `/api/v4/projects` all
+  returned `HTTP 500`, so no GitLab projects were created, no source was
+  pushed, and no local remotes were changed. R7 is blocked on repairing the
+  GitLab API/route, after which the approved 46-project scope can be resumed.
+
+- **GitLab route isolation 2026-10-31:** a read-only VM100 probe found the
+  GitLab `18.11.11` task healthy, `/-/health` and `/-/readiness` returning
+  `200`, and the internal unauthenticated API returning the expected `401`.
+  The public `gitlab.dungxbuif.com/api/v4/*` requests still return `500`, so
+  R7 is blocked at the public API/tunnel boundary rather than by a stopped
+  GitLab container. No runtime or source state was changed.
 
 ## 2026-10-28 - Databasus Mezon notifier
 
@@ -978,7 +1148,7 @@ timestamp: 2026-07-03T15:14:00Z
 ## 2026-06-23
 
 - **DNS**: Disabled `DNSStubListener` of `systemd-resolved` on Raspberry Pi 5 to free port 53 for AdGuard Home.
-- **Restructure**: Restructured the documentation directory to follow the Open Knowledge Format (OKF) standard (v0.1) and translated all contents from Vietnamese to English. Created root and subdirectory indexes: [INDEX.md](./INDEX.md), [k8s/INDEX.md](./archived/k8s-v2/k8s/INDEX.md), [monitoring/INDEX.md](./archived/k8s-v2/monitoring/INDEX.md). Converted concepts: [2026-05-29_k8s_proxmox_iac_design.md](./archived/k8s-v2/2026-05-29_k8s_proxmox_iac_design.md), [CONTEXT.md](./CONTEXT.md), [MAIN.md](./MAIN.md), [MIKROTIK.md](./MIKROTIK.md), [PI.md](./PI.md), [PRE_REQUIRE.md](./PRE_REQUIRE.md), [PROXMOX.md](./PROXMOX.md), [k8s/CICD.md](./archived/k8s-v2/k8s/CICD.md), [k8s/DB.md](./archived/k8s-v2/k8s/DB.md), [k8s/DB_INVENTORY.md](./archived/k8s-v2/k8s/DB_INVENTORY.md), [k8s/LONGHORN_CONFIG_REVIEW.md](./archived/k8s-v2/k8s/LONGHORN_CONFIG_REVIEW.md), [k8s/RECOVERY_GUIDE.md](./archived/k8s-v2/k8s/RECOVERY_GUIDE.md), [monitoring/README.md](./archived/k8s-v2/monitoring/README.md). Added the official specification reference: [OKF_SPEC.md](./OKF_SPEC.md).
+- **Restructure**: Restructured the documentation directory to follow the Open Knowledge Format (OKF) standard (v0.1) and translated all contents from Vietnamese to English. Created root and subdirectory indexes: [INDEX.md](./INDEX.md), [k8s/INDEX.md](./archived/k8s-v2/k8s/INDEX.md), [monitoring/INDEX.md](./archived/k8s-v2/monitoring/INDEX.md). Converted concepts: [2026-05-29_k8s_proxmox_iac_design.md](./archived/k8s-v2/2026-05-29_k8s_proxmox_iac_design.md), [CONTEXT.md](./CONTEXT.md), [MAIN.md](./MAIN.md), [MIKROTIK.md](./MIKROTIK.md), [PI.md](./PI.md), [PRE_REQUIRE.md](./PRE_REQUIRE.md), [PROXMOX.md](./PROXMOX.md), [k8s/CICD.md](./archived/k8s-v2/k8s/CICD.md), [k8s/DB.md](./archived/k8s-v2/k8s/DB.md), [k8s/DB_INVENTORY.md](./archived/k8s-v2/k8s/DB_INVENTORY.md), [k8s/LONGHORN_CONFIG_REVIEW.md](./archived/k8s-v2/k8s/LONGHORN_CONFIG_REVIEW.md), [k8s/RECOVERY_GUIDE.md](./archived/k8s-v2/k8s/RECOVERY_GUIDE.md), [monitoring/README.md](./archived/k8s-v2/monitoring/README.md). Added the official specification reference: [Google Cloud Platform OKF SPEC v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md).
 
 - **Fix**: Resolved the K8s DNS query loops for `kubernetes.nccsoft.office` by:
    - Replacing the `nccsoft.office` search domain with `lan` in Netplan configs on K8s nodes `k8s-cp-1`, `k8s-cp-2`, `k8s-cp-3` and running `netplan apply`.
@@ -1245,7 +1415,7 @@ timestamp: 2026-07-03T15:14:00Z
 
 - **Documentation finalization 2026-10-21:** rescanned 170 active Markdown
   files under `docs/`. No operational relative links are missing; the four
-  remaining warnings are intentional illustrative URLs in `OKF_SPEC.md`.
+  remaining warnings are intentional illustrative URLs in the external [OKF v0.2 specification](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md).
   Reconciled `STATUS.md`, `BACKLOG.md`, and the CouchDB streaming research
   record after commit `6736615`; D1 is now complete.
 

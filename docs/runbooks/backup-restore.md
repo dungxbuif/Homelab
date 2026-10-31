@@ -1,9 +1,13 @@
 # Homelab Backup and Restore Runbook
 
 **Status:** Online adapters, encrypted Drive upload, and the replacement VM100
-scheduler are deployed. Database, RustFS, GitLab, and configuration markers are
-successful. The `configs` class passed Restic integrity verification and a
-local-mirror scratch restore with checksum verification. The legacy
+backup flow are deployed, with historical class markers and restore evidence.
+The 2026-10-31 live audit found the `homelab-backup-*` systemd timers
+`disabled/inactive`; recurring execution is therefore not currently accepted
+as active. Database, RustFS, GitLab, and configuration artifacts remain
+documented as separate classes, while GitLab is intentionally excluded from
+the current upgrade/backup wave. The `configs` class passed Restic integrity
+verification and a local-mirror scratch restore with checksum verification. The legacy
 `/ssd-data/backup/simple-backup.sh` cron entry was disabled on the Pi on
 2026-10-05; its script and historical local artifacts remain for rollback and
 audit until the replacement flow is fully verified.
@@ -20,10 +24,13 @@ This runbook covers five independent backup classes:
 4. Additional cataloged PostgreSQL instances on VM100.
 5. Selected Pi5 and VM100 configuration sources.
 
-Redis and NATS are deliberately excluded. The generic database backup does not
-include application files, Git repositories, uploads, artifacts, or object
-storage. GitLab and RustFS have separate native/object-aware workflows because
-their recoverable data is not database-only.
+Redis and NATS are deliberately excluded from the generic database class. Redis
+has a separate RDB/AOF service procedure; the 2026-10-31 Pi5 pre-upgrade
+snapshot and scratch restore are recorded in the controlled upgrade ledger.
+NATS remains excluded. The generic database backup does not include application
+files, Git repositories, uploads, artifacts, or object storage. GitLab and
+RustFS have separate native/object-aware workflows because their recoverable
+data is not database-only.
 
 Catalog entries marked `retired` are retained for audit history but are not
 exported. New manifests record those exclusions explicitly; system databases
@@ -55,7 +62,8 @@ The database runner executes native logical exports online:
   `pg_dumpall --globals-only` export for roles/grants/globals.
 - CouchDB: online replication/HTTP export with system/security metadata recorded
   in the manifest.
-- Redis is not queried or exported.
+- Redis is not queried or exported by this generic class; use the separate
+  RDB/AOF procedure for Redis service maintenance.
 
 Post-check requirements:
 
@@ -82,7 +90,8 @@ another object store, that object store becomes an additional required backup
 class.
 
 Redis DB 2 is not part of this workflow. Sessions, cache, and Sidekiq queues
-are expected to rebuild after restore.
+are expected to rebuild after restore; Redis service-level recovery is tracked
+by its separate RDB/AOF procedure.
 
 Post-check requirements:
 
@@ -136,11 +145,24 @@ selected files are mode `0600`, and the collector refuses a missing required
 source or an unsafe archive member.
 
 The class is accepted only after Restic upload, remote post-check, and a
-scratch restore. Its timer is enabled on VM100 after the first snapshot and
-scratch restore passed; the latest acceptance is recorded in
+scratch restore. Historical acceptance passed, but its VM100 timer is currently
+disabled; re-enable and verify the schedule before treating recurring execution
+as active. The latest acceptance is recorded in
 `docs/deployments/backup-configs-readiness-2026-10-20.md`.
 
-## Schedule
+![Backup and restore ownership flow](../assets/diagrams/data-and-backup.svg)
+
+## Planned schedule
+
+The table below is the intended serial schedule, not a claim that the timers
+are currently enabled. The 2026-10-31 audit found all `homelab-backup-*` timers
+disabled/inactive; see backlog items B2, B4, B5 and B8 before re-enabling any
+class. Do not enable the GitLab class while the operator's size-based deferral
+is in effect. The installed `homelab-backup-database-instances.timer` also
+targets a wrapper whose current accepted arguments are only
+`databases|gitlab|rustfs|retention`, while `schedule.yaml` does not list that
+class; reconcile the unit, wrapper and schedule source as one reviewed change
+before enabling it.
 
 Jobs run serially behind one global lock:
 
@@ -171,8 +193,9 @@ The executable flow is defined in `automation/backup-runner/`:
 
 The current deployment record is [Backup Scheduler Re-enable](../deployments/backup-scheduler-2026-10-06.md),
 and the point-in-time result is in the [runtime inventory](../deployments/runtime-inventory-2026-10-13.md).
-The VM100 timers are the only active schedule; do not restore the legacy Pi5
-cron entry.
+VM100 timers are the intended schedule owner, but they are currently inactive;
+do not restore the legacy Pi5 cron entry or enable GitLab implicitly while
+repairing the scheduler.
 
 ## Google Drive and Retention
 
@@ -304,7 +327,9 @@ tests are mandatory before claiming operational recovery.
   scheduler. Task 57 is the current read-only health acceptance; it does not
   replace remote restore testing.
 - The Mezon webhook secret is intentionally not stored in this repository.
-- Redis recovery is out of scope.
+- Redis recovery is outside the generic database class. The Pi5 RDB/AOF
+  service procedure passed a scratch restore on 2026-10-31; recurring Redis
+  enrollment remains a separate operational decision.
 - The `configs` class stores selected host configuration and secret-bearing
   files in its own encrypted Restic repository. Restore drills mirror the
   repository with rclone before restoring locally; this avoids making a large

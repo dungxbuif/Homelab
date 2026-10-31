@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="850" viewBox="0 0 1400 850" role="img" aria-labelledby="title desc">
+  <title id="title">NetBird control plane and external relay</title>
+  <desc id="desc">NetBird server and dashboard run on VM100, with three NetBird databases on Pi5. The external relay and STUN endpoint run on the VPS, while the embedded relay is disabled. The relay route and STUN binding are verified; authenticated external peer and UDP smoke remain open.</desc>
+  <defs>
+    <marker id="blue-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#2f6fed"/></marker>
+    <marker id="teal-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#1f9d8b"/></marker>
+    <style>
+      .bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.small{font:14px sans-serif}.body{font:16px sans-serif}.head{font:700 22px sans-serif}.title{font:700 30px sans-serif}.card{stroke:#d8dee9;stroke-width:2}.blue{fill:#eaf2ff;stroke:#2f6fed}.teal{fill:#eafaf6;stroke:#1f9d8b}.purple{fill:#f1edff;stroke:#7c5cfc}.amber{fill:#fff7e8;stroke:#d97706}.white{fill:#fff;stroke:#d8dee9}.pill{font:700 13px sans-serif;letter-spacing:.5px}.flow{fill:none;stroke:#2f6fed;stroke-width:4;marker-end:url(#blue-arrow)}.dataflow{fill:none;stroke:#1f9d8b;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#teal-arrow)}.open{fill:none;stroke:#d97706;stroke-width:3;stroke-dasharray:9 8}
+    </style>
+  </defs>
+  <rect class="bg" width="1400" height="850"/>
+  <text class="title ink" x="50" y="58">NetBird relay path</text>
+  <text class="body muted" x="52" y="88">Control plane stays on VM100 • relay/STUN stays on VPS • evidence and open smoke gates as of 2026-10-31</text>
+
+  <rect class="blue card" x="50" y="150" width="300" height="290" rx="18"/>
+  <text class="pill" fill="#2f6fed" x="78" y="187">CLIENTS / PEERS</text>
+  <text class="head ink" x="78" y="225">Mac + VM100 peer</text>
+  <text class="body muted" x="78" y="253">NetBird clients and routing peer</text>
+  <rect class="white card" x="78" y="282" width="244" height="110" rx="12"/>
+  <text class="body ink" x="96" y="315">Mac</text>
+  <text class="small muted" x="96" y="340">relay Available via ws</text>
+  <text class="small muted" x="96" y="363">STUN available in 2026-10-23 check</text>
+  <text class="small muted" x="78" y="418">External authenticated peer/UDP test remains open.</text>
+
+  <rect class="purple card" x="460" y="150" width="425" height="380" rx="18"/>
+  <text class="pill" fill="#7c5cfc" x="488" y="187">CONTROL PLANE • VM100</text>
+  <text class="head ink" x="488" y="225">10.10.0.31</text>
+  <rect class="white card" x="488" y="255" width="369" height="115" rx="12"/>
+  <text class="body ink" x="508" y="288">netbird_netbird-server</text>
+  <text class="small muted" x="508" y="314">management / signal services</text>
+  <text class="small muted" x="508" y="340">public route via Pi5 edge</text>
+  <text class="small muted" x="508" y="360">netbird.dungxbuif.com</text>
+  <rect class="white card" x="488" y="390" width="369" height="108" rx="12"/>
+  <text class="body ink" x="508" y="423">netbird_netbird-dashboard</text>
+  <text class="small muted" x="508" y="449">dashboard v2.96.0 • server v0.82.0</text>
+  <text class="small muted" x="508" y="475">embedded relay disabled</text>
+
+  <rect class="teal card" x="1020" y="150" width="330" height="300" rx="18"/>
+  <text class="pill" fill="#1f9d8b" x="1048" y="187">EXTERNAL RELAY • VPS</text>
+  <text class="head ink" x="1048" y="225">103.82.21.202</text>
+  <rect class="white card" x="1048" y="255" width="274" height="88" rx="12"/>
+  <text class="body ink" x="1066" y="288">netbird-relay</text>
+  <text class="small muted" x="1066" y="314">TCP 443 • HostSNI route</text>
+  <text class="small" fill="#2f8f5b" x="1066" y="334">root returns expected 404</text>
+  <rect class="white card" x="1048" y="360" width="274" height="66" rx="12"/>
+  <text class="body ink" x="1066" y="390">STUN / coturn</text>
+  <text class="small muted" x="1066" y="414">UDP 3478 bound • public DNS/TLS valid</text>
+
+  <path class="flow" d="M350 290 C390 290 415 290 460 290"/>
+  <text class="small muted" x="356" y="272">control / peer enrollment</text>
+  <path class="flow" d="M885 275 C930 275 970 275 1020 275"/>
+  <text class="small muted" x="898" y="255">relay over WebSocket / TLS</text>
+  <path class="dataflow" d="M885 415 C935 415 970 405 1020 395"/>
+  <text class="small muted" x="900" y="448">external STUN path</text>
+
+  <rect class="teal card" x="460" y="590" width="425" height="150" rx="18"/>
+  <text class="pill" fill="#1f9d8b" x="488" y="627">STATE ON PI5 • 10.10.0.5</text>
+  <text class="head ink" x="488" y="665">PostgreSQL databases</text>
+  <text class="body muted" x="488" y="693">netbird • netbird_activity • netbird_idp</text>
+  <text class="small muted" x="488" y="719">VM100 connects privately via PgBouncer / homelab-net</text>
+  <path class="dataflow" d="M672 530 C672 555 672 565 672 590"/>
+
+  <rect class="amber card" x="1020" y="520" width="330" height="220" rx="18"/>
+  <text class="pill" fill="#d97706" x="1048" y="557">OPEN ACCEPTANCE GATE</text>
+  <text class="head ink" x="1048" y="595">Transport is partly proven</text>
+  <text class="small ink" x="1048" y="629">✓ relay WebSocket availability</text>
+  <text class="small ink" x="1048" y="653">✓ STUN availability on Mac / VM100</text>
+  <text class="small ink" x="1048" y="677">✓ UDP 3478 listener observed</text>
+  <text class="small" fill="#c2413b" x="1048" y="711">○ authenticated external peer + UDP</text>
+  <text class="small muted" x="1048" y="731">end-to-end smoke still open</text>
+</svg>

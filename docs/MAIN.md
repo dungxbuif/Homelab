@@ -46,7 +46,8 @@ GitLab web / Registry trial:
 Git SSH:
   VPS :2222 -> Rathole :7001 -> VM100 -> GitLab :22
 BDS:
-  Cloudflare -> VM100 bds-cloudflared -> bds-app on bds-tunnel-net
+  Historical only: the former Cloudflare -> VM100 bds-cloudflared -> bds-app route is retired;
+  current Pi5 native cloudflared is a separate connector and is currently degraded (`Tunnel not found`)
 Datastores:
   VM100 -> Pi5 PostgreSQL/PgBouncer/Redis over homelab-net
 Native dependencies:
@@ -77,7 +78,7 @@ graph TD
         EdgeTraefik -->|Swarm overlay homelab-net| Pi5Backends["Pi5 HTTP backends"]
         EdgeTraefik -->|Swarm overlay homelab-net| VM100Swarm["tasks.homepage:80<br/>tasks.macocr-proxy:8080<br/>tasks.mezonhook:8080<br/>tasks.family-tree:3000<br/>tasks.openclaw:18789<br/>tasks.n8n:5678"]
         EdgeTraefik -->|VPS :18123| MacDeps["Mac LM Studio :1234"]
-        EdgeTraefik -->|approved routes| Pi5Apps["RustFS, Registry, LibreSpeed,<br/>pgAdmin, CouchDB"]
+        EdgeTraefik -->|approved routes| Pi5Apps["RustFS, Registry, CouchDB"]
         SplitDNS["edge-adguardhome-pi5 split DNS"] --> EdgeTraefik
     end
 
@@ -113,8 +114,9 @@ graph TD
 * **Tailnet mesh:** retired on 2026-09-13 when Headscale was removed from the
   VPS. Do not treat `100.64.0.0/10` paths as current until a new access plan is
   implemented.
-* **Failover tunnel:** Cloudflared provides a high-availability backup channel
-  (HTTPS/WebSockets) in case the ISP throttles/blocks UDP.
+* **Failover tunnel:** Cloudflared is installed as a native Pi5 systemd
+  connector, but the current 2026.10.7 service is degraded because Cloudflare
+  returns `Unauthorized: Tunnel not found`; do not treat this route as active.
 
 ### 2. Physical & Virtual Address Allocation
 
@@ -123,7 +125,7 @@ graph TD
 | Viettel Modem (Huawei) | internal | Bridge Mode (VLAN 35); forwards PPPoE to MikroTik. WiFi disabled. |
 | MikroTik hEX S | `10.10.0.1` | Primary router & gateway: PPPoE, NAT, DHCP, LAN routing, FastTrack. |
 | Orange Pi Zero 3 | `10.10.0.2` (LAN) | Former home edge; currently unavailable/retired from active edge duty until deliberately restored. |
-| Raspberry Pi 5 | `10.10.0.5` (LAN) | **Active edge + manager/datastore**: `edge-traefik-pi5`, `edge-rathole-pi5`, `edge-adguardhome-pi5`, Postgres+PgBouncer, Redis-prod, RustFS, production Docker Registry, LibreSpeed, pgAdmin, CouchDB. |
+| Raspberry Pi 5 | `10.10.0.5` (LAN) | **Active edge + manager/datastore**: `edge-traefik-pi5`, `edge-rathole-pi5`, `edge-adguardhome-pi5`, Postgres+PgBouncer, Redis-prod, RustFS, production Docker Registry, CouchDB. |
 | VM100 | `10.10.0.31` | **Production compute / Swarm worker**: homepage, macocr-proxy, Family Tree, MezonHook, OpenClaw, n8n, MyPocket, Batdongsan, RelayHub bootstrap, and GitLab CE (public SSH, temporary VPS-terminated HTTPS, and a separate bundled Registry trial). |
 | Mac mini | `10.10.0.6` documented LAN; OCR connects outbound via public domain | Universal OCR app connects WSS/443 to production; only LM Studio (`:1234`) uses `/Users/dungxbuif/dev-env/mac-service-tunnel`. |
 | Cloud VPS | `103.82.21.202` (public) | **Public boundary**. `gateway-traefik`, production Rathole `7000`, isolated GitLab SSH `7001`/`:2222`, temporary GitLab HTTP `7002`, and Registry trial `7003` Rathole servers; no GitLab app/database/registry storage container. Batdongsan app/database containers and source were removed from the VPS on 2026-09-13; SQL snapshots remain under `/root/backup-bds`. Headscale, the old VPS-hosted NetBird stack, Coturn, RustDesk, node-exporter, and Tailscale were removed the same day. |
@@ -272,7 +274,10 @@ both clients report relay Available via ws. See the
 ### 3. Failover Backup Tunnel (Cloudflared)
 Cloudflared connects to the Cloudflare edge over HTTPS/WebSockets (TCP 443),
 immune to ISP UDP QoS. Use it only for explicitly approved service tunnels; it
-is not a replacement for the retired Headscale/NetBird control plane.
+is not a replacement for the retired Headscale/NetBird control plane. Current
+state: the native Pi5 unit is on `2026.10.7` but flaps because the Cloudflare
+control plane reports `Unauthorized: Tunnel not found`; the former VM100 BDS
+connector was not recreated.
 
 ### 4. Shared datastores
 * **PostgreSQL** `pgbouncer:6432` on `homelab-net` for Swarm clients; the

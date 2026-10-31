@@ -22,7 +22,7 @@ these are different tasks, not a measured gain in unrestricted answer accuracy.
 | MCP endpoint | `http://couchloom:8787/mcp` on `homelab-net` |
 | Source of truth | Existing CouchDB LiveSync database on `homelab-net` |
 | Vector and queue store | `pgvector/pgvector:0.8.6-pg17-bookworm` |
-| Embedding runtime | `ollama/ollama:0.34.0`, CPU on VM100 |
+| Embedding runtime | `ollama/ollama:0.40.13@sha256:b2f0122c…`, CPU on VM100 |
 | Embedding model | `nomic-embed-text`, 768 dimensions |
 | Host/public ports | None |
 | Current steady state | 1,365/1,365 documents, 6,099 chunks, coverage 1, backlog 0, failed 0 |
@@ -31,6 +31,12 @@ these are different tasks, not a measured gain in unrestricted answer accuracy.
 The model remains hosted on VM100. Note bodies are embedded through the private
 `couchloom-ollama:11434` endpoint and are not sent to an external embedding
 provider.
+
+On 2026-10-31, Ollama was upgraded from `0.34.0` to the pinned `0.40.13`
+digest. The `ollama_data` volume was archived and validated at
+`/opt/apps/homelab-backup/runs/version-upgrade-20261031/ollama/ollama-data.tgz`
+(`252237297` bytes) before the recreate. `nomic-embed-text` remained present;
+the Ollama and CouchLoom containers stayed healthy with zero restarts.
 
 ## Architecture and data flow
 

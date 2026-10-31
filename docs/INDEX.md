@@ -2,13 +2,23 @@
 type: Dashboard
 title: "Homelab Core Documentation Index"
 description: "Centralized table of contents for Homelab core files, workloads, and services (v3.5 — Pi5 edge, VM100 production worker, and Mac service tunnel)"
-timestamp: 2026-10-21T00:00:00+07:00
+timestamp: 2026-10-31T10:30:00+07:00
 ---
 
 # Homelab Core Infrastructure (v3.5)
 
+## How to read and maintain the notes
+
+![Project management and reference-note flow](./assets/diagrams/project-reference-flow.svg)
+
+Start with `STATUS.md` and `STACK.md` for current truth, then follow the linked
+dated deployment or audit record for proof. Use runbooks for executable change
+and rollback procedures. Keep source code in `/home/dungxbuif/workspace/projects/`
+and use `PROJECTS.md` as the inventory bridge; archived notes provide history,
+not current runtime authority.
+
 * [Current Homelab Status](./STATUS.md) — short operational truth, verified boundaries, and remaining gates.
-* [Homelab Runtime Verification — 2026-10-26](./deployments/2026-10-26-homelab-runtime-verification.md) — latest repository ownership, topology, live services, backup evidence, retention boundary and open gates.
+* [Version Upgrade & Backup Verification — 2026-10-31](./deployments/version-upgrade-2026-10-31.md) — latest live upgrade ledger, backup/restore evidence, GitLab exclusion and remaining Cloudflared control-plane gate.
 * [DB-management Project and Homelab Reference](./deployments/2026-10-26-db-management-project-and-homelab-reference.md) — project ownership, adapter boundary, runtime placement, release path, current evidence and open gates.
 
 * [Runtime Inventory and Deployment Reconciliation](./deployments/runtime-inventory-2026-10-13.md) — historical 2026-10-13 baseline; use the later 2026-10-15/16 reconciliation notes for current runtime state.
@@ -18,28 +28,27 @@ timestamp: 2026-10-21T00:00:00+07:00
 * [Current Stack Catalog](./STACK.md) - current workloads, tunnel exceptions, DB endpoints, backup boundaries, and proposed work; Markdown for people and agents.
 * [Documentation Audit](./research/docs-stack-audit-2026-09-16.md) - corrected drift and runtime verification coverage.
 * [System Context & Playbook](./MAIN.md) — current VPS `gateway-traefik` -> Rathole -> Pi5 `edge-traefik-pi5` topology, Pi5 split DNS, service-export playbook, and bug registry.
-* [Raspberry Pi 5 Datastore Spec](./PI.md) — Pi5 **active edge + manager/datastore node**: Traefik/Rathole/AdGuard, Postgres+PgBouncer, Redis-prod, RustFS, Registry, LibreSpeed, pgAdmin, and CouchDB.
-* [VM100 Production Compute](./VM100.md) — production apps including MyPocket, n8n, OpenClaw, NetBird, RelayHub bootstrap and GitLab; portless Swarm plus isolated BDS Compose connector.
+* [Raspberry Pi 5 Datastore Spec](./PI.md) — Pi5 **active edge + manager/datastore node**: Traefik/Rathole/AdGuard, Postgres+PgBouncer, Redis-prod, RustFS, Registry, and CouchDB.
+* [VM100 Production Compute](./VM100.md) — production apps including MyPocket, n8n, OpenClaw, NetBird, RelayHub bootstrap and GitLab; portless Swarm with retired BDS connector notes.
 * [Mac Mini Runtime Dependencies](./MAC.md) — native OCR connects outbound over WSS; only LM Studio remains on the Mac Rathole tunnel; includes the installed app and manual artifact locations.
 * [MacOCR Outbound Worker Release](./deployments/macocr-outbound-2026-10-06.md) — production image, Universal app artifacts, admin routes, verification, account cleanup, and rollback boundary.
 * [MyPocket API-only Runtime](./deployments/mypocket-api-only-2026-10-13.md) — production web shutdown, direct API route, service state, verification and rollback.
 * [MikroTik Router Hardening](./MIKROTIK.md) — PPPoE, local DHCP, WireGuard return-path routing, security hardening.
 * [Proxmox Production Hypervisor](./PROXMOX.md) — VM100 production storage/lifecycle; no Kubernetes VM or cluster is active, and any future practice VM must be isolated from production.
-* [VM100 OpenTofu import module](../../../projects/homelab-ops/automation/tofu/proxmox/README.md) — import-only boundary for VM ID 100 with destroy protection and no historical K8s targets.
+* [VM100 OpenTofu import module](../automation/tofu/proxmox/README.md) — import-only boundary for VM ID 100 with destroy protection and no historical K8s targets.
 * [Proxmox IaC Prerequisites](./PRE_REQUIRE.md) — Proxmox API tokens & SSH keys for Terraform/Ansible (generic; now used for lab VMs).
 * [Network Diagnostic Trace](./CONTEXT.md) — benchmarks, bandwidth, latency, and DNS troubleshooting history.
 * [CouchDB Obsidian Sync](./COUCHDB_OBSIDIAN_SYNC.md) — deployment, client settings, and recovery notes for the vault sync backend.
 * [Local Project Workspace Inventory](./PROJECTS.md) — summary-only source checkout inventory; project folders live under `/home/dungxbuif/workspace/projects/`.
-* [Code ownership rule](../index.md#operational-code-ownership) — executable homelab code belongs to `projects/homelab-ops`; this vault stores documentation and evidence.
 * [NetBird Deployment Note](./deployments/netbird-2026-09-13.md) — VM100 control plane, Pi5 PostgreSQL, VPS relay/STUN, deployed public allow-list, and pending LAN-routing peer enrollment.
 * [n8n Daily Gold And Fuel Mezon Report](./deployments/n8n-daily-gold-fuel-report-2026-09-24.md) — 08:00 deterministic price report workflow, Mezon webhook config, sources, idempotency, and failure policy.
 * [GitLab Runbook](./services/gitlab.md) - Omnibus components, Pi5 DB/Redis, public SSH and temporary VPS HTTPS; includes agent-readable facts.
+* [GitLab ↔ Pi5 Redis Network Operations](./runbooks/gitlab-redis-network.md) - install/update/verify/rollback procedure for the attachable Swarm overlay and Compose override.
 * [GitLab Registry Trial](./deployments/gitlab-registry-trial-2026-09-16.md) - successful OCI smoke and local backup evidence; Pi5 registry still production.
 * [Backup and Restore Runbook](./runbooks/backup-restore.md) - native CLI/API backup rules, post-check verification, Mezon status reporting, Google Drive retention, and restore boundaries.
-* [Databasus](./services/databasus.md) - runtime, admin access, setup pitfalls, and backup verification boundary.
 * [Secret Rotation and History Purge Runbook](./runbooks/secret-rotation-and-history-purge.md) - ordered credential rotation, verification, and history-purge plan for the public mirror (commands documented, not executed).
 * [Database Provisioning Runbook](./runbooks/db-provisioning.md) - validated database/user creation contract, secret boundary, and staging workflow.
-* [Backup Runner](../../../projects/homelab-ops/automation/backup-runner/README.md) - serial export/upload/post-check flow, retention lock, and schedule contract.
+* [Backup Runner](../automation/backup-runner/README.md) - serial export/upload/post-check flow, retention lock, and schedule contract.
 * [Native Backup Pull Transport](./deployments/backup-native-pull-transport-2026-10-21.md) - private-network PostgreSQL/RustFS transport and staged CouchDB proxy boundary.
 * [CouchDB Backup Proxy](./deployments/couchdb-backup-proxy-2026-10-21.md) - GET-only VM100-to-Pi5 proxy, credential boundary, restore evidence, and current cutover gate.
 * [CouchDB Restic Streaming Research](./research/couchdb-restic-streaming-2026-10-21.md) - experimental no-staging design and restore gates; not scheduled production.
@@ -55,7 +64,7 @@ timestamp: 2026-10-21T00:00:00+07:00
 
 # Standards & Guidelines
 
-* [Open Knowledge Format (OKF) Specification](./OKF_SPEC.md) — the OKF v0.1 standard used across this bundle.
+* [Open Knowledge Format (OKF) Specification v0.2](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md) — the external OKF standard used across this bundle.
 
 # Proposed Architecture
 

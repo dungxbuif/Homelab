@@ -1,10 +1,11 @@
 # GitLab on VM100
 
-## Current status (2026-10-16; route history retained below)
+## Current status (2026-10-31; route history retained below)
 
 GitLab CE 18.11.11 is installed as one Docker Swarm service on VM100. The
 container and internal web/SSH endpoints are healthy after the shared Redis
-network recovery on 2026-10-16. **Public HTTPS now
+network recovery on 2026-10-16 and the follow-up overlay repair on
+2026-10-31. **Public HTTPS now
 returns 200 with a valid Let's Encrypt certificate, and Git-over-SSH on VPS
 port 2222 reaches GitLab.** HTTPS temporarily terminates on VPS Traefik and
 uses an isolated VM100 Rathole tunnel; direct Orange Pi GitLab HTTPS still
@@ -25,14 +26,14 @@ limits are described below.
 | Swarm service | `gitlab_gitlab` (stack `gitlab`) |
 | Image | `gitlab/gitlab-ce:18.11.11-ce.0` |
 | Placement | VM100 `vm100-prod`, `10.10.0.31` |
-| Network | `homelab-net`, no published VM100 host ports |
+| Network | `gitlab-net`, `pg-net`, and `edge-http-net`; no published VM100 host ports |
 | Internal web | `http://tasks.gitlab_gitlab:80` |
 | Public HTTPS | `https://gitlab.dungxbuif.com/users/sign_in` 200; VPS Traefik Docker router `gitlab-temp@docker`, Let's Encrypt DNS-01 certificate; Orange Pi direct route 404 |
 | Internal SSH | `tasks.gitlab_gitlab:22`; public `103.82.21.202:2222` |
 | SSH tunnel | VPS `gitlab-ssh-rathole-server` (`7001` client control, `2222` public SSH) and VM100 Swarm `gitlab-ssh-tunnel_client` |
 | Temporary HTTPS tunnel | VPS `gitlab-https-rathole-server` (`7002` client control, `8085` VPS Docker-network-only backend) and VM100 Swarm `gitlab-https-tunnel_client` |
-| Database | Pi5 PostgreSQL 16.14, direct `postgres:5432`, dedicated `gitlabhq_production` database owned by `gitlab` |
-| Redis | Pi5 shared `redis-prod:6379`, GitLab DB `/2`, 1 GiB `noeviction`, AOF |
+| Database | Pi5 PostgreSQL 16.15, direct `postgres:5432`, dedicated `gitlabhq_production` database owned by `gitlab` |
+| Redis | Pi5 shared `redis-prod:6379` on `gitlab-net`, GitLab DB `/2`, 1 GiB `noeviction`, AOF; see [Redis network operations](../runbooks/gitlab-redis-network.md) |
 | VM100 data | `/opt/apps/gitlab/{config,logs,data}` |
 | Resource envelope | 10 GiB/4 CPU limit, 2 GiB/1 CPU reservation; 256 MiB `/dev/shm` tmpfs |
 | Secrets | Swarm `gitlab_db_password`, `gitlab_redis_password`, `gitlab_root_password`, `gitlab_ssh_tunnel_client`, and `gitlab_https_tunnel_client`; source files are mode 0600 under Pi5 `/ssd-data/infra/gitlab/secrets/` |
@@ -43,8 +44,8 @@ limits are described below.
 
 ## Operator workflow
 
-1. Edit the secret-free [stack manifest](../../../../projects/homelab-ops/migration/gitlab-stack.yml)
-   and [Omnibus config](../../../../projects/homelab-ops/migration/gitlab-omnibus.rb) in this repo.
+1. Edit the secret-free [stack manifest](../../migration/gitlab-stack.yml)
+   and [Omnibus config](../../migration/gitlab-omnibus.rb) in this repo.
    Validate with `docker stack config -c migration/gitlab-stack.yml` and
    `ruby -c migration/gitlab-omnibus.rb`.
 2. Copy those files to Pi5 `/ssd-data/infra/gitlab/deploy/`. Deploy from
@@ -72,22 +73,22 @@ limits are described below.
 
 VPS Traefik has Docker provider enabled only for containers on VPS; this is
 **not** an Orange Pi Swarm-label route. The new VPS
-[Compose server](../../../../projects/homelab-ops/migration/gitlab-https-tunnel/docker-compose.yml)
+[Compose server](../../migration/gitlab-https-tunnel/docker-compose.yml)
 joins only `gateway-network`. Its `traefik.*` container labels create
 `Host(gitlab.dungxbuif.com)` on `websecure`, TLS via the existing
 `letsencrypt` Cloudflare DNS-01 resolver, and backend port `8085` inside the
 VPS Docker network. Only Rathole control `7002/tcp` is host-published. The
-portless [VM100 client](../../../../projects/homelab-ops/migration/gitlab-https-tunnel/client-stack.yml)
-forwards from that service to `tasks.gitlab_gitlab:80` on `homelab-net`.
+portless [VM100 client](../../migration/gitlab-https-tunnel/client-stack.yml)
+forwards from that service to `tasks.gitlab_gitlab:80` on `gitlab-net`.
 Token/Noise keys were generated outside the repo with the shared
-[renderer](../../../../projects/homelab-ops/migration/gitlab-ssh-tunnel/render-runtime.py). VPS source
+[renderer](../../migration/gitlab-ssh-tunnel/render-runtime.py). VPS source
 is `/root/gitlab-https-tunnel/runtime/server.toml` (mode 0600, image UID
 1000); Pi5 client source is
 `/ssd-data/infra/gitlab/secrets/https-tunnel-client.toml`, and an ignored
 local copy is `credentials/gitlab-https-tunnel-client.toml`.
 
 The VPS shared `/root/gateway/dynamic.yml` was changed **in place** with the
-[guarded helper](../../../../projects/homelab-ops/migration/gitlab-https-tunnel/patch_gateway.py): only
+[guarded helper](../../migration/gitlab-https-tunnel/patch_gateway.py): only
 the GitLab term was removed from `rathole-passthrough` HostSNI, leaving all
 other rules intact and the bind-mount inode unchanged. Backup:
 `/root/gateway/dynamic.yml.bak-gitlab-temp-20260915-171055-839423`.
@@ -104,7 +105,7 @@ observed under this temporary topology.
 
 ## Container Registry trial
 
-The bundled Registry is enabled in [Omnibus config](../../../../projects/homelab-ops/migration/gitlab-omnibus.rb)
+The bundled Registry is enabled in [Omnibus config](../../migration/gitlab-omnibus.rb)
 with `registry_external_url 'https://registry-gitlab.dungxbuif.com'`, legacy
 filesystem metadata (`registry['database']['enabled']=false`), and private
 HTTP NGINX port `5005`. Its storage lives under the VM100 GitLab data bind
@@ -112,12 +113,12 @@ mount. GitLab's versioned Swarm config is
 `gitlab_gitlab_omnibus_registry_trial_20260916`; the old config remains for
 rollback. No GitLab host port was added.
 
-The [trial VPS Compose server](../../../../projects/homelab-ops/migration/gitlab-registry-trial/docker-compose.yml)
+The [trial VPS Compose server](../../migration/gitlab-registry-trial/docker-compose.yml)
 publishes only authenticated Rathole control `7003/tcp`; its `8086/tcp`
 backend is private on VPS Docker `gateway-network`. VPS Traefik Docker
 labels terminate TLS for only the trial domain. The portless
-[VM100 client](../../../../projects/homelab-ops/migration/gitlab-registry-trial/client-stack.yml) uses
-Docker DNS `tasks.gitlab_gitlab:5005` on `homelab-net` and Swarm secret
+[VM100 client](../../migration/gitlab-registry-trial/client-stack.yml) uses
+Docker DNS `tasks.gitlab_gitlab:5005` on `gitlab-net` and Swarm secret
 `gitlab_registry_trial_client`. Separate Noise credentials were generated
 outside the repo and held at VPS
 `/root/gitlab-registry-trial/runtime/{server,client}.toml`, Pi5
@@ -148,8 +149,8 @@ internal DNS/edge route and native Docker pull test pass.
 ## Public SSH tunnel
 
 The SSH path is separate from the existing Orange Pi HTTPS Rathole tunnel.
-The VPS source is [server Compose](../../../../projects/homelab-ops/migration/gitlab-ssh-tunnel/docker-compose.yml)
-and the VM100 source is [client stack](../../../../projects/homelab-ops/migration/gitlab-ssh-tunnel/client-stack.yml).
+The VPS source is [server Compose](../../migration/gitlab-ssh-tunnel/docker-compose.yml)
+and the VM100 source is [client stack](../../migration/gitlab-ssh-tunnel/client-stack.yml).
 The VPS project is `/root/gitlab-ssh-tunnel`; its `runtime/server.toml` is
 mode 0600 and owned by the image UID 1000. The matching client TOML is a
 Swarm secret mounted read-only in `gitlab-ssh-tunnel_client`; its Pi5 source
@@ -157,7 +158,7 @@ is `/ssd-data/infra/gitlab/secrets/ssh-tunnel-client.toml`. A local ignored
 copy lives under `credentials/gitlab-ssh-tunnel-client.toml`. The secret
 contains a dedicated token and the server's Noise public key; the server's
 Noise private key stays on the VPS. New runtime configs are generated with
-[render-runtime.py](../../../../projects/homelab-ops/migration/gitlab-ssh-tunnel/render-runtime.py) and
+[render-runtime.py](../../migration/gitlab-ssh-tunnel/render-runtime.py) and
 are never committed. The external VPS address in the client config is a
 deliberate exception to internal Docker DNS: split DNS would resolve the
 gateway hostname to Orange Pi on the LAN.
@@ -199,7 +200,7 @@ service: gitlab_gitlab
 status: public_https_vps_temporary_ssh_live
 image: gitlab/gitlab-ce:18.11.11-ce.0
 node: vm100-prod
-network: homelab-net
+network: gitlab-net, pg-net, edge-http-net
 http_upstream: tasks.gitlab_gitlab:80
 ssh_upstream: tasks.gitlab_gitlab:22
 postgres_database: gitlabhq_production
@@ -233,16 +234,15 @@ registry_trial_metadata_database: false
 pi5_registry_current_status: active
 lab_native_docker_pull_verified: false
 ```
-## Current backup status (2026-10-28)
+## Current backup status (2026-10-13)
 
 GitLab is a separate backup class; it is not covered by the generic PostgreSQL
-or CouchDB export. The VM100 `homelab-backup-gitlab.timer` unit exists but is
-currently inactive; re-enable it before relying on scheduled runs. It runs
+or CouchDB export. The VM100 `homelab-backup-gitlab.timer` is enabled and runs
 the native Omnibus command `gitlab-backup create` beside the GitLab container,
 then captures configuration/secrets and the local bundled Registry artifacts
 before uploading and checking the encrypted Restic repository.
 
-The previous verified run was `gitlab-20261012-193002` with snapshot ID
+The latest verified run is `gitlab-20261012-193002` with snapshot ID
 `0e4c88063586aece8b924c56422ee0272779bac7b5743cc517b7a858e18b0df3`. The run
 completed successfully; the warning that `/var/opt/gitlab/backups` may be
 readable by non-root users did not fail the job. Redis cache/session data is
@@ -250,8 +250,4 @@ deliberately excluded because it is rebuildable; Git repositories, uploads,
 CI artifacts, Registry layers, config, and secrets remain in the GitLab-native
 backup class. On 2026-10-13 the VM100 Mezon secret was corrected to match the
 Pi5 executor secret after the GitLab notification was found to target an old
-webhook; a warning-level delivery probe returned successfully. On 2026-10-28
-the local GitLab native payloads and staging archives were removed after
-explicit approval to reclaim VM100 disk. The staging manifest, checksums and
-`remote/snapshot-id` receipt remain, but a fresh scheduled backup must be run
-before this is considered current.
+webhook; a warning-level delivery probe returned successfully.

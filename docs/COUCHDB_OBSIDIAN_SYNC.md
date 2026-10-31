@@ -11,8 +11,8 @@ timestamp: 2026-09-14T00:00:00Z
 
 CouchDB runs on the Raspberry Pi 5 datastore node as the sync backend for this
 Obsidian vault and as a small general document datastore. It is deployed as a
-portless Docker service behind the VPS Traefik -> Rathole -> Orange Pi Traefik
-edge path.
+portless Docker service behind the VPS Traefik -> Rathole -> Pi5 Traefik edge
+path.
 
 ## Deployment
 
@@ -21,7 +21,7 @@ edge path.
 | Host | Raspberry Pi 5 gateway |
 | Stack path | `/ssd-data/infra` |
 | Container | `couchdb` |
-| Image | `couchdb:3.3.3` |
+| Image | `couchdb:3.5.3@sha256:bed314d1…` |
 | Docker network | `proxy_net` |
 | Host port exposure | None |
 | Internal port | `5984` |

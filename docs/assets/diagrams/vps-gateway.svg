@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="920" viewBox="0 0 1400 920" role="img" aria-labelledby="title desc">
+  <title id="title">VPS gateway live audit</title>
+  <desc id="desc">The 2026-10-31 read-only audit found nine running containers, ample host headroom and three bounded HTTPS route smokes. The gateway has no Docker healthchecks and UFW is inactive, so process stability is not full readiness.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.small{font:14px sans-serif}.body{font:16px sans-serif}.head{font:700 22px sans-serif}.title{font:700 30px sans-serif}.card{stroke:#d8dee9;stroke-width:2}.blue{fill:#eaf2ff;stroke:#2f6fed}.green{fill:#eafaf6;stroke:#1f9d8b}.amber{fill:#fff7e8;stroke:#d97706}.red{fill:#fff1f1;stroke:#c2413b}.white{fill:#fff;stroke:#d8dee9}.pill{font:700 13px sans-serif;letter-spacing:.5px}.mono{font:14px monospace}.row{stroke:#e5e9f0;stroke-width:1}
+    </style>
+  </defs>
+  <rect class="bg" width="1400" height="920"/>
+  <text class="title ink" x="50" y="58">VPS gateway • live audit</text>
+  <text class="body muted" x="52" y="88">Read-only evidence from 2026-10-31 • SSH via existing gateway profile • no configuration changed</text>
+
+  <rect class="blue card" x="50" y="125" width="840" height="650" rx="18"/>
+  <text class="pill" fill="#2f6fed" x="78" y="162">HOST 103.82.21.202</text>
+  <text class="head ink" x="78" y="200">Nine stable gateway containers</text>
+  <text class="small muted" x="78" y="225">All running • restart count 0 • no exited container • no Docker healthchecks declared</text>
+  <rect class="white card" x="78" y="250" width="784" height="470" rx="12"/>
+  <text class="pill muted" x="102" y="283">CONTAINER</text><text class="pill muted" x="430" y="283">ROLE / LISTENERS</text><text class="pill muted" x="740" y="283">STATE</text>
+  <line class="row" x1="98" y1="297" x2="842" y2="297"/>
+  <text class="mono ink" x="102" y="328">gateway-traefik</text><text class="small muted" x="430" y="328">public edge • TCP 80, 443</text><text class="small" fill="#2f8f5b" x="740" y="328">running / 0</text>
+  <line class="row" x1="98" y1="344" x2="842" y2="344"/>
+  <text class="mono ink" x="102" y="375">rathole-server</text><text class="small muted" x="430" y="375">shared edge • TCP 7000, 18087, 18123</text><text class="small" fill="#2f8f5b" x="740" y="375">running / 0</text>
+  <line class="row" x1="98" y1="391" x2="842" y2="391"/>
+  <text class="mono ink" x="102" y="422">gitlab-ssh-rathole</text><text class="small muted" x="430" y="422">isolated Git SSH • TCP 2222, 7001</text><text class="small" fill="#2f8f5b" x="740" y="422">running / 0</text>
+  <line class="row" x1="98" y1="438" x2="842" y2="438"/>
+  <text class="mono ink" x="102" y="469">gitlab-https-rathole</text><text class="small muted" x="430" y="469">isolated GitLab HTTPS • TCP 7002</text><text class="small" fill="#2f8f5b" x="740" y="469">running / 0</text>
+  <line class="row" x1="98" y1="485" x2="842" y2="485"/>
+  <text class="mono ink" x="102" y="516">gitlab-registry-trial</text><text class="small muted" x="430" y="516">registry trial tunnel • TCP 7003</text><text class="small" fill="#2f8f5b" x="740" y="516">running / 0</text>
+  <line class="row" x1="98" y1="532" x2="842" y2="532"/>
+  <text class="mono ink" x="102" y="563">netbird-relay</text><text class="small muted" x="430" y="563">relay / STUN • TCP 443, UDP 3478</text><text class="small" fill="#2f8f5b" x="740" y="563">running / 0</text>
+  <line class="row" x1="98" y1="579" x2="842" y2="579"/>
+  <text class="mono ink" x="102" y="610">coturn</text><text class="small muted" x="430" y="610">TURN • TCP/UDP 5349</text><text class="small" fill="#2f8f5b" x="740" y="610">running / 0</text>
+  <line class="row" x1="98" y1="626" x2="842" y2="626"/>
+  <text class="mono ink" x="102" y="657">hbbs / hbbr</text><text class="small muted" x="430" y="657">RustDesk • TCP 21115–21119, UDP 21116</text><text class="small" fill="#2f8f5b" x="740" y="657">running / 0</text>
+  <text class="small muted" x="102" y="699">Running/restart=0 proves process stability only; application readiness needs service-specific probes.</text>
+
+  <rect class="green card" x="930" y="125" width="420" height="275" rx="18"/>
+  <text class="pill" fill="#1f9d8b" x="958" y="162">RESOURCE HEADROOM</text>
+  <text class="head ink" x="958" y="200">Comfortable at audit time</text>
+  <text class="body ink" x="958" y="240">4 vCPU</text><text class="small muted" x="1095" y="240">Intel Xeon E5-2690 v4</text>
+  <text class="body ink" x="958" y="273">7.8 GiB RAM</text><text class="small muted" x="1095" y="273">7.0 GiB available</text>
+  <text class="body ink" x="958" y="306">38 GiB root</text><text class="small muted" x="1095" y="306">31 GiB free • 20% used</text>
+  <text class="body ink" x="958" y="339">Load 0.01 / 0.03 / 0.00</text>
+  <text class="small muted" x="958" y="372">Docker 29.3.0 • no failed systemd units</text>
+
+  <rect class="amber card" x="930" y="430" width="420" height="205" rx="18"/>
+  <text class="pill" fill="#d97706" x="958" y="467">LIMITS TO READ CORRECTLY</text>
+  <text class="body ink" x="958" y="505">⚠ No Docker healthchecks</text>
+  <text class="small muted" x="958" y="531">Healthy process state is not full readiness.</text>
+  <text class="body ink" x="958" y="567">⚠ UFW inactive</text>
+  <text class="small muted" x="958" y="593">Confirm provider/cloud firewall policy separately.</text>
+  <text class="small muted" x="958" y="619">No swap is a resilience consideration.</text>
+
+  <rect class="white card" x="930" y="665" width="420" height="155" rx="18"/>
+  <text class="pill" fill="#2f6fed" x="958" y="702">BOUNDED SMOKE RESULTS</text>
+  <text class="small ink" x="958" y="731">✓ netbird-relay / → 404 (expected protocol root)</text>
+  <text class="small ink" x="958" y="754">✓ gitlab.dungxbuif.com → 302</text>
+  <text class="small ink" x="958" y="777">✓ dungxbuif.com → 200</text>
+  <text class="small muted" x="958" y="800">Open: external NetBird UDP/client and RustDesk session tests</text>
+
+  <rect class="red card" x="50" y="815" width="1300" height="70" rx="14"/>
+  <text class="body ink" x="78" y="845">Open verification boundary:</text>
+  <text class="small muted" x="255" y="845">TCP listeners passed for 22, 80, 443, 2222, 7000–7003, 5349; UDP listeners were observed for 3478, 21116 and 5349.</text>
+  <text class="small muted" x="78" y="868">Malformed handshakes and probe noise were sampled without restart correlation; monitor, but do not treat as deploy failure alone.</text>
+</svg>

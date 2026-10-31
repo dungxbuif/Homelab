@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+  <title id="title">Homelab data and backup boundaries</title>
+  <desc id="desc">Pi5 remains the authoritative datastore and object host. VM100 owns the intended backup schedule and exports, VM110 owns database operations, and encrypted Restic repositories target Google Drive. Current timers are disabled, GitLab is skipped in the upgrade wave, and Cloudflared is a separate deferred control-plane boundary.</desc>
+  <defs>
+    <marker id="blue-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#2f6fed"/></marker>
+    <marker id="teal-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#1f9d8b"/></marker>
+    <style>
+      .bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.small{font:14px sans-serif}.body{font:16px sans-serif}.head{font:700 22px sans-serif}.title{font:700 30px sans-serif}.card{stroke:#d8dee9;stroke-width:2}.data{fill:#eafaf6;stroke:#1f9d8b}.compute{fill:#f1edff;stroke:#7c5cfc}.drive{fill:#eaf2ff;stroke:#2f6fed}.amber{fill:#fff7e8;stroke:#d97706}.red{fill:#fff1f1;stroke:#c2413b}.white{fill:#fff;stroke:#d8dee9}.pill{font:700 13px sans-serif;letter-spacing:.5px}.blueflow{fill:none;stroke:#2f6fed;stroke-width:4;marker-end:url(#blue-arrow)}.tealflow{fill:none;stroke:#1f9d8b;stroke-width:4;stroke-dasharray:10 8;marker-end:url(#teal-arrow)}.redflow{fill:none;stroke:#c2413b;stroke-width:3;stroke-dasharray:8 8}
+    </style>
+  </defs>
+  <rect class="bg" width="1400" height="900"/>
+  <text class="title ink" x="50" y="58">Data and backup boundaries</text>
+  <text class="body muted" x="52" y="88">Current recovery model • authoritative data stays on Pi5 • evidence and schedule truth reconciled 2026-10-31</text>
+
+  <rect class="data card" x="50" y="145" width="330" height="510" rx="18"/>
+  <text class="pill" fill="#1f9d8b" x="78" y="182">AUTHORITATIVE DATA</text>
+  <text class="head ink" x="78" y="220">Pi5 • 10.10.0.5</text>
+  <text class="body muted" x="78" y="248">Swarm manager + active home edge</text>
+  <rect class="white card" x="78" y="280" width="274" height="82" rx="12"/>
+  <text class="body ink" x="96" y="311">PostgreSQL / PgBouncer</text>
+  <text class="small muted" x="96" y="337">logical exports • 17 DBs in upgrade gate</text>
+  <rect class="white card" x="78" y="379" width="274" height="82" rx="12"/>
+  <text class="body ink" x="96" y="410">CouchDB</text>
+  <text class="small muted" x="96" y="436">online export / replication metadata</text>
+  <rect class="white card" x="78" y="478" width="274" height="82" rx="12"/>
+  <text class="body ink" x="96" y="509">RustFS + Redis</text>
+  <text class="small muted" x="96" y="535">S3-native export • separate RDB/AOF path</text>
+  <text class="small muted" x="78" y="606">No production data is hosted on VM110.</text>
+
+  <rect class="compute card" x="460" y="145" width="390" height="510" rx="18"/>
+  <text class="pill" fill="#7c5cfc" x="488" y="182">EXPORT / OPERATIONS</text>
+  <text class="head ink" x="488" y="220">VM100 + VM110</text>
+  <rect class="white card" x="488" y="250" width="334" height="168" rx="12"/>
+  <text class="body ink" x="508" y="282">VM100 • 10.10.0.31</text>
+  <text class="small muted" x="508" y="310">backup runner owns intended schedule</text>
+  <text class="small ink" x="508" y="341">PostgreSQL / CouchDB class</text>
+  <text class="small ink" x="508" y="364">RustFS native-pull • GitLab native</text>
+  <text class="small ink" x="508" y="387">configs class • Redis separate procedure</text>
+  <text class="small" fill="#d97706" x="508" y="407">Timers currently disabled / inactive</text>
+  <rect class="white card" x="488" y="440" width="334" height="154" rx="12"/>
+  <text class="body ink" x="508" y="472">VM110 • 10.10.0.32</text>
+  <text class="small muted" x="508" y="500">db-management adapters + UI boundary</text>
+  <text class="small ink" x="508" y="530">Google Drive SDK / Databasus receipts</text>
+  <text class="small ink" x="508" y="553">6 approved service DBs: backup + restore passed</text>
+  <text class="small muted" x="508" y="576">Other jobs remain outside this maintenance wave</text>
+
+  <rect class="drive card" x="930" y="145" width="400" height="510" rx="18"/>
+  <text class="pill" fill="#2f6fed" x="958" y="182">OFF-SITE TARGET</text>
+  <text class="head ink" x="958" y="220">Google Drive</text>
+  <text class="body muted" x="958" y="248">Encrypted Restic repositories</text>
+  <rect class="white card" x="958" y="280" width="344" height="190" rx="12"/>
+  <text class="body ink" x="978" y="312">Homelab Backup / homelab-backups</text>
+  <text class="small ink" x="978" y="348">databases</text>
+  <text class="small ink" x="978" y="374">database-instances</text>
+  <text class="small ink" x="978" y="400">gitlab</text>
+  <text class="small ink" x="978" y="426">rustfs</text>
+  <text class="small ink" x="978" y="452">configs</text>
+  <rect class="white card" x="958" y="494" width="344" height="100" rx="12"/>
+  <text class="body ink" x="978" y="526">Acceptance rule</text>
+  <text class="small muted" x="978" y="552">export → upload → remote check → manifest/checksum</text>
+  <text class="small muted" x="978" y="575">→ isolated restore before production recovery</text>
+  <text class="small muted" x="958" y="626">Retention: 14 daily • 8 weekly • 12 monthly</text>
+
+  <path class="blueflow" d="M380 355 C410 355 430 355 460 355"/>
+  <text class="small muted" x="386" y="339">online native exports</text>
+  <path class="tealflow" d="M850 355 C880 355 900 355 930 355"/>
+  <text class="small muted" x="856" y="339">encrypted upload / receipts</text>
+  <path class="tealflow" d="M850 520 C900 520 900 520 930 520"/>
+  <text class="small muted" x="856" y="505">provider + restore evidence</text>
+
+  <rect class="amber card" x="50" y="705" width="640" height="125" rx="16"/>
+  <text class="pill" fill="#d97706" x="78" y="741">PARTIAL / OPERATIONAL GATE</text>
+  <text class="body ink" x="78" y="777">Historical restore acceptance exists, but VM100 recurring backup, health and</text>
+  <text class="body ink" x="78" y="801">restore-drill timers are disabled/inactive; re-enable only after reviewed scheduler repair.</text>
+
+  <rect class="red card" x="730" y="705" width="600" height="125" rx="16"/>
+  <text class="pill" fill="#c2413b" x="758" y="741">SEPARATE / DEFERRED BOUNDARIES</text>
+  <text class="body ink" x="758" y="777">GitLab: skipped in the upgrade wave; future window needs PostgreSQL 17 and</text>
+  <text class="body ink" x="758" y="801">feasible native backup/restore. Cloudflared: route smoke deferred; token says Tunnel not found.</text>
+</svg>
