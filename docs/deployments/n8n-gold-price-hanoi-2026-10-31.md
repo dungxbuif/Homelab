@@ -1,21 +1,23 @@
 ---
 type: Deployment
-title: n8n Hanoi gold-price workflow — local/dev verification
+title: n8n Hanoi gold-price workflow — production release
 generated:
   by: codex
-  at: "2026-10-31T13:00:00+07:00"
+  at: "2026-10-31T13:56:30+07:00"
 stale_after: "2026-11-30T13:00:00+07:00"
-lifecycle: verification-only
+lifecycle: active
 service: n8n
 ---
 
-# n8n Hanoi gold-price workflow — local/dev verification
+# n8n Hanoi gold-price workflow — production release
 
 ## Decision
 
-The new workflow is local/dev only. It has not been imported, activated, or
-sent to either Mezon destination. Production remains separate and requires a
-later explicit release approval.
+The approved production release is live in n8n. The workflow uses the runtime
+variable `MEZON_GOLD_PROD_WEBHOOK_URL`; the webhook token is not in this
+repository, generated JSON, or this document. The release did not send a
+manual production test message; scheduled delivery is the production smoke
+path.
 
 ## Scope and source policy
 
@@ -51,9 +53,24 @@ The generated workflow separates the runtime destination into
 (production). The production value is not written here or into repository
 files.
 
+## Production release record
+
+- Source revision: `3be86b3` (`feat: add production workflow release mode`).
+- Live workflow ID: `daily-gold-fuel-mezon`.
+- Published name: `Hanoi Gold Price Fallback - PROD`.
+- Published shape: 22 nodes; six parallel brand branches, twelve gold source
+  slots, Petrolimex daily branch, seven-input merge, conditional fallbacks.
+- Schedules: daily `0 8 * * *`; watcher `*/10 8-21 * * *`.
+- Import path: `n8n import:workflow` with the existing workflow ID, then
+  `n8n publish:workflow --id=daily-gold-fuel-mezon`; a controlled `n8n` service
+  restart was performed because this n8n instance is regular mode.
+- Runtime destination identity was checked by hostname/path only; the secret
+  value was never printed. The custom `mezonWebhook` node is installed in the
+  live package (`n8n-nodes-mezon` 0.1.1).
+
 ## Evidence
 
-- `npm test`: 16 tests passed.
+- `npm test`: 17 tests passed.
 - `npm run typecheck`: passed after `npm ci`.
 - `npm run build`: passed.
 - Final DEV preview after the BTMC fallback, source-cache, and timestamp fixes used the current production-compatible Mezon format (`message.mk` contains one `pre` range covering all of `message.t`) and was accepted with HTTP 200. The payload had 5/6 gold brands with two rows, Petrolimex OK, and only SJC's expected blocked-source warning. Production delivery was not called.
@@ -73,16 +90,24 @@ files.
   it also received the Cloudflare challenge. A browser-session-only DEV preview
   was sent with SJC values `13.600/13.900` and `13.180/13.580`, source update
   `31/10/2026 08:16`, and HTTP 200. It is not production automation.
-- Current live workflow export backup: `/tmp/n8n-gold-before-hanoi-local-test.1yfONB.json` on the local machine, 25,412 bytes, workflow ID `daily-gold-fuel-mezon`, active with 8 nodes.
+- Pre-import live workflow export backup: `/opt/apps/n8n/data/backups/n8n-gold-before-hanoi-prod-20261031T065023+0000.json` on VM100, 25,412 bytes, mode `600`, workflow ID `daily-gold-fuel-mezon`, active with 8 nodes. Post-import and published exports are retained beside it.
+- Release verification: after the publish, the n8n container was force-restarted and reported `healthy`, restart count `0`; local and public `/healthz` returned `{"status":"ok"}`. The published export reported `active: true`, 22 nodes, and the production env expression.
 
-## Release gate
+## Release gate — completed
 
-Do not import or activate the generated workflow until:
+1. SJC official-source `blocked`/`N/A` behavior was intentionally accepted;
+   no unapproved third-party source was added.
+2. DEV preview was accepted earlier with the production-compatible Mezon
+   envelope; production delivery was kept schedule-driven for this release.
+3. Generated production JSON was reviewed: 22 nodes, both schedules, correct
+   connections, runtime env expression, and no webhook literal.
+4. The pre-import backup is protected and recoverable. Rollback is:
 
-1. SJC browser/session strategy is confirmed or the official-source N/A state
-   is intentionally accepted.
-2. A dev webhook is supplied through `MEZON_GOLD_TEST_WEBHOOK_URL` and the
-   test delivery is manually inspected.
-3. The generated JSON is reviewed for node connections and no secrets.
-4. The live export backup remains recoverable and rollback is tested.
+   ```sh
+   cid=$(docker ps --filter name='n8n.1' --format '{{.ID}}' | head -1)
+   docker cp /opt/apps/n8n/data/backups/n8n-gold-before-hanoi-prod-20261031T065023+0000.json "$cid":/tmp/gold-rollback.json
+   docker exec "$cid" n8n import:workflow --input=/tmp/gold-rollback.json
+   docker exec "$cid" n8n publish:workflow --id=daily-gold-fuel-mezon
+   docker service update --force n8n
+   ```
 

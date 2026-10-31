@@ -1,5 +1,9 @@
 ## 2026-10-31
 
+### VM100 backup coverage audit
+
+**Update** — A read-only audit of VM100 found that all 9 legacy backup timers are disabled and the last successful runs were on 2026-10-21 and 2026-10-22; only the new GitLab set from today exists. VM100 holds about 4 GB of its own application state that no backup covers. This corrects an earlier assumption (see [decisions](/docs/decisions.md)). Backlog items VB1 and VB2 track it.
+
 ### First verified GitLab backup on Drive
 
 **Creation** — Created the human-only 1Password vault `Homelab-Recovery` and the item `backup - gitlab - age private key`, written through the CLI without printing the key. Installed `age` on VM100 and deployed the backup tooling with Ansible (check mode first); the timer stays disabled. The first real run produced the set `20261031T062156Z` (455 MB, 38 repositories): uploaded, checksum-verified, and decrypted with the 1Password key. The run exposed one bug (`RuntimeMaxSec` ignored for oneshot units), fixed and redeployed. See the [GitLab production task](/docs/superpowers/plans/2026-10-31-gitlab-production-task.md) section 9.

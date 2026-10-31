@@ -57,8 +57,10 @@ tasks in external mode, authenticated by a shared runner token. n8n reaches
 ## Secrets
 
 Passed as **plain env vars**, not Swarm secrets: `N8N_ENCRYPTION_KEY`,
-`N8N_RUNNERS_AUTH_TOKEN`, `DB_POSTGRESDB_PASSWORD`. 1Password item paths
-(unverified). Losing `N8N_ENCRYPTION_KEY` makes stored credentials unreadable.
+`N8N_RUNNERS_AUTH_TOKEN`, `DB_POSTGRESDB_PASSWORD`,
+`MEZON_GOLD_TEST_WEBHOOK_URL`, and `MEZON_GOLD_PROD_WEBHOOK_URL`. Values are
+never documented. 1Password item paths (unverified). Losing
+`N8N_ENCRYPTION_KEY` makes stored credentials unreadable.
 
 ## Delivery
 
@@ -90,3 +92,7 @@ Passed as **plain env vars**, not Swarm secrets: `N8N_ENCRYPTION_KEY`,
 
 - 2026-10-31: upgraded n8n and runners to `2.46.3` (pair matched).
 - 2026-10-31: `n8n` DB enrolled in Databasus restore verification.
+- 2026-10-31: Hanoi gold-price fallback workflow published as
+  `daily-gold-fuel-mezon` (`Hanoi Gold Price Fallback - PROD`), 22 nodes, with
+  a protected pre-import export and post-publish health verification; details:
+  [production release](../deployments/n8n-gold-price-hanoi-2026-10-31.md).
