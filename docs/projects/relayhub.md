@@ -11,8 +11,9 @@ project: relayhub
 class: public
 owner: dungxbuif
 repo: dungxbuif/relayhub
-deployed_revision: c61e998 (public Rust v1 API); Go canary 731047e (not public)
+deployed_revision: c61e998 (public Rust v1 API); Go production runtime 731047e (not public)
 canary_image: registry-gitlab.dungxbuif.com/dungxbuif/relayhub@sha256:4331063e39eb42caa722ae80aa656348d384e425c082cf451c50f46730261234
+go_production_image: registry-gitlab.dungxbuif.com/dungxbuif/relayhub@sha256:4331063e39eb42caa722ae80aa656348d384e425c082cf451c50f46730261234
 ---
 
 # RelayHub
@@ -38,7 +39,7 @@ Related internal references (keep them, do not merge into public docs):
 | Local checkout | `/home/dungxbuif/workspace/projects/RelayHub/` (checked out on `codex/centrifugo-upstream-baseline`, HEAD `9c6baa0`, 2026-10-31) |
 | GitLab | `dungxbuif/relayhub` (default branch `main`); GitHub mirror `dungxbuif/RelayHub` |
 | Repo docs | `README.md`, `CHANGELOG.md`, `docs/` (architecture, decisions, developer, operations, user), public site `web/docs/` |
-| Deployed revision | Public v1 API `c61e998` ("expose live agent presence to dashboard", contained in `main`); stack file from `f933e49` (2026-10-31). Legacy Go `eee9e7c`; Go Admin-parity canary `731047e` |
+| Deployed revision | Public v1 API `c61e998` ("expose live agent presence to dashboard", contained in `main`); stack file from `f933e49` (2026-10-31). Go production runtime `731047e`; rollback image alias preserves legacy Go `eee9e7c` |
 
 ## Internal architecture
 
@@ -76,20 +77,45 @@ must not be pointed at the live v1 or legacy database. Current image is pinned
 by the shared GitLab Registry digest in the frontmatter. Public routing remains
 on `relayhub-v1`; the canary is for release acceptance only.
 
-Legacy rollback runtime (VM100 Compose `prod`, `/opt/apps/relayhub/prod/`,
+Go production/rollback runtime (VM100 Compose `prod`, `/opt/apps/relayhub/prod/`,
 files `compose.yml` + `compose.override.yml` + `compose.release.yml`):
-`relayhub-api` and `relayhub-worker` on `homelab/relayhub:prod-eee9e7c`,
+`relayhub-api` and `relayhub-worker` on local alias `homelab/relayhub:prod-eee9e7c`,
+currently backed by registry digest
+`sha256:4331063e39eb42caa722ae80aa656348d384e425c082cf451c50f46730261234`
+(`731047e`). The previous image is preserved as
+`homelab/relayhub:rollback-eee9e7c-20261031`.
 `relayhub-nats`, `relayhub-redis`; 1 CPU / 1 GiB each; all healthchecked;
 networks `relayhub-net`, `pg-net` (api also `edge-http-net`). No Pi5 route
-points at it. A 0/0 Swarm service `relayhub` (`bootstrap-20260914`) is a
-leftover cleanup candidate.
+points at it; the public hostname remains on Rust v1. A 0/0 Swarm service
+`relayhub` (`bootstrap-20260914`) is a leftover cleanup candidate.
+
+## Production acceptance (2026-10-31)
+
+- Production Go API/worker were recreated on VM100 from the immutable shared
+  registry digest above; both are healthy, restart count 0, and the worker
+  readiness check passes. This is a production-runtime validation, not a
+  public DNS cutover: `relayhub.dungxbuif.com` remains Rust v1 for rollback.
+- Before rollout, PostgreSQL was dumped to
+  `/opt/apps/relayhub/backups/relayhub-prod-20261031T055828Z.dump`, mode 0600,
+  93,618 bytes. `pg_restore --list` returned 208 entries. The old image remains
+  available under the rollback alias above.
+- A disposable TypeScript SDK client ran against the production API through a
+  temporary localhost-only tunnel. It created an app and queue, published an
+  event, replayed the same idempotency key and received the same event ID,
+  pulled and acknowledged the delivery, and received a realtime WebSocket
+  message. The app, queue, test user and temporary port were cleaned up; app
+  history is retained but the synthetic apps are disabled because event
+  foreign keys preserve audit history.
+- Public smoke checks after cleanup: `/healthz`, `/readyz`,
+  `/api/v1/openapi.json`, and `/admin/` all returned HTTP 200. No public route
+  was changed during this acceptance run.
 
 ## Data
 
 | Store | Name | Backup class | Last restore evidence | RPO / RTO |
 |---|---|---|---|---|
 | PostgreSQL (Pi5, via PgBouncer) | `relayhub_v1_staging_20261030` (active v1 DB, despite the name) | none: no Databasus job documented | none | not stated |
-| PostgreSQL (Pi5) | `relayhub` (legacy, rollback) | Databasus → Google Drive | 2026-10-31: backup + `pg_restore` verify, 30 tables ([upgrade ledger](../deployments/version-upgrade-2026-10-31.md)) | not stated |
+| PostgreSQL (Pi5) | `relayhub` (Go production/rollback) | Databasus → Google Drive | 2026-10-31: backup + `pg_restore` verify, 208 restore-list entries ([upgrade ledger](../deployments/version-upgrade-2026-10-31.md)) | not stated |
 | NATS volume | `relayhub-v1_relayhub-v1-nats` | none | none | rebuildable from PostgreSQL outbox (unverified) |
 | Redis | in-memory only | none (by design) | n/a | n/a |
 
@@ -157,3 +183,8 @@ NATS and Redis in the v1 stack run without credentials (private overlay only).
   skip), Go and TypeScript clients passed live app/queue/realtime flows, and
   a post-restart readiness/session check passed. A real SDK bug where `202`
   with an empty body was parsed as JSON was fixed and included in the image.
+- 2026-10-31: Go production runtime was upgraded on VM100 to `731047e` after
+  a verified PostgreSQL backup. A disposable TypeScript production client
+  passed event idempotency, queue pull/ack, and realtime WebSocket checks;
+  public routing stayed on Rust v1 and the previous Go image was retained for
+  rollback.
