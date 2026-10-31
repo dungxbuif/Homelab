@@ -1,5 +1,9 @@
 ## 2026-10-31
 
+### VM120 created, VM110 imported and resized
+
+**Update** — With the owner's approval of the migration chain: removed an unused 9.2 GB image on VM100, imported VM110 into OpenTofu with a zero-diff plan, resized VM110 from 8 to 4 GiB (db-management came back 5 of 5), and created VM120 for GitLab (8 GiB, 100 GiB, `10.10.0.33`). Details and the state layout are in the [GitLab production task](/docs/superpowers/plans/2026-10-31-gitlab-production-task.md) section 9a. GitLab itself has not been moved.
+
 ### Proxmox host measured, `pve.nccsoft.office` removed
 
 **Update** — With the existing API token (GET only) the Proxmox host measured 31.3 GiB RAM (24.9 in use) and 75 GiB free in the thin pool, so the VM120 sizing was reduced and a resize sequence added ([compute plan](/docs/superpowers/plans/2026-10-31-compute-layout-and-sizing.md)). Read-only `tofu plan` runs showed that the VM100 and VM110 modules are not zero-diff yet. The disk audit found that VM100's space is mostly container images, not data.

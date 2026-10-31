@@ -193,6 +193,19 @@ Still open before this task can be called production-grade:
 | T1, T6 to T8 | VM100 and VM110 import into tofu and VM120 need Proxmox access |
 | Recovery secrets | Confirm `restic-password` and `rclone.conf` are also in 1Password (see [secrets standard](/docs/standards/secrets-1password.md)) |
 
+## 9a. Progress after the owner approved the chain (2026-10-31)
+
+| Step | Result |
+|---|---|
+| VM100 cleanup | Removed the unused image `ollama/ollama:0.34.0` (9.2 GB) and 0.37 GB of dangling layers; kept the RelayHub rollback images. Guest usage 115 to 106 GiB. `fstrim` trimmed 86 GiB in the guest but the **thin pool did not shrink** (289.4 GiB used, 75 GiB free), so discard does not reach the pool and the space cannot be counted on |
+| VM110 import | Module fixed (removed the create-only `clone` block, matched `replicate`, `upgrade`, `discard`, the serial device). Plan became **1 import, 0 add, 0 change, 0 destroy**; applied; state is encrypted |
+| VM110 resize | `tofu plan` showed one change, memory 8192 to 4096, policy passed. Applied: the VM restarted in about 40 seconds; all five db-management services were `1/1` afterwards. Host RAM in use fell from 24.9 to 19.5 GiB |
+| VM120 | Created by `tofu apply` (1 add, 0 change, 0 destroy): 6 vCPU, 8 GiB, 100 GiB, `10.10.0.33`, Ubuntu 22.04.5, cloud-init done, SSH works, Docker not installed yet |
+
+State handling for these runs: the encrypted state of each module is in `/opt/apps/homelab-tofu/state/<module>` on VM100, with a copy on the workstation in `~/.local/share/homelab/tofu-state/<module>`. The passphrases are 1Password items `infra - tofu - <module> state passphrase` in `Homelab-Automation`. This is an interim layout until the RustFS backend of plan P1; the VM100 copy is a single point of failure for GitLab's own infrastructure state, so the workstation copy must be kept.
+
+Still to do: configure VM120 (Docker, the same GitLab version with bundled PostgreSQL and Redis), restore the Drive set into it as the T7 rehearsal without switching traffic, then ask for the cutover window and the VM100 resize. The VM100 module still differs from the live VM (cloud-init keys) and is not imported yet.
+
 ## 9b. What blocked production earlier
 
 The code, tests and read-only checks are done. A production-grade GitLab still needs actions that change the live system, which are not taken without the owner:
