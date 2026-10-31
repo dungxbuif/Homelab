@@ -129,7 +129,7 @@ Consequences to remember:
 **Still open (owner action or approval needed):**
 
 1. ~~Delete two staged archives on VM120~~ Done 2026-10-31 on the owner's instruction; `data/backups` is empty (the sets are on Drive).
-2. Restore rehearsal from a set made on the new host, in an isolated instance (needs the age key from 1Password and a host with enough RAM).
+2. Restore from a set made on the new host. **Half done 2026-10-31:** `gitlab-backup-verify.py` (read-only) checked set `20261031T131411Z` (made by the Swarm container on the new host): both checksums match, both archives decrypt, the database dump decompresses in full (35.4 MB) with users, projects, namespaces and CI tables, 38 repository bundles, a valid `gitlab-secrets.json` and 6 SSH host keys. **Not done:** starting GitLab from the set in an isolated instance (`gitlab-restore.py`, needs a host with 4-6 GiB free and the owner's go-ahead).
 3. Real login, a pipeline on a runner and a registry pull with real credentials.
 4. Instance-level (global) CI/CD variables for the registry need an admin token; per-job `CI_REGISTRY_*` and `CI_JOB_TOKEN` already work for pushes to this registry.
 5. The old registry data on VM100 was deleted on 2026-10-31 on the owner's instruction ("không cần giữ data cũ của registry"); the registry on VM120 was restarted and answers 401 on LAN and VPS. The rest of the old GitLab data on VM100 stays frozen until the owner approves its deletion after a soak period.
@@ -141,3 +141,7 @@ To finish: run `GITLAB_AGE_KEY="$(op read ...)" automation/gitlab-backup/gitlab-
 Open after the cutover: LAN clients reach GitLab through the Pi5 route (`gitlab.dungxbuif.com` resolves to Pi5 on the LAN), which still points at the old Swarm service. That route must be pointed at VM120 before the old service is scaled to 0.
 
 Rollback is only safe before writes happen on VM120. After the first hour on the new host, going back means exporting new data first.
+
+## 9. Incident: age private key printed in a session transcript (2026-10-31 20:30)
+
+While reading the key for the verification, a shell redirection mistake printed the **private** age key into the local Claude Code session transcript on the owner's workstation (not Git, not Drive, not a ticket). Per the secrets standard an exposed secret is rotated. **Rotation is pending the owner's go-ahead:** create a new key in `Homelab-Recovery`, add its recipient to `/etc/homelab-gitlab-backup/age-recipients.txt` on VM120, **keep the old private key** (renamed `... (retired 2026-10)`) because every existing set is encrypted to it, then make a new set and verify it. Lesson: read secrets only into a variable (`VAR="$(op read ...)"`), never as the last command in a pipeline whose output is shown.
