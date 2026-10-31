@@ -63,3 +63,4 @@ LLM: VPS :18123 -> Mac Rathole client -> LM Studio :1234
    up, scale to zero, confirm exit, then start the replacement
    ([GitLab runbook](/docs/services/gitlab.md)).
 10. **Scripts come from `homelab-ops`.** Every script is written, reviewed, tested and committed in `homelab-ops` first, then deployed to the server (an Ansible release) and run from there. Nothing that changes state is typed on a server, pasted into a shell or run from a scratch directory. Read-only inspection commands are fine. Operator tools live in `homelab-ops/automation/tools/`.
+11. **No junk on any VM.** Every job cleans up after itself on failure and retries transient errors, and every VM runs a recurring cleanup (`homelab-docker-maintenance.timer`, plus the GitLab backup sweep on the GitLab host). A failed run must never leave partial archives, staging directories or unused images behind. Control uses the file key `~/.ssh/homelab-automation`, with 1Password as backup only.

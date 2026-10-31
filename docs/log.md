@@ -1,5 +1,9 @@
 ## 2026-10-31
 
+### Cleanup on every VM and a dedicated control key
+
+**Update** — New rule in [overview](/docs/overview.md): no junk on any VM. The recurring Docker cleanup is now deployed to VM110 and VM120 by Ansible, and a daily GitLab backup sweep was added. Control of the hosts uses a dedicated file key (1Password holds a backup copy). The cutover script and the new-host staging are in `homelab-ops`; the cutover itself had not run when this entry was written.
+
 ### Rule: scripts live in homelab-ops first; GitLab restore runbook
 
 **Update** — New rule recorded in [overview](/docs/overview.md): every script is created in `homelab-ops` before it runs on a server. The operator helpers used earlier from a scratch directory were moved into the repository. Added the [GitLab backup and restore runbook](/docs/runbooks/gitlab-backup-restore.md), the restore script `gitlab-restore.py`, and rclone retries in the backup script. The cutover to VM120 has not happened yet.
