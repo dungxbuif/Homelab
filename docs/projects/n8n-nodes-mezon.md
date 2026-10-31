@@ -11,7 +11,7 @@ project: n8n-nodes-mezon
 class: none
 owner: dungxbuif
 repo: local Git checkout; no remotes configured
-deployed_revision: "faaf3cc (SJC removed from active report); follow-up docs a4bed9a and cleanup 423fe77"
+deployed_revision: "3e655d6 (watcher fail-closed guard); SJC removal faaf3cc; cleanup 423fe77"
 ---
 
 # n8n-nodes-mezon
@@ -30,7 +30,7 @@ Class `none` · owner dungxbuif · status `local source / live dependency`.
 | Git | local branch `codex/gold-price-hanoi-fallback`, clean at `423fe77` |
 | Git remotes | none configured; do not invent a remote until the GitLab project is created |
 | Repo docs | `README.md` |
-| Deployed revision | workflow `daily-gold-fuel-mezon` from `faaf3cc` plus earlier hotfixes; package `0.1.1` unchanged |
+| Deployed revision | workflow `daily-gold-fuel-mezon` from `3e655d6`; package `0.1.1` unchanged |
 
 ## Why it does not run
 
@@ -69,9 +69,51 @@ Delivery separation is mandatory: local/dev uses `MEZON_GOLD_TEST_WEBHOOK_URL`;
 production uses the separately managed `MEZON_GOLD_PROD_WEBHOOK_URL`. Neither
 secret is stored in this repository or its generated JSON.
 
+## Workflow contract — do not mix the two schedules
+
+Canonical production workflow:
+
+- n8n ID: `daily-gold-fuel-mezon`.
+- Name: `Hanoi Gold Price Fallback - PROD`.
+- The only production destination is the runtime expression
+  `MEZON_GOLD_PROD_WEBHOOK_URL`; never paste a webhook token into JSON, code, or
+  a test command.
+- Active report scope is BTMC, BTMH, DOJI, PNJ, and Phú Quý; SJC is excluded.
+
+Daily schedule (`0 8 * * *`):
+
+- Always sends one report, even when gold prices did not change.
+- Includes gold and Petrolimex fuel sections.
+- Uses the title `Giá vàng & xăng dầu - DD/MM/YYYY`.
+- May include a Petrolimex missing-data warning when the fuel source fails.
+
+Change watcher (`*/10 8-21 * * *`):
+
+- Checks the same five gold branches and their fallback sources.
+- Sends only when a normalized gold buy/sell value or source status changes.
+- The first run initializes the baseline and must not send.
+- An unchanged run must not send.
+- Must never include Petrolimex, a fuel warning, or the daily title.
+- Uses the title `Biến động giá vàng - DD/MM/YYYY HH:mm`.
+
+Safety invariants:
+
+- The parser accepts exactly one `runMode`: `daily` or `watch`; conflicting
+  modes fail closed instead of selecting the first item.
+- Delivery is allowed only for `daily-report` in daily mode or
+  `source-or-price-change` in watch mode. Any other reason is blocked before
+  the Mezon node.
+- The source cache may preserve a last-good two-row result for six hours, but a
+  cache refresh alone is not a price change and must not trigger a watcher
+  message.
+- Before importing, export the existing workflow. After importing, publish the
+  same canonical ID, restart n8n, then export again and verify the parser gate,
+  schedules, active state, node count, and health endpoint. Never import an
+  ID-less artifact as production; n8n will create a second workflow.
+
 ## Verification and backup evidence (2026-10-31)
 
-- Local unit/integration tests: `20/20` passed; `npm run typecheck`, `npm run build`, and `git diff --check` passed.
+- Local unit/integration tests: `22/22` passed; `npm run typecheck`, `npm run build`, and `git diff --check` passed.
 - Latest independent official-source run: BTMC primary returned HTTP 404 without a configured API key, then the official `btmc.vn` HTML fallback returned both target products; BTMH, DOJI, PNJ, and Phú Quý returned both target products; SJC was blocked with HTTP 403 on both direct candidates; Petrolimex returned the retained three-row fuel section.
 - A browser session can load the official SJC page and show the exact two target rows, but the current n8n HTTP code path receives Cloudflare 403; no unverified third-party source was substituted.
 - A free headless Chrome trial (the route intended for an n8n `Execute Command` node) also received the Cloudflare challenge, so it is not treated as an automated source yet. A browser-session snapshot was used only for the DEV preview: SJC bar `13.600 / 13.900`, round ring `13.180 / 13.580`, source update `31/10/2026 08:16`.

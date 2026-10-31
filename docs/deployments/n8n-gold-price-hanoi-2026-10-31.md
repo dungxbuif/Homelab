@@ -254,6 +254,32 @@ most likely trigger.
 Preventive cleanup before the next push: quarantine the legacy generator from
 normal deployment paths, keep the historical snapshot rollback-only, and add
 a guard that rejects any non-canonical artifact carrying the production ID.
+
+## Watcher mode guard release — 2026-10-31
+
+The 10-minute path was hardened after a report that a watcher message had the
+daily title, fuel section, and Petrolimex warning. The local fix adds explicit
+mode resolution and a fail-closed delivery gate:
+
+- `daily` may send only with reason `daily-report`.
+- `watch` may send only with reason `source-or-price-change`.
+- Missing or conflicting mode markers do not become a daily report.
+- The existing format, sources, schedules, fallback behavior, and production
+  webhook expression remain unchanged.
+
+Verification before deployment: `22/22` tests passed, typecheck, build, and
+`git diff --check` passed. The protected pre-import export was
+`/opt/apps/n8n/data/backups/n8n-gold-before-watch-mode-guard-20261031T081246+0000.json`
+(223,034 bytes, mode `600`). The published post-import export was verified as
+workflow `daily-gold-fuel-mezon`, active, 20 nodes, both schedules, and with
+`resolveRunMode`, `dispatchAllowed`, and the explicit IF gate present. VM100
+and the public `/healthz` endpoint returned healthy. No production webhook was
+sent manually.
+
+An ID-less test import briefly created an inactive duplicate named
+`Hanoi Gold Price Fallback - PROD`; it is not active and is not a production
+execution path. Future imports must set the canonical ID before import and must
+not create another duplicate.
 - VM100 n8n restarted through the Swarm manager and returned healthy; public
   `/healthz` returned `{"status":"ok"}`. No manual production webhook was sent.
 
