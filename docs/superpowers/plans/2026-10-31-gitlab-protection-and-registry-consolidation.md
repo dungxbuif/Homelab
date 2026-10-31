@@ -1,7 +1,7 @@
 ---
 type: Plan
 title: "GitLab Protection, Dedicated VM and Registry Consolidation"
-description: "Make GitLab recoverable with verified off-site backups, move it to its own VM, move registry storage to RustFS and delete the Pi5 registry"
+description: "Make GitLab recoverable with verified off-site backups, move it to its own VM, keep the registry on the GitLab VM disk and delete the Pi5 registry"
 status: draft
 generated:
   by: claude-code/opus-5.5
@@ -32,7 +32,7 @@ Plan con của [IaC automation rebuild](./2026-10-31-lab-iac-automation-rebuild.
 
 ### 2.1 Tách GitLab sang VM riêng: **có** (VM 120, kích thước theo [compute layout](./2026-10-31-compute-layout-and-sizing.md))
 
-**Backup và verify không phụ thuộc vào VM riêng.** G1 (backup) và G2 (restore drill) làm ngay trên VM100 hiện tại. Việc tách VM (G3) chỉ làm sau khi G2 đã pass và R0 xác nhận Proxmox đủ tài nguyên. Nếu host < 32 GiB RAM thì GitLab ở lại VM100, nhưng vẫn chuyển sang PostgreSQL và Redis bundled, với registry trên RustFS.
+**Backup và verify không phụ thuộc vào VM riêng.** G1 (backup) và G2 (restore drill) làm ngay trên VM100 hiện tại. Việc tách VM (G3) chỉ làm sau khi G2 đã pass và R0 xác nhận Proxmox đủ tài nguyên. Nếu host < 32 GiB RAM thì GitLab ở lại VM100, nhưng vẫn chuyển sang PostgreSQL và Redis bundled, giữ registry trên đĩa của VM đang chạy GitLab.
 
 | Lý do | Giải thích |
 |---|---|
@@ -43,7 +43,7 @@ Plan con của [IaC automation rebuild](./2026-10-31-lab-iac-automation-rebuild.
 
 Giới hạn cần nói rõ: VM mới vẫn nằm **cùng host Proxmox và cùng `local-lvm`** với VM100. Tách VM giúp cô lập lỗi phần mềm và tài nguyên, không bảo vệ khi host chết. Phần đó do backup off-site lo (§3).
 
-Kích thước: VM `120 gitlab`, **6 vCPU, 12 GiB RAM, 100 GiB disk**. Số liệu đo được: GitLab dùng 5.0 GiB RAM; `/opt/apps/gitlab` 30 GiB, trong đó 14 GiB là registry sẽ chuyển sang RustFS. Runner `build` và `plan` cũng chạy trên VM này. Registry chuyển sang RustFS nên đĩa VM không phải chứa 14 GiB đó. Không join Swarm: chạy Omnibus bằng Docker Compose do Ansible quản (stateful, một instance).
+Kích thước: VM `120 gitlab`, **6 vCPU, 12 GiB RAM, 150 GiB disk**. Số liệu đo được: GitLab dùng 5.0 GiB RAM; `/opt/apps/gitlab` 30 GiB, trong đó 14 GiB là registry sẽ chuyển sang RustFS. Runner `build` và `plan` cũng chạy trên VM này. **Registry nằm luôn trên đĩa VM** (filesystem), không dùng RustFS, nên disk là **150 GiB**. Không join Swarm: chạy Omnibus bằng Docker Compose do Ansible quản (stateful, một instance).
 
 ### 2.2 Xoá `registry.dungxbuif.com`: **có, nhưng là bước cuối**
 
@@ -53,11 +53,11 @@ Kích thước: VM `120 gitlab`, **6 vCPU, 12 GiB RAM, 100 GiB disk**. Số li�
 
 | Lớp | Nội dung | Ở đâu | Tần suất |
 |---|---|---|---|
-| L1 Native backup | `gitlab-backup create` (repos, DB bundled, uploads, artifacts, LFS, CI). Bỏ registry bằng `SKIP=registry` vì registry đã nằm trên RustFS | Thư mục backup trong VM → đẩy đi ngay | Hằng ngày 02:00 |
+| L1 Native backup | `gitlab-backup create` (repos, DB bundled, uploads, artifacts, LFS, CI). Bỏ registry bằng `SKIP=registry`, vì registry được backup riêng bằng restic (L5) | Thư mục backup trong VM → đẩy đi ngay | Hằng ngày 02:00 |
 | L2 Config + secrets | `gitlab.rb`, `gitlab-secrets.json`, cấu hình tunnel. Mã hoá | 1Password (attachment) + kèm mỗi bản backup | Mỗi lần thay đổi + hằng ngày |
 | L3 Bản trong lab, khác host | Bucket RustFS `gitlab-backups` trên Pi5, bật versioning và object lock 7 ngày | Pi5 | Hằng ngày |
 | L4 Bản off-site | restic (mã hoá, dedup) → Google Drive | Ngoài lab | Hằng ngày. Giữ 7 bản ngày, 4 bản tuần, 6 bản tháng |
-| L5 Registry | Bucket `gitlab-registry` (versioning) nằm trong lịch backup RustFS → Drive | Pi5 → Drive | Hằng ngày |
+| L5 Registry | restic incremental thư mục registry trên VM120 → RustFS `gitlab-backups` + Drive | Pi5 + Drive | Hằng ngày |
 | L6 Ảnh VM | `vzdump` VM 120 lên target ngoài host (quyết định B3: PBS/NAS) | Ngoài host | Hằng tuần + trước mỗi lần upgrade |
 | L7 Bản sao source | Push mirror các repo quan trọng (`homelab-ops`, vault, repo app đang deploy) sang GitHub private | GitHub | Mỗi lần push |
 
@@ -98,7 +98,7 @@ Cảnh báo tự động: nếu bản backup off-site cũ hơn 26 giờ, kích t
 | **G1 Backup ngay trên VM100** | Chạy một native backup đầy đủ trong maintenance window (gồm cả registry). Copy secrets vào 1Password. Đẩy lên RustFS `gitlab-backups` và Drive bằng restic. Bật lịch hằng ngày (role `backup`, timer systemd trên host, không phụ thuộc CI) | Có (tải I/O, không restart) | Bản backup đầu tiên nằm trên Drive |
 | **G2 Restore drill lần 1** | Restore bản trên Drive vào một instance tạm (VM tạm hoặc VM110), chạy checklist §3 | Không đụng prod | **Drill pass**: lần đầu tiên GitLab có backup được kiểm chứng |
 | **G3 VM riêng** | Tofu tạo VM 120 → Ansible cài base, docker, GitLab compose cùng phiên bản và bundled PostgreSQL/Redis → restore bản mới nhất (đây cũng là drill lần 2) → chuyển 3 tunnel client sang VM 120 → smoke test web, SSH :2222, registry, runner | Có (cutover khoảng 30 phút, read-only trước đó) | GitLab chạy trên VM 120. Bản cũ trên VM100 scale về 0 và giữ 14 ngày để rollback |
-| **G4 Registry → RustFS** | Bucket `gitlab-registry` + metadata DB + `s3_v2` + `mc mirror` + kiểm tra mọi digest (chi tiết trong [registry.md](../../standards/registry.md)) | Có (registry read-only trong lúc chuyển) | Mọi digest pull được từ registry chạy trên RustFS |
+| **G4 Registry hoá chuẩn** | Bật metadata DB, online GC, cleanup policy; backup restic thư mục registry; restore thử (chi tiết trong [registry.md](../../standards/registry.md)) | Có (registry read-only trong lúc import metadata) | Dung lượng < 25 GiB, restore thử pass |
 | **G5 Gom image** | Push 9 image chỉ có trên máy lên GitLab Registry. Copy image bên thứ ba đang dùng vào `dungxbuif/mirror/`. Copy image MyPocket từ Pi5 registry sang (`skopeo copy`, giữ nguyên digest). Repin `mypocket-api`, `mypocket-worker` (cần duyệt vì service restart) | Có (restart MyPocket) | Không service nào còn dùng `registry.dungxbuif.com` |
 | **G6 Xoá Pi5 registry** | Sau 7 ngày ổn định: tar `/ssd-data/infra/registry/data` (1.5 GiB) lên Drive (giữ 90 ngày) → dừng và xoá container `docker-registry` → bỏ route, catalog entry và file auth → cập nhật docs | Có | `registry.dungxbuif.com` hết tồn tại. Rollback: chạy lại container từ bản tar |
 | **G7 Vận hành** | Lịch backup + drill hằng tháng + `vzdump` hằng tuần + push mirror. Chỉ upgrade GitLab (U0) khi drill gần nhất pass | — | 3 tháng liền drill pass |

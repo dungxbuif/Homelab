@@ -72,7 +72,7 @@ Everything else in this catalog is automatic. Execution model, runners and `hl` 
 | Flow | Trigger | Automated | Human |
 |---|---|---|---|
 | D1 Provision / rotate / adopt / retire | See [database provisioning](./database-provisioning.md) | — | Click for data jobs |
-| D2 Scheduled backups | One owner per class (db-management/Databasus for PG + CouchDB, role `backup` for GitLab, RustFS, Redis, configs, tofu state, registry bucket) | Backup → verify → mark success | — |
+| D2 Scheduled backups | One owner per class (db-management/Databasus for PG + CouchDB, role `backup` for GitLab, RustFS, Redis, configs, tofu state, GitLab registry directory) | Backup → verify → mark success | — |
 | D3 Backup freshness | Nightly | Compare the last success per class with its RPO; a miss opens an issue and goes to Mezon | — |
 | D4 Restore drill | Monthly | Restore each class into a scratch target, check the data, record the result | — |
 | D5 Config snapshots | Nightly | MikroTik export, Proxmox config, tofu state (encrypted) → backup | — |
@@ -132,7 +132,7 @@ The vault syncs to Obsidian through LiveSync. Bots therefore never write to Couc
 | P1 | B1, `hl`, D1 (`db_provision`), Semaphore retired |
 | P2 | C1, C2, C3, C7, B2 |
 | P3 | B4, C6 |
-| P4 | A1–A6, A9, E5, registry on RustFS |
+| P4 | A1–A6, A9, E5, registry cleanup + GC |
 | **P4b** | G1–G5 doc-bot and gate-bot, F3 digest, issue automation |
 | P5 | All apps on flow A, A8 Renovate, E3 |
 | P6 | D2, D4, D5, H1 |

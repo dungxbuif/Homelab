@@ -10,7 +10,7 @@ stale_after: "2026-11-30T11:05:44+07:00"
 
 # Homelab Backlog
 
-Open work only; completed items live in git history and [log.md](./log.md).
+Open work only; completed items live in git history and [log.md](./log.md). Backlog confirmed by the owner on 2026-10-31.
 The forward roadmap is the
 [Lab IaC and automation rebuild plan](./superpowers/plans/2026-10-31-lab-iac-automation-rebuild.md)
 (status: proposed). The **Plan** column maps each item to its phase (P0–P8).
@@ -118,3 +118,4 @@ canaries, keep a bounded rollback. Ledger:
 | R1 | Reclaim unused Docker images: VM100 10.7 GiB, Pi5 49 GiB (images + build cache); `fstrim` VM100 | Space reclaimed, no service touched | P0 | open |
 | R2 | Create VM120 gitlab (6 vCPU / 12 GiB / 100 GiB), move GitLab, then VM100 16→12 GiB and VM110 8→12 GiB + scratch disk | Steps R3–R8 of the compute plan | P2 | open |
 | R3 | Three Swarm managers (Pi5, VM100, VM110) | `docker node ls` shows 3 reachable managers | P2 | open |
+| GP | **GitLab production task**: VMs under OpenTofu, safe migration to VM120, native scheduled backups to Drive that verify themselves and leave no junk ([task](./superpowers/plans/2026-10-31-gitlab-production-task.md)) | T0–T12 done, definition of done met | P0–P2 | open (T3 partly done; T0 blocked on Proxmox access) |

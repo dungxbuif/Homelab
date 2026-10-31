@@ -1,7 +1,7 @@
 ---
 type: Decision
 title: Container Registry Decision
-description: One registry for the whole lab — GitLab Container Registry (storage on RustFS) serves every image, our own and third-party; the Pi5 registry is deleted
+description: One registry for the whole lab — GitLab Container Registry on the dedicated GitLab VM serves every image, our own and third-party; the Pi5 registry is deleted
 status: draft
 generated:
   by: claude-code/opus-5.5
@@ -32,34 +32,27 @@ Reasons:
   - Harbor: heavy, several containers, and retired once already in the K8s era.
   - A cloud registry: adds an external dependency and egress for every pull.
 
-## Storage: RustFS S3 on Pi5 (decided 2026-10-31, plan only)
+## Storage: local disk on the GitLab VM (decided 2026-10-31)
 
-Registry blobs move from the VM100 disk (`/opt/apps/gitlab/data/gitlab-rails/shared/registry`, **14 GiB** on 2026-10-31) to a RustFS bucket on Pi5. RustFS has 264 GiB free and already sits on the private `s3-net` overlay.
+Because GitLab gets its own VM (VM120), the registry keeps **filesystem storage on that VM's disk**. RustFS was considered and rejected as the primary store.
 
-Why:
+Why local disk:
 
-- Registry data then lives in tier T1 (Pi5), next to the other datastores. A rebuilt GitLab on any VM attaches to the same bucket and every image is still there.
-- It frees VM100 disk (66% used), and the registry gets object versioning and the RustFS backup class.
+- Fewer moving parts: no S3 credentials, no `s3_v2` config, and no dependency on Pi5 RustFS for every push and pull.
+- Pi5 is already the single datastore host, and RustFS has no backup schedule yet (B0). Putting the registry there would make Pi5 more critical.
+- Images are rebuildable. Our images come from CI tags, and third-party images can be re-copied from upstream. A lost registry is slow to rebuild, not data loss.
+- GitLab, its database and its registry form **one unit**, backed up and restored together.
 
 Design:
 
 | Item | Value |
 |---|---|
-| Bucket | `gitlab-registry`. Versioning on. Lifecycle rule: expire noncurrent versions after 7 days |
-| Access | A dedicated access key scoped to this bucket only. Kept in 1Password `homelab-prod/platform/gitlab-registry-s3` and passed to GitLab as a Swarm secret |
-| GitLab config | `registry['storage'] = { 's3_v2' => { regionendpoint: 'http://rustfs:9000', bucket: 'gitlab-registry', pathstyle: true, region: 'us-east-1' } }`. GitLab reaches RustFS over `s3-net` |
-| Metadata DB | Registry metadata database `gitlab_registry` on Pi5 PostgreSQL, created by `db_provision`. Enables online GC |
-| Backup | The bucket is enrolled in the RustFS backup class and depends on BACKLOG B0, because RustFS has no schedule today |
+| Path | Omnibus default (`/var/opt/gitlab/gitlab-rails/shared/registry`) on VM120, sized in the [compute plan](../superpowers/plans/2026-10-31-compute-layout-and-sizing.md) (disk 150 GiB) |
+| Size control | Registry metadata database (bundled PostgreSQL) + online GC + cleanup policy (keep the last 10 tags, every `v*` tag and every deployed digest). Target: under 25 GiB |
+| Backup | Daily restic (incremental, deduplicated, encrypted) of the registry directory → RustFS `gitlab-backups` (in-lab copy on another host) + Google Drive. `gitlab-backup` runs with `SKIP=registry` so the native archive stays small. Weekly `vzdump` of VM120 |
+| Restore | Restore the directory with restic, then run a registry metadata check. The monthly drill pulls one digest |
 
-Migration (one maintenance window, nothing is deleted):
-
-1. Back up the GitLab config and registry directory, and record the list of image digests in use.
-2. Create the bucket, key and metadata DB through the normal provisioning job.
-3. Put the registry in read-only mode, then `mc mirror` the filesystem storage into the bucket.
-4. Switch `gitlab.rb` to `s3_v2`, run the metadata import, reconfigure, and leave read-only mode.
-5. Pull every recorded digest from VM100 and from Pi5. Deploy one app on staging as a smoke test.
-6. Keep the old directory read-only for 14 days, then delete it in a separate approved job.
-7. Rollback: switch the config back to filesystem storage. The old directory is unchanged until step 6.
+**Fallback:** if the Proxmox thin pool cannot hold VM120's disk (step R0 of the compute plan), use RustFS S3 storage instead (`s3_v2`, bucket `gitlab-registry`, path-style, scoped key).
 
 ## Image lifecycle (fully automated)
 
@@ -67,7 +60,7 @@ Migration (one maintenance window, nothing is deleted):
 CI build → push :<sha> (CI_JOB_TOKEN) → Trivy + SBOM + cosign → digest
 → bot MR env/stg.yml → Swarm pulls by digest (read-only deploy token, --with-registry-auth)
 → tag vX.Y.Z adds a tag to the SAME digest → bot MR env/prod.yml → policy verifies registry + digest + signature
-→ weekly cleanup policy + online GC → nightly backup of the bucket → drift flags any image outside the registry
+→ weekly cleanup policy + online GC → nightly restic backup of the registry directory → drift flags any image outside the registry
 ```
 
 - Only CI pushes; humans have no push rights. Tags are `<sha>` and `vX.Y.Z`. `latest` is never used.
@@ -76,8 +69,8 @@ CI build → push :<sha> (CI_JOB_TOKEN) → Trivy + SBOM + cosign → digest
 
 ## Required to promote it from "trial" (plan P4)
 
-1. Move storage to RustFS and enable the metadata DB and online GC (above). Set a cleanup policy per project.
-2. Back up the bucket and record one restore test.
+1. Move GitLab (with its registry) to VM120, then enable the metadata DB and online GC. Set a cleanup policy per project.
+2. Back up the registry directory (restic → RustFS + Drive) and record one restore test.
 3. Make split DNS and the Pi5 route for `registry-gitlab.dungxbuif.com` work from the LAN, so pulls do not hairpin through the VPS. Create a read-only deploy token for Swarm.
 4. Push every local-only image (table above) and re-pin the services by digest (P0.5).
 5. Move MyPocket to GitLab Registry, then delete `registry.dungxbuif.com` (archive its 1.5 GiB to Drive first).
@@ -96,5 +89,5 @@ Policy gate: an image reference outside `registry-gitlab.dungxbuif.com` fails th
 
 With one registry, GitLab is a dependency for every pull. If GitLab is down, running tasks keep their cached images and nothing stops. Only new deploys and re-pulls wait.
 - GitLab itself (and anything needed to rebuild it) is pulled from upstream, pinned by digest. This is the break-glass exception.
-- Because the blobs live in RustFS on Pi5, a rebuilt GitLab reattaches to the bucket and every image is still there.
+- The registry is restored together with GitLab from restic and `vzdump`. Our images can also be rebuilt from git tags.
 - GitLab is protected as described in the [GitLab protection plan](../superpowers/plans/2026-10-31-gitlab-protection-and-registry-consolidation.md).

@@ -1,5 +1,11 @@
 ## 2026-10-31
 
+### GitLab production task and stale backup removed
+
+**Update** — Wrote the [GitLab production task](/docs/superpowers/plans/2026-10-31-gitlab-production-task.md): all VMs under OpenTofu, safe migration to a dedicated VM, native scheduled backups to Google Drive, and failure handling that leaves no junk. The task's audit found that GitLab's real data is small (git 463 MiB, artifacts 59 MiB) while the registry is 14 GiB.
+
+**Deletion** — With the owner's approval, removed the stale 14.3 GB `registry.tar.gz` left in `/opt/apps/gitlab/data/backups/` by the backup stopped on 2026-10-30. VM100 disk went from 66% to 59% used. The live registry was not touched because running services pull images from it.
+
 ### IaC plan, vault cleanup, standards and OKF v0.2
 
 **Update** — Live read-only audit of Pi5, VM100 and VM110. The new

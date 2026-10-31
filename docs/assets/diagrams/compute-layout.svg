@@ -33,10 +33,10 @@
   <text class="small muted" x="88" y="372">no GitLab · no runners · no backup</text>
   <rect class="ctrl card" x="390" y="180" width="300" height="300" rx="12"/>
   <text class="bold ink" x="406" y="206">VM120 · gitlab (new)</text>
-  <text class="small muted" x="406" y="228">6 vCPU · 12 GiB · 100 GiB</text>
+  <text class="small muted" x="406" y="228">6 vCPU · 12 GiB · 150 GiB</text>
   <text class="small muted" x="406" y="252"></text>
   <text class="small muted" x="406" y="276">GitLab Omnibus, bundled PG + Redis</text>
-  <text class="small muted" x="406" y="300">registry → blobs on RustFS</text>
+  <text class="small muted" x="406" y="300">registry on VM disk</text>
   <text class="small muted" x="406" y="324">runner build (rootless) + plan</text>
   <text class="small muted" x="406" y="348"></text>
   <text class="small muted" x="406" y="372">not in Swarm · no data creds</text>
@@ -60,7 +60,7 @@
   <text class="bold ink" x="1106" y="206">Data · edge · manager</text>
   <text class="small muted" x="1106" y="228">PostgreSQL · Redis</text>
   <text class="small muted" x="1106" y="252">CouchDB · RustFS</text>
-  <text class="small muted" x="1106" y="276">  (registry + backups buckets)</text>
+  <text class="small muted" x="1106" y="276">  (gitlab-backups bucket)</text>
   <text class="small muted" x="1106" y="300">Traefik · AdGuard · Rathole</text>
   <text class="small muted" x="1106" y="324">Swarm manager #1</text>
   <text class="small muted" x="1106" y="348">runner deploy</text>

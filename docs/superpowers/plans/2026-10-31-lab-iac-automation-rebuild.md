@@ -404,7 +404,7 @@ Catalog đầy đủ: [Automation Flows](../../standards/automation-flows.md).
 - [ ] Doc-bot (`hl docs sync`): chỉ ghi các block `<!-- generated -->` của doc vault qua MR (không ghi thẳng CouchDB/LiveSync).
 - [ ] Gate-bot (`hl gates`): chấm G0–G8 từ evidence thật.
 - [ ] Báo cáo đêm/tuần: drift, backup freshness, CVE, stale docs, exception hết hạn → Mezon + GitLab issue tự tạo.
-- [ ] Registry chuyển storage sang RustFS `gitlab-registry` + metadata DB ([quyết định](../../standards/registry.md)).
+- [ ] Registry: metadata DB, online GC, cleanup policy, backup restic thư mục registry trên VM120 ([quyết định](../../standards/registry.md)).
 - **Exit:** homepage đi trọn flow A1–A10 không có bước tay ngoài duyệt; doc vault của homepage tự cập nhật sau deploy.
 
 ### P5: Onboard app và data (3–4 tuần)

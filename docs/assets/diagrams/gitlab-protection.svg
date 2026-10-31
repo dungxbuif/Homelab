@@ -28,7 +28,7 @@
   <text class="bold ink" x="88" y="256">GitLab Omnibus (compose, Ansible)</text>
   <text class="small muted" x="88" y="278">bundled PostgreSQL + Redis</text>
   <text class="small muted" x="88" y="298">repos · uploads · artifacts · CI</text>
-  <text class="small muted" x="88" y="318">registry service → blobs on RustFS</text>
+  <text class="small muted" x="88" y="318">registry on VM disk (GC &lt; 25 GiB)</text>
   <rect class="note card" x="72" y="376" width="376" height="110" rx="12"/>
   <text class="bold ink" x="88" y="402">L1 gitlab-backup create (daily)</text>
   <text class="small muted" x="88" y="424">SKIP=registry · 02:00</text>
@@ -47,8 +47,8 @@
   <text class="bold ink" x="598" y="246">gitlab-backups</text>
   <text class="small muted" x="598" y="268">versioning + object lock 7 days</text>
   <rect class="data card" x="582" y="316" width="336" height="80" rx="12"/>
-  <text class="bold ink" x="598" y="342">gitlab-registry (L5)</text>
-  <text class="small muted" x="598" y="364">image blobs · versioning</text>
+  <text class="bold ink" x="598" y="342">registry restic copy (L5)</text>
+  <text class="small muted" x="598" y="364">incremental · daily</text>
   <rect class="edge card" x="560" y="450" width="380" height="270" rx="18"/>
   <text class="pill" x="582" y="482" fill="#2f6fed">OFF-SITE</text>
   <text class="head ink" x="582" y="514">Outside the lab</text>

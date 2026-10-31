@@ -67,7 +67,7 @@ These decisions define the **target state** in the [IaC plan](/docs/superpowers/
 
 - **Compute layout:** VM100 runs prod apps only. VM120 (new) runs GitLab with runners `build` and `plan`. VM110 runs backup, DB operations and restore drills. Pi5 runs data, edge and the `deploy` runner. There are 3 Swarm managers: Pi5, VM100 and VM110. Sizing is in the [compute plan](/docs/superpowers/plans/2026-10-31-compute-layout-and-sizing.md).
 - **GitLab exception:** GitLab moves to bundled PostgreSQL and Redis on VM120. This is the one deliberate exception to "Pi5 holds the data". Its backups still leave the host.
-- **One registry:** GitLab Container Registry, with storage on RustFS. Third-party images are copied into it. `registry.dungxbuif.com` is deleted ([decision](/docs/standards/registry.md)).
+- **One registry:** GitLab Container Registry, with storage on the GitLab VM disk (RustFS only as a fallback if Proxmox storage is short). Third-party images are copied into it. `registry.dungxbuif.com` is deleted ([decision](/docs/standards/registry.md)).
 - **Control plane:** GitLab CI only. Semaphore and the provisioner are retired in P1. `hl` is written in Python.
 - **Secrets:** 1Password is the single source, with two service accounts (plan, apply).
 - **Backup owners:** PostgreSQL → Databasus. CouchDB → db-management. GitLab, RustFS, Redis, configs and tofu state → role `backup`. VM images of VM120 and VM110 → `vzdump` to Drive until a NAS exists.
