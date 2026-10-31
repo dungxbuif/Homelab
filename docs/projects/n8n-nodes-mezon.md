@@ -47,8 +47,10 @@ Canonical local files:
 - `docs/superpowers/plans/2026-10-31-gold-price-hanoi-fallback.md`: implementation checklist.
 
 Scope is exactly `gold_bar` and `round_ring` for BTMC, BTMH, DOJI, PNJ, Phú Quý,
-and SJC. The generated workflow uses twelve primary/fallback source nodes,
-reports daily at 08:00, and checks changes every ten minutes during 08:00–21:00.
+and SJC. The generated workflow uses twelve primary/fallback gold source nodes
+plus the retained Petrolimex fuel node, reports daily at 08:00, and checks gold
+changes every ten minutes during 08:00–21:00. The daily report keeps RON 95,
+E5 RON 92, and Diesel V1/V2; the watcher remains gold-only.
 SJC Cloudflare/HTTP block and incomplete source rows remain visible as source
 diagnostics. They are not converted into prices.
 
@@ -58,9 +60,9 @@ secret is stored in this repository or its generated JSON.
 
 ## Verification and backup evidence (2026-10-31)
 
-- Local unit/integration tests: `7/7` passed.
-- Local official-source run: BTMC, DOJI, PNJ, and Phú Quý returned both target products; BTMH returned an incomplete round-ring row and was failed closed; SJC was blocked with HTTP 403 on both official candidates.
+- Local unit/integration tests: `12/12` passed.
+- Local official-source run: BTMC, BTMH, DOJI, PNJ, and Phú Quý returned both target products; SJC was blocked with HTTP 403 on both official candidates; Petrolimex returned the retained three-row fuel section.
 - First watcher decision: `baseline-initialized`, `send=false`.
-- Dev/test delivery sent once after local verification: HTTP 200 accepted by the test webhook; production webhook was not called. Awaiting human inspection/approval.
+- Dev/test delivery sent with the production-compatible envelope and `message.mk = [{ type: "pre", s: 0, e: message.t.length }]`, including the retained fuel section; HTTP 200 accepted. Production webhook was not called. Awaiting human inspection/approval.
 - Live workflow backup made over SSH before any import: `/tmp/n8n-gold-before-hanoi-local-test.1yfONB.json`, 25,412 bytes, workflow `daily-gold-fuel-mezon`, 8 nodes, active. The backup is outside the repository and contains the old workflow snapshot; do not commit it.
 - No n8n import, activation, production delivery, or production webhook use occurred.

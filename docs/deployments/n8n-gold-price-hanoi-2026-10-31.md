@@ -30,8 +30,9 @@ The schedule contract is:
 - daily report: `0 8 * * *`
 - watcher: `*/10 8-21 * * *`
 
-The watcher establishes a baseline on its first run, then sends only price or
-source-status changes. The daily report always sends the full diagnostic table.
+The watcher establishes a baseline on its first run, then sends only gold price
+or source-status changes. The daily report always sends the full gold table and
+retains the existing Petrolimex RON 95/E5/Diesel V1/V2 section.
 
 ## Root cause addressed
 
@@ -47,18 +48,18 @@ files.
 
 ## Evidence
 
-- `npm test`: 7 tests passed.
+- `npm test`: 12 tests passed.
 - `npm run typecheck`: passed after `npm ci`.
 - `npm run build`: passed.
-- Dev/test delivery was sent once after local verification and accepted with HTTP 200. This is awaiting human inspection; production delivery was not called.
+- Dev/test delivery was corrected to the current production-compatible Mezon format (`message.mk` contains one `pre` range covering all of `message.t`) and accepted with HTTP 200. This is awaiting human inspection; production delivery was not called.
 - Local live run was performed without sending to Mezon:
   - BTMC: primary OK, two products.
   - DOJI: primary OK, two products; encrypted API payload decrypted locally.
   - PNJ: primary OK, Hanoi data plus generic ring table, two products.
   - Phú Quý: primary OK, two products.
-  - BTMH: both official candidates incomplete because the live round-ring row
-    has no sell value; failed closed.
+  - BTMH: primary embedded production data parsed successfully, two products.
   - SJC: both official candidates HTTP 403; reported blocked.
+  - Petrolimex: daily fuel section returned three V1/V2 rows.
   - first watcher: baseline only, `send=false`.
 - Current live workflow export backup: `/tmp/n8n-gold-before-hanoi-local-test.1yfONB.json` on the local machine, 25,412 bytes, workflow ID `daily-gold-fuel-mezon`, active with 8 nodes.
 
@@ -66,8 +67,8 @@ files.
 
 Do not import or activate the generated workflow until:
 
-1. BTMH round-ring sell price is confirmed or intentionally accepted as
-   unavailable.
+1. SJC browser/session strategy is confirmed or the official-source N/A state
+   is intentionally accepted.
 2. A dev webhook is supplied through `MEZON_GOLD_TEST_WEBHOOK_URL` and the
    test delivery is manually inspected.
 3. The generated JSON is reviewed for node connections and no secrets.

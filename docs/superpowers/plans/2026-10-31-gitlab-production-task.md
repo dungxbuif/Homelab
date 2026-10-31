@@ -29,7 +29,7 @@ Parent plans: [GitLab protection](./2026-10-31-gitlab-protection-and-registry-co
 | GitLab's real data is small: `git-data` 463 MiB, artifacts 59 MiB, uploads 60 KiB, LFS and packages empty. The registry is 14 GiB | A native backup **without the registry** is about 1 GiB plus the database, so it can run daily and fit on Drive. The registry is handled as a separate, incremental class |
 | `/opt/apps/gitlab/data/backups/` held a **14.3 GB `registry.tar.gz`** left by the backup stopped on 2026-10-30, plus small partial files | This is the junk the new design must make impossible. **The 14.3 GB archive was deleted on 2026-10-31 with the owner's approval** (VM100 disk 66% → 59%). The small partial files (about 17 MiB) remain until the new sweeper removes them. The live registry was **not** touched: it holds images that running services use (`homepage`, `relayhub`, `db-management` api/web/worker, `homelab-ops/provisioner`, `homelab-automation/*`, `root/registry-trial`) |
 | `homelab-ops/automation/gitlab-backup/run-gitlab-backup.sh` already takes a native archive, a config/secrets archive, a registry archive, a manifest and checksums | Reuse it as the base. It **lacks** a lock, preflight, an exit trap that cleans up, upload, verification of the upload, retention and a schedule. It includes the 14 GiB registry tar on every run |
-| An rclone remote `homelab1` exists on VM100 (`/etc/homelab-backup/secrets/rclone.conf`). Whether its OAuth token still works is **unverified**. BACKLOG R4 records a Drive OAuth 401 for Databasus | T0 verifies the remote and the Drive quota (a free Google account has 15 GiB shared with everything else) |
+| An rclone remote `homelab1` (type `drive`) exists on VM100 (`/etc/homelab-backup/secrets/rclone.conf`). **Verified 2026-10-31: the token works. The account has 2 TiB, of which 1.23 TiB is free.** BACKLOG R4 still records a Drive OAuth 401 for Databasus, which is a separate credential | Quota is not a constraint. The rclone remote can be reused; the scope should still be narrowed to `drive.file` for the backup folder |
 | GitLab uses the Pi5 database and Redis. The Pi5 LAN `:5432` maps to PgBouncer, and GitLab needs direct PostgreSQL. VM120 will sit outside the Swarm overlay | VM120 cannot reach them, so it uses **bundled PostgreSQL and Redis**. The migration therefore restores into a new database engine, which is why it is rehearsed twice |
 | The Proxmox module for VM100 sets `protection = false` and the state is local. Whether `tofu import` was ever applied is **unproven** | T1 makes `tofu plan` show zero changes before anything is modified |
 | No access to Proxmox yet | T0 and everything on the hypervisor is **blocked** until access is given |
@@ -167,16 +167,28 @@ Rough duration: T0 1 day (waiting on access), T1 1–2 days, T2 3–4 days, T4 a
 | Monitoring | Probes for readiness, SSH `:2222`, registry `/v2/`, runner heartbeat, disk and backup freshness, all alerting to Mezon |
 | Docs | `services/gitlab.md` shows G3 to G5 as pass with evidence |
 
-## 9. Needed from the owner
+## 9. What blocks production, and the exact next step
+
+The code, tests and read-only checks are done. A production-grade GitLab still needs actions that change the live system, which are not taken without the owner:
+
+| Step | What it changes | Needs |
+|---|---|---|
+| T4 deploy and first backup | Install `age` on VM100 (`apt install age`), add files under `/opt/apps/homelab-gitlab-backup` and `/etc/homelab-gitlab-backup`, run one backup that puts I/O load on GitLab | Approval, the `age` recipients file, the Mezon webhook file |
+| T5 restore drill | Needs the backup from T4 and an isolated target (workstation or VM110) | T4 |
+| T1, T6 to T8 | Importing VM100 and VM110 into tofu, creating VM120, migrating | Proxmox access, then approval for each 🔴 step |
+
+**Decision for the owner: the `age` private key.** Backups are unreadable without it. Recommended: generate the key pair on the workstation, store the private key in 1Password (and the break-glass kit), and put **only the public recipient** on VM100. The key must never live on VM100 or on Drive.
+
+## 9a. Needed from the owner
 
 1. Proxmox access (read-only API token and SSH key) for T0.
 2. Approve the 1Password SSH agent so the VPS audit can finish.
-3. Confirm the Google account behind the Drive remote and its free quota (a free account has 15 GiB shared across Drive, Gmail and Photos).
+3. Decide who holds the `age` private key (see §10). The Drive remote itself is already verified.
 4. Approve T3, T8 and T10 individually when their turn comes.
 
 ## 10. Implementation status (2026-10-31)
 
-Written in `homelab-ops` on branch `feat/gitlab-production` (commit `0c94b8b`, worktree `/home/dungxbuif/workspace/.worktrees/homelab-ops-gitlab-prod`). **Nothing was applied or deployed.**
+Written in `homelab-ops` on branch `feat/gitlab-production` (commits `0c94b8b` and `e4d29a2`, worktree `/home/dungxbuif/workspace/.worktrees/homelab-ops-gitlab-prod`). **Nothing was applied or deployed.**
 
 | Delivered | Where |
 |---|---|
@@ -189,7 +201,11 @@ Written in `homelab-ops` on branch `feat/gitlab-production` (commit `0c94b8b`, w
 
 Verified locally: 14 fault-injection scenarios (failure at each step, SIGTERM, lock, foreign backup process, leftover staging), 17 unit tests, and `shellcheck -S error`. The repo's test count went from 189 to 206 and the same 2 tests fail before and after (CloudBeaver healthcheck contract, unrelated, caused by the base commit).
 
-**Not verified** (the tools are missing on this workstation, so CI must run them): `tofu fmt`, `tofu validate`, `ansible-lint`, `ansible-playbook --syntax-check`. Also unverified against real systems: `age`, rclone and the Drive quota, the template VM `9000`, and the free address `10.10.0.33`.
+**Verified afterwards, with the CI pins** (ansible-core 2.18.19, ansible-lint 25.5.0, in an isolated venv): `ansible-playbook --syntax-check` passes and `ansible-lint` passes the `production` profile for the new playbook (it found one real issue, a relative path, now fixed in `e4d29a2`). Across the whole lint scope one existing file, `ci-runner-install.yml`, still fails its syntax check because the venv lacks the collections that the CI image has; it is not part of this change.
+
+**Verified against the real GitLab on VM100, read-only** (the assumptions the stubs could not check): the container name pattern matches; `curl`, `pgrep`, `timeout`, `tar`, `gitlab-backup` and `gitlab-ctl backup-etc` exist in the container; the readiness endpoint returns 200 from inside; the version is 18.11.11; the `df` output parses; no backup process is running. The Drive remote answers with 2 TiB total and 1.23 TiB free. The backup directory still holds the old staging (`db/`, `repositories/`, five small `*.tar.gz`), which the first run will clean.
+
+**Not verified:** `tofu fmt` and `tofu validate`. The workstation has no OpenTofu and the safety classifier blocked downloading a release binary, so CI must run them (its image carries OpenTofu 1.13.1). Also unverified: `age` and the full run against a real GitLab (`age` is **not installed on VM100**; `apt install age` is part of T4), template VM `9000`, and whether `10.10.0.33` is free.
 
 The fault-injection test found a real gap before any deployment: `gitlab-backup` leaves `db/`, `repositories/` and `*.tar.gz` staging in the backup directory when interrupted, and those names carry no run id. This is exactly the junk that filled 14 GB. The runner now removes those fixed names while it owns the directory, and refuses to start while another GitLab backup process is running.
 
