@@ -1,7 +1,7 @@
 ---
 type: Decision
 title: Container Registry Decision
-description: GitLab Container Registry becomes the single lab registry; the Pi5 registry becomes a pull-through mirror for tier-1 images
+description: GitLab Container Registry is the single lab registry with its storage on RustFS (Pi5); the Pi5 registry becomes a pull-through mirror for tier-1 images
 status: draft
 generated:
   by: claude-code/opus-5.5
@@ -32,12 +32,54 @@ Reasons:
   - Harbor: heavy, several containers, and retired once already in the K8s era.
   - A cloud registry: adds an external dependency and egress for every pull.
 
+## Storage: RustFS S3 on Pi5 (decided 2026-10-31, plan only)
+
+Registry blobs move from the VM100 disk (`/opt/apps/gitlab/data/gitlab-rails/shared/registry`, **14 GiB** on 2026-10-31) to a RustFS bucket on Pi5. RustFS has 264 GiB free and already sits on the private `s3-net` overlay.
+
+Why:
+
+- Registry data then lives in tier T1 (Pi5), next to the other datastores. A rebuilt GitLab on any VM attaches to the same bucket and every image is still there.
+- It frees VM100 disk (66% used), and the registry gets object versioning and the RustFS backup class.
+
+Design:
+
+| Item | Value |
+|---|---|
+| Bucket | `gitlab-registry`. Versioning on. Lifecycle rule: expire noncurrent versions after 7 days |
+| Access | A dedicated access key scoped to this bucket only. Kept in 1Password `homelab-prod/platform/gitlab-registry-s3` and passed to GitLab as a Swarm secret |
+| GitLab config | `registry['storage'] = { 's3_v2' => { regionendpoint: 'http://rustfs:9000', bucket: 'gitlab-registry', pathstyle: true, region: 'us-east-1' } }`. GitLab reaches RustFS over `s3-net` |
+| Metadata DB | Registry metadata database `gitlab_registry` on Pi5 PostgreSQL, created by `db_provision`. Enables online GC |
+| Backup | The bucket is enrolled in the RustFS backup class and depends on BACKLOG B0, because RustFS has no schedule today |
+
+Migration (one maintenance window, nothing is deleted):
+
+1. Back up the GitLab config and registry directory, and record the list of image digests in use.
+2. Create the bucket, key and metadata DB through the normal provisioning job.
+3. Put the registry in read-only mode, then `mc mirror` the filesystem storage into the bucket.
+4. Switch `gitlab.rb` to `s3_v2`, run the metadata import, reconfigure, and leave read-only mode.
+5. Pull every recorded digest from VM100 and from Pi5. Deploy one app on staging as a smoke test.
+6. Keep the old directory read-only for 14 days, then delete it in a separate approved job.
+7. Rollback: switch the config back to filesystem storage. The old directory is unchanged until step 6.
+
+## Image lifecycle (fully automated)
+
+```text
+CI build → push :<sha> (CI_JOB_TOKEN) → Trivy + SBOM + cosign → digest
+→ bot MR env/stg.yml → Swarm pulls by digest (read-only deploy token, --with-registry-auth)
+→ tag vX.Y.Z adds a tag to the SAME digest → bot MR env/prod.yml → policy verifies registry + digest + signature
+→ weekly cleanup policy + online GC → nightly backup of the bucket → drift flags any image outside the registry
+```
+
+- Only CI pushes; humans have no push rights. Tags are `<sha>` and `vX.Y.Z`. `latest` is never used.
+- Cleanup policy: keep the last 10 tags, every `v*` tag and every digest that is currently deployed.
+- Third-party images are pulled through the Pi5 mirror, pinned by digest, and bumped by Renovate MRs.
+
 ## Required to promote it from "trial" (plan P4)
 
-1. Enable the registry metadata database and online garbage collection. Set a cleanup policy per project: keep the last 10 tags plus every tag that matches `v*`.
-2. Add a backup class for registry data (or move storage to RustFS S3 with versioning) and record one restore test.
-3. Make split DNS and the Pi5 route for `registry-gitlab.dungxbuif.com` work from the LAN, so pulls do not hairpin through the VPS.
-4. Push every local-only image (table above) and re-pin the services by digest.
+1. Move storage to RustFS and enable the metadata DB and online GC (above). Set a cleanup policy per project.
+2. Back up the bucket and record one restore test.
+3. Make split DNS and the Pi5 route for `registry-gitlab.dungxbuif.com` work from the LAN, so pulls do not hairpin through the VPS. Create a read-only deploy token for Swarm.
+4. Push every local-only image (table above) and re-pin the services by digest (P0.5).
 5. Move MyPocket to GitLab Registry, then stop pushing to `registry.dungxbuif.com`.
 
 ## Pi5 mirror (tier T1)
@@ -48,4 +90,4 @@ Reasons:
 
 ## Risk accepted
 
-GitLab lives on VM100 (tier T3). If VM100 is down, new app images cannot be pulled. Running tasks keep their cached image, and Pi5 tier-1 services still recover from the mirror. Rebuilding VM100 restores the registry from its backup.
+The GitLab registry *service* still runs on VM100 (tier T3). If VM100 is down, new app images cannot be pulled. Running tasks keep their cached image, and Pi5 tier-1 services still recover from the mirror. Because the blobs live in RustFS on Pi5, a rebuilt GitLab reattaches to the bucket without restoring image data.

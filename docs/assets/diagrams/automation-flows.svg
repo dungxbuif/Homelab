@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="780" viewBox="0 0 1400 780" role="img" aria-labelledby="title desc">
+  <title id="title">Automation flows</title>
+  <desc id="desc">One flow shape for everything, eight flow families (app, infrastructure, maintenance, data, security, observability, docs, DR) and the schedule calendar.</desc>
+  <defs><marker id="a-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#2f6fed"/></marker><marker id="a-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#1f9d8b"/></marker><marker id="a-ok" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#16a34a"/></marker><marker id="a-red" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#c2413b"/></marker><marker id="a-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7c5cfc"/></marker><marker id="a-pink" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#db2777"/></marker><marker id="a-muted" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7b8798"/></marker><style>
+.bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.white{fill:#fff}
+.small{font:14px sans-serif}.tiny{font:12.5px sans-serif}.body{font:16px sans-serif}.bold{font:700 16px sans-serif}
+.head{font:700 21px sans-serif}.title{font:700 30px sans-serif}.pill{font:700 13px sans-serif;letter-spacing:.5px}
+.card{stroke-width:2}.edge{fill:#eaf2ff;stroke:#2f6fed}.data{fill:#eafaf6;stroke:#1f9d8b}
+.compute{fill:#f1edff;stroke:#7c5cfc}.host{fill:#fff;stroke:#b8c2d1}.note{fill:#fff7e8;stroke:#d97706}
+.retired{fill:#fff1f1;stroke:#c2413b}.ops{fill:#ecfdf3;stroke:#16a34a}.ctrl{fill:#fdf2f8;stroke:#db2777}
+.flow{fill:none;stroke:#2f6fed;stroke-width:3.5;marker-end:url(#a-blue)}
+.dflow{fill:none;stroke:#1f9d8b;stroke-width:3.5;marker-end:url(#a-green)}
+.gflow{fill:none;stroke:#16a34a;stroke-width:3.5;marker-end:url(#a-ok)}
+.rflow{fill:none;stroke:#c2413b;stroke-width:3;stroke-dasharray:8 7;marker-end:url(#a-red)}
+.pflow{fill:none;stroke:#7c5cfc;stroke-width:3.5;marker-end:url(#a-purple)}
+.kflow{fill:none;stroke:#db2777;stroke-width:3.5;marker-end:url(#a-pink)}
+.dashed{fill:none;stroke:#7b8798;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#a-muted)}
+</style></defs>
+  <rect class="bg" width="1400" height="780"/>
+  <text class="title ink" x="50" y="58">Automation flows</text>
+  <text class="body muted" x="52" y="88">Standard 2026-10-31 • every flow: trigger → hl in CI → evidence → notify • humans only approve</text>
+  <rect class="note card" x="50" y="120" width="240" height="84" rx="12"/>
+  <text class="bold ink" x="66" y="146">Trigger</text>
+  <text class="small muted" x="66" y="168">MR · tag · schedule · alert</text>
+  <path class="flow" d="M290 162 H314"/>
+  <rect class="compute card" x="314" y="120" width="240" height="84" rx="12"/>
+  <text class="bold ink" x="330" y="146">hl &lt;command&gt;</text>
+  <text class="small muted" x="330" y="168">GitLab CI · automation-ee</text>
+  <path class="flow" d="M554 162 H578"/>
+  <rect class="data card" x="578" y="120" width="240" height="84" rx="12"/>
+  <text class="bold ink" x="594" y="146">Evidence</text>
+  <text class="small muted" x="594" y="168">artifact · receipt · vault MR</text>
+  <path class="flow" d="M818 162 H842"/>
+  <rect class="ops card" x="842" y="120" width="240" height="84" rx="12"/>
+  <text class="bold ink" x="858" y="146">Notify</text>
+  <text class="small muted" x="858" y="168">Mezon · GitLab issue</text>
+  <path class="flow" d="M1082 162 H1106"/>
+  <rect class="retired card" x="1106" y="120" width="240" height="84" rx="12"/>
+  <text class="bold ink" x="1122" y="146">Human</text>
+  <text class="small muted" x="1122" y="168">merge · click prod/data</text>
+  <text class="small muted" x="1122" y="188">write prose · decide</text>
+  <rect class="compute card" x="50" y="250" width="310" height="165" rx="12"/>
+  <text class="head ink" x="66" y="276">A  App lifecycle</text>
+  <text class="small muted" x="66" y="298">create → infra → data → change</text>
+  <text class="small muted" x="66" y="322">release → docs → nightly</text>
+  <text class="small muted" x="66" y="346">updates · incident · retire</text>
+  <rect class="edge card" x="380" y="250" width="310" height="165" rx="12"/>
+  <text class="head ink" x="396" y="276">B  Infrastructure</text>
+  <text class="small muted" x="396" y="298">IaC MR plan/apply · new VM</text>
+  <text class="small muted" x="396" y="322">new host · routes/DNS</text>
+  <text class="small muted" x="396" y="346">router · NetBird · retire host</text>
+  <rect class="host card" x="710" y="250" width="310" height="165" rx="12"/>
+  <text class="head ink" x="726" y="276">C  Maintenance</text>
+  <text class="small muted" x="726" y="298">OS patches · rolling reboot</text>
+  <text class="small muted" x="726" y="322">Docker / GitLab upgrade</text>
+  <text class="small muted" x="726" y="346">certs · cleanup · capacity</text>
+  <rect class="data card" x="1040" y="250" width="310" height="165" rx="12"/>
+  <text class="head ink" x="1056" y="276">D  Data</text>
+  <text class="small muted" x="1056" y="298">provision · rotate · adopt</text>
+  <text class="small muted" x="1056" y="322">backups (1 owner/class)</text>
+  <text class="small muted" x="1056" y="346">freshness · restore drill</text>
+  <rect class="ctrl card" x="50" y="440" width="310" height="165" rx="12"/>
+  <text class="head ink" x="66" y="466">E  Security</text>
+  <text class="small muted" x="66" y="488">secret rotation · exposure</text>
+  <text class="small muted" x="66" y="512">CVE watch · access review</text>
+  <text class="small muted" x="66" y="536">policy gate on every MR</text>
+  <rect class="ops card" x="380" y="440" width="310" height="165" rx="12"/>
+  <text class="head ink" x="396" y="466">F  Observability</text>
+  <text class="small muted" x="396" y="488">alerts → Mezon + runbook</text>
+  <text class="small muted" x="396" y="512">dead-man heartbeat</text>
+  <text class="small muted" x="396" y="536">daily / weekly digest</text>
+  <rect class="note card" x="710" y="440" width="310" height="165" rx="12"/>
+  <text class="head ink" x="726" y="466">G  Docs</text>
+  <text class="small muted" x="726" y="488">doc-bot · gate-bot</text>
+  <text class="small muted" x="726" y="512">log entries · OKF check</text>
+  <text class="small muted" x="726" y="536">stale docs</text>
+  <rect class="retired card" x="1040" y="440" width="310" height="165" rx="12"/>
+  <text class="head ink" x="1056" y="466">H  DR</text>
+  <text class="small muted" x="1056" y="488">quarterly VM110 rebuild</text>
+  <text class="small muted" x="1056" y="512">hl rebuild &lt;tier&gt;</text>
+  <text class="small muted" x="1056" y="536">off-lab mirror + T0</text>
+  <text class="pill" x="50" y="660" fill="#64748b">CALENDAR</text>
+  <rect class="white card" stroke="#d8dee9" x="50" y="675" width="240" height="70" rx="12"/>
+  <text class="bold ink" x="66" y="701">every MR</text>
+  <text class="small muted" x="66" y="723">validate · plan · policy · OKF</text>
+  <rect class="white card" stroke="#d8dee9" x="314" y="675" width="240" height="70" rx="12"/>
+  <text class="bold ink" x="330" y="701">daily</text>
+  <text class="small muted" x="330" y="723">patches · drift · backups · bots</text>
+  <rect class="white card" stroke="#d8dee9" x="578" y="675" width="240" height="70" rx="12"/>
+  <text class="bold ink" x="594" y="701">weekly</text>
+  <text class="small muted" x="594" y="723">Renovate · cleanup · CVE · docs</text>
+  <rect class="white card" stroke="#d8dee9" x="842" y="675" width="240" height="70" rx="12"/>
+  <text class="bold ink" x="858" y="701">monthly</text>
+  <text class="small muted" x="858" y="723">rolling reboot · restore drill</text>
+  <rect class="white card" stroke="#d8dee9" x="1106" y="675" width="240" height="70" rx="12"/>
+  <text class="bold ink" x="1122" y="701">quarterly</text>
+  <text class="small muted" x="1122" y="723">rotation · access · rebuild drill</text>
+</svg>

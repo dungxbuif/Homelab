@@ -104,10 +104,12 @@ canaries, keep a bounded rollback. Ledger:
 |---|---|---|---|---|
 | C1 | Adopt hand-made services: 15 Swarm services without a stack, 7 VM100 compose projects | Every running service has a file in `homelab-ops/stacks/`; nightly drift report clean | P0.5 | open |
 | C2 | Push local-only images (macocr-proxy, mezonhook, openclaw, k8s-syntax, relayhub-v1, relayhub-admin, couchloom, whiteboard-*, rathole) to GitLab Registry | Services pinned by registry digest | P0.5 | open |
-| C3 | Promote GitLab Registry from trial per the [registry decision](./standards/registry.md); move MyPocket off the Pi5 registry | Metadata DB, GC, cleanup policy, backup + restore test | P4 | open |
+| C3 | Promote GitLab Registry from trial per the [registry decision](./standards/registry.md): storage → RustFS bucket `gitlab-registry` (14 GiB today), metadata DB, GC, cleanup policy; move MyPocket off the Pi5 registry | All digests pull from RustFS-backed registry; bucket backed up + restore test | P4 / P4b | open |
 | C4 | Read-only inventory of all databases, users and buckets; adopt with `adopt: true` | Plan shows 0 changes per app ([process](./standards/database-provisioning.md)) | P0.5 / P5 | open |
 | C5 | Replace Semaphore `db-provision` and the provisioner with `db_provision` | First new DB created by the CI job, with backup and secret | P1 | open |
 | D1 | Repo-side docs per the [project doc standard](./standards/project-documentation.md): fix READMEs that describe other projects (MyPocket, devtool, pocketnode), add `docs/configuration.md` + CHANGELOG to deployed projects, remove lab internals from mac-ocr/mezonhook/k8s-syntax deploy docs | G7 pass for every deployed project | P4 / P5 | open |
 | D2 | Whiteboard: reconcile uncommitted changes in `/opt/apps/whiteboard` on VM100 with the `devtool` checkout | Deploy dir clean, deployed revision recorded | P5 | open |
 | D3 | k8s-syntax is class `lab` but publicly routed | Route made LAN-only or class changed with gates | P5 | open |
 | D4 | Third-party docs: move `n8n-nodes-mezon` into Git; decide BDS leftovers (`bds-app_bds_network`, `bds_prod`) | Repo exists / leftovers retired | P5 | open |
+| A1 | Build the automation glue: `hl new`, doc-bot, gate-bot, nightly/weekly reports, issue automation ([flows](./standards/automation-flows.md)) | Homepage completes flows A1–A10 with approvals only | P4b | open |
+| A2 | Maintenance flows: unattended security patches, monthly rolling reboot, pinned Docker engine, weekly cleanup | Nightly check `changed=0`; reboot run receipt | P2 | open |

@@ -393,6 +393,17 @@ Audit 2026-10-31: 15 Swarm service tạo tay bằng `docker service create` (kh�
 - [ ] Registry: GitLab Registry là registry duy nhất cho app, Pi5 thành pull-through mirror T1 ([quyết định](../../standards/registry.md)).
 - **Exit:** homepage chạy trọn stg → prod → rollback thử.
 
+### P4b: Tự động hoá trọn flow (2 tuần)
+
+Catalog đầy đủ: [Automation Flows](../../standards/automation-flows.md).
+
+- [ ] `hl new app` + GitLab project template (CI include, Dockerfile, README/`docs/`) → tự mở MR `app.yml` và MR doc stub vault.
+- [ ] Doc-bot (`hl docs sync`): chỉ ghi các block `<!-- generated -->` của doc vault qua MR (không ghi thẳng CouchDB/LiveSync).
+- [ ] Gate-bot (`hl gates`): chấm G0–G8 từ evidence thật.
+- [ ] Báo cáo đêm/tuần: drift, backup freshness, CVE, stale docs, exception hết hạn → Mezon + GitLab issue tự tạo.
+- [ ] Registry chuyển storage sang RustFS `gitlab-registry` + metadata DB ([quyết định](../../standards/registry.md)).
+- **Exit:** homepage đi trọn flow A1–A10 không có bước tay ngoài duyệt; doc vault của homepage tự cập nhật sau deploy.
+
 ### P5: Onboard app và data (3–4 tuần)
 
 - [ ] Mỗi workload trong §1.2 có một thư mục `stacks/<app>/` gồm stack, metadata (owner, host, network, secret names, backup class, health URL) và digest pin.
