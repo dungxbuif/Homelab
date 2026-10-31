@@ -1,5 +1,9 @@
 ## 2026-10-31
 
+### GitLab cutover attempts: five safe stops, cutover not completed
+
+**Update** — `gitlab-cutover.py` ran five times; each stopped safely and rolled back, leaving the old instance serving. The fourth attempt passed the final backup, the restore into VM120, readiness and the counts check. It exposed two design flaws, both fixed in `homelab-ops`: the image healthcheck undoes a freeze by making Swarm replace the container, and the smoke test must force the VPS path. The last attempt needs the owner to approve a 1Password prompt. Details in the [runbook](/docs/runbooks/gitlab-backup-restore.md) section 8.
+
 ### Cleanup on every VM and a dedicated control key
 
 **Update** — New rule in [overview](/docs/overview.md): no junk on any VM. The recurring Docker cleanup is now deployed to VM110 and VM120 by Ansible, and a daily GitLab backup sweep was added. Control of the hosts uses a dedicated file key (1Password holds a backup copy). The cutover script and the new-host staging are in `homelab-ops`; the cutover itself had not run when this entry was written.

@@ -96,14 +96,18 @@ The native set skips the registry. Until the restic class exists, moving GitLab 
 
 ## 8. Migration to VM120 (status 2026-10-31)
 
-| Step | State |
-|---|---|
-| VM120 created with OpenTofu, configured with Ansible | Done |
-| Restore rehearsal from Drive into VM120 | Passed data-level checks |
-| Registry copied to VM120 | Not done |
-| Backup tooling and Drive access on VM120 | Not done |
-| Tunnel clients prepared on VM120 | Not done |
-| Cutover (about 30 minutes read-only) | Not done; needs a window |
-| Rollback | Stop the VM120 tunnel clients, start the old ones, leave maintenance mode on VM100. The old GitLab stays untouched until the cutover is verified |
+State: VM120 runs GitLab 18.11.11 restored from Drive, with backup tooling, tunnel clients staged and the cleanup timer. **Traffic is still on the old instance (VM100); the cutover has not completed.** Five attempts of `gitlab-cutover.py` each ended safely, with the old instance serving again:
+
+| Attempt | Stopped at | Cause and fix |
+|---|---|---|
+| 1 | Final backup | The env file was sourced but not exported, so rclone did not see its config. Fixed |
+| 2 | Restore | 1Password could not be read ten minutes into a background run. The key is now supplied by the caller |
+| 3 | Preflight | 1Password cannot prompt inside a background process |
+| 4 | Smoke test | Restore, readiness and counts passed (39 projects, 3 users, 0 groups, identical). The smoke test took the LAN path (the name resolves to Pi5, which reaches the old service), and the freeze had been undone: **the image healthcheck makes Swarm replace the GitLab container about four minutes after Puma is stopped.** Fixed with `--prepare-old` (removes the healthcheck, already applied to the old service), a guard that aborts if the old Puma is up again, and a smoke test that forces the VPS address |
+| 5 | Preflight | The 1Password approval prompt was dismissed, so the backup key could not be read. Nothing was frozen |
+
+To finish: run `GITLAB_AGE_KEY="$(op read ...)" automation/gitlab-backup/gitlab-cutover.py --yes-cut-over` from a terminal where you can approve the 1Password prompt, and approve it when it appears. The run takes about 25 minutes and rolls back by itself on any failure.
+
+Open after the cutover: LAN clients reach GitLab through the Pi5 route (`gitlab.dungxbuif.com` resolves to Pi5 on the LAN), which still points at the old Swarm service. That route must be pointed at VM120 before the old service is scaled to 0.
 
 Rollback is only safe before writes happen on VM120. After the first hour on the new host, going back means exporting new data first.
