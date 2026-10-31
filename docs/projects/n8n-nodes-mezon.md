@@ -30,7 +30,7 @@ Class `none` · owner dungxbuif · status `local source / live dependency`.
 | Git | local branch `codex/gold-price-hanoi-fallback` |
 | GitLab | not configured |
 | Repo docs | `README.md` |
-| Deployed revision | workflow `daily-gold-fuel-mezon` from `3be86b3` plus hotfix `d4a78dd`; package `0.1.1` unchanged |
+| Deployed revision | workflow `daily-gold-fuel-mezon` from `faaf3cc` plus earlier hotfixes; package `0.1.1` unchanged |
 
 ## Why it does not run
 
@@ -46,13 +46,15 @@ Canonical local files:
 - `docs/superpowers/specs/2026-10-31-gold-price-hanoi-fallback-design.md`: design and source policy.
 - `docs/superpowers/plans/2026-10-31-gold-price-hanoi-fallback.md`: implementation checklist.
 
-Scope is exactly `gold_bar` and `round_ring` for BTMC, BTMH, DOJI, PNJ, Phú Quý,
-and SJC. The generated workflow uses twelve primary/fallback gold source nodes
-plus the retained Petrolimex fuel node, reports daily at 08:00, and checks gold
-changes every ten minutes during 08:00–21:00. The daily report keeps RON 95,
-E5 RON 92, and Diesel V1/V2; the watcher remains gold-only.
-The six brand branches run in parallel and merge before normalization; fallback
-within each brand remains conditional.
+Active report scope is exactly `gold_bar` and `round_ring` for BTMC, BTMH, DOJI,
+PNJ, and Phú Quý. The generated production workflow uses ten primary/fallback
+gold source nodes plus the retained Petrolimex fuel node, reports daily at
+08:00, and checks gold changes every ten minutes during 08:00–21:00. The daily
+report keeps RON 95, E5 RON 92, and Diesel V1/V2; the watcher remains gold-only.
+The five brand branches run in parallel and merge before normalization; fallback
+within each brand remains conditional. SJC parser fixtures remain in the source
+registry for regression coverage, but SJC is excluded from collection, parsing
+of active results, and production output.
 SJC Cloudflare/HTTP block and incomplete source rows remain visible as source
 diagnostics. They are not converted into prices.
 The missing-data warning is emitted only when all configured candidates for a
@@ -85,3 +87,35 @@ secret is stored in this repository or its generated JSON.
 - Pre-import live backup: `/opt/apps/n8n/data/backups/n8n-gold-before-hanoi-prod-20261031T065023+0000.json` on VM100, 25,412 bytes, mode `600`, old workflow active with 8 nodes. Post-import and published exports are retained in the same protected `backups/` directory.
 - n8n was force-restarted after CLI publish; VM100 container reported `healthy`, restart count `0`, and `/healthz` returned `{"status":"ok"}` locally and through `https://n8n.dungxbuif.com/healthz`.
 - No manual production webhook message was sent during release; the first production delivery is schedule-driven. SJC remains an explicit official-source `blocked`/`N/A` condition until an approved automated access strategy is added; no third-party price source was substituted.
+
+### SJC alternative-source decision record — 2026-10-31
+
+- Official SJC remains the only source allowed to populate the canonical SJC
+  bar/ring rows. The official page lists both product families, but VM100's
+  automated HTTP path is blocked by the site's WAF/Cloudflare layer.
+- DOJI, PNJ, and Phú Quý officially publish an SJC bar row, so they are viable
+  **reference** sources for a separately labeled bar value. Their ring rows are
+  their own products, not `Nhẫn tròn SJC`, and cannot be used as a silent SJC
+  fallback.
+- A third-party aggregator or browser-session collector could cover the missing
+  ring value, but neither is approved for production automation yet. Current
+  behavior remains `blocked` → `N/A` after the last-good cache expires.
+- No live workflow, webhook, credential, or production payload was changed by
+  this source audit.
+
+### Current production removal — 2026-10-31
+
+- User-approved commit `faaf3cc` removed SJC from the active production report.
+- Protected pre-change export: `/opt/apps/n8n/data/backups/n8n-gold-before-remove-sjc-20261031T075959+0000.json` (245,400 bytes, mode `600`).
+- Published export: `/opt/apps/n8n/data/backups/n8n-gold-remove-sjc-final-20261031T0810+0000.json` (213,856 bytes, mode `600`).
+- Verification: active workflow, 20 nodes, five gold branches plus Petrolimex,
+  merge input count 6, no `Fetch SJC` node, runtime delivery env unchanged,
+  public health `{"status":"ok"}`.
+- No manual production webhook was sent during this change.
+
+Read-only comparison on 2026-10-31: DOJI and PNJ both returned SJC bar
+`136.000.000 / 139.000.000` (VND/lượng); Phú Quý returned
+`134.500.000 / 139.000.000`, so the buy side is not uniform. Calc.vn also
+returned `136.000.000 / 139.000.000`, but is non-primary. The only separately
+found SJC-ring value (`131.800.000 / 135.800.000`) came from a third-party
+aggregator and is not approved. No production source was changed.

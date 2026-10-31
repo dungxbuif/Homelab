@@ -96,6 +96,10 @@ never documented. 1Password item paths (unverified). Losing
   `daily-gold-fuel-mezon` (`Hanoi Gold Price Fallback - PROD`), 22 nodes, with
   a protected pre-import export and post-publish health verification; details:
   [production release](../deployments/n8n-gold-price-hanoi-2026-10-31.md).
+- 2026-10-31: SJC removed from the active Hanoi gold report at user request;
+  current workflow is 20 nodes with five gold branches plus Petrolimex. The
+  protected backup and verification evidence are recorded in the same
+  [production release](../deployments/n8n-gold-price-hanoi-2026-10-31.md).
 - 2026-10-31: workflow hotfix `d4a78dd` removed the unsupported `process.env`
   reference from the BTMC external-runner Code node; the workflow was backed
   up, republished, force-restarted, and verified active with n8n/runners at

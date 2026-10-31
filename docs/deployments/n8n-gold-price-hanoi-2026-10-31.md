@@ -163,3 +163,70 @@ files.
   production message was changed by this follow-up, and no manual production
   webhook was sent.
 
+## SJC source alternatives audit — 2026-10-31
+
+- The official SJC page still exposes the two product families needed by the
+  workflow (`Vàng Miếng SJC` and `Vàng Nhẫn SJC`), but its price table is
+  client-rendered and the VM100 n8n HTTP path receives the same Cloudflare/WAF
+  block as the XML candidate. The workflow therefore keeps official SJC as
+  `blocked`/`N/A`; this is intentional data-integrity behavior.
+- Three official retailer pages can provide an independently labeled reference
+  for **SJC gold bars**: DOJI's SJC retail row, PNJ's SJC row, and Phú Quý's
+  SJC bar row. They are retailer quotations, not SJC's own official quote.
+- Those retailer pages do **not** provide an equivalent `Nhẫn tròn SJC` row:
+  their ring rows are DOJI/PNJ/Phú Quý products. They must not silently fill the
+  SJC ring row.
+- Third-party aggregators may expose both SJC bar and ring values, but their
+  provenance and freshness are not yet approved for automatic production use.
+
+### Approved implementation options (not deployed)
+
+1. Keep the current official SJC rows as `N/A` and add a separate optional
+   `SJC tham chiếu` block sourced from DOJI/PNJ/Phú Quý for the bar only.
+2. Add a browser/session collector for the official SJC page, with a short TTL,
+   explicit `browser-session` provenance, and no production use when the page
+   presents a challenge.
+3. Approve a named third-party feed for the ring row only after recording its
+   provider, timestamp, freshness limit, and failure behavior.
+
+No source was added to the live workflow during this audit.
+
+### Same-snapshot comparison
+
+Read-only probes on 2026-10-31 found that the SJC **bar** quote was not fully
+uniform after normalizing to VND/lượng:
+
+| Source | SJC bar buy | SJC bar sell | Result |
+|---|---:|---:|---|
+| DOJI official API | 136.000.000 | 139.000.000 | matches majority |
+| PNJ official API, Hà Nội | 136.000.000 | 139.000.000 | matches majority |
+| Phú Quý official page | 134.500.000 | 139.000.000 | buy differs by 1.500.000 |
+| Calc.vn aggregator | 136.000.000 | 139.000.000 | matches majority; non-primary |
+
+The official SJC HTTP/XML candidates remained challenged from VM100, so there
+was no direct official SJC value to use as the authority in this snapshot. The
+only independent SJC-ring value found was `131.800.000 / 135.800.000` from a
+third-party aggregator; it is not a cross-source consensus and remains
+unapproved for production.
+
+Conclusion: the three-source majority for the **bar** is `136.000.000 /
+139.000.000`, but the sources are not fully consistent. The production
+canonical SJC rows remain unchanged (`N/A` when official access is blocked).
+
+## SJC removal release — 2026-10-31
+
+At the user's request, SJC was removed from the active production report rather
+than being filled from an unapproved source.
+
+- Source commit: `faaf3cc` (`feat: remove SJC from active gold report`).
+- Pre-change protected export: `/opt/apps/n8n/data/backups/n8n-gold-before-remove-sjc-20261031T075959+0000.json`, 245,400 bytes, mode `600`.
+- Published post-change export: `/opt/apps/n8n/data/backups/n8n-gold-remove-sjc-final-20261031T0810+0000.json`, 213,856 bytes, mode `600`.
+- Current workflow: `daily-gold-fuel-mezon`, active, `Hanoi Gold Price Fallback - PROD`.
+- Current shape: 20 nodes; five gold brand branches (BTMC, BTMH, DOJI, PNJ,
+  Phú Quý), Petrolimex daily branch, six-input merge, and no `Fetch SJC` node.
+- Schedules remain daily `0 8 * * *` and watcher `*/10 8-21 * * *`.
+- Delivery remains runtime-injected through `MEZON_GOLD_PROD_WEBHOOK_URL`;
+  no webhook value was printed or written to the artifact.
+- VM100 n8n restarted through the Swarm manager and returned healthy; public
+  `/healthz` returned `{"status":"ok"}`. No manual production webhook was sent.
+
