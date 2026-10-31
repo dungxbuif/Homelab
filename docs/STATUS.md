@@ -1,82 +1,54 @@
 ---
 type: Dashboard
 title: "Homelab Current Status"
-description: "Single-page current status, verified boundaries, and remaining gates for operators and agents"
-timestamp: 2026-10-31T10:20:41+07:00
+description: "One-page current status and genuinely open gates"
+timestamp: 2026-10-31T12:00:00+07:00
 ---
 
-# Homelab Current Status
+# Homelab Current Status — 2026-10-31
 
-**Last reconciled:** 2026-10-31 10:20 (Asia/Bangkok)
+Based on the 2026-10-31 read-only live audit (Pi5, VM100, VM110) and the
+[VPS gateway audit](./deployments/vps-gateway-audit-2026-10-31.md). Proxmox
+and MikroTik were not audited live. Full catalog: [STACK.md](./STACK.md).
+Open work list: [BACKLOG.md](./BACKLOG.md).
 
-**Latest runtime snapshot:** [Version Upgrade & Backup Verification — 2026-10-31](./deployments/version-upgrade-2026-10-31.md)
+## Summary
 
-**Latest host audit:** [VPS Gateway Live Audit — 2026-10-31](./deployments/vps-gateway-audit-2026-10-31.md)
+| Area | State |
+|---|---|
+| Public edge | Up. VPS Traefik -> Rathole -> Pi5 Traefik; homepage 200, GitLab 302, NetBird relay 404 (expected) |
+| Swarm | Pi5 leader + VM100 + VM110; `orangepizero3` down but still a member; five 0/0 leftover services |
+| Apps | All production Swarm services 1/1; RelayHub v1 (Rust) is the public writer, legacy Go Compose on VM100 is rollback only |
+| Data | Pi5 hosts PostgreSQL 16.15, PgBouncer, CouchDB 3.5.3, RustFS 1.0.4, Redis 7.2 — all upgraded and restore-checked 2026-10-31 |
+| Backups | Databasus (VM110) backs up and restore-verifies 6 service DBs to Google Drive. **No scheduled backup timers on any host**; GitLab, RustFS, CouchDB, Redis and configs have no recurring backup |
+| Monitoring | VictoriaMetrics + Alertmanager on Pi5; VM100 drift timer active |
+| Capacity | Pi5 disk 42%, VM100 66%, VM110 65%, VPS 20% |
+| Automation | Semaphore v2.19.17 on Pi5 for reviewed host tasks; most stacks still deployed by hand (see plan) |
 
-The latest evidence found db-management API, worker, web, CloudBeaver and
-Databasus at `1/1`. CloudBeaver login and the private PostgreSQL explorer are
-verified. Databasus admin access, Drive storage, 15 PostgreSQL jobs, successful
-artifacts and the Mezon test notifier are verified. The Pi5 verification agent
-is online, and the six approved service-database jobs have post-upgrade provider
-backup plus isolated-restore evidence; non-service jobs remain outside this
-maintenance wave. Cloudflared was explicitly deferred from this maintenance
-window and remains a separate control-plane task. Live webhook-secret rotation
-remains open.
+## Open gates
 
-**Documentation check:** 170 active Markdown files under `docs/` were checked.
-There are no missing operational relative links. The OKF reference is maintained
-externally at the Google Cloud Platform knowledge-catalog specification.
-Archived historical pages are excluded from the current-runtime check.
-
-This is the short operational index. It summarizes the latest evidence; it does
-not replace dated deployment records or the [backlog](./BACKLOG.md). Historical
-documents may describe an earlier state and are intentionally retained for
-incident and rollback context.
-
-## Current operating model
-
-| Area | Current state | Evidence |
+| ID | Gate | Done when |
 |---|---|---|
-| Public edge | VPS HostSNI gateway -> Rathole -> Pi5 Traefik | [system playbook](./MAIN.md) |
-| Compute | VM100 (`10.10.0.31`) runs user-facing workloads; VM110 (`10.10.0.32`) is the new backup/DB-operations worker | [VM100 reference](./VM100.md), [Proxmox reference](./PROXMOX.md) |
-| Data | Pi5 (`10.10.0.5`) remains the authoritative PostgreSQL, Redis, CouchDB and RustFS host | [Pi5 specification](./PI.md) |
-| Automation | Semaphore/Ansible handles reviewed host operations; VM100 systemd owns backup schedules | [automation runbook](./runbooks/automation-operations.md) |
-| Backups | Google Drive is the single off-site target; historical backup/restore evidence exists, but the VM100 configs, health and restore-drill timers are currently disabled/inactive and remain open backlog work | [backup runbook](./runbooks/backup-restore.md) |
-| Kubernetes | No production Kubernetes cluster or VM exists; old K8s material is archived | [Proxmox reference](./PROXMOX.md) |
+| S0 | MikroTik DHCP may hand out DNS `10.10.0.2` (dead Orange Pi) — **verify urgently** | Live DHCP DNS confirmed `10.10.0.5` |
+| S1/S3 | Rotate previously exposed GitHub credentials and the GitLab PAT exposed 2026-10-31 | Issuer-side revocation evidence |
+| S4 | VPS: UFW inactive, no container healthchecks, no external NetBird/RustDesk session test | Firewall on with approved ports, probes, session smoke |
+| B0 | No recurring backup for GitLab, RustFS, CouchDB, Redis, host configs | One owner/schedule per class with an observed scheduled run |
+| B3 | No VM image backup (no separate failure-domain target) | Off-host target plus verified `vzdump` restore |
+| U0 | GitLab 18.11.11 not upgraded; native backup too large to complete | Feasible GitLab backup/restore, then staged upgrade (needs PostgreSQL 17) |
+| C1 | Pi5 cloudflared flaps: `Unauthorized: Tunnel not found` (deferred) | Token repaired or connector retired |
+| P1/P4 | Swarm leftovers, down Orange Pi node, legacy RelayHub Go rollback | Owner-confirmed removal |
+| R13 | `db-management_mezon_webhook` secret does not match the intended webhook | Replaced via release path, delivery verified |
 
-## Verified complete
+## Forward plan
 
-- Restore acceptance passed for PostgreSQL/database-instances, GitLab, shared
-  PostgreSQL/CouchDB payloads and RustFS. The historical monthly restore-drill
-  acceptance remains valid, but its current VM100 timer is disabled/inactive;
-  see backlog item B8.
-- Host-config backup, health/dead-man checks, Pi5 backup resource caps, VM100
-  disk maintenance and manager-side Swarm inventory are deployed.
-- RustFS and PostgreSQL native-pull paths are verified. The experimental
-  CouchDB stream exporter now has a per-page free-space guard and source
-  contract coverage, but Pi5 remains the rollback path for the database class
-  while the full CouchDB stream restore is being evaluated.
-- Current VM100 resource limits, AI selector rollout, monitoring target
-  cleanup and retired-service cleanup are documented in dated evidence records.
-
-## Remaining gates
-
-| ID | Gate | Current truth | Completion evidence |
-|---|---|---|---|
-| S1 | Rotate previously exposed GitHub credentials | Pattern audit is clean; issuer-side rotation is not evidenced | New issuer credentials plus revocation evidence |
-| S2 | VPS HostSNI live validation | Direct SSH/resource audit and bounded HTTPS route smoke passed on 2026-10-31; guarded live HostSNI dry-run/current-hash approval remains open | Approved hash, dry-run output and bounded public smoke |
-| A1 | AI rollout owner UAT | Runtime and synthetic matrix pass; business acceptance is still separate | Owner-approved UAT record |
-| A8 | GitLab CI Homepage release | Source contract and tests pass; protected variables, runner enrollment and live positive/no-op runs remain | GitLab pipeline receipts |
-| B3 | VM100 image backup | Proxmox has no separate failure-domain target | PBS/NAS/other target and a verified `vzdump` restore |
-| B9 | Passive Pi5 backups | RustFS/PostgreSQL are native-pull; CouchDB has a guarded stream uploader, durable metadata snapshot and manual two-snapshot restore orchestrator, but the full `homelab` comparison is still pending | Complete export, representative restore, scheduler cutover and rollback test |
-| D1 | Databasus restore verification | Pi5 verification agent is online; all six approved service-database jobs have post-upgrade provider backup plus isolated-restore evidence | Keep non-service jobs scoped separately and repeat the gate after future backup-provider changes |
+[Lab-wide IaC automation rebuild](./superpowers/plans/2026-10-31-lab-iac-automation-rebuild.md)
+(status: proposed) is the only roadmap.
 
 ## Operator rules
 
-1. Read this page and `BACKLOG.md` before changing infrastructure.
-2. Treat a dated deployment record as evidence for that change only; do not
-   infer that an older “pending” sentence describes the current runtime.
-3. Never move Pi5 data services or enable a new backup transport without a
-   restore test and an explicit rollback path.
-4. Keep secrets and issuer values out of this repository; record only references
-   and verification evidence.
+1. Read this page, STACK.md and BACKLOG.md before changing infrastructure.
+2. Code changes go to `/home/dungxbuif/workspace/projects/homelab-ops`; this
+   vault records current state, evidence and rollback notes.
+3. Stateful changes need a fresh backup, a restore check and a recorded
+   rollback. Never delete or recreate data volumes as a first response.
+4. No secret values in this vault — names and locations only.

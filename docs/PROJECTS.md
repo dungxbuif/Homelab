@@ -2,7 +2,7 @@
 type: Reference
 title: "Local Project Workspace Inventory"
 description: "Summary-only project inventory for source checkouts kept outside the Homelab repo"
-timestamp: 2026-10-31T10:30:00+07:00
+timestamp: 2026-10-31T11:05:44+07:00
 ---
 
 # Local Project Workspace Inventory
@@ -37,25 +37,63 @@ actually reached runtime; `STATUS.md`, `STACK.md` and `BACKLOG.md` summarize the
 current operational decision. Do not mark a project or rollout complete from a
 source change alone without runtime or restore evidence where applicable.
 
-## Remote publication audit
+## GitLab mirrors
 
-As of 2026-10-31, the workspace contains 35 Git repositories and 11 non-Git
-directories. Four Git repositories already use a GitLab remote
-(`NoteVault`, `db-management`, `homelab-ops` and `homepage`); the other 31 Git
-repositories do not yet have a GitLab remote, including `Flotsam` and `learn`
-which have no remote at all. The requested GitLab mirror wave is not applied
-yet. Before creating projects or pushing source, classify the 11 non-Git
-directories and choose the GitLab visibility/namespace; keep the token outside
-the repository and record only the resulting project URL and verification. A
-2026-10-31 preflight found the local token file with mode `0600`, but the
-public GitLab API returned `HTTP 500` for authenticated requests. A Rails log
-trace identified the root cause as Redis DNS failure after the Redis container
-lost its `gitlab-net` attachment; the overlay attachment and persistent
-override were repaired. GitLab now resolves `redis-prod`, authenticated Redis
-DB2 returns `PONG`, and unauthenticated API calls return the expected `401`.
-Project creation and remote pushes remain blocked until the PAT used in that
-preflight is revoked/rotated because it was exposed in a shell error. See
-[the repair evidence](./deployments/gitlab-redis-network-repair-2026-10-31.md).
+As of 2026-10-31 the workspace has 35 Git repositories and 11 non-Git
+directories. Every Git repository is published to a private GitLab project
+under `dungxbuif`; the 11 non-Git directories are intentionally not
+initialized. Four repositories use GitLab as `origin` (`NoteVault`,
+`db-management`, `homelab-ops`, `homepage`); the other 31 keep their original
+`origin` and have a second remote named `gitlab`.
+
+- The `gitlab` remote uses the GitLab SSH endpoint; no PAT is stored in
+  `.git/config` or embedded in any remote URL. The API token lives only in a
+  mode-`0600` local secret file.
+- Pushes did not change local upstream tracking. Local uncommitted work (e.g.
+  in `RelayHub`, `homelab-ops`) is not mirrored until committed and pushed.
+- `MyPocket` is a shallow local clone with a missing parent object, so its
+  GitLab branch is a one-commit snapshot whose tree matches local `HEAD`;
+  branch protection is in place.
+- The PAT used in the mirror preflight was exposed in a shell error and must
+  be rotated (BACKLOG `S3`).
+
+| Local project | GitLab project | Remote | Published branch |
+|---|---|---|---|
+| `99tech_code-challenge` | `dungxbuif/99tech-code-challenge` | `gitlab` | `main` |
+| `BrowserBridge` | `dungxbuif/browserbridge` | `gitlab` | `codex/workspace-unreleased-20261028` |
+| `Flotsam` | `dungxbuif/flotsam` | `gitlab` | `master` |
+| `GraphQL_Real-time-Digital-Auction-Hub` | `dungxbuif/graphql-real-time-digital-auction-hub` | `gitlab` | `fea/us-004` |
+| `Knowledgebase` | `dungxbuif/knowledgebase` | `gitlab` | `main` |
+| `MyPocket` | `dungxbuif/mypocket` | `gitlab` | `codex/workspace-unreleased-20261028` (tree-matching snapshot) |
+| `NoteVault` | `dungxbuif/note-vault` | `origin` | `main` |
+| `PocketNode` | `dungxbuif/pocketnode` | `gitlab` | `codex/workspace-unreleased-20261028` |
+| `QnOffice` | `dungxbuif/qnoffice` | `gitlab` | `production` |
+| `RelayHub` | `dungxbuif/relayhub` | `gitlab` | `codex/centrifugo-upstream-baseline` |
+| `RuntimeRoasters` | `dungxbuif/runtimeroasters` | `gitlab` | `codex/workspace-unreleased-20261028` |
+| `bds-ngoctinh` | `dungxbuif/bds-ngoctinh` | `gitlab` | `codex/workspace-unreleased-20261028` |
+| `code-challenge` | `dungxbuif/code-challenge` | `gitlab` | `main` |
+| `cortex` | `dungxbuif/cortex` | `gitlab` | `feat/ctx-708` |
+| `couchloom` | `dungxbuif/couchloom` | `gitlab` | `codex/workspace-unreleased-20261028` |
+| `datcom-clone` | `dungxbuif/datcom-clone` | `gitlab` | `codex/workspace-unreleased-20261028` |
+| `db-management` | `dungxbuif/db-management` | `origin` | `main` |
+| `devtool` | `dungxbuif/devtool` | `gitlab` | `codex/workspace-unreleased-20261028` |
+| `doino` | `dungxbuif/doino` | `gitlab` | `codex/workspace-unreleased-20261028` |
+| `donation` | `dungxbuif/donation` | `gitlab` | `codex/workspace-unreleased-20261028` |
+| `go-study` | `dungxbuif/go-study` | `gitlab` | `codex/workspace-unreleased-20261028` |
+| `harness` | `dungxbuif/harness` | `gitlab` | `main` |
+| `homelab-ops` | `dungxbuif/homelab-ops` | `origin` | `codex/workspace-unreleased-20261028` |
+| `homepage` | `dungxbuif/homepage` | `origin` | `main` |
+| `k8s-syntax` | `dungxbuif/k8s-syntax` | `gitlab` | `main` |
+| `learn` | `dungxbuif/learn` | `gitlab` | `master` |
+| `llm-flashcard` | `dungxbuif/llm-flashcard` | `gitlab` | `codex/phase-0-foundation` |
+| `mac-ocr` | `dungxbuif/mac-ocr` | `gitlab` | `codex/workspace-sync-20261023` |
+| `mezon-desktop` | `dungxbuif/mezon-desktop` | `gitlab` | `codex/workspace-unreleased-20261028` |
+| `mezon-sdk-go` | `dungxbuif/mezon-sdk-go` | `gitlab` | `codex/discordgo-organization` |
+| `mezonhook` | `dungxbuif/mezonhook` | `gitlab` | `codex/mvp-webhook-builder` |
+| `my-cv` | `dungxbuif/my-cv` | `gitlab` | `codex/workspace-unreleased-20261028` |
+| `my_family_tree` | `dungxbuif/my-family-tree` | `gitlab` | `main` |
+| `random-template-code` | `dungxbuif/random-template-code` | `gitlab` | `codex/workspace-unreleased-20261028` |
+| `selfhost` | `dungxbuif/selfhost` | `gitlab` | `codex/workspace-unreleased-20261028` |
 
 ## Project Inventory
 
@@ -64,12 +102,12 @@ preflight is revoked/rotated because it was exposed in a shell error. See
 | `99tech_code-challenge` | `/home/dungxbuif/workspace/projects/99tech_code-challenge/` | `git@github.com:harrybui-dev/99tech_code-challenge.git` | Git checkout |
 | `apps` | `/home/dungxbuif/workspace/projects/apps/` | none | Local grouping directory; not a standalone Git project |
 | `BrowserBridge` | `/home/dungxbuif/workspace/projects/BrowserBridge/` | `git@github.com:dungxbuif/browserbridge.git` | Git checkout |
-| `Flotsam` | `/home/dungxbuif/workspace/projects/Flotsam/` | none recorded | Git checkout without origin |
+| `Flotsam` | `/home/dungxbuif/workspace/projects/Flotsam/` | none recorded | Git checkout without origin; mirrored via `gitlab` remote |
 | `GraphQL_Real-time-Digital-Auction-Hub` | `/home/dungxbuif/workspace/projects/GraphQL_Real-time-Digital-Auction-Hub/` | `git@github.com:dungxbuif/GraphQL_Real-time-Digital-Auction-Hub.git` | Git checkout |
 | `Knowledgebase` | `/home/dungxbuif/workspace/projects/Knowledgebase/` | `git@github.com:dungxbuif/Knowledgebase.git` | Git checkout |
 | `MezonDong` | `/home/dungxbuif/workspace/projects/MezonDong/` | none recorded | Local directory |
 | `MyPocket` | `/home/dungxbuif/workspace/projects/MyPocket/` | `git@github.com:dungxbuif/MyPocket.git` | Git checkout; production app source |
-| `NoteVault` | `/home/dungxbuif/workspace/projects/NoteVault/` | none recorded | Local directory |
+| `NoteVault` | `/home/dungxbuif/workspace/projects/NoteVault/` | `ssh://gitlab.dungxbuif.com:2222/dungxbuif/note-vault.git` | Git checkout; existing GitLab origin verified |
 | `PocketNode` | `/home/dungxbuif/workspace/projects/PocketNode/` | `git@github.com:dungxbuif/PocketNode.git` | Git checkout |
 | `QnOffice` | `/home/dungxbuif/workspace/projects/QnOffice/` | `git@github.com:tiennguyenvan-ncc/QnOffice.git` | Git checkout |
 | `RelayHub` | `/home/dungxbuif/workspace/projects/RelayHub/` | `git@github.com:dungxbuif/RelayHub.git` | Git checkout; production app source |
@@ -78,20 +116,20 @@ preflight is revoked/rotated because it was exposed in a shell error. See
 | `code-challenge` | `/home/dungxbuif/workspace/projects/code-challenge/` | `git@github.com:dungxbuif/code-challenge.git` | Git checkout |
 | `cortex` | `/home/dungxbuif/workspace/projects/cortex/` | `git@github.com:dungxbuif/cortex.git` | Git checkout |
 | `couchloom` | `/home/dungxbuif/workspace/projects/couchloom/` | `git@github.com:dungxbuif/couchloom.git` | Git checkout |
-| `db-management` | `/home/dungxbuif/workspace/projects/db-management/` | `ssh://git@gitlab.dungxbuif.com:2222/dungxbuif/db-management.git` | NestJS/Bun database operations UI, adapter-based backups and Drive upload; project/runtime map in [the 2026-10-26 reference](./deployments/2026-10-26-db-management-project-and-homelab-reference.md) and acceptance gates in [the production gate matrix](./deployments/2026-10-26-db-management-production-gates.md) |
+| `db-management` | `/home/dungxbuif/workspace/projects/db-management/` | `ssh://git@gitlab.dungxbuif.com:2222/dungxbuif/db-management.git` | NestJS/Bun database operations UI (runs as `db-management` Swarm stack on VM110), adapter-based backups and Drive upload |
 | `datcom-clone` | `/home/dungxbuif/workspace/projects/datcom-clone/` | `git@github.com:dungxbuif/komu-foward.git` | Git checkout |
-| `devtool` | `/home/dungxbuif/workspace/projects/devtool/` | none recorded | Git checkout without origin |
+| `devtool` | `/home/dungxbuif/workspace/projects/devtool/` | none recorded | Git checkout without origin; mirrored via `gitlab` remote |
 | `doino` | `/home/dungxbuif/workspace/projects/doino/` | `git@github-dungxbuif:dungxbuif/mezon-doino.git` | Git checkout |
 | `donation` | `/home/dungxbuif/workspace/projects/donation/` | `git@github.com:dungxbuif/donate.git` | Git checkout |
 | `fox-spirit` | `/home/dungxbuif/workspace/projects/fox-spirit/` | none recorded | Local directory |
 | `go-study` | `/home/dungxbuif/workspace/projects/go-study/` | `git@github.com:dungxbuif/go-study.git` | Git checkout |
 | `harness` | `/home/dungxbuif/workspace/projects/harness/` | `git@github.com:dungxbuif/harness.git` | Git checkout |
-| `homelab-ops` | `/home/dungxbuif/workspace/projects/homelab-ops/` | `ssh://gitlab.dungxbuif.com:2222/dungxbuif/homelab-ops.git` | Canonical checkout; migration merged to local `main`; branch worktree retained at `/home/dungxbuif/workspace/homelab-ops-task1/` |
+| `homelab-ops` | `/home/dungxbuif/workspace/projects/homelab-ops/` | `ssh://gitlab.dungxbuif.com:2222/dungxbuif/homelab-ops.git` | Canonical infrastructure-as-code checkout; target of the IaC rebuild plan |
 | `homelab-legacy` | `/home/dungxbuif/workspace/projects/homelab-legacy/` | none | Retained source snapshot; rollback/migration history only, never the deployment source |
 | `homelab-tunnel` | `/home/dungxbuif/workspace/projects/homelab-tunnel/` | none recorded | Local directory |
 | `homepage` | `/home/dungxbuif/workspace/projects/homepage/` | `ssh://gitlab.dungxbuif.com:2222/dungxbuif/homepage.git` | Git checkout |
 | `k8s-syntax` | `/home/dungxbuif/workspace/projects/k8s-syntax/` | `git@github.com:dungxbuif/k8s-syntax.git` | Git checkout |
-| `learn` | `/home/dungxbuif/workspace/projects/learn/` | none recorded | Git checkout without origin |
+| `learn` | `/home/dungxbuif/workspace/projects/learn/` | none recorded | Git checkout without origin; mirrored via `gitlab` remote |
 | `llm-flashcard` | `/home/dungxbuif/workspace/projects/llm-flashcard/` | `git@github.com:dungxbuif/llm-flashcard.git` | Git checkout |
 | `mac-ocr` | `/home/dungxbuif/workspace/projects/mac-ocr/` | `git@github.com:dungxbuif/mac-ocr.git` | Git checkout |
 | `mezon-desktop` | `/home/dungxbuif/workspace/projects/mezon-desktop/` | `git@github.com:dungxbuif/mezon-desktop.git` | Git checkout |
@@ -108,25 +146,10 @@ preflight is revoked/rotated because it was exposed in a shell error. See
 | `test-clone` | `/home/dungxbuif/workspace/projects/test-clone/` | none recorded | Local directory |
 | `toeic` | `/home/dungxbuif/workspace/projects/toeic/` | none recorded | Local directory |
 
-## Migration Note
+## Notes
 
-On 2026-09-16, project source directories were moved out of
-`/home/dungxbuif/workspace/vaults/homelab/projects/` and back to
-`/home/dungxbuif/workspace/projects/`. This keeps Homelab focused on infrastructure
-documentation while preserving local and remote references for future work.
-
-On 2026-10-31, the untracked `obsidian-livesync` source checkout was moved to
-the desktop Trash at the owner's request. No Homelab documentation, CouchDB
-data, LiveSync runtime, or other project directory was removed; the source
-checkout was not present as an inventory row before removal.
-
-On 2026-10-31, the local `mezon`, `urbanx-sample`, and `harness-experimental`
-checkouts were moved to the desktop Trash at the owner's request. The latter
-was the local clone whose origin redirected to `repository-harness`; no local
-folder named `repository-harness` existed. No runtime service, Mezon webhook,
-or Homelab infrastructure was removed.
-
-The inventory was reconciled against the filesystem on 2026-10-31: 46 real
-project directories remain. The old compatibility symlink
-`/home/dungxbuif/workspace/projects/mezon-go-sdk` points to a missing Mac path
-and is intentionally excluded from the current-project table.
+- The dangling compatibility symlink
+  `/home/dungxbuif/workspace/projects/mezon-go-sdk` points to a missing Mac
+  path and is intentionally excluded from the inventory.
+- Inventory reconciled against the filesystem on 2026-10-31: 46 real project
+  directories.

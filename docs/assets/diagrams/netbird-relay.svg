@@ -44,7 +44,7 @@
   <text class="small muted" x="1066" y="314">TCP 443 • HostSNI route</text>
   <text class="small" fill="#2f8f5b" x="1066" y="334">root returns expected 404</text>
   <rect class="white card" x="1048" y="360" width="274" height="66" rx="12"/>
-  <text class="body ink" x="1066" y="390">STUN / coturn</text>
+  <text class="body ink" x="1066" y="390">STUN (netbird-relay)</text>
   <text class="small muted" x="1066" y="414">UDP 3478 bound • public DNS/TLS valid</text>
 
   <path class="flow" d="M350 290 C390 290 415 290 460 290"/>

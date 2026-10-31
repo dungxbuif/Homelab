@@ -2,12 +2,22 @@
 type: Reference
 title: "MikroTik hEX S Configuration Guide"
 description: "Operational guidelines for PPPoE dialing, local network DHCP, WireGuard routing tables, and security hardening on MikroTik"
-timestamp: 2026-07-03T15:14:00Z
+timestamp: 2026-10-31T00:00:00+07:00
 ---
 
 # 🛜 MikroTik Router Configuration & Network Guide
 
-This document outlines the detailed configuration, network architecture, and security hardening for the core router in the homelab.
+This document outlines the configuration, network architecture, and security hardening for the core router in the homelab.
+
+> [!WARNING]
+> **Verify urgently — router not audited live.** This guide was last checked
+> against the router in July 2026; the 2026-10-31 audit did not reach it.
+> It says DHCP advertises the **Orange Pi Zero 3 (`10.10.0.2`) as primary DNS**.
+> The Orange Pi is dead, so LAN clients would silently fall back to `1.1.1.1`
+> and lose split-horizon DNS (lab names resolving to the VPS instead of the
+> Pi5 edge). Check with `/ip dhcp-server network print` and, if confirmed,
+> point the primary DNS at Pi5 AdGuard `10.10.0.5`. Treat every other value in
+> this file as (unverified) until a fresh export is reviewed.
 
 ---
 
@@ -54,14 +64,14 @@ PPPoE dialing is managed via the `pppoe-out1` interface on top of `ether1`.
 ### 3. IP Allocation & DHCP Server
 *   **Primary Subnet:** `<LAN_SUBNET>` (Gateway: `<MIKROTIK_IP>`).
 *   **DHCP Server:** Managed by MikroTik. Hands out leases within the `10.10.0.x` range.
-*   **DHCP DNS Server Options:** Advertises `<ORANGE_PI_IP>` (Orange Pi Zero 3 AdGuard Home) as primary DNS, and `1.1.1.1` as secondary.
-*   **Reserved Ranges:** Node IPs for Kubernetes control planes (`<K8S_VIP>-33`) are reserved and excluded from the dynamic DHCP pool.
+*   **DHCP DNS Server Options:** As of July 2026, advertises `<ORANGE_PI_IP>` (Orange Pi Zero 3, **now dead**) as primary DNS and `1.1.1.1` as secondary — see the warning above. Intended primary: Pi5 AdGuard `10.10.0.5`.
+*   **Reserved Ranges:** The former Kubernetes range (`<K8S_VIP>-33`) is excluded from the dynamic pool; it now covers static guests such as VM100 `10.10.0.31` and VM110 `10.10.0.32` (unverified).
 
 ---
 
 ## 🔒 Routing & Transit Forwarding (Admin VPN Access)
 
-To access and manage the router (`<MIKROTIK_IP>`) and other LAN devices remotely through the WireGuard VPN subnet (`10.66.66.x`), the Raspberry Pi 5 (`<PI_IP>`) acts as a gateway proxy.
+To access and manage the router (`<MIKROTIK_IP>`) and other LAN devices remotely through the WireGuard VPN subnet (`10.66.66.x`), the Raspberry Pi 5 (`<PI_IP>`) acts as a gateway proxy. Remote admin now primarily uses NetBird; whether this WireGuard path and its masquerade rule are still active is (unverified).
 
 ### Return Path Routing (NAT Masquerade)
 Because the MikroTik router does not maintain a return route config for `10.66.66.x` traffic, packets would normally be discarded. To bypass this, the Pi 5 applies an **iptables NAT Masquerade** rule:

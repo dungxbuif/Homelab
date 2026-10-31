@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="960" viewBox="0 0 1400 960" role="img" aria-labelledby="title desc">
   <title id="title">Project management and documentation reference flow</title>
-  <desc id="desc">Project source stays outside the Homelab vault, while the vault records project ownership, runtime evidence, release notes and backlog state. A separate reading path shows the authority order from the index and current status through dated evidence and runbooks, with archived notes retained only as history.</desc>
+  <desc id="desc">Project source stays outside the Homelab vault, while the vault records project ownership, runtime evidence, release notes and backlog state. A separate reading path shows the authority order from the index and current status through dated evidence and runbooks, with older records kept only in git history.</desc>
   <defs>
     <marker id="blue-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#2f6fed"/></marker>
     <marker id="teal-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#1f9d8b"/></marker>
@@ -83,7 +83,7 @@
   <text class="small muted" x="838" y="744">secret boundary</text>
 
   <rect class="history card" x="1082" y="625" width="240" height="150" rx="14"/>
-  <text class="head ink" x="1104" y="662">History / archived</text>
+  <text class="head ink" x="1104" y="662">Git history only</text>
   <text class="small muted" x="1104" y="692">incident context</text>
   <text class="small muted" x="1104" y="718">rollback history only</text>
   <text class="small muted" x="1104" y="744">never current by itself</text>
@@ -95,6 +95,6 @@
 
   <line class="rule" x1="78" y1="820" x2="1322" y2="820"/>
   <text class="small ink" x="78" y="852">Authority rule</text>
-  <text class="small muted" x="205" y="852">new dated live evidence → current STATUS/STACK catalog → runbook procedure → historical/archived notes</text>
+  <text class="small muted" x="205" y="852">new dated live evidence → current STATUS/STACK catalog → runbook procedure → git history</text>
   <text class="small muted" x="78" y="878">When records conflict, do not silently merge them: keep the old note as history and link the newer evidence.</text>
 </svg>

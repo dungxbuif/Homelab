@@ -8,7 +8,7 @@
 
 **Tech Stack:** Rust/Axum/sqlx/reqwest, PostgreSQL, NATS JetStream, Redis, Node/Go SDKs, React/Playwright and disposable integration services.
 
-**Spec:** [Full webhook design](../specs/2026-10-31-relayhub-full-webhooks-design.md), with [Rust v1 baseline](../specs/2026-10-29-relayhub-rust-v1-design.md) limits. This explicitly restores original outbound callbacks/routing as new v1 work; it does not imply all old Go features are in scope.
+**Spec:** [Full webhook design](../specs/2026-10-31-relayhub-full-webhooks-design.md), with Rust v1 baseline (RelayHub v1 design, in git history) limits. This explicitly restores original outbound callbacks/routing as new v1 work; it does not imply all old Go features are in scope.
 
 ## Global Constraints
 

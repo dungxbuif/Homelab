@@ -6,7 +6,7 @@ Date: 2026-10-31. Status: proposed scope and contracts for review; source audit 
 
 The user requested a plan for full webhook functionality as originally intended. Include both inbound webhook-to-agent delivery and outbound signed HTTP callbacks, with endpoint management, routing, retries, DLQ, replay, dashboard and official SDK guidance. Product consumers connect their applications to RelayHub; they do not provision its internal messaging/storage services.
 
-The [Rust v1 baseline](2026-10-29-relayhub-rust-v1-design.md) governs current transport limits, tenancy and durable acceptance. The earlier product expansion in `/home/dungxbuif/workspace/projects/RelayHub/docs/superpowers/specs/2026-09-20-relayhub-platform-expansion-design.md`, sections 10–12 and 16, supplies the requested restored callback/routing/replay behavior. The older Go implementation is a reference, not a drop-in Rust contract. For conflicts, explicitly use the current v1 defaults below; do not accidentally import Go's different retry count.
+The Rust v1 baseline (RelayHub v1 design, in git history) governs current transport limits, tenancy and durable acceptance. The earlier product expansion in `/home/dungxbuif/workspace/projects/RelayHub/docs/superpowers/specs/2026-09-20-relayhub-platform-expansion-design.md`, sections 10–12 and 16, supplies the requested restored callback/routing/replay behavior. The older Go implementation is a reference, not a drop-in Rust contract. For conflicts, explicitly use the current v1 defaults below; do not accidentally import Go's different retry count.
 
 ## Current implementation and gaps
 

@@ -1,142 +1,85 @@
 ---
 type: Runbook
 title: "CouchDB Obsidian Sync"
-description: "Deployment, connection details, verification commands, and recovery notes for the Pi5 CouchDB backend"
-timestamp: 2026-09-14T00:00:00Z
+description: "Current deployment, client settings, verification and recovery for the Pi5 CouchDB LiveSync backend"
+timestamp: 2026-10-31T00:00:00+07:00
 ---
 
 # CouchDB Obsidian Sync
 
-## Purpose
-
-CouchDB runs on the Raspberry Pi 5 datastore node as the sync backend for this
-Obsidian vault and as a small general document datastore. It is deployed as a
-portless Docker service behind the VPS Traefik -> Rathole -> Pi5 Traefik edge
-path.
+CouchDB on the Raspberry Pi 5 is the Obsidian Self-hosted LiveSync backend and
+the source of truth for CouchLoom. It has no host port; public traffic comes
+through the VPS edge.
 
 ## Deployment
 
 | Item | Value |
 | ---- | ----- |
-| Host | Raspberry Pi 5 gateway |
-| Stack path | `/ssd-data/infra` |
+| Host | Pi5 `rpivn` (`10.10.0.5`) |
+| Stack | Compose `infra` at `/ssd-data/infra` |
 | Container | `couchdb` |
 | Image | `couchdb:3.5.3@sha256:bed314d1…` |
-| Docker network | `proxy_net` |
-| Host port exposure | None |
 | Internal port | `5984` |
-| Data volume | `/ssd-data/infra/couchdb/data` |
-| Local config | `/ssd-data/infra/couchdb/local.d/obsidian.ini` |
+| Data | `/ssd-data/infra/couchdb/data` |
+| Local config / CORS | `/ssd-data/infra/couchdb/local.d/obsidian.ini` |
+| Backup proxy | `couchdb-backup-proxy`, GET/HEAD-only, LAN `10.10.0.5:15984`, VM100 backup relay only |
 
-## Public Endpoints
-
-| Endpoint | Purpose |
-| -------- | ------- |
-| `https://couchdb.dungxbuif.com` | Primary CouchDB endpoint |
-| `https://sync-db.dungxbuif.com` | Alias endpoint for sync clients |
-
-Both endpoints are routed:
+Request path:
 
 ```text
-Internet
--> Cloud VPS gateway-traefik HostSNI allow-list
--> Rathole tunnel
--> Orange Pi edge_traefik
--> couchdb:5984 over homelab-net/proxy_net
+Internet -> VPS gateway-traefik (HostSNI allow-list, 103.82.21.202)
+-> Rathole -> Pi5 edge-traefik-pi5 -> couchdb:5984
 ```
 
-## Obsidian Client Settings
+## Endpoints
 
-Use a dedicated non-admin sync user.
+| Endpoint | Exposure |
+| -------- | -------- |
+| `https://sync-db.dungxbuif.com` | Internet endpoint for LiveSync; path-restricted to `/`, `/_session` and `/obsidian_vault…` |
+| `https://couchdb.dungxbuif.com` | LAN-only (`lan-only` middleware) |
 
-| Setting | Value |
-| ------- | ----- |
-| Remote database URI | `https://couchdb.dungxbuif.com` |
-| Database name | `obsidian_vault` |
-| Username | `obsidian_sync` |
-| Password source | `/ssd-data/infra/couchdb/obsidian-sync.env` on the Pi |
+## Databases
 
-Do not store the password directly in vault notes.
+| Database | Purpose / access |
+| -------- | ---------------- |
+| `obsidian_vault` | Main Obsidian vault sync (~49k docs). `_security`: admin = CouchDB admin; member = `obsidian_sync` user/role. Anonymous `401`. |
+| `homelab` | LiveSync copy of this Homelab vault (doc ids are repo paths), member `homelab_sync`. Decision: private/admin-only, no public `sync-db` route. Whether a `/homelab` path is currently present on the `sync-db` router is (unverified). |
+| `_users`, `_replicator`, `_global_changes` | System |
 
-The homelab vault is documentation-only for LiveSync. Keep the plugin
-`syncOnlyRegEx` setting at `^docs(?:/|$)` so project runbooks and evidence under
-`docs/` sync, while source checkouts and generated files outside `docs/` do not.
+## Client settings
 
-The homelab vault uses the restricted `homelab_sync` user and database path:
+| Setting | Personal vault | Homelab vault |
+| ------- | -------------- | ------------- |
+| URI | `https://sync-db.dungxbuif.com` | `https://couchdb.dungxbuif.com` (LAN; `sync-db` `/homelab` path unverified) |
+| Database | `obsidian_vault` | `homelab` |
+| User | `obsidian_sync` | `homelab_sync` |
 
-| Setting | Value |
-| ------- | ----- |
-| Remote database URI | `https://sync-db.dungxbuif.com` |
-| Database name | `homelab` |
-| Username | `homelab_sync` |
-| Allowed remote path | `/homelab` only |
+The Homelab vault is documentation-only for LiveSync: keep `syncOnlyRegEx` at
+`^docs(?:/|$)` so source checkouts and generated files never sync.
 
 ## Credentials
 
-Credential files on the Pi:
+Never store passwords in vault notes.
 
-```text
-/ssd-data/infra/couchdb/.env
-/ssd-data/infra/couchdb/obsidian-sync.env
-```
+- `/ssd-data/infra/couchdb/.env` — admin bootstrap and CouchDB secrets (`0600`).
+- `/ssd-data/infra/couchdb/obsidian-sync.env` — non-admin sync user (`0600`).
+- Local reference: `local_vars.json` -> `COUCHDB_SECRETS`.
 
-- `.env` contains the CouchDB admin bootstrap credentials and CouchDB secrets.
-- `obsidian-sync.env` contains the non-admin Obsidian sync user and database settings.
-- Both files should remain `0600` and must not be committed.
-- Local operational reference: `local_vars.json` -> `COUCHDB_SECRETS`
-  contains the current CouchDB admin, sync user, endpoint, and database names.
+## CORS
 
-## Database Layout
-
-| Database | Purpose |
-| -------- | ------- |
-| `_users` | CouchDB user documents |
-| `_replicator` | CouchDB replication metadata |
-| `_global_changes` | CouchDB global changes metadata |
-| `obsidian_vault` | Main Obsidian sync database |
-| `homelab` | General homelab CouchDB database, created 2026-09-14; empty at creation (`doc_count=0`); keep app-specific `_security` unset until a consuming service is assigned |
-
-The `obsidian_vault` database is restricted with `_security`:
-
-- Admin: CouchDB admin user.
-- Member: `obsidian_sync` user and `obsidian_sync` role.
-- Anonymous access should return `401`.
-
-Current non-admin user document:
-
-- `org.couchdb.user:obsidian_sync`
-
-The `homelab` database currently relies on CouchDB's global authenticated-only
-setting; anonymous access returned `401` after creation. Add explicit
-`_security` before assigning it to a specific app.
+Allowed origins: `app://obsidian.md`, `capacitor://localhost`,
+`http://localhost`, `http://127.0.0.1`, `https://couchdb.dungxbuif.com`.
 
 ## Verification
 
-Run from the Pi gateway.
+On Pi5:
 
 ```bash
-cd /ssd-data/infra
 docker ps --filter name=couchdb
 docker logs --tail 80 couchdb
 ```
 
-Since 2026-10-20 `couchdb.dungxbuif.com` is LAN-only (`lan-only` middleware) and
-`sync-db.dungxbuif.com` is the Internet endpoint for LiveSync, limited to `/`,
-`/_session`, and `/obsidian_vault…`, and `/homelab…`. Configure the plugin with the
- `sync-db` host.
-
-Database audit 2026-10-20 (`_all_dbs`): `_users`, `_replicator`, `_global_changes`
-(system), `obsidian_vault` (49k docs, member `obsidian_sync`, the only database
-with remote traffic in the previous 72 h) and `homelab` (1.5M docs, 5.9 GB
-external size, last written 2026-10-17). `homelab` is a LiveSync copy of this
-repository (doc ids are repo file paths), uses the dedicated non-admin
-`homelab_sync` member, and is exposed only through the path-restrictedis admin-only, and is **not** exposed on
-`sync-db`; use it from the LAN through `couchdb.dungxbuif.com`. To sync it from
-outside, first create a dedicated non-admin user as a `_security` member, then add
-`PathPrefix(/homelab)` to the `sync-db` router rule. The earlier note that
-`/homelab` route on `sync-db`is empty is obsolete.
-
-Test public path through the VPS gateway:
+Public path through the VPS:
 
 ```bash
 curl -k --resolve sync-db.dungxbuif.com:443:103.82.21.202 \
@@ -144,77 +87,22 @@ curl -k --resolve sync-db.dungxbuif.com:443:103.82.21.202 \
   https://sync-db.dungxbuif.com/obsidian_vault
 ```
 
-Expected:
+Expected: authenticated `200`, anonymous `401`, CORS preflight from
+`app://obsidian.md` `204`.
 
-- Authenticated sync user receives `200`.
-- Anonymous request receives `401`.
-- CORS preflight from `app://obsidian.md` receives `204`.
-- `homelab` exists and returns metadata with `doc_count=0` when queried as the
-  CouchDB admin.
+## Headless LiveSync CLI
 
-## Headless Local LiveSync CLI
-
-The optional local headless client uses the upstream Self-hosted LiveSync CLI.
 CouchLoom on VM100 uses the vendored LiveSync common library directly against
-this CouchDB database and does not run a second CLI sync node. The local
-runner and state layout are documented in
-[`couchloom/docs/LOCAL_LIVESYNC.md`](../../couchloom/docs/LOCAL_LIVESYNC.md).
+this database and does not run a second sync node. The optional local CLI
+runner is documented in the CouchLoom checkout at
+`/home/dungxbuif/workspace/projects/couchloom/docs/LOCAL_LIVESYNC.md`
+(`tools/livesync/livesync.sh doctor | remote-status | sync`).
 
-Run the checks from the CouchLoom checkout:
+If LiveSync reports the remote database is locked and this device is not
+accepted, stop. Never `unlock-remote` from an empty or unverified local
+database; rebuild on the trusted Obsidian device first.
 
-```bash
-tools/livesync/livesync.sh doctor
-tools/livesync/livesync.sh remote-status
-tools/livesync/livesync.sh sync
-```
-
-The runner stores its settings and PouchDB state outside Git with mode `0600`
-settings. It reads the sync credentials from the existing homelab
-`local_vars.json` unless explicit `LIVESYNC_*` variables are supplied.
-
-If LiveSync reports that the remote database is locked and this device is not
-accepted, stop. Do not use `unlock-remote` from an empty or unverified local
-database. Complete the rebuild on the existing trusted Obsidian device first,
-then retry the commands above. Only after a successful sync and mirror pass
-should a persistent daemon be enabled.
-
-## CORS
-
-Configured in:
-
-```text
-/ssd-data/infra/couchdb/local.d/obsidian.ini
-```
-
-Allowed origins currently include:
-
-- `app://obsidian.md`
-- `capacitor://localhost`
-- `http://localhost`
-- `http://127.0.0.1`
-- `https://couchdb.dungxbuif.com`
-
-## Gateway Configuration
-
-Pi Caddy route:
-
-```caddy
-@couchdb host couchdb.dungxbuif.com sync-db.dungxbuif.com
-handle @couchdb {
-    reverse_proxy couchdb:5984
-}
-```
-
-Cloud VPS Nginx whitelist includes:
-
-```nginx
-sync-db.dungxbuif.com rathole-server:443;
-couchdb.dungxbuif.com rathole-server:443;
-```
-
-## Recovery Notes
-
-If CouchDB is down:
+## Recovery
 
 ```bash
 cd /ssd-data/infra
@@ -222,23 +110,13 @@ docker compose up -d couchdb
 docker logs --tail 120 couchdb
 ```
 
-If Caddy route is changed:
-
-```bash
-cd /ssd-data/infra
-docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
-```
-
-If VPS whitelist is changed:
-
-```bash
-cd /root/gateway
-docker compose exec -T nginx-gateway nginx -t
-docker compose restart nginx-gateway
-```
+Routes are managed in the Pi5 Traefik edge and the VPS HostSNI allow-list;
+change them only through the route catalog in `homelab-ops`. Backups: the
+`databases` class exports `obsidian_vault` (restore verified 2026-10-31, see
+[backup repair](./deployments/backup-repair-2026-10-31.md)); a recurring
+schedule is open in [BACKLOG](./BACKLOG.md).
 
 ## Related
 
 - [Raspberry Pi 5 Datastore Spec](./PI.md)
-- [Directory Update Log](./LOG.md)
-- [System Context & Playbook](./MAIN.md)
+- [Stack](./STACK.md)

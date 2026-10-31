@@ -2,6 +2,8 @@
 
 Scope: credentials that were committed to this repository (also mirrored to a public GitHub remote, `origin`). Rotation comes first: purging history does not un-leak anything that was already cloned, forked, or cached. Treat every value below as compromised until rotated.
 
+Status (2026-10-31): row-by-row completion is not recorded here (unverified); check `docs/LOG.md`. Grafana, GoClaw, Bitwarden, Authentik, MinIO and webhook-relay are retired, so their rows reduce to "confirm decommissioned". Paths such as `docs/archived/...`, `deprecated/...` and `diagnostics/...` refer to Git history and are removed from the working tree; they remain valid `filter-repo` targets.
+
 Rules: never paste secret values into chat, tickets, logs, or commit messages. Load new values from the password manager or Semaphore secret store into files outside the repo (`~/.config/homelab/*`, mode 0600).
 
 ## 1. Rotation checklist (in order)

@@ -1,3 +1,10 @@
+---
+type: Service
+title: "CouchLoom on VM100"
+description: "Private MCP and local semantic index over the Obsidian CouchDB vault"
+timestamp: 2026-10-31T00:00:00+07:00
+---
+
 # CouchLoom on VM100
 
 ## Purpose and current status
@@ -8,35 +15,31 @@ turns those documents into an authenticated MCP surface for agents and maintains
 a local semantic index. It does not replace Obsidian, CouchDB, or the Markdown
 files as the source of truth.
 
-Production was last validated on **2026-10-26** on VM100 (`10.10.0.31`). The
-running CouchLoom release is Git commit/image tag `9541933`, stored as the
-immutable release `/opt/apps/couchloom/releases/9541933`. It adds optional literal
-folder scope to semantic search and a reproducible authenticated MCP evaluation.
-The 12-case diagnostic scores 6/12 unrestricted and 9/12 with known `wiki` scope;
-these are different tasks, not a measured gain in unrestricted answer accuracy.
+The 2026-10-31 audit found the Compose project `couchloom` running on VM100
+with `couchloom`, `couchloom-postgres` and `couchloom-ollama`. Its Compose
+config references four compose files across several release directories, so
+the active release is ambiguous: release `9541933`
+(`/opt/apps/couchloom/releases/9541933`, last validated 2026-10-26) per this
+doc, while VM100 notes cite image `couchloom:8f7a8e0` (unverified — confirm
+with `docker inspect couchloom` before a rollout).
 
 | Field | Current value |
 | --- | --- |
 | Host | VM100 `vm100-prod`, `10.10.0.31` |
 | Runtime | Standalone Docker Compose, not a Swarm stack |
 | MCP endpoint | `http://couchloom:8787/mcp` on `homelab-net` |
-| Source of truth | Existing CouchDB LiveSync database on `homelab-net` |
-| Vector and queue store | `pgvector/pgvector:0.8.6-pg17-bookworm` |
+| Source of truth | Pi5 CouchDB LiveSync database via `homelab-net` |
+| Vector and queue store | `pgvector/pgvector:0.8.6-pg17-bookworm` (PostgreSQL 17) |
 | Embedding runtime | `ollama/ollama:0.40.13@sha256:b2f0122c…`, CPU on VM100 |
 | Embedding model | `nomic-embed-text`, 768 dimensions |
-| Host/public ports | None |
-| Current steady state | 1,365/1,365 documents, 6,099 chunks, coverage 1, backlog 0, failed 0 |
-| Runtime health | CouchLoom, PostgreSQL, and Ollama healthy at validation |
+| Limits | app 2 CPU / 2 GiB, PostgreSQL 1 CPU / 2 GiB, Ollama 2 CPU / 4 GiB |
+| Host/public ports | None (a LAN relay `10.10.0.31:15433` exposes its PostgreSQL to the VM110 backup worker only) |
+| Last steady state | 1,365/1,365 documents, 6,099 chunks, coverage 1, backlog 0, failed 0 (2026-10-26) |
 
-The model remains hosted on VM100. Note bodies are embedded through the private
-`couchloom-ollama:11434` endpoint and are not sent to an external embedding
-provider.
-
-On 2026-10-31, Ollama was upgraded from `0.34.0` to the pinned `0.40.13`
-digest. The `ollama_data` volume was archived and validated at
-`/opt/apps/homelab-backup/runs/version-upgrade-20261031/ollama/ollama-data.tgz`
-(`252237297` bytes) before the recreate. `nomic-embed-text` remained present;
-the Ollama and CouchLoom containers stayed healthy with zero restarts.
+Note bodies are embedded through the private `couchloom-ollama:11434` endpoint
+and never sent to an external provider. The pre-upgrade Ollama volume archive
+(previous version `0.34.0`) is at
+`/opt/apps/homelab-backup/runs/version-upgrade-20261031/ollama/ollama-data.tgz`.
 
 ## Architecture and data flow
 
@@ -65,8 +68,8 @@ server are isolated on the private `couchloom-internal` bridge. CouchLoom joins
 the existing attachable `homelab-net` to reach CouchDB and `knowledge-hub-net`
 for n8n/Knowledge Hub clients. No service publishes a host port. The pinned
 `couchloom-network_anchor` Swarm service keeps `homelab-net` materialized on
-VM100 while standalone Compose recreates CouchLoom; its source is
-`homelab-ops` commit `dc8b606`.
+VM100 while standalone Compose recreates CouchLoom (source: `homelab-ops`
+commit `dc8b606`).
 
 The endpoint is suitable for OpenClaw, but this runbook does not claim that the
 current OpenClaw registry entry has been verified. Treat client registration as
@@ -210,14 +213,13 @@ A recoverable backup contains:
    restorable secret source;
 4. the source commit, Compose manifest, image digest, and model identity.
 
-Current verified pre-rollout artifacts under `/opt/apps/couchloom/run` are:
+Scheduled coverage: the VM110 db-management worker backs up CouchLoom
+PostgreSQL to Drive (receipt-level only); the restic `database-instances`
+class is not scheduled. The latest local pre-rollout set under
+`/opt/apps/couchloom/run` is dated 20261013 (`src-`, `env-`, `vaults-`,
+`postgres-backup-20261013-0318.*`).
 
-- `src-backup-20261013-0318.tgz`;
-- `env-backup-20261013-0318`;
-- `vaults-backup-20261013-0318.json`;
-- `postgres-backup-20261013-0318.dump`.
-
-All are mode `0600`; the custom dump passed `pg_restore --list`. A backup is
+All are mode `0600`. A backup is
 not considered complete until it restores into an isolated PostgreSQL 17
 instance and is verified against a non-production CouchDB copy. Never run a
 restore drill against production CouchDB with write tools enabled.
@@ -270,51 +272,26 @@ PostgreSQL to clear a queue and do not downgrade its data directory across a
 PostgreSQL major version. After rollback, verify `/ready`, per-vault index
 status, metadata, semantic search, backlog, failures, and the MCP tool catalog.
 
-## Production evidence
+## Measured baseline
 
-- Controlled Ollama outage: metadata remained available, backlog became 1,
-  failed remained 0, and the service returned to ready 23 seconds after Ollama
-  restarted. The test note was restored exactly.
-- Retry drill: the retry counter increased for recoverable failed attempts and
-  the final queue returned to coverage 1, backlog 0, failed 0. The cumulative
-  counter was 4 when production was rechecked on 2026-10-13.
-- Ten warm semantic searches: p50 102.3 ms, p95 122.9 ms.
-- Post-drill memory sample: CouchLoom 120.8 MiB of 2 GiB, PostgreSQL 91.96 MiB,
-  Ollama 316.6 MiB.
-- The authenticated smoke covered vault listing, metadata read, semantic
-  search, create, and edit without recording note contents.
+Ten warm semantic searches: p50 102 ms, p95 123 ms. Memory: CouchLoom ~121 MiB,
+PostgreSQL ~92 MiB, Ollama ~317 MiB. After an Ollama outage the service
+returned to ready ~23 s after Ollama restarted.
 
-## Automation roadmap
-
-The runtime is hardened, but deployment and recovery still require too much
-operator SSH. The next infrastructure phase should encode the existing runbook,
-without changing its safety gates:
-
-1. Ansible role for immutable release upload, mode-`0600` config placement,
-   Compose validation, image build, and targeted replacement.
-2. Automated preflight/backup gate that refuses deployment when the database
-   dump or config snapshot cannot be verified.
-3. Post-deploy health gate for security settings, ready state, queue drain,
-   coverage, MCP smoke, and rollback on core failure.
-4. Prometheus scrape and alerts for coverage, queue age, retries, failures, and
-   service availability.
-5. Scheduled isolated restore drill with a report stored outside VM100.
-6. Semaphore or an equivalent audited UI/API as the controlled execution layer;
-   direct SSH remains break-glass access, not the normal workflow.
-
-This roadmap is **not deployed yet**. Automation must consume secrets from the
-approved private store and must never emit them or note content into job logs.
+Automating deployment, backup gates and restore drills is part of the
+[IaC rebuild plan](../superpowers/plans/2026-10-31-lab-iac-automation-rebuild.md);
+direct SSH is still the operator path.
 
 ## Agent-readable facts
 
 ```yaml
 service: couchloom
-status: healthy
+status: running (audit 2026-10-31)
 role: markdown_second_brain_mcp_and_local_semantic_index
 host: vm100-prod
 host_ip: 10.10.0.31
 runtime: docker_compose
-release_commit: 9541933
+release_commit: 9541933  # unverified vs image 8f7a8e0
 release_path: /opt/apps/couchloom/releases/9541933
 mcp_endpoint: http://couchloom:8787/mcp
 public_ports: []
@@ -336,7 +313,6 @@ chunks: 6099
 coverage: 1
 backlog: 0
 failed: 0
-retries_total_observed: 4
 write_policy: authenticated_create_and_edit_all_vault_paths
 destructive_mcp_tools_exposed: false
 normal_deployment_automation: pending

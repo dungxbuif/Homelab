@@ -1,302 +1,150 @@
 ---
 type: Reference
-title: "Raspberry Pi 5 Datastore Specification"
-description: "Technical specification of the Pi5 manager/datastore node: PostgreSQL, Redis, object storage, and persistent services"
-timestamp: 2026-10-21T00:00:00+07:00
+title: "Raspberry Pi 5 Datastore and Edge Host"
+description: "Current state of the Pi5 Swarm manager: datastores, edge, ports, storage paths, operations and rollback"
+timestamp: 2026-10-31T00:00:00+07:00
 ---
 
-# System Specification & Architectural Design: Pi5 Datastore Infrastructure
+# Raspberry Pi 5 — Swarm manager, datastore and edge
 
-> **Host Device:** Raspberry Pi 5 (ARM64 Architecture - Broadcom BCM2712) **Host Static LAN IP:** `10.10.0.5` **Target Audience:** AI Coding & DevOps Agents **Root Directory:** `/ssd-data` (High-speed External SSD mounted on Raspberry Pi 5) **Role:** Docker Swarm manager, active Traefik/Rathole/AdGuard edge, datastore, and persistent-services host.
+Source: live read-only audit 2026-10-31 plus the
+[2026-10-31 upgrade ledger](./deployments/version-upgrade-2026-10-31.md).
+Forward plan: [Lab IaC automation rebuild](./superpowers/plans/2026-10-31-lab-iac-automation-rebuild.md).
 
-> **Current runtime source:** [Current Homelab Status](./STATUS.md), the dated deployment evidence it links, and [Runtime Inventory and Deployment Reconciliation](./deployments/runtime-inventory-2026-10-13.md). This file contains the Pi5 architecture and runbook; it does not override newer dated evidence.
+## Role and specs
 
-## Placement decision
+| Field | Value |
+|---|---|
+| Hardware | Raspberry Pi 5, ARM64 (BCM2712); every image must support `linux/arm64` |
+| Hostname / LAN IP | `rpivn` / `10.10.0.5` (SSH alias `pi`) |
+| Role | Docker Swarm manager/leader, authoritative datastore, home edge (Traefik, Rathole client, AdGuard DNS), private image registry |
+| Docker | 28.4.0 |
+| Storage | External NVMe SSD at `/ssd-data`; root `/` 469 G, 42 % used |
+| Swap | 4 GiB `/ssd-data/infra/swapfile` via `homelab-pi5-swap.service`, `vm.swappiness=10` (unverified) |
+| systemd | No homelab timers. Native units: `cloudflared` (degraded, see below), `databasus-verification-agent.service` |
 
-Pi5 remains the authoritative database/data host. VM100 is the production compute
-and backup/restore worker, not a replacement data VM. A future move requires a
-separate failure-domain host or storage target and an explicit restore drill.
+Pi5 stays the data host. VM100 is application compute; VM110 (`db-ops`) runs
+db-management. Moving data off Pi5 requires a separate failure-domain target
+and a restore drill first.
 
-This workspace houses the complete configuration, provisioning scripts, security policies, and orchestration definitions for the **Home Gateway Infrastructure** running as a self-hosted single-board server on a **Raspberry Pi 5**. The entire infrastructure state is stored on a high-speed external SSD mounted at `/ssd-data`.
+## Swarm cluster (managed from Pi5)
 
----
+Nodes: `rpivn` (leader), `vm100-prod`, `db-ops` (VM110), and `orangepizero3`
+which is **down but still a member** — remove it deliberately, do not schedule
+onto it. Leftover `0/0` services: `edge_traefik`, `edge_rathole`,
+`edge_adguardhome`, `relayhub` (legacy bootstrap), `mypocket-web`. Do not scale
+these up implicitly; the edge now runs as standalone containers on Pi5.
 
-## 🗺️ Workspace Directory Map
+All Swarm service state (including VM100/VM110 tasks) is inspected and updated
+from Pi5: `docker service ls`, `docker service ps <svc>`. Semaphore and
+`homelab-provisioner` run as Swarm services on the Pi5 control plane
+(placement unverified).
+
+## What runs on Pi5 outside Swarm
+
+| Unit | Runtime | Image / version | Notes |
+|---|---|---|---|
+| `postgres` | Compose `infra` | `pgvector/pgvector:pg16@sha256:7b822b0a…` (PostgreSQL 16.15) | No host port; on `pg-net`, `proxy_net`; cap 2 GiB / 1.5 CPU (unverified) |
+| `pgbouncer` | Compose `infra` | `edoburu/pgbouncer:latest@sha256:ca2814bc…` (1.26.1) | LAN `10.10.0.5:5432` → pooler `:6432`; overlay alias `pgbouncer:6432` |
+| `couchdb` | Compose `infra` | `couchdb:3.5.3@sha256:bed314d1…` | Obsidian LiveSync source of truth; routes `couchdb.` / `sync-db.dungxbuif.com` |
+| `couchdb-backup-proxy` | Compose `infra` | — | GET/HEAD-only, LAN `10.10.0.5:15984`, VM100 source only |
+| `rustfs` | Compose `infra` | `rustfs/rustfs:1.0.4@sha256:ed9210d6…` | S3 API `storage.dungxbuif.com` (`:9000`), console `cdn.dungxbuif.com` (`:9001`); no host port; on `s3-net` |
+| `victoriametrics` | Compose `infra` | `v1.155.0` | LAN `10.10.0.5:8428` |
+| `alertmanager` | Compose `infra` | `v0.34.2` | LAN `10.10.0.5:9093` |
+| exporters, `cadvisor` | Compose `infra` | postgres-exporter v0.18.1, blackbox, snmp, cAdvisor v0.55.1 | Scrape targets only |
+| `redis-prod` | Compose `redis-prod` | `redis:7.2-alpine@sha256:2c933526…` (7.2.17) | See Redis below |
+| `edge-traefik-pi5` | standalone | `traefik:v3.6` | Ports 80/443; all lab TLS/route ownership |
+| `edge-rathole-pi5` | standalone | `rathole:local` (hand-built) | Client to the VPS shared Rathole server |
+| `edge-adguardhome-pi5` | standalone | `adguard/adguardhome:latest` | LAN DNS, split-horizon to the Pi5 edge |
+| `docker-registry` | standalone | `registry:2` | Production registry `registry.dungxbuif.com`; htpasswd auth |
+
+Floating tags still in use: AdGuard `latest`, PgBouncer `latest`, blackbox/SNMP
+exporters, `registry:2`, `rathole:local`. Pin before automating.
+
+## Storage paths
 
 ```text
-/ssd-data
-├── index.md               # Unified gateway, network topology, and agent instructions
-├── .gitignore             # Multi-tier exclusion list for repository security, logs, and docker volumes
-├── backup/                # Gitignored directory containing historical system backups
-├── rathole-build/         # Build context for compiling/testing local Rathole binaries
-└── infra/                 # Operational runtime stack directory
-    ├── docker-compose.yml # Main Docker Compose orchestration file defining all gateway microservices
-    ├── README.md          # Human-oriented vietnamese system catalog and maintenance runbooks
-    ├── kuma-data/         # Inactive configs for Uptime Kuma monitoring (decommissioned)
-    ├── my-cv/             # Static volume path for custom CV web application
-    ├── postgres/          # Centralized PostgreSQL database storage
-    │   └── data/          # Persistent database files
-    ├── netdata/           # System resources monitoring configuration profiles
-    ├── registry/          # Dynamic volumes and security credentials for local Docker Registry
-    │   └── auth/          # Htpasswd credentials for docker login authentication
-    ├── redis-prod/        # Standalone Redis for macocr-proxy and approved services
-    │   └── docker-compose.yml  # bind 10.10.0.5:16379, auth, AOF (see Redis-Prod section)
-    └── rustfs/            # High-performance S3 object storage directories (RustFS engine backend)
+/ssd-data/infra/docker-compose.yml        # `infra` Compose source (contains credentials; never copy)
+/ssd-data/infra/postgres/data             # PostgreSQL data
+/ssd-data/infra/rustfs                    # RustFS object data
+/ssd-data/infra/registry/                 # registry data; auth/htpasswd (bcrypt)
+/ssd-data/infra/redis-prod/               # docker-compose.yml + docker-compose.override.yml, data/ (AOF)
+/ssd-data/infra/gitlab/{deploy,secrets}   # GitLab stack deploy dir and mode-0600 secret sources
+/ssd-data/infra/backup/secrets/rclone.conf
+/ssd-data/infra/services/databasus-verification/
+/ssd-data/infra/backups/version-upgrade-20261031/   # pre-upgrade archives, specs, rollback sources
 ```
 
----
+Edge route source of truth: `homelab-ops/migration/traefik/dynamic.yml`
+(the generated `routes/` output is not live yet).
 
-## 📐 System Architecture & Service Connections
+## Networking and ports
 
-Pi5 supplies datastore and HTTP backend services to VM100 over purpose-specific
-attachable Swarm overlays (`pg-net`, `s3-net`, and `homelab-net`) and is also the
-active home edge. The normal public
-path is VPS `gateway-traefik` -> shared Rathole -> Pi5 standalone
-`edge-traefik-pi5`. Pi5 `edge-adguardhome-pi5` resolves active split-horizon
-names to the Pi5 edge on the LAN. The old Orange Pi edge is down and the old
-Swarm edge services are scaled to zero.
+Public path: VPS `gateway-traefik` (HostSNI) → VPS Rathole → `edge-rathole-pi5`
+→ `edge-traefik-pi5` → service (VM100 services via `tasks.<service>` DNSRR).
+Overlays used by Pi5 datastores: `pg-net`, `s3-net`, `homelab-net`,
+`gitlab-net`, `edge-http-net`, `data-net`.
 
-![NetBird server, relay and STUN boundaries](./assets/diagrams/netbird-relay.svg)
+Host-port exceptions (everything else is portless):
 
----
+| Bind | Service | Consumers |
+|---|---|---|
+| `:80`, `:443` | edge Traefik | Rathole / LAN clients |
+| `:53` | AdGuard | LAN DNS (unverified bind) |
+| `10.10.0.5:5432` | PgBouncer (not raw PostgreSQL) | LAN clients not yet on overlay |
+| `10.10.0.5:16379` | redis-prod | Mac / LAN clients |
+| `10.10.0.5:15984` | couchdb-backup-proxy | VM100 backup relay only |
+| `10.10.0.5:8428`, `:9093` | VictoriaMetrics, Alertmanager | LAN |
 
-## 🔒 Portless Security & Ingress Invariants
+PostgreSQL must never get an edge route or a public port. GitLab is the only
+client using direct `postgres:5432` (session-mode pooler); everything else uses
+`pgbouncer:6432`.
 
-### 1. Controlled Host Port Exposure
+## Datastore contents
 
-Pi5 core services remain portless unless an inventoried exception requires
-LAN access. PostgreSQL remains unchanged: the raw container is internal and
-PgBouncer continues to provide the existing `10.10.0.5:5432` client endpoint.
-The VM100 n8n, Family Tree, OCR proxy, and MyPocket services use the equivalent
-private overlay endpoint `pgbouncer:6432`; GitLab alone uses direct
-`postgres:5432` because the current pooler is session-mode. The LAN mapping remains for clients
-that have not migrated.
-Redis-prod remains the other documented LAN datastore endpoint on `:16379`.
-RelayHub application compute was moved to VM100; the old Pi5 RelayHub
-API/worker/NATS containers are stopped and only the RelayHub PostgreSQL
-container remains healthy for datastore duty. The 2026-09-15 audit also found
-monitoring `alertmanager:9093`/`victoriametrics:8428` host binds. Both are now
-LAN-bound at `10.10.0.5:9093` and `10.10.0.5:8428`. See the
-[network audit](./research/network-segmentation-2026-09-15.md) and
-[resource inventory](./research/resource-limit-audit-2026-09-15.md).
+- **PostgreSQL** (17 databases at the 2026-10-31 dump): includes `n8n`,
+  `homelab`, `relayhub` (legacy Go, rollback only),
+  `relayhub_v1_staging_20261030` (live RelayHub v1), `netbird`,
+  `netbird_activity`, `netbird_idp`, `gitlabhq_production` (owner `gitlab`;
+  extensions `amcheck`, `btree_gist`, `pg_trgm`), `family_tree`, `macocr`,
+  `mypocket`, `whiteboard`, `bds_prod` (app retired, data retained), and
+  retired `goclaw`/`omniscan`. Inventory query:
+  `docker exec postgres psql -U admin -d postgres -Atc "SELECT datname FROM pg_database WHERE NOT datistemplate"`.
+- **Redis-prod**: AOF on, `maxmemory 1gb`, `noeviction`, `requirepass`.
+  DB 0 macocr-proxy, DB 1 MyPocket, DB 2 GitLab. Swarm clients use
+  `redis-prod:6379` on `homelab-net`/`gitlab-net`. Always run Compose with
+  **both** the base and override files — base-only recreate drops the
+  `gitlab-net` attachment. See [GitLab ↔ Redis runbook](./runbooks/gitlab-redis-network.md).
+- **Registry**: user `dungxbuif`; credentials in `local_vars.json`
+  (`LEGACY_SYSTEM_SECRETS.REGISTRY_USER` / `REGISTRY_PASSWORD`) and 1Password.
 
-- **PostgreSQL (`postgres`)** does not declare `ports`. A host scan **does**
-  see Pi5 `:5432` open because PgBouncer publishes that port; it does not
-  expose the raw PostgreSQL container.
-- **RustFS S3 (`rustfs`)** does not expose ports `9000` or `9001` directly to the host. External S3 client requests are securely routed via subdomains: S3 API via `storage.dungxbuif.com` and S3 Console via `cdn.dungxbuif.com`.
+## Known issues
 
-### 2. Edge Routing Boundary
+- `cloudflared` (native systemd 2026.10.7) loops in `activating/auto-restart`:
+  the token returns `Unauthorized: Tunnel not found`. Needs the Cloudflare
+  owner to reissue the tunnel; no live route depends on it. Old binary SHA-256
+  for rollback: `03c5d58e…`; artifacts in the backup dir above.
+- Stale Docker networks remain (`bds-app_bds_network`, `datcom_default`,
+  `dungxbuif_default`, `traefik_proxy`, `relayhub_relayhub`, …).
+- Databasus verification agent needs Docker access; `userns-remap` is disabled.
 
-TLS and route ownership live on the Pi5 standalone Traefik. The canonical
-router and service definitions are in [`../migration/traefik/dynamic.yml`](../../../projects/homelab-ops/migration/traefik/dynamic.yml).
-Pi5-backed routes currently include:
+## Operations
 
-- Dynamic subdomain mapping routes requests as follows:
-    - `cdn.dungxbuif.com` →→ proxied internally to `rustfs:9001` (S3 Web Console)
-    - `storage.dungxbuif.com` →→ proxied internally to `rustfs:9000` (S3 API)
-    - `registry.dungxbuif.com` →→ proxied internally to `registry:5000` (Private Docker Registry)
-    - `couchdb.dungxbuif.com` and `sync-db.dungxbuif.com` -> `couchdb:5984`
+- Change one service at a time: back up source + data, apply, smoke, record
+  rollback. Never use `latest` in new Compose entries; no new host ports
+  without an explicit request.
+- Backups: Databasus (Pi5 PostgreSQL jobs, verified restores for the six
+  approved service DBs) and the db-management stack on VM110. See
+  [backup runbook](./runbooks/backup-restore.md) and
+  [Databasus operations](./runbooks/databasus-backup-operations.md).
 
-n8n is no longer a Pi5-hosted edge route; it now runs on VM100 and uses Pi5
-PostgreSQL database `n8n` through the private `pgbouncer:6432` overlay
-endpoint (changed from the equivalent LAN PgBouncer mapping on 2026-09-15).
-RelayHub is likewise no longer a Pi5-hosted app; VM100 runs the Rust API/Admin
-UI/NATS/Redis, while Pi5 keeps PostgreSQL database
-`relayhub_v1_staging_20261030` for the public v1 stack. Legacy database
-`relayhub` remains retained only for rollback of the old Go runtime.
-GitLab runs on VM100 and its public HTTPS/SSH routes are live through isolated
-VPS tunnels; no Orange Pi GitLab route is active. Grafana
-remains retired. See [GitLab service runbook](./services/gitlab.md) for the
-temporary route and rollback.
-PostgreSQL is not an edge route and must not be added to the Traefik dynamic
-configuration.
+## Rollback (current upgrade set)
 
----
-
-## 🎛️ Network, Container & Technical Parameters Blueprint
-
-Below is the core datastore/HTTP mapping for Pi5. It is not a complete
-container inventory; telemetry and RelayHub development containers are
-listed in the [resource audit](./research/resource-limit-audit-2026-09-15.md).
-
-### 1. Container Allocation & Service Matrix
-
-|Service|Container Name|Docker Image & Version|Port Mapping (Host / Container)|Subdomain Routing / Ingress Target|Core Purpose & Technical Parameters|
-|---|---|---|---|---|---|
-|**RustFS Storage**|`rustfs`|`rustfs/rustfs:1.0.4@sha256:ed9210d6…`|**Portless** on `edge-http-net`, `homelab-net`, `proxy_net`, and `s3-net`|`storage.dungxbuif.com` (S3 API) <br>`cdn.dungxbuif.com` (Console)|ARM64 S3 storage; ports 9000/9001 internal. `s3-net` is the VM100 native-backup path.|
-|**Private Registry**|`docker-registry`|`registry:2`|**Portless** on `edge-http-net`, `homelab-net`, and `proxy_net`|`registry.dungxbuif.com`|Docker image registry on Pi5 SSD.|
-|**Centralized PostgreSQL**|`postgres`|`pgvector/pgvector:pg16@sha256:7b822b0a…` (PostgreSQL 16.15)|**Portless** on `pg-net` and `proxy_net`; PgBouncer maps LAN `:5432` to pooler `:6432`|Direct container DNS `postgres:5432` only for approved clients such as GitLab; LAN `10.10.0.5:5432` is PgBouncer, not raw PostgreSQL; no edge route|Pinned backend DB serving Pi5 apps and approved VM100 services. Raw PostgreSQL is no longer on `homelab-net`.|
-|**CouchDB**|`couchdb`|`couchdb:3.5.3@sha256:bed314d1…`|**Portless** on `edge-http-net`, `homelab-net`, and `proxy_net`|`couchdb.dungxbuif.com` <br>`sync-db.dungxbuif.com`|Obsidian sync and document databases; the backup proxy is private and separate from the public routes.|
-
-The retired `my-cv` container is not part of the running Pi5 inventory.
-The Pi5 `docker-registry` is still the production image registry. GitLab's
-separate VM100 bundled Registry trial at `registry-gitlab.dungxbuif.com`
-does not replace this container or its Pi5 SSD storage; native lab
-Docker/Swarm pulls are not yet verified for the trial domain. See
-[GitLab Registry trial](./deployments/gitlab-registry-trial-2026-09-16.md).
-Public `dungxbuif.com` is served by VM100 Swarm `tasks.homepage:80` through
-the active Pi5 Traefik; the old VM100 Compose `:18081` path is stopped rollback.
-
----
-
-## 🔑 Docker Registry Credentials & Shared CI/CD Spec
-
-- **Domain Endpoint**: `https://registry.dungxbuif.com`
-- **Authentication Engine**: HTTP Basic Authentication via Htpasswd (`/ssd-data/infra/registry/auth/htpasswd`)
-- **Active Service User**: **`dungxbuif`**
-- **Password Encryption**: Apache Bcrypt (`$2y$`)
-- **Local Secret Reference**: `local_vars.json` $\rightarrow$ `LEGACY_SYSTEM_SECRETS.REGISTRY_USER` / `REGISTRY_PASSWORD`
-- **Client login:** use the registry credentials from `local_vars.json`; do not
-  duplicate them in repository files.
-
----
-
-## 📂 Volume Allocation & Container Management Invariants
-
-To keep the home lab on the Raspberry Pi 5 clean, easy to backup, and immune to volume conflicts or permission issues, all service configurations must adhere strictly to these three rules:
-
-### Rule 1: Centralized Architecture (Single Infrastructure Stack)
-
-- Every single microservice container in the Home Lab stack must be declared inside the centralized Docker Compose file: `/ssd-data/infra/docker-compose.yml`.
-- **DO NOT** spread compose files or standalone docker containers across disparate host folders. Stacking them together makes backup operations as simple as taking a snapshot of the `/ssd-data/infra` directory.
-
-### Rule 2: Service-Named Volume Folders (Volume Folder Convention)
-
-All bind mounts mapped from the host filesystem into container layers must declare relative paths and group neatly under service-named subfolders `./<service-name>/...`:
-
-1. **Static Files & Configuration Files (Static Config):** Mount single config files directly or group configurations in `./<service-name>/config` or `./<service-name>/auth`.
-2. **Dynamic Volumes & Databases (Dynamic Data):** Group files inside `./<service-name>/data` or `./<service-name>/db_storage`.
-    - _Examples:_
-        - RustFS: `./rustfs:/data` (S3 object storage files live cleanly inside `./rustfs`)
-        - PostgreSQL Central: `./postgres/data:/var/lib/postgresql/data`
-
-### Rule 3: Smart Centralized Backup
-**Status (2026-09-13): existing directory-upload job, owner-confirmed.** The
-current mechanism uploads a whole directory to Google Drive. Its database-aware
-coverage, consistency, schedule and restore behavior have not been verified.
-The earlier assessment that no backup solution existed was incorrect: the gap
-is reliable multi-engine database backup, not the absence of Drive uploads.
-Pi5 should remain a dedicated datastore; backup orchestration belongs on VM100.
-
-See [Google Drive database backup proposal](./research/google-drive-db-backup-2026-09-13.md)
-for the proposed replacement. It is not deployed.
-
-#### Historical Backup Description (Unverified)
-The previous documentation claimed the following automated strategy:
-*   **Tools:** `rclone` (Google Drive Integration) + `zip` + `pg_dump`.
-*   **Strategy:**
-    *   **PostgreSQL:** Automated daily `.sql` dumps prior to compression to ensure complete database transactional integrity.
-    *   **Ingress & Application Data:** Backs up all critical configuration and persistent asset folders inside `/ssd-data/infra` (excluding temporary caches, runtime log files, and netdata profiles).
-    *   **Frequency:** Every day at 01:00 AM local time.
-*   **Retention Policy:** Retains backups locally for 7 days (stored under `/tmp/backups`) and remotely on Google Drive for 30 days (stored under `server-backups` directory).
-
-### Current backup implementation (2026-10-13)
-
-The whole-directory upload description above is historical and is not the
-current recovery contract. The active implementation keeps Pi5 as the online
-datastore/RustFS host and exports PostgreSQL/CouchDB logically, RustFS through
-S3, and GitLab through its native VM100 workflow. A complete local database
-run and isolated restore rehearsal are recorded in
-[the 2026-10-05 evidence note](./deployments/backup-restore-rehearsal-2026-10-05.md).
-VM100 systemd timers now own the schedule and Pi5 remains the online
-datastore/object executor. The latest database, RustFS, and GitLab success
-markers plus remote snapshot IDs are in the [runtime inventory](./deployments/runtime-inventory-2026-10-13.md).
-Redis uses a separate RDB/AOF service backup path; NATS remains excluded. The
-combined Semaphore health check passed as
-task 57 on 2026-10-15 with free space, lock state, and all three class markers
-within policy; remote Drive restore acceptance is recorded in the [restore-drill acceptance](./deployments/backup-restore-drill-acceptance-2026-10-21.md); monthly execution remains an operational observation item.
-
----
-
-## 🪵 Key Troubleshooting Registry & Decisions
-
-1. **Current AdGuard placement (2026-10-13):** DNS runs as the standalone
-   `edge-adguardhome-pi5` container on Pi5 `10.10.0.5`. The old Orange Pi
-   `edge_adguardhome` service is `0/0` and must not be restored implicitly.
-
----
-
-## 🗄️ Database Management
-All system databases are centrally hosted within the `postgres` container (fronted by PgBouncer on `:5432`) on the Raspberry Pi 5, and shared by approved Pi5, VM100, and Mac dependency workloads.
-Legacy K8s-era database history (not a current inventory):
-[archived/k8s-v2/k8s/DB_INVENTORY.md](./archived/k8s-v2/k8s/DB_INVENTORY.md).
-
-GitLab CE 18.11.11 has its own `gitlabhq_production` database and `gitlab`
-owner role in this same PostgreSQL instance. Extensions `amcheck`,
-`btree_gist`, `pg_trgm`, and `plpgsql` are installed. Its Swarm service on
-VM100 connects privately to `postgres:5432`; DB credentials are a Swarm
-secret, not stored in this document. Pi5 PostgreSQL remains capped at
-2 GiB/1.5 CPU. See [GitLab service runbook](./services/gitlab.md).
-
-### Batdongsan database migration
-
-On 2026-09-13, the Batdongsan production database was restored from the VPS
-snapshot into the Pi5 central PostgreSQL service:
-
-- Database: `bds_prod`
-- Role: `bds_user`
-- Verified data: `listings=31`, `users=4`
-- Backup source retained on VPS: `/root/backup-bds/bds_prod_snapshot_20260913_121113.sql`
-- Snapshot SHA256: `9baa9613153312519e005c72ffc5b8237a2adbdf40e682cb8ba17708fcaf692e`
-
-For container-only access, both `postgres` and `pgbouncer` are attached to the
-attachable Swarm overlay `homelab-net`:
-
-```text
-build-time:  postgres:5432
-runtime:     pgbouncer:6432
-```
-
-Do not expose this database through Cloudflare Tunnel or host ports. The former
-BDS app route and its VM100 tunnel container are retired/absent and were not
-recreated. Current Cloudflared runs natively as a Pi5 systemd unit, separate
-from the data plane; it is currently degraded because the Cloudflare control
-plane reports `Unauthorized: Tunnel not found`.
-
-### NetBird databases
-
-On 2026-09-13, the VM100 NetBird bootstrap was moved from its initial SQLite
-volume to Pi5 PostgreSQL:
-
-- Role: `netbird`
-- Databases: `netbird`, `netbird_activity`, `netbird_idp`
-- Access path: `pgbouncer:6432` over `homelab-net`
-- Verified schema counts: `39`, `2`, and `13` public tables respectively
-
-NetBird still runs on VM100 as Swarm services. Pi5 stores the data only and
-must not run the NetBird dashboard or management server.
-
----
-
-## ⚡ Redis-Prod (v3 NEW)
-
-A **standalone** Redis instance was added on the Pi5 to back approved production
-workloads (macocr-proxy queue and approved service state). It is intentionally **not** part of
-the centralized `docker-compose.yml` because it binds a host port for LAN
-access from the Mac:
-
-| | |
----|---|
-Compose | `/ssd-data/infra/redis-prod/docker-compose.yml` |
-Image | `redis:7.2-alpine@sha256:2c933526…` (pinned, arm64; Redis 7.2.17) |
-Bind | `10.10.0.5:16379` (uncommon port — avoids dev `6379` clashes) |
-Auth | password (`requirepass`) — see `local_vars.json` |
-Persistence | AOF (`appendonly yes`) |
-Memory | `maxmemory 1gb`, `noeviction` (writes fail at cap instead of evicting keys) |
-
-> [!NOTE]
-> This is a **deliberate exception** to the portless principle: approved LAN
-> clients reach Redis over LAN at `10.10.0.5:16379`; Swarm clients use the
-> `redis-prod:6379` alias on `homelab-net`. It is the only Pi5 datastore
-> with a documented Pi5 host-port bind, alongside PgBouncer's LAN `:5432`.
-
-Pi5 has a 4 GiB NVMe-backed swapfile at `/ssd-data/infra/swapfile`, enabled by
-`homelab-pi5-swap.service` with `vm.swappiness=10`. Swap is an OOM buffer, not
-additional physical RAM. See [resource audit](./research/resource-limit-audit-2026-09-15.md).
-
-
-1. **NEVER expose new host ports** in the `docker-compose.yml` unless explicitly requested. All new services must remain isolated inside the virtual virtual network `proxy_net`.
-2. **NEVER use the generic `latest` tag** for system images in compose files. Pin down exact tags (e.g., `rustfs/rustfs:1.0.0-beta.3`, `postgres:16`) to guarantee runtime consistency and predictability.
-3. **DO NOT run invasive host-level commands** with `sudo` if they prompt for password inputs. Leverage helper container volume mounts to modify files with root/non-root UID restrictions.
-4. **ALWAYS keep verification scripts updated** inside `/ssd-data/scratch/` whenever security rules or credentials change to ensure CI/CD workflows and automatic verification procedures continue to pass cleanly.
-5. **MANDATE ARM64 Compatibility:** Because this home lab runs on a single-board **Raspberry Pi 5 (ARM64 architecture)**, any new docker image or backend library added to compose must explicitly support the `linux/arm64` platform target. All compiled binaries inside `rathole-build` must target ARM instruction sets.
+Pre-upgrade archives, Compose sources and service specs for every 2026-10-31
+change are under `/ssd-data/infra/backups/version-upgrade-20261031/<service>/`;
+previous images remain in the local image cache. For a stateful service: stop
+it, restore the previous image reference in the Compose source, start it, and
+restore its archive only if data is incompatible. PgBouncer's previous
+container is retained as `pgbouncer-rollback-version-upgrade` (image tag
+`edoburu/pgbouncer:rollback-version-upgrade`). Never delete or recreate a data
+volume as a first response.

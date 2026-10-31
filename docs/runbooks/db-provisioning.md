@@ -1,3 +1,10 @@
+---
+type: Runbook
+title: "Database Provisioning Runbook"
+description: "Provision a database and owner through Semaphore, then enroll it in Databasus"
+timestamp: 2026-10-31T00:00:00+07:00
+---
+
 # Database Provisioning Runbook
 
 ## Contract
@@ -21,9 +28,10 @@ Semaphore sends the validated request to the internal `homelab-provisioner`
 service; the UI itself has no Docker socket and no database credentials. After
 the native create and connectivity smoke test succeed, the provisioner
 atomically adds the resource to the canonical backup catalog. A failed
-provision will never create an inventory entry. The next database backup run
-reads that catalog, so no backup script or schedule edit is needed for a newly
-created application.
+provision will never create an inventory entry. The restic `databases` class
+reads that catalog on its next run; note that this runner currently has **no
+schedule** (no VM100 backup timers), so the Databasus job below is the only
+scheduled backup for a new PostgreSQL database.
 
 The catalog stores the engine, resource name, application, lifecycle, policy ID,
 and secret reference only. A complete nightly live-resource drift check is a
@@ -106,9 +114,7 @@ not silently rotate a live application's password.
 The current implementation uses `swarm:<secret-name>` references. A new credential is
 generated in memory and written directly to a Swarm secret; the value is never
 returned in the API response or job log. If the secret already exists, the
-workflow will not rotate it implicitly. Production backup schedules remain
-owned by the VM100 systemd runner and read the catalog after successful
-provisioning. Use a staging name for the first request; do not use a destructive
+workflow will not rotate it implicitly. Use a staging name for the first request; do not use a destructive
 drop/rename operation to “reset” an existing production database.
 
 ## Current Semaphore form
@@ -132,7 +138,6 @@ playbook's HTTP operation is skipped in check mode and it has no dedicated
 validation-only API flow. Use the local validator above for request validation;
 normal template execution is the mutating create operation. A successful job
 prints the engine, resource name and changed flag, not the generated password
-or a full connection string. The project currently has seven templates and one
-owner membership; see the [automation UI guide](automation-operations.md).
-Old task history remains for audit. Fine-grained operator RBAC and a supported
-UI preview are still required before the full control-plane rollout is complete.
+or a full connection string. The project has seven templates and one owner
+membership; see the [automation UI guide](automation-operations.md).
+Fine-grained operator RBAC and a supported UI preview do not exist yet.

@@ -14,7 +14,7 @@ The product promise is managed integration: a consumer connects their applicatio
 
 The source already contains `web/docs/docusaurus.config.js`, `sidebars.js`, `docs/`, `static/llms.txt`, generated `static/llms-full.txt`, and integration skill/SDK ZIPs. `web/docs/scripts/build-public-guide.mjs` gathers tutorial pages and invokes `backend/scripts/build-skill.sh` and `build-llms.sh`. Those scripts build deterministic archives/text, but public static Markdown duplicates some tutorial content and describes Go/v2 behavior. The skill includes an OpenAPI snapshot; it must not silently become an unverified Rust v1 contract.
 
-The site currently uses English and Docusaurus 3.x from its committed lockfile. Keep both unless the user asks otherwise. This work does not require upgrading the docs framework. Centrifugo/room/Yjs capabilities are proposed in the [realtime design](2026-10-31-relayhub-centrifugo-fork-design.md), not implemented merely because upstream repos were cloned. The original [Rust v1 design](2026-10-29-relayhub-rust-v1-design.md) remains the source for durable/webhook behavior.
+The site currently uses English and Docusaurus 3.x from its committed lockfile. Keep both unless the user asks otherwise. This work does not require upgrading the docs framework. Centrifugo/room/Yjs capabilities are proposed in the [realtime design](2026-10-31-relayhub-centrifugo-fork-design.md), not implemented merely because upstream repos were cloned. The original Rust v1 design (RelayHub v1 design, in git history) remains the source for durable/webhook behavior.
 
 ## Approaches and proposed choice
 
