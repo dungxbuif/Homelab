@@ -227,6 +227,33 @@ than being filled from an unapproved source.
 - Schedules remain daily `0 8 * * *` and watcher `*/10 8-21 * * *`.
 - Delivery remains runtime-injected through `MEZON_GOLD_PROD_WEBHOOK_URL`;
   no webhook value was printed or written to the artifact.
+
+## Workflow overwrite audit — 2026-10-31
+
+The repeated overwrite was traced to an identity collision, not to Git or the
+Swarm service replacing workflow data. The old homelab artifact and the current
+production artifact both use the n8n workflow ID `daily-gold-fuel-mezon`:
+
+- The legacy source `examples/generate-price-workflow.cjs` still hard-codes
+  that ID and the old name `Daily Gold & Fuel Report to Mezon`.
+- The protected VM100 snapshot
+  `/opt/apps/n8n/data/kh-backup-20261025-023555/daily-gold-fuel-mezon.json`
+  contains the same ID, is `active: true`, and has the old 7-node shape.
+- Importing either artifact targets the same n8n workflow identity; the last
+  import therefore wins and can make the current 20-node workflow appear to be
+  overwritten by the old homelab workflow.
+
+The audit did not find a live homelab import job or a recent n8n workflow
+mutation event. The homelab deployment spec only changes the n8n service image;
+it does not import workflow JSON. At audit time the published workflow was
+still active, named `Hanoi Gold Price Fallback - PROD`, with 20 nodes and the
+five-brand post-SJC-removal shape. The concrete trigger for an earlier import
+is therefore not proven to be automatic; a manual/legacy import remains the
+most likely trigger.
+
+Preventive cleanup before the next push: quarantine the legacy generator from
+normal deployment paths, keep the historical snapshot rollback-only, and add
+a guard that rejects any non-canonical artifact carrying the production ID.
 - VM100 n8n restarted through the Swarm manager and returned healthy; public
   `/healthz` returned `{"status":"ok"}`. No manual production webhook was sent.
 
