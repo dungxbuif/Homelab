@@ -43,3 +43,10 @@ without deleting `portainer_portainer_data`. The replacement task is Running
 on `rpivn`; three consecutive LAN probes returned HTTP 200 in under 0.1s, and
 all four Agent tasks remained Running. No startup error, timeout, or connection
 failure appeared in the recent service logs.
+
+## Access correction — 2026-10-31
+
+The Portainer route returned `403` for a client reaching Pi5 through the
+NetBird overlay. The route remains LAN-only, with the private NetBird range
+`100.69.0.0/16` added to the existing local-network allowlist; public traffic
+is still rejected.
