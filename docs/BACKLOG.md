@@ -113,3 +113,4 @@ canaries, keep a bounded rollback. Ledger:
 | D4 | Third-party docs: move `n8n-nodes-mezon` into Git; decide BDS leftovers (`bds-app_bds_network`, `bds_prod`) | Repo exists / leftovers retired | P5 | open |
 | A1 | Build the automation glue: `hl new`, doc-bot, gate-bot, nightly/weekly reports, issue automation ([flows](./standards/automation-flows.md)) | Homepage completes flows A1–A10 with approvals only | P4b | open |
 | A2 | Maintenance flows: unattended security patches, monthly rolling reboot, pinned Docker engine, weekly cleanup | Nightly check `changed=0`; reboot run receipt | P2 | open |
+| C6 | One registry for the whole lab: GitLab protection plan G1–G6 (verified backup → VM 120 → registry on RustFS → move all images incl. third-party → delete `registry.dungxbuif.com`) | [GitLab protection plan](./superpowers/plans/2026-10-31-gitlab-protection-and-registry-consolidation.md) exit for G6 | P0.5–P4 | open |

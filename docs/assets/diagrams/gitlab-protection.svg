@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="750" viewBox="0 0 1400 750" role="img" aria-labelledby="title desc">
+  <title id="title">GitLab protection</title>
+  <desc id="desc">GitLab runs self-contained on VM 120. Daily native backups and secrets go to RustFS on Pi5 and encrypted to Google Drive; registry blobs live on RustFS; VM images and GitHub mirrors add more copies. A monthly automated drill restores from Drive into a throwaway VM and checks the result.</desc>
+  <defs><marker id="a-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#2f6fed"/></marker><marker id="a-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#1f9d8b"/></marker><marker id="a-ok" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#16a34a"/></marker><marker id="a-red" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#c2413b"/></marker><marker id="a-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7c5cfc"/></marker><marker id="a-pink" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#db2777"/></marker><marker id="a-muted" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7b8798"/></marker><style>
+.bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.white{fill:#fff}
+.small{font:14px sans-serif}.tiny{font:12.5px sans-serif}.body{font:16px sans-serif}.bold{font:700 16px sans-serif}
+.head{font:700 21px sans-serif}.title{font:700 30px sans-serif}.pill{font:700 13px sans-serif;letter-spacing:.5px}
+.card{stroke-width:2}.edge{fill:#eaf2ff;stroke:#2f6fed}.data{fill:#eafaf6;stroke:#1f9d8b}
+.compute{fill:#f1edff;stroke:#7c5cfc}.host{fill:#fff;stroke:#b8c2d1}.note{fill:#fff7e8;stroke:#d97706}
+.retired{fill:#fff1f1;stroke:#c2413b}.ops{fill:#ecfdf3;stroke:#16a34a}.ctrl{fill:#fdf2f8;stroke:#db2777}
+.flow{fill:none;stroke:#2f6fed;stroke-width:3.5;marker-end:url(#a-blue)}
+.dflow{fill:none;stroke:#1f9d8b;stroke-width:3.5;marker-end:url(#a-green)}
+.gflow{fill:none;stroke:#16a34a;stroke-width:3.5;marker-end:url(#a-ok)}
+.rflow{fill:none;stroke:#c2413b;stroke-width:3;stroke-dasharray:8 7;marker-end:url(#a-red)}
+.pflow{fill:none;stroke:#7c5cfc;stroke-width:3.5;marker-end:url(#a-purple)}
+.kflow{fill:none;stroke:#db2777;stroke-width:3.5;marker-end:url(#a-pink)}
+.dashed{fill:none;stroke:#7b8798;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#a-muted)}
+</style></defs>
+  <rect class="bg" width="1400" height="750"/>
+  <text class="title ink" x="50" y="58">GitLab protection</text>
+  <text class="body muted" x="52" y="88">Plan 2026-10-31 • dedicated VM • 3-2-1 copies • a backup only counts after a restore drill passes</text>
+  <rect class="compute card" x="50" y="120" width="420" height="600" rx="18"/>
+  <text class="pill" x="72" y="152" fill="#7c5cfc">TARGET · Proxmox VM 120</text>
+  <text class="head ink" x="72" y="184">GitLab (self-contained)</text>
+  <text class="small muted" x="72" y="210">4 vCPU · 12 GiB · own lifecycle</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="230" width="376" height="130" rx="12"/>
+  <text class="bold ink" x="88" y="256">GitLab Omnibus (compose, Ansible)</text>
+  <text class="small muted" x="88" y="278">bundled PostgreSQL + Redis</text>
+  <text class="small muted" x="88" y="298">repos · uploads · artifacts · CI</text>
+  <text class="small muted" x="88" y="318">registry service → blobs on RustFS</text>
+  <rect class="note card" x="72" y="376" width="376" height="110" rx="12"/>
+  <text class="bold ink" x="88" y="402">L1 gitlab-backup create (daily)</text>
+  <text class="small muted" x="88" y="424">SKIP=registry · 02:00</text>
+  <text class="small muted" x="88" y="444">+ L2 gitlab.rb + gitlab-secrets.json</text>
+  <rect class="note card" x="72" y="502" width="376" height="96" rx="12"/>
+  <text class="bold ink" x="88" y="528">L6 vzdump VM 120</text>
+  <text class="small muted" x="88" y="550">weekly + before every upgrade</text>
+  <text class="small muted" x="88" y="570">→ off-host target (B3)</text>
+  <rect class="note card" x="72" y="614" width="376" height="90" rx="12"/>
+  <text class="bold ink" x="88" y="640">L7 push mirrors → GitHub</text>
+  <text class="small muted" x="88" y="662">homelab-ops · vault · deployed app repos</text>
+  <rect class="data card" x="560" y="120" width="380" height="300" rx="18"/>
+  <text class="pill" x="582" y="152" fill="#1f9d8b">IN LAB · OTHER HOST</text>
+  <text class="head ink" x="582" y="184">Pi5 RustFS</text>
+  <rect class="data card" x="582" y="220" width="336" height="80" rx="12"/>
+  <text class="bold ink" x="598" y="246">gitlab-backups</text>
+  <text class="small muted" x="598" y="268">versioning + object lock 7 days</text>
+  <rect class="data card" x="582" y="316" width="336" height="80" rx="12"/>
+  <text class="bold ink" x="598" y="342">gitlab-registry (L5)</text>
+  <text class="small muted" x="598" y="364">image blobs · versioning</text>
+  <rect class="edge card" x="560" y="450" width="380" height="270" rx="18"/>
+  <text class="pill" x="582" y="482" fill="#2f6fed">OFF-SITE</text>
+  <text class="head ink" x="582" y="514">Outside the lab</text>
+  <rect class="edge card" x="582" y="550" width="336" height="70" rx="12"/>
+  <text class="bold ink" x="598" y="576">Google Drive (restic, encrypted)</text>
+  <text class="small muted" x="598" y="598">7 daily · 4 weekly · 6 monthly</text>
+  <rect class="ctrl card" x="582" y="632" width="336" height="70" rx="12"/>
+  <text class="bold ink" x="598" y="658">1Password</text>
+  <text class="small muted" x="598" y="680">secrets + gitlab-secrets.json</text>
+  <path class="gflow" d="M448 420 C510 420 520 260 582 260"/>
+  <path class="dflow" d="M448 300 C510 300 520 356 582 356"/>
+  <path class="gflow" d="M918 260 C990 260 990 585 918 585"/>
+  <rect fill="#f7f8fb" x="941.2" y="405" width="117.60000000000001" height="21" rx="6"/>
+  <text class="small muted" x="1000" y="420" text-anchor="middle">restic → Drive</text>
+  <path class="kflow" d="M448 440 C520 440 520 667 582 667"/>
+  <rect class="ops card" x="1000" y="120" width="350" height="600" rx="18"/>
+  <text class="pill" x="1022" y="152" fill="#15803d">VERIFY (monthly, automated)</text>
+  <text class="head ink" x="1022" y="184">Restore drill</text>
+  <text class="body ink" x="1022" y="230">1. tofu: throwaway VM, same version</text>
+  <text class="body ink" x="1022" y="264">2. restore latest FROM DRIVE</text>
+  <text class="body ink" x="1022" y="298">3. secrets from 1Password</text>
+  <text class="body ink" x="1022" y="332">4. gitlab:check + doctor:secrets</text>
+  <text class="body ink" x="1022" y="366">5. project/repo counts = manifest</text>
+  <text class="body ink" x="1022" y="400">6. clone 3 repos, HEAD sha match</text>
+  <text class="body ink" x="1022" y="434">7. CI vars decrypt · pull 1 digest</text>
+  <text class="body ink" x="1022" y="468">8. record RTO / RPO → vault + Mezon</text>
+  <text class="body ink" x="1022" y="502">9. destroy VM</text>
+  <rect class="retired card" x="1022" y="560" width="306" height="140" rx="12"/>
+  <text class="bold ink" x="1038" y="586">Alerts</text>
+  <text class="small muted" x="1038" y="608">off-site copy &gt; 26 h old</text>
+  <text class="small muted" x="1038" y="628">size change &gt; ±30%</text>
+  <text class="small muted" x="1038" y="648">drill failed</text>
+  <text class="small muted" x="1038" y="668">→ Mezon + GitLab issue</text>
+  <path class="dashed" d="M1000 585 H940"/>
+</svg>

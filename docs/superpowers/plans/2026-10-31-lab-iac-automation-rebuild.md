@@ -390,7 +390,7 @@ Audit 2026-10-31: 15 Swarm service tạo tay bằng `docker service create` (kh�
 - [ ] Bot bump digest mở MR vào `homelab-ops` (`env/stg.yml`, `env/prod.yml`).
 - [ ] Staging namespace `stg-<app>`, domain `<app>.stg.dungxbuif.com` (lan).
 - [ ] Generator golden path từ `app.yml` (§3.5) và policy gate cho stack.
-- [ ] Registry: GitLab Registry là registry duy nhất cho app, Pi5 thành pull-through mirror T1 ([quyết định](../../standards/registry.md)).
+- [ ] Registry: **một registry duy nhất** là GitLab Registry, cho cả image của mình lẫn image bên thứ ba (job mirror trong CI). Xoá registry trên Pi5 ([quyết định](../../standards/registry.md)).
 - **Exit:** homepage chạy trọn stg → prod → rollback thử.
 
 ### P4b: Tự động hoá trọn flow (2 tuần)

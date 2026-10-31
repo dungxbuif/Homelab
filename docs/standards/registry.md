@@ -1,7 +1,7 @@
 ---
 type: Decision
 title: Container Registry Decision
-description: GitLab Container Registry is the single lab registry with its storage on RustFS (Pi5); the Pi5 registry becomes a pull-through mirror for tier-1 images
+description: One registry for the whole lab — GitLab Container Registry (storage on RustFS) serves every image, our own and third-party; the Pi5 registry is deleted
 status: draft
 generated:
   by: claude-code/opus-5.5
@@ -21,7 +21,7 @@ stale_after: "2027-01-29T14:00:00+07:00"
 
 ## Decision
 
-**GitLab Container Registry is the only registry for app images in the lab.** The Pi5 registry stays, but only as a **pull-through mirror** for tier-1 infrastructure images.
+**One registry for the whole lab: GitLab Container Registry (`registry-gitlab.dungxbuif.com`).** Every image that runs in the lab, our own and third-party, is pulled from it. The Pi5 `registry:2` (`registry.dungxbuif.com`) is deleted, with no mirror and no second registry. The RustFS bucket is only its storage, not another registry.
 
 Reasons:
 
@@ -72,7 +72,7 @@ CI build → push :<sha> (CI_JOB_TOKEN) → Trivy + SBOM + cosign → digest
 
 - Only CI pushes; humans have no push rights. Tags are `<sha>` and `vX.Y.Z`. `latest` is never used.
 - Cleanup policy: keep the last 10 tags, every `v*` tag and every digest that is currently deployed.
-- Third-party images are pulled through the Pi5 mirror, pinned by digest, and bumped by Renovate MRs.
+- Third-party images (traefik, postgres, n8n, …) are copied into the same registry under `dungxbuif/mirror/<upstream-path>` by a CI job (`skopeo copy --all`, digest preserved) whenever Renovate bumps them. Stacks reference the copy, never Docker Hub or ghcr directly. Docker Hub images may instead use GitLab's built-in Dependency Proxy, which is still the same registry.
 
 ## Required to promote it from "trial" (plan P4)
 
@@ -80,14 +80,21 @@ CI build → push :<sha> (CI_JOB_TOKEN) → Trivy + SBOM + cosign → digest
 2. Back up the bucket and record one restore test.
 3. Make split DNS and the Pi5 route for `registry-gitlab.dungxbuif.com` work from the LAN, so pulls do not hairpin through the VPS. Create a read-only deploy token for Swarm.
 4. Push every local-only image (table above) and re-pin the services by digest (P0.5).
-5. Move MyPocket to GitLab Registry, then stop pushing to `registry.dungxbuif.com`.
+5. Move MyPocket to GitLab Registry, then delete `registry.dungxbuif.com` (archive its 1.5 GiB to Drive first).
+6. Copy the third-party images in use into `dungxbuif/mirror/` and repin the stacks.
 
-## Pi5 mirror (tier T1)
+## Third-party images in the same registry
 
-- Replace `registry:2` with a pull-through cache (`distribution` in proxy mode, or `zot` with sync).
-- It mirrors only the images Pi5 needs in order to come back without VM100: traefik, rathole, adguard, postgres, pgbouncer, redis, couchdb, rustfs and the monitoring images.
-- Docker daemons on Pi5 and VM100 use it as `registry-mirrors`.
+| Source | How it enters the lab registry |
+|---|---|
+| Docker Hub | CI mirror job, or the GitLab Dependency Proxy (`registry-gitlab.dungxbuif.com/dungxbuif/dependency_proxy/containers/...`) |
+| ghcr.io, quay.io, docker.stirlingpdf.com, … | CI mirror job `mirror:<image>`, triggered by the Renovate MR that bumps the digest |
+
+Policy gate: an image reference outside `registry-gitlab.dungxbuif.com` fails the MR. The only exception is the break-glass rebuild of GitLab itself (§Risk accepted).
 
 ## Risk accepted
 
-The GitLab registry *service* still runs on VM100 (tier T3). If VM100 is down, new app images cannot be pulled. Running tasks keep their cached image, and Pi5 tier-1 services still recover from the mirror. Because the blobs live in RustFS on Pi5, a rebuilt GitLab reattaches to the bucket without restoring image data.
+With one registry, GitLab is a dependency for every pull. If GitLab is down, running tasks keep their cached images and nothing stops. Only new deploys and re-pulls wait.
+- GitLab itself (and anything needed to rebuild it) is pulled from upstream, pinned by digest. This is the break-glass exception.
+- Because the blobs live in RustFS on Pi5, a rebuilt GitLab reattaches to the bucket and every image is still there.
+- GitLab is protected as described in the [GitLab protection plan](../superpowers/plans/2026-10-31-gitlab-protection-and-registry-consolidation.md).
