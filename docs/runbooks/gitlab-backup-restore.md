@@ -124,6 +124,16 @@ Consequences to remember:
 
 **Registry (owner decision 2026-10-31):** the old registry is restored and in use again. Data copied from VM100 with `gitlab-registry-restore.py` (stream, no temporary files; the VM100 data is kept until the owner approves its deletion). **Every project must push its images to this registry** (`registry-gitlab.dungxbuif.com`). The registry is not part of the daily backup set (section 7); until the restic class exists its loss is recovered by re-pushing from CI.
 
+**Verified 2026-10-31 after GP7:** registry restored (13.5 GiB, 2 repositories, 11 container repositories in the database, `/v2/` answers 401 through Pi5 and through the VPS); counts still 39 projects, 3 users, 0 groups; a backup run from the Swarm container succeeded (set `20261031T131411Z`, 38 repositories) after the container pattern was changed with `automation/gitlab-backup/deploy-backup-gitlab-host.sh`.
+
+**Still open (owner action or approval needed):**
+
+1. Delete two staged archives on VM120, `/opt/apps/gitlab/data/backups/20261031T062156Z_gitlab_backup.tar` and `...T092228Z_gitlab_backup.tar` (about 900 MB, leftovers of the migration; both sets are complete on Drive).
+2. Restore rehearsal from a set made on the new host, in an isolated instance (needs the age key from 1Password and a host with enough RAM).
+3. Real login, a pipeline on a runner and a registry pull with real credentials.
+4. Instance-level (global) CI/CD variables for the registry need an admin token; per-job `CI_REGISTRY_*` and `CI_JOB_TOKEN` already work for pushes to this registry.
+5. Delete the old data on VM100 (including its 13.5 GiB registry) only after a soak period and with approval.
+
 Older notes from the attempts follow.
 
 To finish: run `GITLAB_AGE_KEY="$(op read ...)" automation/gitlab-backup/gitlab-cutover.py --yes-cut-over` from a terminal where you can approve the 1Password prompt, and approve it when it appears. The run takes about 25 minutes and rolls back by itself on any failure.
