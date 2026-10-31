@@ -114,3 +114,7 @@ canaries, keep a bounded rollback. Ledger:
 | A1 | Build the automation glue: `hl new`, doc-bot, gate-bot, nightly/weekly reports, issue automation ([flows](./standards/automation-flows.md)) | Homepage completes flows A1–A10 with approvals only | P4b | open |
 | A2 | Maintenance flows: unattended security patches, monthly rolling reboot, pinned Docker engine, weekly cleanup | Nightly check `changed=0`; reboot run receipt | P2 | open |
 | C6 | One registry for the whole lab: GitLab protection plan G1–G6 (verified backup → VM 120 → registry on RustFS → move all images incl. third-party → delete `registry.dungxbuif.com`) | [GitLab protection plan](./superpowers/plans/2026-10-31-gitlab-protection-and-registry-consolidation.md) exit for G6 | P0.5–P4 | open |
+| R0 | Measure the Proxmox host (RAM, CPU, thin pool) to pick the [sizing](./superpowers/plans/2026-10-31-compute-layout-and-sizing.md) row | Sizing row chosen; needs Proxmox read-only access | P0 | blocked (access) |
+| R1 | Reclaim unused Docker images: VM100 10.7 GiB, Pi5 49 GiB (images + build cache); `fstrim` VM100 | Space reclaimed, no service touched | P0 | open |
+| R2 | Create VM120 gitlab (6 vCPU / 12 GiB / 100 GiB), move GitLab, then VM100 16→12 GiB and VM110 8→12 GiB + scratch disk | Steps R3–R8 of the compute plan | P2 | open |
+| R3 | Three Swarm managers (Pi5, VM100, VM110) | `docker node ls` shows 3 reachable managers | P2 | open |

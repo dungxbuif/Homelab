@@ -81,8 +81,8 @@ backup-bds/              retained Batdongsan SQL snapshot (unverified still pres
 5. **Verify** via LAN and via the public path, then record the change.
 
 Do not use `edge-registrar/scripts/edge-publish.sh` (targets the retired Caddy
-edge). Route and HostSNI edits are manual until the IaC plan renders them
-from a catalog.
+edge). Route and HostSNI edits are manual until plan P3 lands. The target flow is
+[Domain Routing](./standards/domain-routing.md).
 
 ## Known pitfalls
 

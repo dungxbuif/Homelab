@@ -128,7 +128,7 @@ initialized. Four repositories use GitLab as `origin` (`NoteVault`,
 | `go-study` | `/home/dungxbuif/workspace/projects/go-study/` | `git@github.com:dungxbuif/go-study.git` | Git checkout |
 | `harness` | `/home/dungxbuif/workspace/projects/harness/` | `git@github.com:dungxbuif/harness.git` | Git checkout |
 | `homelab-ops` | `/home/dungxbuif/workspace/projects/homelab-ops/` | `ssh://gitlab.dungxbuif.com:2222/dungxbuif/homelab-ops.git` | Canonical infrastructure-as-code checkout; target of the IaC rebuild plan |
-| `homelab-legacy` | `/home/dungxbuif/workspace/projects/homelab-legacy/` | none | Retained source snapshot; rollback/migration history only, never the deployment source |
+| `homelab-legacy` | `/home/dungxbuif/workspace/projects/homelab-legacy/` | none | Retiring: archive to Drive, then delete (decided 2026-10-31) |
 | `homelab-tunnel` | `/home/dungxbuif/workspace/projects/homelab-tunnel/` | none recorded | Local directory |
 | `homepage` | `/home/dungxbuif/workspace/projects/homepage/` | `ssh://gitlab.dungxbuif.com:2222/dungxbuif/homepage.git` | Git checkout |
 | `k8s-syntax` | `/home/dungxbuif/workspace/projects/k8s-syntax/` | `git@github.com:dungxbuif/k8s-syntax.git` | Git checkout |

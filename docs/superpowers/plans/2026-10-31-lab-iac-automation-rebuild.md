@@ -369,6 +369,9 @@ Audit 2026-10-31: 15 Swarm service tạo tay bằng `docker service create` (kh�
 
 ### P2: Host baseline bằng Ansible (2 tuần)
 
+- [ ] 3 Swarm manager (Pi5, VM100, VM110), có canary theo host và `resource_group` ([reliability](../../standards/reliability.md)).
+- [ ] Phân bổ lại tài nguyên theo [compute layout](./2026-10-31-compute-layout-and-sizing.md) (R0–R8).
+
 - [ ] Role `base` + `docker` chạy ở chế độ quản lý thật, bật dần: check → diff → apply từng host theo thứ tự VM110 → VM100 → VPS → Pi5.
 - [ ] Pin Docker engine thống nhất, nâng cấp có kế hoạch theo từng node vì đang lệch 28.4 → 29.8.
 - [ ] Role `swarm`: gỡ node `orangepizero3`, xoá service `0/0` đã chốt retired, gắn node labels cho placement.
@@ -449,7 +452,11 @@ Catalog đầy đủ: [Automation Flows](../../standards/automation-flows.md).
 | Xoá runtime "retired" | Đối chiếu `policies/retired-runtime.yaml` và xác nhận của owner |
 | Rotate secret | Theo runbook rotation; Swarm secret có version |
 
-## 7. Việc cần chủ lab quyết định
+## 7. Quyết định (đã chốt 2026-10-31, xem [decisions](/docs/decisions.md))
+
+Các mục dưới đây đã được chốt theo đề xuất của plan. Chỉ còn thiếu **quyền truy cập Proxmox và MikroTik, và approve 1Password cho VPS**.
+
+<!-- original questions kept for traceability -->
 
 1. Secret store: **1Password** (khuyến nghị) hay SOPS + age?
 2. DNS public đang ở đâu (Cloudflare hay registrar)? Từ đó chọn provider tofu.

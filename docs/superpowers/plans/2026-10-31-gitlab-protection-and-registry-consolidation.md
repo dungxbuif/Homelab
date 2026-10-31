@@ -28,9 +28,11 @@ Plan con của [IaC automation rebuild](./2026-10-31-lab-iac-automation-rebuild.
 | Sự cố gần đây | GitLab trả HTTP 500 hai lần (16/10 và 31/10), cả hai đều do Redis dùng chung qua overlay. Bản upgrade lên 19.x đang hoãn vì chưa có backup |
 | Registry Pi5 | `registry:2`, 1.5 GiB. Repo: `mypocket-api`, `mypocket-web` (đang dùng), `homepage`, `macocr-proxy`, `omniscan` (cũ). Chỉ MyPocket còn kéo image từ đây |
 
-## 2. Quyết định đề xuất
+## 2. Quyết định (chủ lab uỷ quyền, chốt 2026-10-31)
 
-### 2.1 Tách GitLab sang VM riêng: **có**
+### 2.1 Tách GitLab sang VM riêng: **có** (VM 120, kích thước theo [compute layout](./2026-10-31-compute-layout-and-sizing.md))
+
+**Backup và verify không phụ thuộc vào VM riêng.** G1 (backup) và G2 (restore drill) làm ngay trên VM100 hiện tại. Việc tách VM (G3) chỉ làm sau khi G2 đã pass và R0 xác nhận Proxmox đủ tài nguyên. Nếu host < 32 GiB RAM thì GitLab ở lại VM100, nhưng vẫn chuyển sang PostgreSQL và Redis bundled, với registry trên RustFS.
 
 | Lý do | Giải thích |
 |---|---|
@@ -41,7 +43,7 @@ Plan con của [IaC automation rebuild](./2026-10-31-lab-iac-automation-rebuild.
 
 Giới hạn cần nói rõ: VM mới vẫn nằm **cùng host Proxmox và cùng `local-lvm`** với VM100. Tách VM giúp cô lập lỗi phần mềm và tài nguyên, không bảo vệ khi host chết. Phần đó do backup off-site lo (§3).
 
-Đề xuất kích thước: VM `120 gitlab`, 4 vCPU, 12 GiB RAM. Dung lượng đĩa sẽ chốt sau khi đo ở bước G0. Registry chuyển sang RustFS nên đĩa VM không phải chứa 14 GiB đó. Không join Swarm: chạy Omnibus bằng Docker Compose do Ansible quản (stateful, một instance).
+Kích thước: VM `120 gitlab`, **6 vCPU, 12 GiB RAM, 100 GiB disk**. Số liệu đo được: GitLab dùng 5.0 GiB RAM; `/opt/apps/gitlab` 30 GiB, trong đó 14 GiB là registry sẽ chuyển sang RustFS. Runner `build` và `plan` cũng chạy trên VM này. Registry chuyển sang RustFS nên đĩa VM không phải chứa 14 GiB đó. Không join Swarm: chạy Omnibus bằng Docker Compose do Ansible quản (stateful, một instance).
 
 ### 2.2 Xoá `registry.dungxbuif.com`: **có, nhưng là bước cuối**
 
@@ -61,7 +63,19 @@ Giới hạn cần nói rõ: VM mới vẫn nằm **cùng host Proxmox và cùng
 
 **Kiểm chứng** là phần trước đây thiếu, nên bản backup chỉ được tính khi đã restore thử thành công.
 
-Restore drill hằng tháng chạy tự động (job manual lần đầu, sau đó theo lịch):
+Restore drill hằng tháng chạy tự động (job manual lần đầu, sau đó theo lịch). Drill chạy ở:
+
+| Lần | Ở đâu |
+|---|---|
+| Lần đầu | Workstation (Docker) hoặc VM110, với `SKIP=registry` (registry kiểm tra riêng bằng cách pull thử một digest) |
+| Các lần sau | VM110 (12 GiB + scratch disk) hoặc VM tạm do tofu tạo |
+
+**Quy tắc cô lập bắt buộc:**
+- Instance restore dùng PostgreSQL và Redis **bundled**, không bao giờ trỏ về Pi5.
+- Không cho ra internet.
+- Tắt push mirror, webhook, email, runner và các job theo lịch trước khi khởi động.
+
+Các bước:
 
 1. Tạo VM tạm từ template bằng tofu, cài **đúng phiên bản** GitLab.
 2. Restore bản mới nhất **lấy từ Google Drive** (không dùng bản local) cùng secrets lấy từ 1Password.
@@ -80,7 +94,7 @@ Cảnh báo tự động: nếu bản backup off-site cũ hơn 26 giờ, kích t
 
 | Bước | Việc | Đụng runtime? | Điều kiện xong |
 |---|---|---|---|
-| **G0 Đo** | Đo dung lượng `/opt/apps/gitlab/data`, số project/repo, RAM và thin pool của Proxmox. **Cần quyền SSH/API vào Proxmox (hiện chưa có)** | Không | Có số liệu để chốt kích thước VM 120 và target backup |
+| **G0 Đo** | Đã đo: data 28 GiB (14 GiB registry), RAM 5.0 GiB. Còn thiếu: RAM và thin pool của Proxmox (bước R0 của [compute layout](./2026-10-31-compute-layout-and-sizing.md)), **cần quyền vào Proxmox** | Không | Chọn được dòng kích thước tương ứng |
 | **G1 Backup ngay trên VM100** | Chạy một native backup đầy đủ trong maintenance window (gồm cả registry). Copy secrets vào 1Password. Đẩy lên RustFS `gitlab-backups` và Drive bằng restic. Bật lịch hằng ngày (role `backup`, timer systemd trên host, không phụ thuộc CI) | Có (tải I/O, không restart) | Bản backup đầu tiên nằm trên Drive |
 | **G2 Restore drill lần 1** | Restore bản trên Drive vào một instance tạm (VM tạm hoặc VM110), chạy checklist §3 | Không đụng prod | **Drill pass**: lần đầu tiên GitLab có backup được kiểm chứng |
 | **G3 VM riêng** | Tofu tạo VM 120 → Ansible cài base, docker, GitLab compose cùng phiên bản và bundled PostgreSQL/Redis → restore bản mới nhất (đây cũng là drill lần 2) → chuyển 3 tunnel client sang VM 120 → smoke test web, SSH :2222, registry, runner | Có (cutover khoảng 30 phút, read-only trước đó) | GitLab chạy trên VM 120. Bản cũ trên VM100 scale về 0 và giữ 14 ngày để rollback |
@@ -100,9 +114,9 @@ Cảnh báo tự động: nếu bản backup off-site cũ hơn 26 giờ, kích t
 | G5 | Repin MyPocket về digest cũ trên Pi5 registry (Pi5 registry vẫn còn tới G6) |
 | G6 | Giải nén bản tar, chạy lại container `registry:2` |
 
-## 6. Cần bạn quyết định
+## 6. Quyết định đã chốt
 
-1. Đồng ý tách GitLab sang VM 120 dùng **PostgreSQL và Redis bundled** (rời khỏi Pi5)?
-2. Cấp quyền truy cập Proxmox cho bước G0 (API token chỉ đọc + SSH key).
-3. Target cho ảnh VM (L6): PBS trên máy khác, NAS, hay `vzdump` lên Drive?
-4. Repo nào cần push mirror sang GitHub (L7)? Đề xuất: `homelab-ops`, vault homelab, cùng repo của mọi app đang deploy.
+1. GitLab tách sang VM 120 với PostgreSQL và Redis bundled. Đây là ngoại lệ có chủ đích với quy tắc "Pi5 giữ data", đã ghi trong [decisions](/docs/decisions.md).
+2. Truy cập Proxmox: vẫn **cần chủ lab cấp** (API token chỉ đọc + SSH key). Đây là việc chặn R0 và G3.
+3. Target cho ảnh VM (L6): trước mắt `vzdump` VM 120 và VM 110 lên Drive. Mua NAS sau.
+4. Push mirror sang GitHub: `homelab-ops`, vault homelab và repo của mọi app đang deploy.

@@ -2,6 +2,7 @@
 
 ## Plans
 
+- [Compute Layout and Resource Sizing](/docs/superpowers/plans/2026-10-31-compute-layout-and-sizing.md) — Three-VM layout (prod, GitLab, backup) plus Pi5, sized from measured usage on 2026-10-31, with the re-allocation steps and capacity checks
 - [GitLab Protection, Dedicated VM and Registry Consolidation](/docs/superpowers/plans/2026-10-31-gitlab-protection-and-registry-consolidation.md) — Make GitLab recoverable with verified off-site backups, move it to its own VM, move registry storage to RustFS and delete the Pi5 registry
 - [Lab-wide IaC Automation Rebuild](/docs/superpowers/plans/2026-10-31-lab-iac-automation-rebuild.md) — Fresh audit of the current lab and a from-scratch plan to manage every layer (network, hypervisor, hosts, edge, data, apps, secrets, CI/CD, DR) as code in homelab-ops
 - [RelayHub Collaboration and Release Implementation Plan](/docs/superpowers/plans/2026-10-31-relayhub-centrifugo-collaboration.md) — 

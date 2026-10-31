@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="710" viewBox="0 0 1400 710" role="img" aria-labelledby="title desc">
+  <title id="title">Compute layout and sizing</title>
+  <desc id="desc">Three Proxmox VMs: VM100 prod apps, VM120 GitLab with runners, VM110 backup and restore drills, with their target sizes, plus Pi5 for data, edge and the deploy runner, and off-site copies.</desc>
+  <defs><marker id="a-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#2f6fed"/></marker><marker id="a-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#1f9d8b"/></marker><marker id="a-ok" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#16a34a"/></marker><marker id="a-red" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#c2413b"/></marker><marker id="a-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7c5cfc"/></marker><marker id="a-pink" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#db2777"/></marker><marker id="a-muted" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7b8798"/></marker><style>
+.bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.white{fill:#fff}
+.small{font:14px sans-serif}.tiny{font:12.5px sans-serif}.body{font:16px sans-serif}.bold{font:700 16px sans-serif}
+.head{font:700 21px sans-serif}.title{font:700 30px sans-serif}.pill{font:700 13px sans-serif;letter-spacing:.5px}
+.card{stroke-width:2}.edge{fill:#eaf2ff;stroke:#2f6fed}.data{fill:#eafaf6;stroke:#1f9d8b}
+.compute{fill:#f1edff;stroke:#7c5cfc}.host{fill:#fff;stroke:#b8c2d1}.note{fill:#fff7e8;stroke:#d97706}
+.retired{fill:#fff1f1;stroke:#c2413b}.ops{fill:#ecfdf3;stroke:#16a34a}.ctrl{fill:#fdf2f8;stroke:#db2777}
+.flow{fill:none;stroke:#2f6fed;stroke-width:3.5;marker-end:url(#a-blue)}
+.dflow{fill:none;stroke:#1f9d8b;stroke-width:3.5;marker-end:url(#a-green)}
+.gflow{fill:none;stroke:#16a34a;stroke-width:3.5;marker-end:url(#a-ok)}
+.rflow{fill:none;stroke:#c2413b;stroke-width:3;stroke-dasharray:8 7;marker-end:url(#a-red)}
+.pflow{fill:none;stroke:#7c5cfc;stroke-width:3.5;marker-end:url(#a-purple)}
+.kflow{fill:none;stroke:#db2777;stroke-width:3.5;marker-end:url(#a-pink)}
+.dashed{fill:none;stroke:#7b8798;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#a-muted)}
+</style></defs>
+  <rect class="bg" width="1400" height="710"/>
+  <text class="title ink" x="50" y="58">Compute layout and sizing</text>
+  <text class="body muted" x="52" y="88">Plan 2026-10-31 • prod, GitLab and backup split into three VMs • sized from measured usage</text>
+  <rect class="compute card" x="50" y="120" width="980" height="560" rx="18"/>
+  <text class="pill" x="72" y="152" fill="#7c5cfc">PROXMOX HOST · 10.10.0.20 (RAM to verify: needs ≥ 40 GiB)</text>
+  <rect class="data card" x="72" y="180" width="300" height="300" rx="12"/>
+  <text class="bold ink" x="88" y="206">VM100 · prod</text>
+  <text class="small muted" x="88" y="228">6 vCPU · 16 → 12 GiB · 200 GiB</text>
+  <text class="small muted" x="88" y="252"></text>
+  <text class="small muted" x="88" y="276">all app Swarm stacks</text>
+  <text class="small muted" x="88" y="300">Swarm manager #2</text>
+  <text class="small muted" x="88" y="324">uses ~3 GiB without GitLab</text>
+  <text class="small muted" x="88" y="348"></text>
+  <text class="small muted" x="88" y="372">no GitLab · no runners · no backup</text>
+  <rect class="ctrl card" x="390" y="180" width="300" height="300" rx="12"/>
+  <text class="bold ink" x="406" y="206">VM120 · gitlab (new)</text>
+  <text class="small muted" x="406" y="228">6 vCPU · 12 GiB · 100 GiB</text>
+  <text class="small muted" x="406" y="252"></text>
+  <text class="small muted" x="406" y="276">GitLab Omnibus, bundled PG + Redis</text>
+  <text class="small muted" x="406" y="300">registry → blobs on RustFS</text>
+  <text class="small muted" x="406" y="324">runner build (rootless) + plan</text>
+  <text class="small muted" x="406" y="348"></text>
+  <text class="small muted" x="406" y="372">not in Swarm · no data creds</text>
+  <rect class="ops card" x="708" y="180" width="300" height="300" rx="12"/>
+  <text class="bold ink" x="724" y="206">VM110 · backup</text>
+  <text class="small muted" x="724" y="228">4 vCPU · 8 → 12 GiB · 80 + 100 GiB scratch</text>
+  <text class="small muted" x="724" y="252"></text>
+  <text class="small muted" x="724" y="276">db-management · Databasus</text>
+  <text class="small muted" x="724" y="300">role backup · restore drills</text>
+  <text class="small muted" x="724" y="324">Swarm manager #3</text>
+  <text class="small muted" x="724" y="348"></text>
+  <text class="small muted" x="724" y="372">no runners · no public route</text>
+  <rect class="retired card" x="72" y="500" width="936" height="160" rx="12"/>
+  <text class="bold ink" x="88" y="526">Shared failure domain</text>
+  <text class="small muted" x="88" y="548">all three VMs share one host and one local-lvm thin pool (~77% used)</text>
+  <text class="small muted" x="88" y="572">→ backups leave the host: RustFS on Pi5 + Google Drive · vzdump of VM120/VM110 to Drive</text>
+  <text class="small muted" x="88" y="596">→ free GitLab&#x27;s 30 GiB on VM100 with fstrim before VM120 lands</text>
+  <rect class="edge card" x="1070" y="120" width="280" height="560" rx="18"/>
+  <text class="pill" x="1092" y="152" fill="#2f6fed">Pi5 · 8 GiB · 469 GiB</text>
+  <rect class="data card" x="1090" y="180" width="240" height="300" rx="12"/>
+  <text class="bold ink" x="1106" y="206">Data · edge · manager</text>
+  <text class="small muted" x="1106" y="228">PostgreSQL · Redis</text>
+  <text class="small muted" x="1106" y="252">CouchDB · RustFS</text>
+  <text class="small muted" x="1106" y="276">  (registry + backups buckets)</text>
+  <text class="small muted" x="1106" y="300">Traefik · AdGuard · Rathole</text>
+  <text class="small muted" x="1106" y="324">Swarm manager #1</text>
+  <text class="small muted" x="1106" y="348">runner deploy</text>
+  <text class="small muted" x="1106" y="372"></text>
+  <text class="small muted" x="1106" y="396">reclaim 49 GiB unused</text>
+  <rect class="edge card" x="1090" y="500" width="240" height="160" rx="12"/>
+  <text class="bold ink" x="1106" y="526">Off-site</text>
+  <text class="small muted" x="1106" y="548">Google Drive (restic)</text>
+  <text class="small muted" x="1106" y="572">GitHub push mirrors</text>
+  <text class="small muted" x="1106" y="596">1Password</text>
+</svg>

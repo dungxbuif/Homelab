@@ -60,3 +60,19 @@ control plane. The Proxmox K8s cluster (v2) is retired.
 
 Older history (entries before 2026-10-31) is available in git history of this
 file.
+
+## Decided 2026-10-31 (owner delegated the choices)
+
+These decisions define the **target state** in the [IaC plan](/docs/superpowers/plans/2026-10-31-lab-iac-automation-rebuild.md). Where they conflict with the "in force" bullets above, the bullets above describe today's runtime until the matching phase lands.
+
+- **Compute layout:** VM100 runs prod apps only. VM120 (new) runs GitLab with runners `build` and `plan`. VM110 runs backup, DB operations and restore drills. Pi5 runs data, edge and the `deploy` runner. There are 3 Swarm managers: Pi5, VM100 and VM110. Sizing is in the [compute plan](/docs/superpowers/plans/2026-10-31-compute-layout-and-sizing.md).
+- **GitLab exception:** GitLab moves to bundled PostgreSQL and Redis on VM120. This is the one deliberate exception to "Pi5 holds the data". Its backups still leave the host.
+- **One registry:** GitLab Container Registry, with storage on RustFS. Third-party images are copied into it. `registry.dungxbuif.com` is deleted ([decision](/docs/standards/registry.md)).
+- **Control plane:** GitLab CI only. Semaphore and the provisioner are retired in P1. `hl` is written in Python.
+- **Secrets:** 1Password is the single source, with two service accounts (plan, apply).
+- **Backup owners:** PostgreSQL → Databasus. CouchDB → db-management. GitLab, RustFS, Redis, configs and tofu state → role `backup`. VM images of VM120 and VM110 → `vzdump` to Drive until a NAS exists.
+- **Delivery policy:** staging only for `internal`/`public` apps that have a database. Prod deploys are manual for the first 3 months. A pipeline is green only after smoke tests and a 10-minute bake ([reliability](/docs/standards/reliability.md)).
+- **Domains:** `app.yml` is the single source. Generated Pi5 routes and the VPS HostSNI list are published with automatic rollback ([domain routing](/docs/standards/domain-routing.md)).
+- **Retire:** RelayHub Go legacy, `bds_prod`, Semaphore, the provisioner, `homelab-legacy` (archived to Drive first). KubeKosh stays LAN-only.
+- **Out of scope for IaC:** the Mac (runbook only).
+
