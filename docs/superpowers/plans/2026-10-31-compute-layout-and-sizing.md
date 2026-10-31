@@ -20,6 +20,40 @@ The owner delegated this decision on 2026-10-31. The numbers below come from a r
 
 ![Compute layout](../../assets/diagrams/compute-layout.svg)
 
+
+## 0. Measured host (2026-10-31) — supersedes the sizing guesses below
+
+Measured with the existing Proxmox API token, GET requests only.
+
+| Item | Measured |
+|---|---|
+| Node `pve` (PVE 8.3.5) | 12 vCPU, **31.3 GiB RAM, 24.9 GiB in use** (VM100 16 + VM110 8, ballooning off) |
+| `local-lvm` thin pool | 364.8 GiB total, 289.5 GiB used, **75.3 GiB free** |
+| VMs | Only 100, 110 and template 9000 (present, stopped). VM id 120 is free. `10.10.0.33` does not answer ping |
+
+**Consequence.** VM120 at 12 GiB cannot start: only about 6.4 GiB of RAM is free. The "host below 32 GiB" row of the fallback table applied, but actual use is low, so the split still works with resizing:
+
+| Step | VM100 | VM120 | VM110 |
+|---|---|---|---|
+| Today | 16 GiB | n/a | 8 GiB |
+| Before VM120 starts | 16 | n/a | **8 → 4 GiB** (db-management restarts, about 5 minutes) |
+| VM120 created | 16 | **8 GiB**, 100 GiB disk | 4 |
+| After the GitLab cutover | **16 → 10 GiB** (reboot window) | 8 → 12 GiB | 4 |
+
+End state is 10 + 12 + 4 = 26 GiB for guests plus about 2 GiB for the host. VM110 uses under 2 GiB today, VM100 about 7 GiB with GitLab (5 GiB) and about 2 GiB without it.
+
+**What fills the disks** (audit, read-only):
+
+| Where | Finding |
+|---|---|
+| VM100 (115 GiB used of 194) | `/var/lib/containerd` **66 GiB**: 53 images (51.5 GB, 12.9 GB unused) and container layers, so it is images, not data. Two Ollama images (9.2 GB `0.34.0` unused, 8.5 GB `0.40.13` in use) and duplicate n8n images. `/opt/apps` 25 GiB (GitLab 17 GiB, of which the registry is 14 GiB). `/swapfile` 8 GiB. `/home` 6.3 GiB (`/home/homelab-ci/.local` 4.9 GiB of CI leftovers) |
+| VM110 | The `db-management-backups` volume holds 18.2 GB of local export staging; the copies that count are on Drive |
+| Thin pool | VM100's logical volume is fully allocated (200 GiB) although the guest uses 115 GiB. `discard=on` is set, so `fstrim` can return roughly 80 GiB. VM110 has no `discard`, so its space never returns |
+
+Reclaiming (R1 below) is what makes room for VM120, and each item needs approval: `docker image prune` of unused images on VM100 (up to 12.9 GB), `fstrim` on VM100, reviewing `/home/homelab-ci/.local` and the VM110 staging volume.
+
+**Import plans** (`tofu plan`, read only, ephemeral state): VM100 shows 1 import and 1 in-place change (the cloud-init SSH keys in the module differ from the VM), so the module must be aligned before any apply. VM110 shows a **destroy and create** (stopped only by `prevent_destroy`), most likely because of the `clone` block; the module must ignore it before import. VM120 shows a clean create. Do not apply either import until each plan is zero-diff.
+
 ## 1. Measured usage (2026-10-31)
 
 | Machine | Allocated | RAM in use | CPU | Disk | Biggest consumers |

@@ -1,5 +1,11 @@
 ## 2026-10-31
 
+### Proxmox host measured, `pve.nccsoft.office` removed
+
+**Update** — With the existing API token (GET only) the Proxmox host measured 31.3 GiB RAM (24.9 in use) and 75 GiB free in the thin pool, so the VM120 sizing was reduced and a resize sequence added ([compute plan](/docs/superpowers/plans/2026-10-31-compute-layout-and-sizing.md)). Read-only `tofu plan` runs showed that the VM100 and VM110 modules are not zero-diff yet. The disk audit found that VM100's space is mostly container images, not data.
+
+**Deletion** — The hostname `pve.nccsoft.office` was removed from the credential template and tooling; the endpoint is the short name `pve`, which the node certificate already lists. The certificate's own common name still carries the old name until the node certificate is regenerated, which was not done.
+
 ### VM100 backup coverage audit
 
 **Update** — A read-only audit of VM100 found that all 9 legacy backup timers are disabled and the last successful runs were on 2026-10-21 and 2026-10-22; only the new GitLab set from today exists. VM100 holds about 4 GB of its own application state that no backup covers. This corrects an earlier assumption (see [decisions](/docs/decisions.md)). Backlog items VB1 and VB2 track it.

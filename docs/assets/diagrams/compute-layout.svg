@@ -21,10 +21,10 @@
   <text class="title ink" x="50" y="58">Compute layout and sizing</text>
   <text class="body muted" x="52" y="88">Plan 2026-10-31 • prod, GitLab and backup split into three VMs • sized from measured usage</text>
   <rect class="compute card" x="50" y="120" width="980" height="560" rx="18"/>
-  <text class="pill" x="72" y="152" fill="#7c5cfc">PROXMOX HOST · 10.10.0.20 (RAM to verify: needs ≥ 40 GiB)</text>
+  <text class="pill" x="72" y="152" fill="#7c5cfc">PROXMOX HOST · 10.10.0.20 (measured RAM 31.3 GiB)</text>
   <rect class="data card" x="72" y="180" width="300" height="300" rx="12"/>
   <text class="bold ink" x="88" y="206">VM100 · prod</text>
-  <text class="small muted" x="88" y="228">6 vCPU · 16 → 12 GiB · 200 GiB</text>
+  <text class="small muted" x="88" y="228">6 vCPU · 16 → 10 GiB · 200 GiB</text>
   <text class="small muted" x="88" y="252"></text>
   <text class="small muted" x="88" y="276">all app Swarm stacks</text>
   <text class="small muted" x="88" y="300">Swarm manager #2</text>
@@ -33,7 +33,7 @@
   <text class="small muted" x="88" y="372">no GitLab · no runners · no backup</text>
   <rect class="ctrl card" x="390" y="180" width="300" height="300" rx="12"/>
   <text class="bold ink" x="406" y="206">VM120 · gitlab (new)</text>
-  <text class="small muted" x="406" y="228">6 vCPU · 12 GiB · 150 GiB</text>
+  <text class="small muted" x="406" y="228">6 vCPU · 8 → 12 GiB · 100 GiB</text>
   <text class="small muted" x="406" y="252"></text>
   <text class="small muted" x="406" y="276">GitLab Omnibus, bundled PG + Redis</text>
   <text class="small muted" x="406" y="300">registry on VM disk</text>
@@ -42,7 +42,7 @@
   <text class="small muted" x="406" y="372">not in Swarm · no data creds</text>
   <rect class="ops card" x="708" y="180" width="300" height="300" rx="12"/>
   <text class="bold ink" x="724" y="206">VM110 · backup</text>
-  <text class="small muted" x="724" y="228">4 vCPU · 8 → 12 GiB · 80 + 100 GiB scratch</text>
+  <text class="small muted" x="724" y="228">4 vCPU · 8 → 4 GiB · 80 GiB</text>
   <text class="small muted" x="724" y="252"></text>
   <text class="small muted" x="724" y="276">db-management · Databasus</text>
   <text class="small muted" x="724" y="300">role backup · restore drills</text>

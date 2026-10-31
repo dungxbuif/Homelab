@@ -3,7 +3,7 @@ type: Deployment
 title: n8n Hanoi gold-price workflow — production release
 generated:
   by: codex
-  at: "2026-10-31T13:56:30+07:00"
+  at: "2026-10-31T14:10:19+07:00"
 stale_after: "2026-11-30T13:00:00+07:00"
 lifecycle: active
 service: n8n
@@ -13,7 +13,7 @@ service: n8n
 
 ## Decision
 
-The approved production release is live in n8n. The workflow uses the runtime
+The approved production release, BTMC runner hotfix, and external-runner allow-list fix are live in n8n. The workflow uses the runtime
 variable `MEZON_GOLD_PROD_WEBHOOK_URL`; the webhook token is not in this
 repository, generated JSON, or this document. The release did not send a
 manual production test message; scheduled delivery is the production smoke
@@ -56,6 +56,10 @@ files.
 ## Production release record
 
 - Source revision: `3be86b3` (`feat: add production workflow release mode`).
+- Hotfix revision: `d4a78dd` (`fix: remove process dependency from gold source node`).
+- Runtime configuration fix: `n8n-runners` now receives
+  `NODE_FUNCTION_ALLOW_BUILTIN=crypto,net,dns,https,url`, matching the main n8n
+  service's Code-node allow-list.
 - Live workflow ID: `daily-gold-fuel-mezon`.
 - Published name: `Hanoi Gold Price Fallback - PROD`.
 - Published shape: 22 nodes; six parallel brand branches, twelve gold source
@@ -70,7 +74,8 @@ files.
 
 ## Evidence
 
-- `npm test`: 17 tests passed.
+- `npm test`: 18 tests passed, including the regression assertion that generated
+  source nodes do not reference `process` in n8n's external runner.
 - `npm run typecheck`: passed after `npm ci`.
 - `npm run build`: passed.
 - Final DEV preview after the BTMC fallback, source-cache, and timestamp fixes used the current production-compatible Mezon format (`message.mk` contains one `pre` range covering all of `message.t`) and was accepted with HTTP 200. The payload had 5/6 gold brands with two rows, Petrolimex OK, and only SJC's expected blocked-source warning. Production delivery was not called.
@@ -91,7 +96,13 @@ files.
   was sent with SJC values `13.600/13.900` and `13.180/13.580`, source update
   `31/10/2026 08:16`, and HTTP 200. It is not production automation.
 - Pre-import live workflow export backup: `/opt/apps/n8n/data/backups/n8n-gold-before-hanoi-prod-20261031T065023+0000.json` on VM100, 25,412 bytes, mode `600`, workflow ID `daily-gold-fuel-mezon`, active with 8 nodes. Post-import and published exports are retained beside it.
-- Release verification: after the publish, the n8n container was force-restarted and reported `healthy`, restart count `0`; local and public `/healthz` returned `{"status":"ok"}`. The published export reported `active: true`, 22 nodes, and the production env expression.
+- Hotfix pre-import backup: `/opt/apps/n8n/data/backups/n8n-gold-before-btmc-runner-fix-20261031T070632+0000.json`, 249,098 bytes, mode `600`. Final published export: `/opt/apps/n8n/data/backups/n8n-gold-btmc-fix-final.json`, 249,072 bytes, mode `600`.
+- Hotfix verification: the published export reported `active: true`, 22 nodes, no `process.` reference in `Fetch BTMC primary`, and the production destination remained `={{ $env.MEZON_GOLD_PROD_WEBHOOK_URL }}`. After a forced restart, the n8n container reported `healthy`, restart count `0`; local and public `/healthz` returned `{"status":"ok"}`.
+- External-runner verification: the first runtime trace exposed
+  `DisallowedModuleError: Module 'node:crypto' is disallowed`; the main n8n
+  service already allowed built-ins but `n8n-runners` did not. After
+  `docker service update --env-add NODE_FUNCTION_ALLOW_BUILTIN=crypto,net,dns,https,url n8n-runners`, runners returned to `1/1`; the new runner has the
+  allow-list and no fresh disallowed-module error in the observation window.
 
 ## Release gate — completed
 
@@ -110,4 +121,45 @@ files.
    docker exec "$cid" n8n publish:workflow --id=daily-gold-fuel-mezon
    docker service update --force n8n
    ```
+
+## Post-release UI incident — 2026-10-31 14:02 ICT
+
+- Chrome reproduced `ERR_NETWORK_CHANGED`; n8n showed `Init Problem: Network
+  Error`, `Offline`, and `Can't connect to n8n`.
+- This was not a backend outage: shell probes returned HTTP 200 for public
+  `/healthz`, `/rest/settings`, and `/`; the n8n container remained healthy.
+- Traefik access logs showed n8n API requests completing with `200`/`304`, while
+  the failing browser bursts were client-aborted `499` requests and closed
+  `/rest/push` long-poll connections. This identifies the failure boundary as
+  the Chrome/host network path, not the workflow database or production
+  webhook.
+- Host NetBird status was Management/Signal connected but only `1/2` peers
+  connected; the gateway also logged repeated 60-second NetBird management
+  `504` jobs. No n8n rollback was performed for this client-side incident.
+- Separate follow-up found in the manual production execution: the BTMC
+  primary Code node referenced `process.env`, but n8n's external JavaScript
+  runner does not expose `process`. This was a workflow execution defect,
+  independent of the browser `Network Error`; hotfix `d4a78dd` replaced it with
+  the official static BTMC API URL, then the workflow was backed up, imported,
+  published, restarted, and verified active/healthy.
+- A requested one-shot CLI execution was attempted twice; both stopped before
+  workflow execution because the temporary CLI process tried to bind task
+  broker port `5679`, already owned by the live n8n process. No successful
+  production delivery was confirmed from these attempts; do not count them as
+  a smoke-test pass.
+
+## Follow-up network and runner trace — 2026-10-31 14:15 ICT
+
+- A fresh Chrome tab loaded the n8n workflow list and showed `Hanoi Gold Price
+  Fallback - PROD`; the UI was not currently failing with `Network Error`.
+- Traefik probes from the shell returned `200` for `/`, `/healthz`, and
+  `/rest/settings`. The earlier browser burst was client-aborted `499`; the
+  same period contained NetBird management `504` jobs. NetBird itself is
+  connected to management/signal, both relays are available, and the active
+  ThinkPad peer has a recent WireGuard handshake; the idle Mac peer explains
+  `1/2` connected and is not an n8n outage.
+- The runner `node:crypto` failure was a separate execution configuration
+  defect and is now fixed. No workflow logic, webhook destination, or
+  production message was changed by this follow-up, and no manual production
+  webhook was sent.
 

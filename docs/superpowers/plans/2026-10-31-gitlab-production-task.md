@@ -111,13 +111,13 @@ Legend: 🟢 no runtime impact · 🟡 touches runtime, no restart · 🔴 resta
 
 | # | Task | Type | Depends on | Done when |
 |---|---|---|---|---|
-| **T0** | Get Proxmox access (read-only token + SSH). Verify the Drive remote and quota. Measure host RAM, CPU and thin pool | 🟢 | Owner | Numbers recorded, sizing row chosen |
+| **T0** | Get Proxmox access (read-only token + SSH). Verify the Drive remote and quota. Measure host RAM, CPU and thin pool | 🟢 | Owner | **Done 2026-10-31**: host has 31.3 GiB RAM and 75 GiB free in the thin pool, so VM120 starts at 8 GiB and 100 GiB (see the [measured host section](./2026-10-31-compute-layout-and-sizing.md)) |
 | **T1** | Bring VM100 and VM110 under tofu: import, `plan` = 0, set `protection` and tags, move state to the encrypted backend, add the plan-JSON policy | 🟡 | T0 | `plan` shows 0 changes in CI. Nightly drift runs. **Partly written 2026-10-31**: the plan-JSON policy and the VM120 module exist (§10); importing VM100 and VM110 still needs Proxmox access |
 | **T2** | Rewrite the backup tooling in `homelab-ops` (role `gitlab_backup`): lock, preflight, trap, age, upload to `.partial`, verify, promote, retention, sweeper, freshness job, systemd units, `selftest` | 🟢 | — | **Code written 2026-10-31** (see §10). Still to do: run against a real GitLab, with real `age` and rclone, in T4/T5 |
 | **T3** | Remove the existing junk: the 14 GiB `registry.tar.gz` and partial files in `/opt/apps/gitlab/data/backups/` | 🔴 | Approval | **Partly done 2026-10-31**: archive deleted (approved), 14 GB reclaimed. Small partials are left for the sweeper |
 | **T4** | Deploy T2 on VM100 and run the first full backup to Drive | 🟡 | T2, T3 | **Done 2026-10-31**: tooling deployed with Ansible (check mode first), set `20261031T062156Z` on Drive, checksums verified, decrypted with the 1Password key. The timer is installed but **disabled**; scheduling waits for the owner |
 | **T5** | Restore drill #1 from **Drive** in an isolated instance (no outbound network, mirrors, webhooks, email or runners). Run the checklist | 🟢 | T4 | Drill passes. RTO and RPO recorded |
-| **T6** | Create VM120 with tofu (6 vCPU, 12 GiB, 150 GiB) and configure it with Ansible: Docker, GitLab Omnibus (same version, bundled PostgreSQL and Redis, local registry), runner, tunnel clients (not started), monitoring | 🟢 | T1, T0 | VM120 healthy and empty, `plan` = 0 |
+| **T6** | Create VM120 with tofu (6 vCPU, **8 GiB, 100 GiB**; grows later; needs RAM freed on VM110 first) and configure it with Ansible: Docker, GitLab Omnibus (same version, bundled PostgreSQL and Redis, local registry), runner, tunnel clients (not started), monitoring | 🟢 | T1, T0 | VM120 healthy and empty, `plan` = 0 |
 | **T7** | Rehearsal: restore the latest Drive set into VM120, verify everything, time it. Traffic is not switched | 🟢 | T5, T6 | Rehearsal passes. Cutover duration known |
 | **T8** | **Cutover** (see §6) | 🔴 | T7, approval | GitLab serves from VM120 |
 | **T9** | Soak for 14 days. Scheduled backups run from VM120. Drill #3 from Drive after cutover | 🟡 | T8 | 14 days with no incident, 14 verified sets, drill passes |
