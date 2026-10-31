@@ -113,18 +113,16 @@ The native set skips the registry. Until the restic class exists, moving GitLab 
 
 After the cutover: the old Swarm tunnel clients are at 0 and the old instance has Puma and Sidekiq stopped (kept for rollback, not to be started). The backup, sweep and Docker cleanup timers are enabled on VM120.
 
-**Open, important (GP7):** on the LAN, `gitlab.dungxbuif.com` resolves to Pi5, whose route points at the Swarm service `gitlab_gitlab` (now stopped on VM100), so **LAN clients get 502 until GitLab runs as that service on VM120.**
+**GP7 closed 2026-10-31 19:46.** GitLab now runs on VM120 as Swarm service `gitlab_gitlab` (stack `gitlab`, node `gitlab`; code `homelab-ops` commits `4dc46f5` and `83d0e42`, script `automation/gitlab-backup/gitlab-swarm-adopt.py`, stack `automation/stacks/gitlab/stack.yml`). Smoke test: LAN through Pi5 = 200, public through the VPS = 200. The three tunnel clients are services of the same stack (`gitlab_tunnel-https|ssh|registry`).
 
-Fix, written and committed in `homelab-ops` (commit `4dc46f5`), **not yet run** (the change touches the shared Swarm on Pi5 and needed the owner's approval):
+Consequences to remember:
 
-```sh
-automation/gitlab-backup/gitlab-swarm-adopt.py --yes-adopt     # about 5 minutes, GitLab down about 3
-automation/gitlab-backup/gitlab-swarm-adopt.py --rollback      # back to compose on VM120
-```
+- The compose project on VM120 was stopped and removed. Never start it while the stack runs (both use the same bind mounts under `/opt/apps/gitlab`). `--rollback` of `gitlab-swarm-adopt.py` goes back to compose.
+- The backup role finds the container with the pattern `gitlab_gitlab[.]` (inventory group `gitlab_host`). Redeploy `gitlab-backup-deploy.yml` once so the env file on VM120 carries it.
+- `gitlab-restore.py --container auto` finds either the compose container `gitlab` or the Swarm task.
+- The old service spec is saved on VM120 in `/opt/apps/gitlab/old-swarm-service.json` (mode 0600). VM100 stays frozen.
 
-What it does: joins VM120 as a Swarm worker (Docker 29.1.5 next to db-ops 29.1.3 and manager 28.4.0), saves the old service spec to `/opt/apps/gitlab/old-swarm-service.json`, stops the compose containers, removes the stopped old service `gitlab_gitlab` (VM100 data is not touched), deploys `automation/stacks/gitlab/stack.yml` (service `gitlab` plus the three tunnel clients, pinned to node `gitlab`), waits for healthy, tests the LAN path (through Pi5) and the public path (through the VPS), then removes the stopped compose containers. Any failure after the stop rolls back to compose. Backups keep working: the container pattern for the host is `gitlab_gitlab[.]` (inventory `gitlab_host`) and `gitlab-restore.py --container auto` finds either name. After it runs, redeploy the backup role once (`gitlab-backup-deploy.yml`) so the env file carries the new pattern.
-
-Caution: the rollback does not bring back the old Swarm service. VM100 must stay frozen anyway (see above).
+**Registry (owner decision 2026-10-31):** the old registry is restored and in use again. Data copied from VM100 with `gitlab-registry-restore.py` (stream, no temporary files; the VM100 data is kept until the owner approves its deletion). **Every project must push its images to this registry** (`registry-gitlab.dungxbuif.com`). The registry is not part of the daily backup set (section 7); until the restic class exists its loss is recovered by re-pushing from CI.
 
 Older notes from the attempts follow.
 

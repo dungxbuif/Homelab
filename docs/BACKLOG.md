@@ -7,7 +7,7 @@ generated:
   at: "2026-10-31T11:05:44+07:00"
 stale_after: "2026-11-30T11:05:44+07:00"
 ---
-
+goal
 # Homelab Backlog
 
 Open work only; completed items live in git history and [log.md](./log.md). Backlog confirmed by the owner on 2026-10-31.
