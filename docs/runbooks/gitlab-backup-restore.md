@@ -132,7 +132,7 @@ Consequences to remember:
 2. Restore rehearsal from a set made on the new host, in an isolated instance (needs the age key from 1Password and a host with enough RAM).
 3. Real login, a pipeline on a runner and a registry pull with real credentials.
 4. Instance-level (global) CI/CD variables for the registry need an admin token; per-job `CI_REGISTRY_*` and `CI_JOB_TOKEN` already work for pushes to this registry.
-5. Delete the old data on VM100 (including its 13.5 GiB registry) only after a soak period and with approval.
+5. The old registry data on VM100 was deleted on 2026-10-31 on the owner's instruction ("không cần giữ data cũ của registry"); the registry on VM120 was restarted and answers 401 on LAN and VPS. The rest of the old GitLab data on VM100 stays frozen until the owner approves its deletion after a soak period.
 
 Older notes from the attempts follow.
 
