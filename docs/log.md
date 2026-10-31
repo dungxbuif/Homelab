@@ -1,5 +1,9 @@
 ## 2026-10-31
 
+### GitLab backup tooling and VM120 module written
+
+**Creation** — In `homelab-ops` (branch `feat/gitlab-production`, commit `0c94b8b`): a hardened GitLab backup runner with encryption, verified Drive upload and cleanup on every failed exit, a retention and freshness tool, a plan policy that rejects VM delete or replace and disk shrink, an OpenTofu module for VM120, systemd units and a deploy playbook. See [implementation status](/docs/superpowers/plans/2026-10-31-gitlab-production-task.md). Nothing was applied or deployed.
+
 ### GitLab production task and stale backup removed
 
 **Update** — Wrote the [GitLab production task](/docs/superpowers/plans/2026-10-31-gitlab-production-task.md): all VMs under OpenTofu, safe migration to a dedicated VM, native scheduled backups to Google Drive, and failure handling that leaves no junk. The task's audit found that GitLab's real data is small (git 463 MiB, artifacts 59 MiB) while the registry is 14 GiB.

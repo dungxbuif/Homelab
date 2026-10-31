@@ -112,8 +112,8 @@ Legend: 🟢 no runtime impact · 🟡 touches runtime, no restart · 🔴 resta
 | # | Task | Type | Depends on | Done when |
 |---|---|---|---|---|
 | **T0** | Get Proxmox access (read-only token + SSH). Verify the Drive remote and quota. Measure host RAM, CPU and thin pool | 🟢 | Owner | Numbers recorded, sizing row chosen |
-| **T1** | Bring VM100 and VM110 under tofu: import, `plan` = 0, set `protection` and tags, move state to the encrypted backend, add the plan-JSON policy | 🟡 | T0 | `plan` shows 0 changes in CI. Nightly drift runs |
-| **T2** | Rewrite the backup tooling in `homelab-ops` (role `gitlab_backup`): lock, preflight, trap, age, upload to `.partial`, verify, promote, retention, sweeper, freshness job, systemd units, `selftest` | 🟢 | — | Tests pass on a throwaway GitLab container. Fault-injection leaves zero residue |
+| **T1** | Bring VM100 and VM110 under tofu: import, `plan` = 0, set `protection` and tags, move state to the encrypted backend, add the plan-JSON policy | 🟡 | T0 | `plan` shows 0 changes in CI. Nightly drift runs. **Partly written 2026-10-31**: the plan-JSON policy and the VM120 module exist (§10); importing VM100 and VM110 still needs Proxmox access |
+| **T2** | Rewrite the backup tooling in `homelab-ops` (role `gitlab_backup`): lock, preflight, trap, age, upload to `.partial`, verify, promote, retention, sweeper, freshness job, systemd units, `selftest` | 🟢 | — | **Code written 2026-10-31** (see §10). Still to do: run against a real GitLab, with real `age` and rclone, in T4/T5 |
 | **T3** | Remove the existing junk: the 14 GiB `registry.tar.gz` and partial files in `/opt/apps/gitlab/data/backups/` | 🔴 | Approval | **Partly done 2026-10-31**: archive deleted (approved), 14 GB reclaimed. Small partials are left for the sweeper |
 | **T4** | Deploy T2 on VM100 and run the first full backup to Drive | 🟡 | T2, T3 | A verified set on Drive and the first scheduled run succeeded |
 | **T5** | Restore drill #1 from **Drive** in an isolated instance (no outbound network, mirrors, webhooks, email or runners). Run the checklist | 🟢 | T4 | Drill passes. RTO and RPO recorded |
@@ -173,5 +173,24 @@ Rough duration: T0 1 day (waiting on access), T1 1–2 days, T2 3–4 days, T4 a
 2. Approve the 1Password SSH agent so the VPS audit can finish.
 3. Confirm the Google account behind the Drive remote and its free quota (a free account has 15 GiB shared across Drive, Gmail and Photos).
 4. Approve T3, T8 and T10 individually when their turn comes.
+
+## 10. Implementation status (2026-10-31)
+
+Written in `homelab-ops` on branch `feat/gitlab-production` (commit `0c94b8b`, worktree `/home/dungxbuif/workspace/.worktrees/homelab-ops-gitlab-prod`). **Nothing was applied or deployed.**
+
+| Delivered | Where |
+|---|---|
+| Hardened backup runner (lock, preflight, native backup, archive checks, age encryption, upload to `.partial`, verify, promote, `COMPLETE` last, cleanup on every failed exit) | `automation/gitlab-backup/gitlab-backup-run.sh` |
+| GFS retention, guarded sweeper, freshness check | `automation/gitlab-backup/gitlab_backup_tools.py` |
+| Failure-injection test and unit tests, with docker, rclone and age stubs | `automation/tests/test_gitlab_backup_run.sh`, `test_gitlab_backup_tools.py`, `stubs/` |
+| Plan policy: reject VM delete or replace and disk shrink | `automation/scripts/check-tofu-plan-policy.py` and its test |
+| VM120 OpenTofu module (sizing as variables, protection, tags) | `automation/tofu/proxmox-gitlab/`, covered by `validate-proxmox-module.sh` |
+| systemd units (backup, freshness, failure report) and the deploy playbook (approval gate, immutable release, timers off by default) | `automation/maintenance/systemd/`, `automation/ansible/playbooks/gitlab-backup-deploy.yml` |
+
+Verified locally: 14 fault-injection scenarios (failure at each step, SIGTERM, lock, foreign backup process, leftover staging), 17 unit tests, and `shellcheck -S error`. The repo's test count went from 189 to 206 and the same 2 tests fail before and after (CloudBeaver healthcheck contract, unrelated, caused by the base commit).
+
+**Not verified** (the tools are missing on this workstation, so CI must run them): `tofu fmt`, `tofu validate`, `ansible-lint`, `ansible-playbook --syntax-check`. Also unverified against real systems: `age`, rclone and the Drive quota, the template VM `9000`, and the free address `10.10.0.33`.
+
+The fault-injection test found a real gap before any deployment: `gitlab-backup` leaves `db/`, `repositories/` and `*.tar.gz` staging in the backup directory when interrupted, and those names carry no run id. This is exactly the junk that filled 14 GB. The runner now removes those fixed names while it owns the directory, and refuses to start while another GitLab backup process is running.
 
 [^audit-2026-10-31]: `du`, `ls`, `docker service inspect` (names only) on VM100 and Pi5, and the `homelab-ops` `automation/gitlab-backup` and `automation/tofu/proxmox` code, 2026-10-31.
