@@ -1,5 +1,9 @@
 ## 2026-10-31
 
+### GitLab now serves from VM120
+
+**Update** — The ninth run of `gitlab-cutover.py --direct` completed: data moved from the frozen old instance to VM120, counts identical, tunnels switched, smoke test through the VPS passed, first backup from the new host uploaded to Drive. Backup, sweep and cleanup timers are enabled on VM120. The old instance is stopped and kept for rollback. Open: the Pi5 LAN route still points at the old service, so LAN clients get 502. See the [runbook](/docs/runbooks/gitlab-backup-restore.md) section 8.
+
 ### Direct cutover mode; seven attempts, the last stopped at the VPS smoke test
 
 **Update** — Added `gitlab-cutover.py --direct`, which moves the data from the old to the new instance over SSH and needs no 1Password prompt. Attempt 7 passed the freeze, backup, transfer, restore, counts (39 projects, 3 users, 0 groups) and the tunnel switch, then failed the smoke test through the VPS address and rolled back. The old instance is serving. The cause is not yet known (see the [runbook](/docs/runbooks/gitlab-backup-restore.md) section 8).

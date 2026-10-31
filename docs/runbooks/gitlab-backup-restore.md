@@ -96,7 +96,7 @@ The native set skips the registry. Until the restic class exists, moving GitLab 
 
 ## 8. Migration to VM120 (status 2026-10-31)
 
-State: VM120 runs GitLab 18.11.11 restored from Drive, with backup tooling, tunnel clients staged and the cleanup timer. **Traffic is still on the old instance (VM100); the cutover has not completed.** Five attempts of `gitlab-cutover.py` each ended safely, with the old instance serving again:
+**Status 2026-10-31 17:56: the cutover is complete. GitLab serves from VM120 through the VPS tunnels.** It took nine runs of `gitlab-cutover.py`; each earlier run stopped safely and rolled back:
 
 | Attempt | Stopped at | Cause and fix |
 |---|---|---|
@@ -107,6 +107,15 @@ State: VM120 runs GitLab 18.11.11 restored from Drive, with backup tooling, tunn
 | 5 | Preflight | The 1Password approval prompt was dismissed, so the backup key could not be read. Nothing was frozen |
 | 6 | Switch guard | `--direct` mode (no Drive, no key, no 1Password): backup on the frozen old instance, stream to VM120, restore, counts equal. A guard bug stopped it (`gitlab-ctl status` exits non-zero for a stopped service). Fixed |
 | 7 | Smoke test through the VPS | Everything passed up to and including the switch of the three tunnel clients. The request to the VPS address then failed (`curl` code 000, no connection) and the run rolled back. **Unknown why**: the new Rathole clients on VM120 either did not register with the VPS in the 50 seconds allowed, or the VPS path was unreachable at that moment. The client logs were lost when the rollback removed the containers. Next step: keep the new clients' logs (`docker logs` before `down`), wait longer than 50 seconds, and check the Rathole server logs on the VPS (needs the 1Password SSH agent) |
+
+| 8 | Smoke test | The new tunnel clients logged `Permission denied` reading their 0600 config (the container user could not read a root-only file). Fixed: root inside a read-only container with all capabilities dropped |
+| 9 | none | **Complete.** Freeze, direct transfer, restore, counts (39 projects, 3 users, 0 groups), tunnel switch, smoke test through the VPS (web served by the new host, SSH host key unchanged), and the first backup from the new host (set `20261031T105352Z` on Drive) |
+
+After the cutover: the old Swarm tunnel clients are at 0 and the old instance has Puma and Sidekiq stopped (kept for rollback, not to be started). The backup, sweep and Docker cleanup timers are enabled on VM120.
+
+**Open, important:** on the LAN, `gitlab.dungxbuif.com` resolves to Pi5, whose route still points at the old Swarm service, so **LAN clients get 502 until that route is pointed at VM120.** Use the VPS address or fix the Pi5 route (VM120 does not publish a port yet).
+
+Older notes from the attempts follow.
 
 To finish: run `GITLAB_AGE_KEY="$(op read ...)" automation/gitlab-backup/gitlab-cutover.py --yes-cut-over` from a terminal where you can approve the 1Password prompt, and approve it when it appears. The run takes about 25 minutes and rolls back by itself on any failure.
 
