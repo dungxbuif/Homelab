@@ -113,7 +113,18 @@ The native set skips the registry. Until the restic class exists, moving GitLab 
 
 After the cutover: the old Swarm tunnel clients are at 0 and the old instance has Puma and Sidekiq stopped (kept for rollback, not to be started). The backup, sweep and Docker cleanup timers are enabled on VM120.
 
-**Open, important:** on the LAN, `gitlab.dungxbuif.com` resolves to Pi5, whose route still points at the old Swarm service, so **LAN clients get 502 until that route is pointed at VM120.** Use the VPS address or fix the Pi5 route (VM120 does not publish a port yet).
+**Open, important (GP7):** on the LAN, `gitlab.dungxbuif.com` resolves to Pi5, whose route points at the Swarm service `gitlab_gitlab` (now stopped on VM100), so **LAN clients get 502 until GitLab runs as that service on VM120.**
+
+Fix, written and committed in `homelab-ops` (commit `4dc46f5`), **not yet run** (the change touches the shared Swarm on Pi5 and needed the owner's approval):
+
+```sh
+automation/gitlab-backup/gitlab-swarm-adopt.py --yes-adopt     # about 5 minutes, GitLab down about 3
+automation/gitlab-backup/gitlab-swarm-adopt.py --rollback      # back to compose on VM120
+```
+
+What it does: joins VM120 as a Swarm worker (Docker 29.1.5 next to db-ops 29.1.3 and manager 28.4.0), saves the old service spec to `/opt/apps/gitlab/old-swarm-service.json`, stops the compose containers, removes the stopped old service `gitlab_gitlab` (VM100 data is not touched), deploys `automation/stacks/gitlab/stack.yml` (service `gitlab` plus the three tunnel clients, pinned to node `gitlab`), waits for healthy, tests the LAN path (through Pi5) and the public path (through the VPS), then removes the stopped compose containers. Any failure after the stop rolls back to compose. Backups keep working: the container pattern for the host is `gitlab_gitlab[.]` (inventory `gitlab_host`) and `gitlab-restore.py --container auto` finds either name. After it runs, redeploy the backup role once (`gitlab-backup-deploy.yml`) so the env file carries the new pattern.
+
+Caution: the rollback does not bring back the old Swarm service. VM100 must stay frozen anyway (see above).
 
 Older notes from the attempts follow.
 
