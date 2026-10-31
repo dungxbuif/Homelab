@@ -11,7 +11,8 @@ project: relayhub
 class: public
 owner: dungxbuif
 repo: dungxbuif/relayhub
-deployed_revision: c61e998 (API image), admin v1-public-20261031 (source revision unverified)
+deployed_revision: c61e998 (public Rust v1 API); Go canary 731047e (not public)
+canary_image: registry-gitlab.dungxbuif.com/dungxbuif/relayhub@sha256:4331063e39eb42caa722ae80aa656348d384e425c082cf451c50f46730261234
 ---
 
 # RelayHub
@@ -37,7 +38,7 @@ Related internal references (keep them, do not merge into public docs):
 | Local checkout | `/home/dungxbuif/workspace/projects/RelayHub/` (checked out on `codex/centrifugo-upstream-baseline`, HEAD `9c6baa0`, 2026-10-31) |
 | GitLab | `dungxbuif/relayhub` (default branch `main`); GitHub mirror `dungxbuif/RelayHub` |
 | Repo docs | `README.md`, `CHANGELOG.md`, `docs/` (architecture, decisions, developer, operations, user), public site `web/docs/` |
-| Deployed revision | v1 API `c61e998` ("expose live agent presence to dashboard", contained in `main`); stack file from `f933e49` (2026-10-31). Legacy Go `eee9e7c` |
+| Deployed revision | Public v1 API `c61e998` ("expose live agent presence to dashboard", contained in `main`); stack file from `f933e49` (2026-10-31). Legacy Go `eee9e7c`; Go Admin-parity canary `731047e` |
 
 ## Internal architecture
 
@@ -66,6 +67,14 @@ Related internal references (keep them, do not merge into public docs):
 | Limits | `relayhub` 1 CPU / 768 MiB; `admin` 0.25 CPU / 128 MiB; NATS and Redis none; no reservations |
 | Healthcheck | `relayhub` curls `/api/v1/openapi.json`; admin, NATS, Redis none |
 | Update config | `failure_action: pause` on all services |
+
+Go release canary (isolated, not public): VM100 Compose project
+`relayhub-canary` from `/opt/apps/relayhub/src/compose.yaml`, bound to
+`18081 -> 8080`. It uses its own Postgres/NATS/Redis named volumes and a
+generated private env file at `/opt/apps/relayhub/canary/relayhub.env`; it
+must not be pointed at the live v1 or legacy database. Current image is pinned
+by the shared GitLab Registry digest in the frontmatter. Public routing remains
+on `relayhub-v1`; the canary is for release acceptance only.
 
 Legacy rollback runtime (VM100 Compose `prod`, `/opt/apps/relayhub/prod/`,
 files `compose.yml` + `compose.override.yml` + `compose.release.yml`):
@@ -98,10 +107,17 @@ NATS and Redis in the v1 stack run without credentials (private overlay only).
 
 - CI: GitHub Actions in the repo (`.github/workflows/ci.yml`, `admin-ci.yml`,
   `publish-typescript-sdk.yml`); no `.gitlab-ci.yml`, no `platform/ci-templates`.
-- Build: images built on VM100 and tagged by commit; not pushed to a registry.
+- Build: main release `731047e` is pushed to both GitHub and GitLab; the Go
+  canary image is pushed to the shared GitLab Registry and deployed by digest.
+  The Docker build runs the host release gates before packaging the image.
 - Deploy: manual `docker stack deploy -c deploy/production/stack-staging.yaml relayhub-v1`
   from the Pi5 manager (unverified exact command). No staging environment;
   `deploy/remake/compose.yaml` is a disposable release rehearsal only.
+- Canary deploy: on VM100, pull the immutable registry tag/digest, retag the
+  local Compose alias `relayhub:local`, then run `docker compose -p
+  relayhub-canary ... up -d --no-build --wait`. Verify `/healthz`,
+  `/readyz`, `/metrics`, `/openapi.json`, `/llms.txt`, and `/admin/`
+  before any promotion.
 - Rollback within v1: redeploy the stack with the previous image tag (must still
   exist on VM100). Rollback to legacy: repoint the Pi5 `relayhub` routes to the
   `prod` Compose API, which still uses the `relayhub` DB; v1 data written since
@@ -111,6 +127,9 @@ NATS and Redis in the v1 stack run without credentials (private overlay only).
 
 - Health: `https://relayhub.dungxbuif.com/api/v1/openapi.json`; legacy `readyz` on `:8080`/`:9090` inside containers.
 - Logs: `docker service logs relayhub-v1_relayhub` (Pi5); legacy `docker logs relayhub-api` (VM100).
+- Canary: `docker compose -p relayhub-canary logs relayhub-api relayhub-worker`
+  and `curl http://127.0.0.1:18081/readyz` on VM100. Keep the canary isolated
+  until the public Rust stack has a separate approved rollout.
 - Runbooks in repo: `docs/operations/runbook.md`, `remake-cutover.md`, `release-note-v1-prod.md`.
 - Known issues: route 502 → check `tasks.relayhub-v1_relayhub` DNS from `edge-traefik-pi5`; v1 DB has no backup (BACKLOG R4).
 
@@ -119,12 +138,12 @@ NATS and Redis in the v1 stack run without credentials (private overlay only).
 | Gate | State | Evidence / exception (expiry) |
 |---|---|---|
 | G0 Intake | fail | No `homelab-ops/stacks/relayhub/app.yml` |
-| G1 Build | fail | Local-only images, no registry digest, no Trivy/SBOM/cosign |
+| G1 Build | partial | Go canary uses the shared GitLab Registry digest; Trivy/SBOM/cosign are still not attached |
 | G2 Security | fail | Host port `18080`; secret name not versioned; legacy secrets in env file |
 | G3 Runtime | fail | Stack lives in app repo, deployed by hand; `failure_action: pause`; no limits/healthchecks on admin/NATS/Redis |
 | G4 Data | fail | Active DB `relayhub_v1_staging_20261030` not enrolled, no restore record (legacy `relayhub` verified 2026-10-31) |
 | G5 Observability | not assessed | No blackbox probe documented |
-| G6 Release | partial | CHANGELOG `1.0.0` (2026-09-20) for Go; v1 has no semver tag or staging smoke |
+| G6 Release | partial | Go canary `731047e` passed live Admin E2E and Go/TypeScript client smoke; v1 has no semver tag or public promotion |
 | G7 Docs | partial | Repo README/docs exist; vault doc now exists; revision recorded |
 | G8 Operate | not assessed | Legacy `prod` + 0/0 `relayhub` service pending retirement (BACKLOG P1/P5) |
 
@@ -133,3 +152,8 @@ NATS and Redis in the v1 stack run without credentials (private overlay only).
 - 2026-10-31: product docs D1–D4 + review fixes on branch `codex/relayhub-product-docs` (not merged)
 - 2026-10-31: Rust v1 edge and dashboard promoted to `relayhub.dungxbuif.com` (`f933e49`, API `c61e998`)
 - 2026-10-31: legacy Compose Redis pinned to `7.4` digest `8da19c73…`
+- 2026-10-31: Go Admin-parity canary deployed on VM100 from shared registry
+  image `731047e`; Admin E2E passed 19/20 (one intentional mobile keyboard
+  skip), Go and TypeScript clients passed live app/queue/realtime flows, and
+  a post-restart readiness/session check passed. A real SDK bug where `202`
+  with an empty body was parsed as JSON was fixed and included in the image.
