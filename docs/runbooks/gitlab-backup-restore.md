@@ -128,7 +128,7 @@ Consequences to remember:
 
 **Still open (owner action or approval needed):**
 
-1. Delete two staged archives on VM120, `/opt/apps/gitlab/data/backups/20261031T062156Z_gitlab_backup.tar` and `...T092228Z_gitlab_backup.tar` (about 900 MB, leftovers of the migration; both sets are complete on Drive).
+1. ~~Delete two staged archives on VM120~~ Done 2026-10-31 on the owner's instruction; `data/backups` is empty (the sets are on Drive).
 2. Restore rehearsal from a set made on the new host, in an isolated instance (needs the age key from 1Password and a host with enough RAM).
 3. Real login, a pipeline on a runner and a registry pull with real credentials.
 4. Instance-level (global) CI/CD variables for the registry need an admin token; per-job `CI_REGISTRY_*` and `CI_JOB_TOKEN` already work for pushes to this registry.
