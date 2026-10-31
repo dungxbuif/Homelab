@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+  <title id="title">IaC target: who owns what</title>
+  <desc id="desc">The homelab-ops repository feeds three tools: OpenTofu for API-managed resources, Ansible for hosts and host runtimes, and Swarm stacks for apps. Secrets come from 1Password and tofu state lives on RustFS.</desc>
+  <defs><marker id="a-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#2f6fed"/></marker><marker id="a-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#1f9d8b"/></marker><marker id="a-ok" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#16a34a"/></marker><marker id="a-red" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#c2413b"/></marker><marker id="a-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7c5cfc"/></marker><marker id="a-pink" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#db2777"/></marker><marker id="a-muted" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7b8798"/></marker><style>
+.bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.white{fill:#fff}
+.small{font:14px sans-serif}.tiny{font:12.5px sans-serif}.body{font:16px sans-serif}.bold{font:700 16px sans-serif}
+.head{font:700 21px sans-serif}.title{font:700 30px sans-serif}.pill{font:700 13px sans-serif;letter-spacing:.5px}
+.card{stroke-width:2}.edge{fill:#eaf2ff;stroke:#2f6fed}.data{fill:#eafaf6;stroke:#1f9d8b}
+.compute{fill:#f1edff;stroke:#7c5cfc}.host{fill:#fff;stroke:#b8c2d1}.note{fill:#fff7e8;stroke:#d97706}
+.retired{fill:#fff1f1;stroke:#c2413b}.ops{fill:#ecfdf3;stroke:#16a34a}.ctrl{fill:#fdf2f8;stroke:#db2777}
+.flow{fill:none;stroke:#2f6fed;stroke-width:3.5;marker-end:url(#a-blue)}
+.dflow{fill:none;stroke:#1f9d8b;stroke-width:3.5;marker-end:url(#a-green)}
+.gflow{fill:none;stroke:#16a34a;stroke-width:3.5;marker-end:url(#a-ok)}
+.rflow{fill:none;stroke:#c2413b;stroke-width:3;stroke-dasharray:8 7;marker-end:url(#a-red)}
+.pflow{fill:none;stroke:#7c5cfc;stroke-width:3.5;marker-end:url(#a-purple)}
+.kflow{fill:none;stroke:#db2777;stroke-width:3.5;marker-end:url(#a-pink)}
+.dashed{fill:none;stroke:#7b8798;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#a-muted)}
+</style></defs>
+  <rect class="bg" width="1400" height="900"/>
+  <text class="title ink" x="50" y="58">IaC target: who owns what</text>
+  <text class="body muted" x="52" y="88">Plan 2026-10-31 • one resource = one tool • import first, change after plan/diff = 0</text>
+  <rect class="host card" x="50" y="120" width="1300" height="150" rx="18"/>
+  <text class="head ink" x="72" y="152">homelab-ops (single repo, single layout)</text>
+  <text class="small muted" x="72" y="178">GitLab main + mirror outside the lab</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="200" width="146" height="50" rx="12"/>
+  <text class="bold ink" x="88" y="226">tofu/</text>
+  <rect class="white card" stroke="#d8dee9" x="230" y="200" width="146" height="50" rx="12"/>
+  <text class="bold ink" x="246" y="226">ansible/</text>
+  <rect class="white card" stroke="#d8dee9" x="388" y="200" width="146" height="50" rx="12"/>
+  <text class="bold ink" x="404" y="226">stacks/</text>
+  <rect class="white card" stroke="#d8dee9" x="546" y="200" width="146" height="50" rx="12"/>
+  <text class="bold ink" x="562" y="226">routes/</text>
+  <rect class="white card" stroke="#d8dee9" x="704" y="200" width="146" height="50" rx="12"/>
+  <text class="bold ink" x="720" y="226">policies/</text>
+  <rect class="white card" stroke="#d8dee9" x="862" y="200" width="146" height="50" rx="12"/>
+  <text class="bold ink" x="878" y="226">images/</text>
+  <rect class="white card" stroke="#d8dee9" x="1020" y="200" width="146" height="50" rx="12"/>
+  <text class="bold ink" x="1036" y="226">bin/hl</text>
+  <rect class="white card" stroke="#d8dee9" x="1178" y="200" width="146" height="50" rx="12"/>
+  <text class="bold ink" x="1194" y="226">tests/</text>
+  <rect class="edge card" x="50" y="330" width="410" height="380" rx="18"/>
+  <text class="head ink" x="72" y="362">OpenTofu</text>
+  <text class="small muted" x="72" y="388">APIs, declared state</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="418" width="366" height="44" rx="12"/>
+  <text class="body ink" x="88" y="444">MikroTik (routeros)</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="474" width="366" height="44" rx="12"/>
+  <text class="body ink" x="88" y="500">Proxmox VMs + template (bpg)</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="530" width="366" height="44" rx="12"/>
+  <text class="body ink" x="88" y="556">Public DNS (provider: verify)</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="586" width="366" height="44" rx="12"/>
+  <text class="body ink" x="88" y="612">NetBird groups / policies</text>
+  <path class="flow" d="M255 270 V330"/>
+  <rect class="compute card" x="495" y="330" width="410" height="380" rx="18"/>
+  <text class="head ink" x="517" y="362">Ansible</text>
+  <text class="small muted" x="517" y="388">hosts + host runtimes</text>
+  <rect class="white card" stroke="#d8dee9" x="517" y="418" width="366" height="44" rx="12"/>
+  <text class="body ink" x="533" y="444">base · docker · swarm (all hosts)</text>
+  <rect class="white card" stroke="#d8dee9" x="517" y="474" width="366" height="44" rx="12"/>
+  <text class="body ink" x="533" y="500">pve_host (Proxmox config)</text>
+  <rect class="white card" stroke="#d8dee9" x="517" y="530" width="366" height="44" rx="12"/>
+  <text class="body ink" x="533" y="556">edge_pi5 · gateway_vps</text>
+  <rect class="white card" stroke="#d8dee9" x="517" y="586" width="366" height="44" rx="12"/>
+  <text class="body ink" x="533" y="612">datastore_pi5 · monitoring</text>
+  <rect class="white card" stroke="#d8dee9" x="517" y="642" width="366" height="44" rx="12"/>
+  <text class="body ink" x="533" y="668">backup · db_provision</text>
+  <path class="flow" d="M700 270 V330"/>
+  <rect class="data card" x="940" y="330" width="410" height="380" rx="18"/>
+  <text class="head ink" x="962" y="362">Swarm stacks</text>
+  <text class="small muted" x="962" y="388">every app</text>
+  <rect class="white card" stroke="#d8dee9" x="962" y="418" width="366" height="44" rx="12"/>
+  <text class="body ink" x="978" y="444">stack.yml + env/stg|prod.yml</text>
+  <rect class="white card" stroke="#d8dee9" x="962" y="474" width="366" height="44" rx="12"/>
+  <text class="body ink" x="978" y="500">app.yml metadata</text>
+  <rect class="white card" stroke="#d8dee9" x="962" y="530" width="366" height="44" rx="12"/>
+  <text class="body ink" x="978" y="556">digest-pinned images</text>
+  <rect class="white card" stroke="#d8dee9" x="962" y="586" width="366" height="44" rx="12"/>
+  <text class="body ink" x="978" y="612">VM100 · VM110 · Pi5</text>
+  <path class="flow" d="M1145 270 V330"/>
+  <rect class="ctrl card" x="50" y="750" width="630" height="110" rx="12"/>
+  <text class="bold ink" x="66" y="776">Secrets: 1Password vault homelab-prod</text>
+  <text class="small muted" x="66" y="798">SA homelab-plan (read) · SA homelab-apply (write)</text>
+  <text class="small muted" x="66" y="818">→ Swarm secrets name_vN · never in Git / vault</text>
+  <rect class="note card" x="720" y="750" width="630" height="110" rx="12"/>
+  <text class="bold ink" x="736" y="776">Tofu state: RustFS on Pi5 (tier T1)</text>
+  <text class="small muted" x="736" y="798">S3 backend · use_lockfile · state encryption</text>
+  <text class="small muted" x="736" y="818">encrypted daily copy → Google Drive</text>
+</svg>

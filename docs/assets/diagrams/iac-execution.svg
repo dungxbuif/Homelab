@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="880" viewBox="0 0 1400 880" role="img" aria-labelledby="title desc">
+  <title id="title">How changes are executed</title>
+  <desc id="desc">A merge request runs plan on the read-only runner and comments the diff. After merge, manual apply jobs run on the protected Pi5 deploy runner against Proxmox, MikroTik, DNS, NetBird, hosts and Swarm. Schedules run drift and restore drills. Break-glass runs the same CLI from the workstation.</desc>
+  <defs><marker id="a-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#2f6fed"/></marker><marker id="a-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#1f9d8b"/></marker><marker id="a-ok" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#16a34a"/></marker><marker id="a-red" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#c2413b"/></marker><marker id="a-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7c5cfc"/></marker><marker id="a-pink" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#db2777"/></marker><marker id="a-muted" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7b8798"/></marker><style>
+.bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.white{fill:#fff}
+.small{font:14px sans-serif}.tiny{font:12.5px sans-serif}.body{font:16px sans-serif}.bold{font:700 16px sans-serif}
+.head{font:700 21px sans-serif}.title{font:700 30px sans-serif}.pill{font:700 13px sans-serif;letter-spacing:.5px}
+.card{stroke-width:2}.edge{fill:#eaf2ff;stroke:#2f6fed}.data{fill:#eafaf6;stroke:#1f9d8b}
+.compute{fill:#f1edff;stroke:#7c5cfc}.host{fill:#fff;stroke:#b8c2d1}.note{fill:#fff7e8;stroke:#d97706}
+.retired{fill:#fff1f1;stroke:#c2413b}.ops{fill:#ecfdf3;stroke:#16a34a}.ctrl{fill:#fdf2f8;stroke:#db2777}
+.flow{fill:none;stroke:#2f6fed;stroke-width:3.5;marker-end:url(#a-blue)}
+.dflow{fill:none;stroke:#1f9d8b;stroke-width:3.5;marker-end:url(#a-green)}
+.gflow{fill:none;stroke:#16a34a;stroke-width:3.5;marker-end:url(#a-ok)}
+.rflow{fill:none;stroke:#c2413b;stroke-width:3;stroke-dasharray:8 7;marker-end:url(#a-red)}
+.pflow{fill:none;stroke:#7c5cfc;stroke-width:3.5;marker-end:url(#a-purple)}
+.kflow{fill:none;stroke:#db2777;stroke-width:3.5;marker-end:url(#a-pink)}
+.dashed{fill:none;stroke:#7b8798;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#a-muted)}
+</style></defs>
+  <rect class="bg" width="1400" height="880"/>
+  <text class="title ink" x="50" y="58">How changes are executed</text>
+  <text class="body muted" x="52" y="88">Plan 2026-10-31 • GitLab CI only (Semaphore retired in P1) • every job calls bin/hl</text>
+  <rect class="white card" stroke="#d8dee9" x="50" y="140" width="230" height="90" rx="12"/>
+  <text class="bold ink" x="66" y="166">Merge request</text>
+  <text class="small muted" x="66" y="188">tofu / ansible / stacks</text>
+  <text class="small muted" x="66" y="208">routes / policies</text>
+  <rect class="data card" x="340" y="140" width="280" height="90" rx="12"/>
+  <text class="bold ink" x="356" y="166">runner: plan (VM110)</text>
+  <text class="small muted" x="356" y="188">SA homelab-plan · read only</text>
+  <text class="small muted" x="356" y="208">hl validate · hl plan · hl check</text>
+  <rect class="white card" stroke="#d8dee9" x="680" y="140" width="300" height="90" rx="12"/>
+  <text class="bold ink" x="696" y="166">MR comment</text>
+  <text class="small muted" x="696" y="188">tofu plan + ansible --diff</text>
+  <text class="small muted" x="696" y="208">+ policy result</text>
+  <rect class="white card" stroke="#d8dee9" x="1040" y="140" width="310" height="90" rx="12"/>
+  <text class="bold ink" x="1056" y="166">review + merge main</text>
+  <text class="small muted" x="1056" y="188">protected branch</text>
+  <path class="flow" d="M280 185 H340"/>
+  <path class="flow" d="M620 185 H680"/>
+  <path class="flow" d="M980 185 H1040"/>
+  <rect class="note card" x="1040" y="300" width="310" height="100" rx="12"/>
+  <text class="bold ink" x="1056" y="326">manual apply jobs</text>
+  <text class="small muted" x="1056" y="348">apply:tofu:&lt;stack&gt; (saved plan)</text>
+  <text class="small muted" x="1056" y="368">apply:ansible:&lt;playbook&gt;</text>
+  <path class="flow" d="M1195 230 V300"/>
+  <rect class="ctrl card" x="560" y="300" width="420" height="100" rx="12"/>
+  <text class="bold ink" x="576" y="326">runner: deploy (Pi5, protected)</text>
+  <text class="small muted" x="576" y="348">SA homelab-apply · Docker socket on Swarm manager</text>
+  <text class="small muted" x="576" y="368">hl apply · hl deploy &lt;app&gt; --env prod</text>
+  <path class="kflow" d="M1040 350 H980"/>
+  <rect class="white card" stroke="#d8dee9" x="60" y="480" width="195" height="60" rx="12"/>
+  <text class="bold ink" x="76" y="506">Proxmox</text>
+  <path class="kflow" d="M770 400 C770 440 157 440 157 480"/>
+  <rect class="white card" stroke="#d8dee9" x="275" y="480" width="195" height="60" rx="12"/>
+  <text class="bold ink" x="291" y="506">MikroTik</text>
+  <path class="kflow" d="M770 400 C770 440 372 440 372 480"/>
+  <rect class="white card" stroke="#d8dee9" x="490" y="480" width="195" height="60" rx="12"/>
+  <text class="bold ink" x="506" y="506">DNS</text>
+  <path class="kflow" d="M770 400 C770 440 587 440 587 480"/>
+  <rect class="white card" stroke="#d8dee9" x="705" y="480" width="195" height="60" rx="12"/>
+  <text class="bold ink" x="721" y="506">NetBird</text>
+  <path class="kflow" d="M770 400 C770 440 802 440 802 480"/>
+  <rect class="white card" stroke="#d8dee9" x="920" y="480" width="195" height="60" rx="12"/>
+  <text class="bold ink" x="936" y="506">hosts (SSH)</text>
+  <path class="kflow" d="M770 400 C770 440 1017 440 1017 480"/>
+  <rect class="white card" stroke="#d8dee9" x="1135" y="480" width="195" height="60" rx="12"/>
+  <text class="bold ink" x="1151" y="506">Swarm stacks</text>
+  <path class="kflow" d="M770 400 C770 440 1232 440 1232 480"/>
+  <rect class="ops card" x="50" y="590" width="640" height="250" rx="18"/>
+  <text class="pill" x="72" y="622" fill="#15803d">SCHEDULES (GitLab pipeline schedules)</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="660" width="290" height="80" rx="12"/>
+  <text class="bold ink" x="88" y="686">nightly: hl drift</text>
+  <text class="small muted" x="88" y="708">tofu plan + ansible check</text>
+  <text class="small muted" x="88" y="728">+ live stacks vs repo</text>
+  <rect class="white card" stroke="#d8dee9" x="380" y="660" width="290" height="80" rx="12"/>
+  <text class="bold ink" x="396" y="686">monthly: hl drill restore</text>
+  <text class="small muted" x="396" y="708">scratch restore per class</text>
+  <text class="small muted" x="396" y="728">result artifact</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="752" width="598" height="70" rx="12"/>
+  <text class="body ink" x="88" y="778">→ Mezon notification on any non-zero drift / failed drill</text>
+  <rect class="retired card" x="730" y="590" width="620" height="250" rx="18"/>
+  <text class="pill" x="752" y="622" fill="#c2413b">BREAK-GLASS (GitLab / VM100 down)</text>
+  <rect class="white card" stroke="#d8dee9" x="752" y="660" width="576" height="80" rx="12"/>
+  <text class="bold ink" x="768" y="686">workstation: op run -- docker run automation-ee hl apply …</text>
+  <text class="small muted" x="768" y="708">same image, same CLI, repo from the off-lab mirror</text>
+  <rect class="white card" stroke="#d8dee9" x="752" y="752" width="576" height="70" rx="12"/>
+  <text class="body ink" x="768" y="778">runner: build (VM100 rootless) — images only, no infra credentials</text>
+</svg>

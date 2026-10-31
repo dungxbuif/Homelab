@@ -23,6 +23,9 @@ retired; do not use them.
 
 ## Topology
 
+![Homelab system overview](./docs/assets/diagrams/system-overview.svg)
+
+
 ```text
 Public HTTPS -> VPS Traefik -> Rathole :7000 -> Pi5 Traefik
              -> Swarm overlays -> VM100 apps / Pi5 HTTP services

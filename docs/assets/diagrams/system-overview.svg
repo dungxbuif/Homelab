@@ -1,86 +1,123 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
-  <title id="title">Current homelab system overview</title>
-  <desc id="desc">Public traffic enters the VPS gateway, crosses shared Rathole to the Pi5 edge, and reaches VM100 production workloads. Proxmox hosts VM100 and VM110. The Mac remains a separate roaming client and development host.</desc>
-  <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#2f6fed"/></marker>
-    <marker id="arrow-muted" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#7b8798"/></marker>
-    <style>
-      .bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.small{font:14px sans-serif}.body{font:16px sans-serif}.head{font:700 22px sans-serif}.title{font:700 30px sans-serif}.card{stroke:#d8dee9;stroke-width:2}.edge{fill:#eaf2ff;stroke:#2f6fed}.data{fill:#eafaf6;stroke:#1f9d8b}.compute{fill:#f1edff;stroke:#7c5cfc}.host{fill:#fff;stroke:#b8c2d1}.note{fill:#fff7e8;stroke:#d97706}.retired{fill:#fff1f1;stroke:#c2413b}.pill{font:700 13px sans-serif;letter-spacing:.5px}.flow{fill:none;stroke:#2f6fed;stroke-width:4;marker-end:url(#arrow)}.dashed{fill:none;stroke:#7b8798;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#arrow-muted)}
-    </style>
-  </defs>
+  <title id="title">Homelab system overview</title>
+  <desc id="desc">Public traffic enters the VPS, crosses Rathole to Pi5 Traefik and reaches Swarm services on VM100 and VM110. Pi5 holds the datastores. Proxmox hosts VM100 and VM110. Mac, MikroTik, Orange Pi and Google Drive are shown along the bottom.</desc>
+  <defs><marker id="a-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#2f6fed"/></marker><marker id="a-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#1f9d8b"/></marker><marker id="a-ok" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#16a34a"/></marker><marker id="a-red" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#c2413b"/></marker><marker id="a-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7c5cfc"/></marker><marker id="a-pink" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#db2777"/></marker><marker id="a-muted" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7b8798"/></marker><style>
+.bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.white{fill:#fff}
+.small{font:14px sans-serif}.tiny{font:12.5px sans-serif}.body{font:16px sans-serif}.bold{font:700 16px sans-serif}
+.head{font:700 21px sans-serif}.title{font:700 30px sans-serif}.pill{font:700 13px sans-serif;letter-spacing:.5px}
+.card{stroke-width:2}.edge{fill:#eaf2ff;stroke:#2f6fed}.data{fill:#eafaf6;stroke:#1f9d8b}
+.compute{fill:#f1edff;stroke:#7c5cfc}.host{fill:#fff;stroke:#b8c2d1}.note{fill:#fff7e8;stroke:#d97706}
+.retired{fill:#fff1f1;stroke:#c2413b}.ops{fill:#ecfdf3;stroke:#16a34a}.ctrl{fill:#fdf2f8;stroke:#db2777}
+.flow{fill:none;stroke:#2f6fed;stroke-width:3.5;marker-end:url(#a-blue)}
+.dflow{fill:none;stroke:#1f9d8b;stroke-width:3.5;marker-end:url(#a-green)}
+.gflow{fill:none;stroke:#16a34a;stroke-width:3.5;marker-end:url(#a-ok)}
+.rflow{fill:none;stroke:#c2413b;stroke-width:3;stroke-dasharray:8 7;marker-end:url(#a-red)}
+.pflow{fill:none;stroke:#7c5cfc;stroke-width:3.5;marker-end:url(#a-purple)}
+.kflow{fill:none;stroke:#db2777;stroke-width:3.5;marker-end:url(#a-pink)}
+.dashed{fill:none;stroke:#7b8798;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#a-muted)}
+</style></defs>
   <rect class="bg" width="1400" height="900"/>
   <text class="title ink" x="50" y="58">Homelab system overview</text>
-  <text class="body muted" x="52" y="88">Current documented topology • reconciled 2026-10-31 • solid paths are live routing or data boundaries</text>
-
-  <rect class="edge card" x="50" y="145" width="300" height="500" rx="18"/>
-  <text class="pill" fill="#2f6fed" x="76" y="180">PUBLIC EDGE</text>
-  <text class="head ink" x="76" y="218">VPS gateway</text>
-  <text class="body muted" x="76" y="246">103.82.21.202</text>
-  <rect fill="#fff" class="card" x="76" y="275" width="248" height="76" rx="12"/>
-  <text class="body ink" x="94" y="304">gateway-traefik</text>
-  <text class="small muted" x="94" y="328">TCP 80 / 443 • HostSNI routes</text>
-  <rect fill="#fff" class="card" x="76" y="367" width="248" height="76" rx="12"/>
-  <text class="body ink" x="94" y="396">shared Rathole</text>
-  <text class="small muted" x="94" y="420">7000 + isolated GitLab 7001–7003</text>
-  <rect fill="#fff" class="card" x="76" y="459" width="248" height="76" rx="12"/>
-  <text class="body ink" x="94" y="488">NetBird relay / STUN</text>
-  <text class="small muted" x="94" y="512">TCP 443 • UDP 3478</text>
-  <text class="small muted" x="76" y="583">No application DB or image storage</text>
-  <text class="small muted" x="76" y="606">RustDesk + Coturn also terminate here</text>
-
-  <rect class="data card" x="410" y="145" width="330" height="500" rx="18"/>
-  <text class="pill" fill="#1f9d8b" x="436" y="180">HOME EDGE + DATA</text>
-  <text class="head ink" x="436" y="218">Pi5</text>
-  <text class="body muted" x="436" y="246">10.10.0.5 • Swarm manager</text>
-  <rect fill="#fff" class="card" x="436" y="275" width="278" height="98" rx="12"/>
-  <text class="body ink" x="454" y="305">edge-traefik-pi5</text>
-  <text class="small muted" x="454" y="329">normal TLS termination + LAN edge</text>
-  <text class="small muted" x="454" y="351">AdGuard split DNS / Rathole client</text>
-  <rect fill="#fff" class="card" x="436" y="389" width="278" height="116" rx="12"/>
-  <text class="body ink" x="454" y="419">Authoritative data</text>
-  <text class="small muted" x="454" y="445">PostgreSQL / PgBouncer • Redis</text>
-  <text class="small muted" x="454" y="467">CouchDB • RustFS • registries</text>
-  <text class="small muted" x="454" y="489">Portless by default; explicit LAN exceptions</text>
-  <rect fill="#fff" class="card" x="436" y="521" width="278" height="91" rx="12"/>
-  <text class="body ink" x="454" y="551">Overlay boundaries</text>
-  <text class="small muted" x="454" y="576">homelab-net • pg-net • s3-net</text>
-  <text class="small muted" x="454" y="598">edge-http-net / private service nets</text>
-
-  <rect fill="none" stroke="#7c5cfc" stroke-width="3" stroke-dasharray="11 8" x="805" y="120" width="525" height="590" rx="24"/>
-  <text class="pill" fill="#7c5cfc" x="835" y="158">PROXMOX 10.10.0.20</text>
-  <text class="small muted" x="835" y="183">separate IAC state and lifecycle per VM • no active Kubernetes cluster</text>
-  <rect class="compute card" x="835" y="215" width="465" height="240" rx="16"/>
-  <text class="pill" fill="#7c5cfc" x="861" y="249">VM100 • 10.10.0.31 • ID 100</text>
-  <text class="head ink" x="861" y="286">Production compute</text>
-  <text class="body muted" x="861" y="314">6 vCPU • 16 GB • Docker Swarm worker</text>
-  <text class="small ink" x="861" y="350">User-facing services: Homepage, n8n, NetBird,</text>
-  <text class="small ink" x="861" y="372">RelayHub, GitLab, OCR proxy, Family Tree,</text>
-  <text class="small ink" x="861" y="394">OpenClaw and other portless Swarm workloads</text>
-  <text class="small muted" x="861" y="428">Pi5 remains the database/object-storage host</text>
-  <rect class="note card" x="835" y="490" width="465" height="166" rx="16"/>
-  <text class="pill" fill="#d97706" x="861" y="525">VM110 • 10.10.0.32 • ID 110</text>
-  <text class="head ink" x="861" y="562">DB operations worker</text>
-  <text class="body muted" x="861" y="590">db-management • backup / restore UI and adapters</text>
-  <text class="small ink" x="861" y="622">No production PostgreSQL, CouchDB, Redis or RustFS</text>
-  <text class="small muted" x="861" y="644">Same Proxmox failure domain; not an off-site target</text>
-
-  <path class="flow" d="M350 380 C375 380 385 380 410 380"/>
-  <text class="small muted" x="356" y="365">public route / shared tunnel</text>
-  <path class="flow" d="M740 330 C780 330 795 330 835 330"/>
-  <text class="small muted" x="748" y="315">Swarm overlays / Pi5 edge</text>
-  <path class="dashed" d="M740 535 C780 560 795 565 835 565"/>
-  <text class="small muted" x="735" y="605">LAN-routed DB operations</text>
-
-  <rect class="host card" x="50" y="735" width="300" height="108" rx="16"/>
-  <text class="pill" fill="#64748b" x="76" y="768">ROAMING CLIENT / DEV</text>
-  <text class="head ink" x="76" y="803">Mac • 10.10.0.6</text>
-  <text class="small muted" x="76" y="827">Native OCR + LM Studio • may roam via VPS Rathole</text>
-  <path class="dashed" d="M220 735 C220 685 190 668 200 645"/>
-  <text class="small muted" x="230" y="684">client-initiated tunnel</text>
-
-  <rect class="retired card" x="410" y="735" width="920" height="108" rx="16"/>
-  <text class="pill" fill="#c2413b" x="436" y="768">EXPLICITLY OUT OF ACTIVE TOPOLOGY</text>
-  <text class="body ink" x="436" y="803">Orange Pi Zero 3 edge, old K8s / kube-vip / Longhorn, BDS connector and old public runtimes are historical or retired.</text>
-  <text class="small muted" x="436" y="827">Do not infer a live route or recreate a retired service from archived documentation.</text>
+  <text class="body muted" x="52" y="88">Live audit 2026-10-31 • blue = request path • green = data path • dashed = outbound tunnel / backup</text>
+  <rect class="white card" stroke="#d8dee9" x="50" y="120" width="230" height="90" rx="12"/>
+  <text class="bold ink" x="66" y="146">Internet clients</text>
+  <text class="small muted" x="66" y="168">public HTTPS, Git SSH,</text>
+  <text class="small muted" x="66" y="188">NetBird / RustDesk peers</text>
+  <rect class="edge card" x="50" y="250" width="320" height="470" rx="18"/>
+  <text class="pill" x="72" y="282" fill="#2f6fed">PUBLIC EDGE · VPS</text>
+  <text class="head ink" x="72" y="314">VPS gateway</text>
+  <text class="small muted" x="72" y="340">103.82.21.202 · 4 vCPU · 7.8 GiB</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="360" width="276" height="64" rx="12"/>
+  <text class="bold ink" x="88" y="386">gateway-traefik</text>
+  <text class="small muted" x="88" y="408">80/443 · HostSNI passthrough</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="430" width="276" height="64" rx="12"/>
+  <text class="bold ink" x="88" y="456">rathole-server</text>
+  <text class="small muted" x="88" y="478">7000 shared · 18123 Mac LLM</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="500" width="276" height="64" rx="12"/>
+  <text class="bold ink" x="88" y="526">GitLab rathole ×3</text>
+  <text class="small muted" x="88" y="548">2222+7001 SSH · 7002 web · 7003 reg</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="570" width="276" height="64" rx="12"/>
+  <text class="bold ink" x="88" y="596">netbird-relay · coturn</text>
+  <text class="small muted" x="88" y="618">443 SNI · 3478/udp · 5349</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="640" width="276" height="64" rx="12"/>
+  <text class="bold ink" x="88" y="666">RustDesk hbbs / hbbr</text>
+  <text class="small muted" x="88" y="688">21115–21117 tcp · 21116 udp</text>
+  <rect class="data card" x="430" y="120" width="400" height="600" rx="18"/>
+  <text class="pill" x="452" y="152" fill="#1f9d8b">LAN EDGE + DATA · Pi5</text>
+  <text class="head ink" x="452" y="184">Pi5 rpivn  10.10.0.5</text>
+  <text class="small muted" x="452" y="210">Swarm leader · Docker 28.4 · 469G (42%)</text>
+  <rect class="white card" stroke="#d8dee9" x="452" y="228" width="356" height="110" rx="12"/>
+  <text class="bold ink" x="468" y="254">Edge (standalone containers)</text>
+  <text class="small muted" x="468" y="276">edge-traefik-pi5 · file provider routes</text>
+  <text class="small muted" x="468" y="296">edge-rathole-pi5 · rathole client</text>
+  <text class="small muted" x="468" y="316">edge-adguardhome-pi5 · split DNS</text>
+  <rect class="white card" stroke="#d8dee9" x="452" y="350" width="356" height="150" rx="12"/>
+  <text class="bold ink" x="468" y="376">Datastores (compose infra)</text>
+  <text class="small muted" x="468" y="398">PostgreSQL pg16 + PgBouncer :6432</text>
+  <text class="small muted" x="468" y="418">Redis redis-prod (AOF)</text>
+  <text class="small muted" x="468" y="438">CouchDB 3.5.3 · RustFS 1.0.4</text>
+  <text class="small muted" x="468" y="458">docker-registry (registry:2)</text>
+  <text class="small muted" x="468" y="478"></text>
+  <rect class="white card" stroke="#d8dee9" x="452" y="512" width="356" height="90" rx="12"/>
+  <text class="bold ink" x="468" y="538">Monitoring</text>
+  <text class="small muted" x="468" y="560">VictoriaMetrics · Alertmanager</text>
+  <text class="small muted" x="468" y="580">exporters · cAdvisor</text>
+  <rect class="white card" stroke="#d8dee9" x="452" y="614" width="356" height="90" rx="12"/>
+  <text class="bold ink" x="468" y="640">Control (Swarm tasks)</text>
+  <text class="small muted" x="468" y="662">Semaphore v2.19 · provisioner</text>
+  <text class="small muted" x="468" y="682">→ retire in IaC plan P1</text>
+  <rect class="compute card" x="890" y="120" width="460" height="600" rx="18"/>
+  <text class="pill" x="912" y="152" fill="#7c5cfc">HYPERVISOR · Proxmox 10.10.0.20</text>
+  <text class="head ink" x="912" y="184">Proxmox VE</text>
+  <text class="small muted" x="912" y="210">local + local-lvm (~77%) · no off-host backup</text>
+  <rect class="white card" stroke="#d8dee9" x="912" y="228" width="416" height="260" rx="12"/>
+  <text class="bold ink" x="928" y="254">VM100 vm100-prod  10.10.0.31</text>
+  <text class="small muted" x="928" y="276">Swarm worker · Docker 29.8 · 194G (66%)</text>
+  <text class="small muted" x="928" y="296">GitLab CE 18.11 + 3 tunnel clients</text>
+  <text class="small muted" x="928" y="316">homepage · family-tree · mezonhook · openclaw</text>
+  <text class="small muted" x="928" y="336">n8n · mypocket api/worker · macocr-proxy</text>
+  <text class="small muted" x="928" y="356">stirling-pdf · netbird server/dashboard</text>
+  <text class="small muted" x="928" y="376">relayhub-v1 (api, admin, nats, redis)</text>
+  <text class="small muted" x="928" y="396">+ 7 compose projects (couchloom, whiteboard,</text>
+  <text class="small muted" x="928" y="416">  kubekosh, relayhub-go legacy, diun, …)</text>
+  <rect class="white card" stroke="#d8dee9" x="912" y="500" width="416" height="120" rx="12"/>
+  <text class="bold ink" x="928" y="526">VM110 db-ops  10.10.0.32</text>
+  <text class="small muted" x="928" y="548">Swarm worker · Docker 29.1 · 78G (65%)</text>
+  <text class="small muted" x="928" y="568">db-management api/web/worker</text>
+  <text class="small muted" x="928" y="588">CloudBeaver 26.2 · Databasus v3.64</text>
+  <rect class="white card" stroke="#d8dee9" x="912" y="632" width="416" height="70" rx="12"/>
+  <text class="small muted" x="928" y="658">VM 101/102 removed · no K8s</text>
+  <rect class="note card" x="50" y="770" width="300" height="100" rx="12"/>
+  <text class="bold ink" x="66" y="796">MikroTik hEX S (router)</text>
+  <text class="small muted" x="66" y="818">PPPoE · DHCP · NAT</text>
+  <text class="small muted" x="66" y="838">DHCP DNS → 10.10.0.2 ? verify</text>
+  <rect class="white card" stroke="#d8dee9" x="380" y="770" width="300" height="100" rx="12"/>
+  <text class="bold ink" x="396" y="796">Mac mini 10.10.0.6 (roaming)</text>
+  <text class="small muted" x="396" y="818">OCR app → WSS ocr.dungxbuif.com</text>
+  <text class="small muted" x="396" y="838">LM Studio :1234 via rathole</text>
+  <rect class="retired card" x="710" y="770" width="300" height="100" rx="12"/>
+  <text class="bold ink" x="726" y="796">Orange Pi 10.10.0.2</text>
+  <text class="small muted" x="726" y="818">DOWN · still a Swarm member</text>
+  <text class="small muted" x="726" y="838">remove in plan P2</text>
+  <rect class="white card" stroke="#d8dee9" x="1040" y="770" width="310" height="100" rx="12"/>
+  <text class="bold ink" x="1056" y="796">Google Drive</text>
+  <text class="small muted" x="1056" y="818">single off-site backup target</text>
+  <text class="small muted" x="1056" y="838">(Databasus, db-management)</text>
+  <path class="flow" d="M165 210 V250"/>
+  <path class="flow" d="M370 300 H430"/>
+  <rect fill="#f7f8fb" x="378.2" y="277" width="43.6" height="21" rx="6"/>
+  <text class="small muted" x="400" y="292" text-anchor="middle">7000</text>
+  <path class="flow" d="M830 300 H890"/>
+  <rect fill="#f7f8fb" x="827.1" y="277" width="65.80000000000001" height="21" rx="6"/>
+  <text class="small muted" x="860" y="292" text-anchor="middle">overlay</text>
+  <path class="dflow" d="M912 420 C860 420 860 420 808 420"/>
+  <rect fill="#f7f8fb" x="838.2" y="397" width="43.6" height="21" rx="6"/>
+  <text class="small muted" x="860" y="412" text-anchor="middle">data</text>
+  <path class="dashed" d="M870 460 V742 H210 V724"/>
+  <path class="dashed" d="M870 460 H908"/>
+  <rect fill="#f7f8fb" x="451.7" y="732" width="376.6" height="21" rx="6"/>
+  <text class="small muted" x="640" y="747" text-anchor="middle">GitLab tunnels 7001–7003 (VM100 dials out to VPS)</text>
+  <path class="dashed" d="M380 820 H362 V724"/>
+  <path class="dashed" d="M1120 620 V770"/>
 </svg>

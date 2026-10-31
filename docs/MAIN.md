@@ -12,6 +12,9 @@ this page covers how traffic gets in and how to publish a service.
 
 ## Ingress paths
 
+![Ingress and domain paths](./assets/diagrams/ingress-domains.svg)
+
+
 ```text
 Shared HTTPS:  VPS gateway-traefik (HostSNI allow-list) -> rathole-server :7000
                -> edge-rathole-pi5 -> edge-traefik-pi5 (TLS, Cloudflare DNS-01 wildcard)

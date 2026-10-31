@@ -10,7 +10,7 @@ timestamp: 2026-10-31T11:05:44+07:00
 Open work only; completed items live in git history and [LOG.md](./LOG.md).
 The forward roadmap is the
 [Lab IaC and automation rebuild plan](./superpowers/plans/2026-10-31-lab-iac-automation-rebuild.md)
-(status: proposed). The **Plan** column maps each item to its phase (P0–P7).
+(status: proposed). The **Plan** column maps each item to its phase (P0–P8).
 Status values: `open`, `partial`, `blocked`, `decision`.
 
 ## P0 Urgent / security
@@ -35,16 +35,16 @@ classes are unconfirmed.
 
 | ID | Item | Acceptance gate | Plan | Status |
 |---|---|---|---|---|
-| B0 | Confirm where GitLab, RustFS, Redis and host-config backups are scheduled | If none, temporarily re-enable the previous runner until P5 assigns one owner per class. | P0 | open |
-| B2 | Host config backup schedule | Re-enable/replace the configs class and observe a recurring scheduled run. | P5 | open (scheduler inactive) |
-| B3 | VM100 vzdump | Add a separate failure-domain target (PBS/NAS/vzdump to off-host) before the first image backup. | P5 | open (target decision) |
-| B4 | Dead-man's switch and alerts | Observe a live scheduled health run with external heartbeat. | P5 | open (scheduler inactive) |
-| B5 | Health check false negatives | Capture a fresh lock-free scheduled health run. | P5 | open (scheduler inactive) |
-| B8 | Monthly automated restore test | One scheduled restore marker/notification, run as a Semaphore job. | P5 | open (scheduler inactive) |
-| B9 | Make Pi5 passive for backups | RustFS/PostgreSQL native pull done; CouchDB native pull and moving the scheduled `databases` class off Pi5 remain. | P5 | partial |
-| B12 | Restore GitLab backup schedule after the 2026-10-28 local purge | Fresh off-host GitLab backup, remote snapshot + restore marker, retention set. | P5 | open |
-| R4 | Databasus coverage | Re-authorize Drive, then fresh-backup and isolated-restore every in-scope job; classify/enroll `relayhub_v1_staging_20261030`. | P5 | blocked (Drive OAuth 401; admin credential stale) |
-| L5 | VM110 `db-ops` as backup/DB-ops worker | Currently runs only db-management Swarm tasks; migrate backup classes one at a time; rebuild-from-zero drill. | P5 | open |
+| B0 | Confirm where GitLab, RustFS, Redis and host-config backups are scheduled | If none, temporarily re-enable the previous runner until P6 assigns one owner per class. | P0 | open |
+| B2 | Host config backup schedule | Re-enable/replace the configs class and observe a recurring scheduled run. | P6 | open (scheduler inactive) |
+| B3 | VM100 vzdump | Add a separate failure-domain target (PBS/NAS/vzdump to off-host) before the first image backup. | P6 | open (target decision) |
+| B4 | Dead-man's switch and alerts | Observe a live scheduled health run with external heartbeat. | P6 | open (scheduler inactive) |
+| B5 | Health check false negatives | Capture a fresh lock-free scheduled health run. | P6 | open (scheduler inactive) |
+| B8 | Monthly automated restore test | One scheduled restore marker/notification, run as a Semaphore job. | P6 | open (scheduler inactive) |
+| B9 | Make Pi5 passive for backups | RustFS/PostgreSQL native pull done; CouchDB native pull and moving the scheduled `databases` class off Pi5 remain. | P6 | partial |
+| B12 | Restore GitLab backup schedule after the 2026-10-28 local purge | Fresh off-host GitLab backup, remote snapshot + restore marker, retention set. | P6 | open |
+| R4 | Databasus coverage | Re-authorize Drive, then fresh-backup and isolated-restore every in-scope job; classify/enroll `relayhub_v1_staging_20261030`. | P6 | blocked (Drive OAuth 401; admin credential stale) |
+| L5 | VM110 `db-ops` as backup/DB-ops worker | Currently runs only db-management Swarm tasks; migrate backup classes one at a time; rebuild-from-zero drill. | P6 | open |
 
 ## Platform and runtime
 
@@ -53,12 +53,12 @@ classes are unconfirmed.
 | P1 | Swarm cleanup | Remove down node `orangepizero3`; remove `0/0` services `edge_traefik`, `edge_rathole`, `edge_adguardhome`, `relayhub` (bootstrap legacy), `mypocket-web` after owner confirmation. | P2 | open |
 | P2 | Docker engine drift | Pi5 28.4.0, VM100 29.8.2, VM110 29.1.3; pin one version and upgrade node by node. | P2 | open |
 | P3 | Pi5 edge as code | Standalone `edge-traefik-pi5`, `edge-rathole-pi5` (`rathole:local`), `edge-adguardhome-pi5` (`latest`) into a managed compose with digests. | P3 | open |
-| P4 | Retire legacy RelayHub Go | VM100 compose `prod` (relayhub-api/worker/nats/redis) is rollback-only; retire after owner confirms. | P4 | decision |
-| R5 | Clean VM100 state | Inventory volumes/runtime/rollback artifacts; move state to the approved host; remove only verified orphans. Disk 66% used. | P4 | open |
-| R1 | Audit and normalize Pi5 databases | Owner, host, backup class, retention for each PostgreSQL/CouchDB/Redis/RustFS store. | P4 | open |
-| R2 | Move stray databases to Pi5 | One engine at a time with restore checks before cleanup (legacy RelayHub PostgreSQL already retired). | P4 | partial |
-| R10 | GitLab/RustFS write-path review | Measure growth/write frequency, classify durable data, decide DB suitability without weakening restore. | P4 | open |
-| R11 | Review every sync mechanism | Map LiveSync, CouchLoom changes feed, backups, replication; verify source of truth, delete propagation, auth, rollback. | P4 | open |
+| P5 | Retire legacy RelayHub Go | VM100 compose `prod` (relayhub-api/worker/nats/redis) is rollback-only; retire after owner confirms. | P5 | decision |
+| R5 | Clean VM100 state | Inventory volumes/runtime/rollback artifacts; move state to the approved host; remove only verified orphans. Disk 66% used. | P5 | open |
+| R1 | Audit and normalize Pi5 databases | Owner, host, backup class, retention for each PostgreSQL/CouchDB/Redis/RustFS store. | P5 | open |
+| R2 | Move stray databases to Pi5 | One engine at a time with restore checks before cleanup (legacy RelayHub PostgreSQL already retired). | P5 | partial |
+| R10 | GitLab/RustFS write-path review | Measure growth/write frequency, classify durable data, decide DB suitability without weakening restore. | P5 | open |
+| R11 | Review every sync mechanism | Map LiveSync, CouchLoom changes feed, backups, replication; verify source of truth, delete propagation, auth, rollback. | P5 | open |
 | C1 | Pi5 Cloudflared tunnel | Native systemd unit flaps with `Unauthorized: Tunnel not found`; repair token/tunnel or retire. | P3 | blocked (deferred by operator) |
 
 ## Image updates
@@ -77,7 +77,7 @@ canaries, keep a bounded rollback. Ledger:
 | U9 | RelayHub Redis `7.4` | Queue/reconnect and latency receipts. | partial |
 | U10 | Backup relay Nginx (3) | Reconcile Diun state with registry; no proven candidate. | blocked |
 | U11 | Diun | Fix 15–16 registry failures per scan before trusting its signals. | blocked |
-| U12 | Private/local app images | Repair registry visibility; current-vs-candidate digest inventory; drift-free digests (P4 exit). | blocked |
+| U12 | Private/local app images | Repair registry visibility; current-vs-candidate digest inventory; drift-free digests (P5 exit). | blocked |
 
 ## Automation and documentation
 

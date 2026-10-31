@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="850" viewBox="0 0 1400 850" role="img" aria-labelledby="title desc">
+  <title id="title">App CI/CD flow</title>
+  <desc id="desc">App pipelines build, scan, sign and push an image by digest. A bot opens a homelab-ops MR to bump staging, which deploys automatically. A git tag opens a prod MR with the same digest; prod deploy is manual and rolls back automatically on failed health.</desc>
+  <defs><marker id="a-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#2f6fed"/></marker><marker id="a-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#1f9d8b"/></marker><marker id="a-ok" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#16a34a"/></marker><marker id="a-red" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#c2413b"/></marker><marker id="a-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7c5cfc"/></marker><marker id="a-pink" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#db2777"/></marker><marker id="a-muted" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7b8798"/></marker><style>
+.bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.white{fill:#fff}
+.small{font:14px sans-serif}.tiny{font:12.5px sans-serif}.body{font:16px sans-serif}.bold{font:700 16px sans-serif}
+.head{font:700 21px sans-serif}.title{font:700 30px sans-serif}.pill{font:700 13px sans-serif;letter-spacing:.5px}
+.card{stroke-width:2}.edge{fill:#eaf2ff;stroke:#2f6fed}.data{fill:#eafaf6;stroke:#1f9d8b}
+.compute{fill:#f1edff;stroke:#7c5cfc}.host{fill:#fff;stroke:#b8c2d1}.note{fill:#fff7e8;stroke:#d97706}
+.retired{fill:#fff1f1;stroke:#c2413b}.ops{fill:#ecfdf3;stroke:#16a34a}.ctrl{fill:#fdf2f8;stroke:#db2777}
+.flow{fill:none;stroke:#2f6fed;stroke-width:3.5;marker-end:url(#a-blue)}
+.dflow{fill:none;stroke:#1f9d8b;stroke-width:3.5;marker-end:url(#a-green)}
+.gflow{fill:none;stroke:#16a34a;stroke-width:3.5;marker-end:url(#a-ok)}
+.rflow{fill:none;stroke:#c2413b;stroke-width:3;stroke-dasharray:8 7;marker-end:url(#a-red)}
+.pflow{fill:none;stroke:#7c5cfc;stroke-width:3.5;marker-end:url(#a-purple)}
+.kflow{fill:none;stroke:#db2777;stroke-width:3.5;marker-end:url(#a-pink)}
+.dashed{fill:none;stroke:#7b8798;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#a-muted)}
+</style></defs>
+  <rect class="bg" width="1400" height="850"/>
+  <text class="title ink" x="50" y="58">App CI/CD flow</text>
+  <text class="body muted" x="52" y="88">Plan 2026-10-31 • build once, promote the same digest</text>
+  <rect class="compute card" x="40" y="120" width="1320" height="170" rx="18"/>
+  <text class="pill" x="60" y="150" fill="#7c5cfc">APP REPO PIPELINE (ci-templates include)</text>
+  <rect class="note card" x="40" y="320" width="1320" height="170" rx="18"/>
+  <text class="pill" x="60" y="350" fill="#b45309">HOMELAB-OPS (bot MRs)</text>
+  <rect class="data card" x="40" y="520" width="1320" height="170" rx="18"/>
+  <text class="pill" x="60" y="550" fill="#1f9d8b">RUNTIME (Swarm)</text>
+  <rect class="white card" stroke="#d8dee9" x="60" y="170" width="200" height="100" rx="12"/>
+  <text class="bold ink" x="76" y="196">MR</text>
+  <text class="small muted" x="76" y="218">test · lint</text>
+  <text class="small muted" x="76" y="238">build (no push)</text>
+  <rect class="white card" stroke="#d8dee9" x="300" y="170" width="300" height="100" rx="12"/>
+  <text class="bold ink" x="316" y="196">merge main</text>
+  <text class="small muted" x="316" y="218">buildx amd64/arm64</text>
+  <text class="small muted" x="316" y="238">Trivy · SBOM · cosign</text>
+  <rect class="white card" stroke="#d8dee9" x="640" y="170" width="260" height="100" rx="12"/>
+  <text class="bold ink" x="656" y="196">push registry</text>
+  <text class="small muted" x="656" y="218">GitLab Registry</text>
+  <text class="small muted" x="656" y="238">:sha@digest</text>
+  <rect class="white card" stroke="#d8dee9" x="1080" y="170" width="260" height="100" rx="12"/>
+  <text class="bold ink" x="1096" y="196">git tag vX.Y.Z</text>
+  <text class="small muted" x="1096" y="218">promote, no rebuild</text>
+  <path class="pflow" d="M260 220 H300"/>
+  <path class="pflow" d="M600 220 H640"/>
+  <rect class="white card" stroke="#d8dee9" x="560" y="370" width="320" height="100" rx="12"/>
+  <text class="bold ink" x="576" y="396">bot MR: env/stg.yml</text>
+  <text class="small muted" x="576" y="418">digest bump · policy check</text>
+  <text class="small muted" x="576" y="438">auto-merge if green</text>
+  <rect class="white card" stroke="#d8dee9" x="1000" y="370" width="340" height="100" rx="12"/>
+  <text class="bold ink" x="1016" y="396">bot MR: env/prod.yml</text>
+  <text class="small muted" x="1016" y="418">same digest as staging</text>
+  <text class="small muted" x="1016" y="438">review + merge</text>
+  <path class="pflow" d="M770 270 V370"/>
+  <path class="pflow" d="M1210 270 V370"/>
+  <rect class="white card" stroke="#d8dee9" x="560" y="570" width="320" height="100" rx="12"/>
+  <text class="bold ink" x="576" y="596">deploy:&lt;app&gt;:stg (auto)</text>
+  <text class="small muted" x="576" y="618">stg-&lt;app&gt; · &lt;app&gt;.stg (LAN)</text>
+  <text class="small muted" x="576" y="638">smoke → Mezon</text>
+  <rect class="white card" stroke="#d8dee9" x="1000" y="570" width="340" height="100" rx="12"/>
+  <text class="bold ink" x="1016" y="596">deploy:&lt;app&gt;:prod (manual)</text>
+  <text class="small muted" x="1016" y="618">wait converge + health</text>
+  <text class="small muted" x="1016" y="638">receipt → Mezon</text>
+  <rect class="note card" x="60" y="570" width="440" height="100" rx="12"/>
+  <text class="bold ink" x="76" y="596">DB migration job</text>
+  <text class="small muted" x="76" y="618">runs before prod deploy</text>
+  <text class="small muted" x="76" y="638">db-management backup first</text>
+  <path class="dflow" d="M720 470 V570"/>
+  <path class="dflow" d="M1170 470 V570"/>
+  <path class="dashed" d="M500 620 C700 700 900 700 1000 640"/>
+  <rect class="retired card" x="60" y="730" width="640" height="90" rx="12"/>
+  <text class="bold ink" x="76" y="756">Failure → Swarm update_config failure_action: rollback</text>
+  <text class="small muted" x="76" y="778">then revert the prod MR (previous digest stays in Git)</text>
+  <rect class="white card" stroke="#d8dee9" x="720" y="730" width="640" height="90" rx="12"/>
+  <text class="bold ink" x="736" y="756">Rules</text>
+  <text class="small muted" x="736" y="778">app CI never SSHes to prod · only the Pi5 deploy runner deploys</text>
+  <text class="small muted" x="736" y="798">Renovate opens dependency MRs, never deploys</text>
+</svg>

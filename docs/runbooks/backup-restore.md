@@ -11,6 +11,9 @@ timestamp: 2026-10-31T00:00:00+07:00
 
 ## Current state (2026-10-31)
 
+![Data and backup](../assets/diagrams/data-and-backup.svg)
+
+
 Three overlapping mechanisms exist. Only the first two run on a schedule.
 
 | Path | Runs on | Covers | Schedule | Restore proof |

@@ -31,6 +31,11 @@ status: proposed
 
 ### 1.2 Runtime thực tế
 
+![Homelab system overview](../../assets/diagrams/system-overview.svg)
+
+![What runs where](../../assets/diagrams/hosts-workloads.svg)
+
+
 **Swarm** (manager Pi5 `rpivn`):
 
 - Có 4 node: `rpivn` (leader), `vm100-prod`, `db-ops`, và `orangepizero3` đang **Down nhưng vẫn là thành viên**.
@@ -81,6 +86,9 @@ status: proposed
 | Rác | `k8s/`, `argocd-apps/` (vẫn bật `prune/selfHeal`), `archive/`, `migration/`, `edge-registrar/` (sửa Caddyfile qua ssh), `__pycache__` bị commit | Worktree `feat/dev-vm-iac` tách từ main thời K8s, chậm 67 commit, tạo thêm cây `infra/` song song |
 
 ### 1.4 Rủi ro ưu tiên phát hiện qua audit
+
+![Data and backup](../../assets/diagrams/data-and-backup.svg)
+
 
 1. **Không lớp nào rebuild lại được từ code.** Edge Pi5, datastore, gateway VPS và MikroTik đều là "snowflake".
 2. **Backup định kỳ có khoảng trống.** Timer VM100 đã tắt. db-management chỉ phụ trách PG/Couch. GitLab, RustFS và Redis chưa có scheduler được xác nhận. Không có backup image VM ngoài Proxmox.
@@ -156,6 +164,9 @@ Cách chuyển từ cấu trúc hiện tại:
 
 ### 3.2 Bảng ai quản cái gì
 
+![IaC target: who owns what](../../assets/diagrams/iac-target-architecture.svg)
+
+
 | Thành phần | Công cụ | Ghi chú |
 |---|---|---|
 | MikroTik hEX S | OpenTofu `terraform-routeros/routeros` | Import theo từng resource. PPPoE secret lấy từ secret store |
@@ -181,6 +192,9 @@ Cách chuyển từ cấu trúc hiện tại:
 - Phương án dự phòng nếu không muốn phụ thuộc cloud: SOPS + age, file mã hoá trong repo. Chọn một trong hai, không dùng cả hai.
 
 ### 3.4 Thực thi: GitLab CI là control plane duy nhất (không Semaphore)
+
+![How changes are executed](../../assets/diagrams/iac-execution.svg)
+
 
 **Một CLI cho mọi đường chạy.** Mọi job CI chỉ gọi `bin/hl …`, chạy trong image `automation-ee` (có digest). Workstation break-glass chạy đúng lệnh đó, cùng image, với `op run`. Vì vậy CI và tay người không bao giờ lệch nhau.
 
@@ -222,6 +236,11 @@ hl drill restore <class>         # restore vào scratch, đo kết quả
 - Stack app: `stack.yml` dùng chung, `env/<env>.yml` chỉ chứa digest, replicas và resource. `app.yml` là metadata để generator sinh route, DNS, DB, monitoring và backup.
 
 ### 3.5 Domain, truy cập máy, DB, network: luồng tự sinh từ `app.yml`
+
+![Golden path](../../assets/diagrams/app-golden-path.svg)
+
+![Access and exposure model](../../assets/diagrams/access-model.svg)
+
 
 Một khai báo trong `stacks/<app>/app.yml` sinh ra toàn bộ các mục dưới đây qua MR. Không ai tạo tay.
 
@@ -272,6 +291,9 @@ needs: { postgres: true, redis: true, s3: [uploads], couchdb: false }
 
 ### 3.6 CI/CD cho app
 
+![App CI/CD flow](../../assets/diagrams/app-cicd-flow.svg)
+
+
 ```text
 MR app        → test, lint, build thử
 merge main    → build multi-arch → Trivy → SBOM → cosign → push GitLab Registry (:sha@digest)
@@ -306,18 +328,21 @@ T3  VM100 / VM110 (apps, GitLab), mọi Swarm stack
 
 ## 5. Lộ trình theo phase
 
+![Roadmap and recovery tiers](../../assets/diagrams/iac-roadmap.svg)
+
+
 Mỗi phase kết thúc bằng **evidence trong vault** (`docs/deployments/…`), có revision `homelab-ops` và đường rollback.
 
 ### P0: Ổn định và dọn nền (1 tuần, rủi ro thấp)
 
 - [ ] Xác minh DNS mà DHCP trên MikroTik đang quảng bá. Nếu vẫn là `10.10.0.2` thì đổi sang `10.10.0.5` (có approval).
-- [ ] Xác minh lịch backup cho GitLab, RustFS và Redis đang thực sự chạy ở đâu. Nếu không có, bật lại tạm runner cũ cho tới P5.
+- [ ] Xác minh lịch backup cho GitLab, RustFS và Redis đang thực sự chạy ở đâu. Nếu không có, bật lại tạm runner cũ cho tới P6.
 - [ ] Thống nhất identity automation: user `automation` cùng **một** SSH key (lưu trong 1Password) trên Pi5, VM100, VM110, VPS và Proxmox. Thêm `IdentitiesOnly yes` vào `~/.ssh/config` để hết lỗi `Too many authentication failures`.
 - [ ] Repo: xoá `k8s/`, `argocd-apps/` (tắt `selfHeal` trước), `__pycache__`, sửa job `validate:semaphore-bootstrap`. Quyết định bỏ worktree `feat/dev-vm-iac` (giữ lại ý tưởng `op-inject`, không merge cây `infra/`).
 - [ ] Bật mirror repo ra ngoài lab.
 - **Exit:** CI xanh, mirror chạy, SSH automation đồng nhất trên 5 host, backup được xác nhận có scheduler.
 
-### P1: Nền tảng IaC (1–2 tuần)
+### P1: Nền tảng IaC (2 tuần)
 
 - [ ] Tạo layout §3.1 bằng `git mv`, giữ lịch sử, cập nhật test path.
 - [ ] Remote state: bucket `tofu-state` trên RustFS (bật versioning) + S3 backend `use_lockfile=true` + giữ state encryption. Migrate state của 2 module Proxmox.
@@ -343,7 +368,17 @@ Mỗi phase kết thúc bằng **evidence trong vault** (`docs/deployments/…`)
 - [ ] Build `rathole` thành image có digest thay cho `rathole:local`.
 - **Exit:** xoá rồi tái tạo edge Pi5 bằng playbook trong window. Smoke test public và LAN pass. Route mới chỉ cần sửa catalog.
 
-### P4: App và data (3 tuần)
+### P4: Platform CI/CD (2–3 tuần)
+
+- [ ] Project `platform/ci-templates` (build multi-arch, Trivy, SBOM, cosign, push GitLab Registry theo digest).
+- [ ] Runner `plan` (VM110) và `deploy` (Pi5, protected). Runner `build` giữ nguyên.
+- [ ] Bot bump digest mở MR vào `homelab-ops` (`env/stg.yml`, `env/prod.yml`).
+- [ ] Staging namespace `stg-<app>`, domain `<app>.stg.dungxbuif.com` (lan).
+- [ ] Generator golden path từ `app.yml` (§3.5) và policy gate cho stack.
+- [ ] Registry: GitLab Registry là chính. Pi5 registry thành pull-through mirror.
+- **Exit:** homepage chạy trọn stg → prod → rollback thử.
+
+### P5: Onboard app và data (3–4 tuần)
 
 - [ ] Mỗi workload trong §1.2 có một thư mục `stacks/<app>/` gồm stack, metadata (owner, host, network, secret names, backup class, health URL) và digest pin.
 - [ ] Chuyển các compose trên VM100 sang Swarm: whiteboard, couchloom (dọn 4 file release), knowledge-hub-search, diun, backup relays. KubeKosh cần privileged nên giữ compose qua `compose_app`, hoặc retire nó.
@@ -353,7 +388,7 @@ Mỗi phase kết thúc bằng **evidence trong vault** (`docs/deployments/…`)
 - [ ] Monitoring as code: rule, target sinh từ `stacks/*/app.yml`, alert route về Mezon.
 - **Exit:** script drift báo **0 workload chạy mà không có trong repo**, và 0 image dùng tag trôi.
 
-### P5: Backup và DR (2 tuần, chạy song song với P4)
+### P6: Backup và DR (2 tuần, chạy song song với P5)
 
 - [ ] Chọn **một** chủ backup cho từng lớp: db-management (PG/Couch), role `backup` (GitLab, RustFS, Redis, host config, tofu state). Databasus giữ hoặc bỏ theo kết quả D1. Xoá `backup/` legacy sau khi cutover.
 - [ ] Backup image VM: thêm target ngoài host (PBS trên máy khác/NAS, hoặc vzdump → RustFS/Drive) do Ansible `pve_host` quản lý job.
@@ -361,7 +396,7 @@ Mỗi phase kết thúc bằng **evidence trong vault** (`docs/deployments/…`)
 - [ ] Diễn tập rebuild: **dựng lại VM110 từ số 0** bằng tofu + ansible + stack (VM110 không phải datastore). Ghi lại thời gian và các bước tay còn sót.
 - **Exit:** restore drill tự động pass. Rebuild VM110 không cần bước tay ngoài runbook.
 
-### P6: Mạng và truy cập (2 tuần)
+### P7: Mạng và truy cập (2 tuần)
 
 - [ ] MikroTik: import vào tofu theo từng resource (DHCP, lease tĩnh, DNS, firewall filter/NAT, `/ip service`). Cho tới khi plan = 0, export `.rsc` làm backup hằng đêm.
 - [ ] Tạo user RouterOS `automation` có quyền tối thiểu, thay cho đường SSH admin.
@@ -370,7 +405,7 @@ Mỗi phase kết thúc bằng **evidence trong vault** (`docs/deployments/…`)
 - [ ] (Tuỳ chọn) VLAN segmentation chỉ làm khi đã có rollback qua console.
 - **Exit:** `tofu plan` network/dns/netbird = 0. Đổi một firewall rule end-to-end qua MR.
 
-### P7: Vận hành liên tục
+### P8: Vận hành liên tục
 
 - Drift hằng đêm cho tofu, ansible và stacks, báo Mezon. Mọi drift phải được sửa bằng MR hoặc ghi lại lý do.
 - Renovate/Diun đề xuất bump digest bằng MR, không tự deploy.

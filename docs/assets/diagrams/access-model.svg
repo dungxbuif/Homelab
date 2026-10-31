@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="800" viewBox="0 0 1400 800" role="img" aria-labelledby="title desc">
+  <title id="title">Access and exposure model</title>
+  <desc id="desc">People, CI and devices map to NetBird groups that grant host or app access. Apps declare public, lan or private exposure, each with its own DNS and protection.</desc>
+  <defs><marker id="a-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#2f6fed"/></marker><marker id="a-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#1f9d8b"/></marker><marker id="a-ok" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#16a34a"/></marker><marker id="a-red" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#c2413b"/></marker><marker id="a-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7c5cfc"/></marker><marker id="a-pink" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#db2777"/></marker><marker id="a-muted" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7b8798"/></marker><style>
+.bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.white{fill:#fff}
+.small{font:14px sans-serif}.tiny{font:12.5px sans-serif}.body{font:16px sans-serif}.bold{font:700 16px sans-serif}
+.head{font:700 21px sans-serif}.title{font:700 30px sans-serif}.pill{font:700 13px sans-serif;letter-spacing:.5px}
+.card{stroke-width:2}.edge{fill:#eaf2ff;stroke:#2f6fed}.data{fill:#eafaf6;stroke:#1f9d8b}
+.compute{fill:#f1edff;stroke:#7c5cfc}.host{fill:#fff;stroke:#b8c2d1}.note{fill:#fff7e8;stroke:#d97706}
+.retired{fill:#fff1f1;stroke:#c2413b}.ops{fill:#ecfdf3;stroke:#16a34a}.ctrl{fill:#fdf2f8;stroke:#db2777}
+.flow{fill:none;stroke:#2f6fed;stroke-width:3.5;marker-end:url(#a-blue)}
+.dflow{fill:none;stroke:#1f9d8b;stroke-width:3.5;marker-end:url(#a-green)}
+.gflow{fill:none;stroke:#16a34a;stroke-width:3.5;marker-end:url(#a-ok)}
+.rflow{fill:none;stroke:#c2413b;stroke-width:3;stroke-dasharray:8 7;marker-end:url(#a-red)}
+.pflow{fill:none;stroke:#7c5cfc;stroke-width:3.5;marker-end:url(#a-purple)}
+.kflow{fill:none;stroke:#db2777;stroke-width:3.5;marker-end:url(#a-pink)}
+.dashed{fill:none;stroke:#7b8798;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#a-muted)}
+</style></defs>
+  <rect class="bg" width="1400" height="800"/>
+  <text class="title ink" x="50" y="58">Access and exposure model</text>
+  <text class="body muted" x="52" y="88">Plan 2026-10-31 • humans reach machines only through NetBird • apps declare exposure</text>
+  <rect class="host card" x="50" y="120" width="400" height="520" rx="18"/>
+  <text class="pill" x="72" y="152" fill="#64748b">WHO</text>
+  <text class="head ink" x="72" y="184">People and machines</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="210" width="356" height="80" rx="12"/>
+  <text class="bold ink" x="88" y="236">dungxbuif (human)</text>
+  <text class="small muted" x="88" y="258">SSH key in 1Password agent</text>
+  <text class="small muted" x="88" y="278">~/.ssh/config from hl ssh-config</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="302" width="356" height="80" rx="12"/>
+  <text class="bold ink" x="88" y="328">automation (CI)</text>
+  <text class="small muted" x="88" y="350">own key via SA homelab-apply</text>
+  <text class="small muted" x="88" y="370">plan runner: --check only</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="394" width="356" height="80" rx="12"/>
+  <text class="bold ink" x="88" y="420">devices</text>
+  <text class="small muted" x="88" y="442">laptop · phone · Mac</text>
+  <text class="small muted" x="88" y="462">NetBird peers</text>
+  <rect class="retired card" x="72" y="486" width="356" height="130" rx="12"/>
+  <text class="bold ink" x="88" y="512">break-glass</text>
+  <text class="small muted" x="88" y="534">Proxmox console</text>
+  <text class="small muted" x="88" y="554">MikroTik console / safe mode</text>
+  <text class="small muted" x="88" y="574">offline emergency key (1Password)</text>
+  <rect class="ctrl card" x="500" y="120" width="400" height="520" rx="18"/>
+  <text class="pill" x="522" y="152" fill="#be185d">NETBIRD GROUPS (tofu netbird)</text>
+  <text class="head ink" x="522" y="184">Policy</text>
+  <rect class="ctrl card" x="522" y="210" width="356" height="110" rx="12"/>
+  <text class="bold ink" x="538" y="236">admins</text>
+  <text class="small muted" x="538" y="258">SSH all hosts</text>
+  <text class="small muted" x="538" y="278">Proxmox :8006</text>
+  <text class="small muted" x="538" y="298">WinBox / router SSH</text>
+  <rect class="ctrl card" x="522" y="336" width="356" height="90" rx="12"/>
+  <text class="bold ink" x="538" y="362">ci-runners</text>
+  <text class="small muted" x="538" y="384">SSH hosts only</text>
+  <rect class="ctrl card" x="522" y="442" width="356" height="90" rx="12"/>
+  <text class="bold ink" x="538" y="468">devices</text>
+  <text class="small muted" x="538" y="490">lan + private apps only</text>
+  <rect class="white card" stroke="#d8dee9" x="522" y="548" width="356" height="70" rx="12"/>
+  <text class="body ink" x="538" y="574">no public SSH (VPS: NetBird only)</text>
+  <rect class="edge card" x="950" y="120" width="400" height="520" rx="18"/>
+  <text class="pill" x="972" y="152" fill="#2f6fed">APP EXPOSURE (app.yml)</text>
+  <text class="head ink" x="972" y="184">Domains</text>
+  <rect class="edge card" x="972" y="210" width="356" height="110" rx="12"/>
+  <text class="bold ink" x="988" y="236">public</text>
+  <text class="small muted" x="988" y="258">DNS → VPS · HostSNI allow-list</text>
+  <text class="small muted" x="988" y="278">Rathole → Pi5 Traefik (TLS)</text>
+  <rect class="edge card" x="972" y="336" width="356" height="110" rx="12"/>
+  <text class="bold ink" x="988" y="362">lan</text>
+  <text class="small muted" x="988" y="384">AdGuard → 10.10.0.5</text>
+  <text class="small muted" x="988" y="404">lan-only middleware (LAN + NetBird)</text>
+  <rect class="edge card" x="972" y="462" width="356" height="110" rx="12"/>
+  <text class="bold ink" x="988" y="488">private</text>
+  <text class="small muted" x="988" y="510">NetBird DNS only</text>
+  <text class="small muted" x="988" y="530">NetBird CIDR + group policy</text>
+  <path class="kflow" d="M428 250 H522"/>
+  <path class="kflow" d="M428 342 C470 342 480 380 522 380"/>
+  <path class="kflow" d="M428 434 C470 434 480 487 522 487"/>
+  <path class="flow" d="M878 487 C920 487 930 517 972 517"/>
+  <path class="flow" d="M878 487 C920 487 930 391 972 391"/>
+  <rect class="white card" stroke="#d8dee9" x="50" y="680" width="1300" height="90" rx="12"/>
+  <text class="bold ink" x="66" y="706">Host baseline (Ansible base)</text>
+  <text class="small muted" x="66" y="728">users dungxbuif + automation only · password + root login off · Proxmox UI and router admin limited to LAN + NetBird (tofu network firewall) · wildcard TLS via DNS-01 on Pi5</text>
+</svg>

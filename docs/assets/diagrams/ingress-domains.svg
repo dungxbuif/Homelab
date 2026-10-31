@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="940" viewBox="0 0 1400 940" role="img" aria-labelledby="title desc">
+  <title id="title">Ingress and domain paths</title>
+  <desc id="desc">Five lanes show public HTTPS, LAN split DNS, GitLab, Mac LLM/OCR and NetBird request paths from client to backend service.</desc>
+  <defs><marker id="a-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#2f6fed"/></marker><marker id="a-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#1f9d8b"/></marker><marker id="a-ok" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#16a34a"/></marker><marker id="a-red" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#c2413b"/></marker><marker id="a-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7c5cfc"/></marker><marker id="a-pink" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#db2777"/></marker><marker id="a-muted" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7b8798"/></marker><style>
+.bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.white{fill:#fff}
+.small{font:14px sans-serif}.tiny{font:12.5px sans-serif}.body{font:16px sans-serif}.bold{font:700 16px sans-serif}
+.head{font:700 21px sans-serif}.title{font:700 30px sans-serif}.pill{font:700 13px sans-serif;letter-spacing:.5px}
+.card{stroke-width:2}.edge{fill:#eaf2ff;stroke:#2f6fed}.data{fill:#eafaf6;stroke:#1f9d8b}
+.compute{fill:#f1edff;stroke:#7c5cfc}.host{fill:#fff;stroke:#b8c2d1}.note{fill:#fff7e8;stroke:#d97706}
+.retired{fill:#fff1f1;stroke:#c2413b}.ops{fill:#ecfdf3;stroke:#16a34a}.ctrl{fill:#fdf2f8;stroke:#db2777}
+.flow{fill:none;stroke:#2f6fed;stroke-width:3.5;marker-end:url(#a-blue)}
+.dflow{fill:none;stroke:#1f9d8b;stroke-width:3.5;marker-end:url(#a-green)}
+.gflow{fill:none;stroke:#16a34a;stroke-width:3.5;marker-end:url(#a-ok)}
+.rflow{fill:none;stroke:#c2413b;stroke-width:3;stroke-dasharray:8 7;marker-end:url(#a-red)}
+.pflow{fill:none;stroke:#7c5cfc;stroke-width:3.5;marker-end:url(#a-purple)}
+.kflow{fill:none;stroke:#db2777;stroke-width:3.5;marker-end:url(#a-pink)}
+.dashed{fill:none;stroke:#7b8798;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#a-muted)}
+</style></defs>
+  <rect class="bg" width="1400" height="940"/>
+  <text class="title ink" x="50" y="58">Ingress and domain paths</text>
+  <text class="body muted" x="52" y="88">Current request paths • no home-router port forwards • every public path enters through the VPS</text>
+  <rect class="edge card" x="40" y="130" width="1320" height="140" rx="18"/>
+  <text class="pill" x="60" y="160" fill="#2f6fed">PUBLIC HTTPS</text>
+  <rect class="data card" x="40" y="290" width="1320" height="140" rx="18"/>
+  <text class="pill" x="60" y="320" fill="#1f9d8b">LAN / SPLIT DNS</text>
+  <rect class="compute card" x="40" y="450" width="1320" height="140" rx="18"/>
+  <text class="pill" x="60" y="480" fill="#7c5cfc">GITLAB GIT SSH / WEB / REGISTRY</text>
+  <rect class="note card" x="40" y="610" width="1320" height="140" rx="18"/>
+  <text class="pill" x="60" y="640" fill="#b45309">MAC LLM / OCR</text>
+  <rect class="ctrl card" x="40" y="770" width="1320" height="140" rx="18"/>
+  <text class="pill" x="60" y="800" fill="#be185d">NETBIRD</text>
+  <rect class="white card" stroke="#d8dee9" x="60" y="176" width="175.0" height="80" rx="12"/>
+  <text class="bold ink" x="76" y="202">client</text>
+  <text class="small muted" x="76" y="224">*.dungxbuif.com</text>
+  <path class="flow" d="M239.0 216 H275.0"/>
+  <rect class="white card" stroke="#d8dee9" x="281.0" y="176" width="175.0" height="80" rx="12"/>
+  <text class="bold ink" x="297.0" y="202">public DNS</text>
+  <text class="small muted" x="297.0" y="224">→ 103.82.21.202</text>
+  <path class="flow" d="M460.0 216 H496.0"/>
+  <rect class="white card" stroke="#d8dee9" x="502.0" y="176" width="175.0" height="80" rx="12"/>
+  <text class="bold ink" x="518.0" y="202">VPS Traefik</text>
+  <text class="small muted" x="518.0" y="224">HostSNI allow-list</text>
+  <text class="small muted" x="518.0" y="244">TLS passthrough</text>
+  <path class="flow" d="M681.0 216 H717.0"/>
+  <rect class="white card" stroke="#d8dee9" x="723.0" y="176" width="175.0" height="80" rx="12"/>
+  <text class="bold ink" x="739.0" y="202">Rathole :7000</text>
+  <text class="small muted" x="739.0" y="224">Pi5 dials out</text>
+  <path class="flow" d="M902.0 216 H938.0"/>
+  <rect class="white card" stroke="#d8dee9" x="944.0" y="176" width="175.0" height="80" rx="12"/>
+  <text class="bold ink" x="960.0" y="202">Pi5 Traefik</text>
+  <text class="small muted" x="960.0" y="224">TLS terminate</text>
+  <text class="small muted" x="960.0" y="244">file-provider route</text>
+  <path class="flow" d="M1123.0 216 H1159.0"/>
+  <rect class="white card" stroke="#d8dee9" x="1165.0" y="176" width="175.0" height="80" rx="12"/>
+  <text class="bold ink" x="1181.0" y="202">tasks.&lt;svc&gt;</text>
+  <text class="small muted" x="1181.0" y="224">Swarm overlay</text>
+  <text class="small muted" x="1181.0" y="244">VM100 / VM110 / Pi5</text>
+  <rect class="white card" stroke="#d8dee9" x="60" y="336" width="285.5" height="80" rx="12"/>
+  <text class="bold ink" x="76" y="362">LAN client</text>
+  <text class="small muted" x="76" y="384">DHCP DNS ?</text>
+  <text class="small muted" x="76" y="404">(verify MikroTik)</text>
+  <path class="dflow" d="M349.5 376 H385.5"/>
+  <rect class="white card" stroke="#d8dee9" x="391.5" y="336" width="285.5" height="80" rx="12"/>
+  <text class="bold ink" x="407.5" y="362">AdGuard Pi5</text>
+  <text class="small muted" x="407.5" y="384">rewrite → 10.10.0.5</text>
+  <path class="dflow" d="M681.0 376 H717.0"/>
+  <rect class="white card" stroke="#d8dee9" x="723.0" y="336" width="285.5" height="80" rx="12"/>
+  <text class="bold ink" x="739.0" y="362">Pi5 Traefik</text>
+  <text class="small muted" x="739.0" y="384">lan-only middleware</text>
+  <path class="dflow" d="M1012.5 376 H1048.5"/>
+  <rect class="white card" stroke="#d8dee9" x="1054.5" y="336" width="285.5" height="80" rx="12"/>
+  <text class="bold ink" x="1070.5" y="362">tasks.&lt;svc&gt;</text>
+  <text class="small muted" x="1070.5" y="384">semaphore, cloudbeaver,</text>
+  <text class="small muted" x="1070.5" y="404">kubekosh …</text>
+  <rect class="white card" stroke="#d8dee9" x="60" y="496" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="76" y="522">git / browser</text>
+  <text class="small muted" x="76" y="544">gitlab.dungxbuif.com</text>
+  <text class="small muted" x="76" y="564">:2222 SSH</text>
+  <path class="pflow" d="M283.2 536 H319.2"/>
+  <rect class="white card" stroke="#d8dee9" x="325.2" y="496" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="341.2" y="522">VPS Traefik / :2222</text>
+  <text class="small muted" x="341.2" y="544">TLS on VPS (exception)</text>
+  <path class="pflow" d="M548.4 536 H584.4"/>
+  <rect class="white card" stroke="#d8dee9" x="590.4" y="496" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="606.4" y="522">rathole 7001/2/3</text>
+  <text class="small muted" x="606.4" y="544">isolated pairs</text>
+  <path class="pflow" d="M813.5999999999999 536 H849.5999999999999"/>
+  <rect class="white card" stroke="#d8dee9" x="855.5999999999999" y="496" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="871.5999999999999" y="522">VM100 clients ×3</text>
+  <text class="small muted" x="871.5999999999999" y="544">Swarm tunnel clients</text>
+  <path class="pflow" d="M1078.8 536 H1114.8"/>
+  <rect class="white card" stroke="#d8dee9" x="1120.8" y="496" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="1136.8" y="522">gitlab_gitlab</text>
+  <text class="small muted" x="1136.8" y="544">:22 · :80 · :5005</text>
+  <rect class="white card" stroke="#d8dee9" x="60" y="656" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="76" y="682">llm.dungxbuif.com</text>
+  <text class="small muted" x="76" y="704">→ Pi5 Traefik</text>
+  <path class="flow" d="M283.2 696 H319.2"/>
+  <rect class="white card" stroke="#d8dee9" x="325.2" y="656" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="341.2" y="682">VPS :18123</text>
+  <text class="small muted" x="341.2" y="704">rathole-server</text>
+  <path class="flow" d="M548.4 696 H584.4"/>
+  <rect class="white card" stroke="#d8dee9" x="590.4" y="656" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="606.4" y="682">Mac rathole client</text>
+  <text class="small muted" x="606.4" y="704">dials VPS</text>
+  <path class="flow" d="M813.5999999999999 696 H849.5999999999999"/>
+  <rect class="white card" stroke="#d8dee9" x="855.5999999999999" y="656" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="871.5999999999999" y="682">LM Studio :1234</text>
+  <text class="small muted" x="871.5999999999999" y="704">must be running</text>
+  <path class="flow" d="M1078.8 696 H1114.8"/>
+  <rect class="white card" stroke="#d8dee9" x="1120.8" y="656" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="1136.8" y="682">Mac OCR app</text>
+  <text class="small muted" x="1136.8" y="704">WSS → ocr.dungxbuif.com</text>
+  <text class="small muted" x="1136.8" y="724">→ macocr-proxy VM100</text>
+  <rect class="white card" stroke="#d8dee9" x="60" y="816" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="76" y="842">peer</text>
+  <text class="small muted" x="76" y="864">Mac / VM100 / phone</text>
+  <path class="kflow" d="M283.2 856 H319.2"/>
+  <rect class="white card" stroke="#d8dee9" x="325.2" y="816" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="341.2" y="842">netbird.dungxbuif.com</text>
+  <text class="small muted" x="341.2" y="864">mgmt on VM100 via edge</text>
+  <path class="kflow" d="M548.4 856 H584.4"/>
+  <rect class="white card" stroke="#d8dee9" x="590.4" y="816" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="606.4" y="842">netbird-relay</text>
+  <text class="small muted" x="606.4" y="864">VPS 443 SNI + 3478/udp</text>
+  <path class="kflow" d="M813.5999999999999 856 H849.5999999999999"/>
+  <rect class="white card" stroke="#d8dee9" x="855.5999999999999" y="816" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="871.5999999999999" y="842">VM100 routing peer</text>
+  <text class="small muted" x="871.5999999999999" y="864">10.10.0.0/24 route</text>
+  <path class="kflow" d="M1078.8 856 H1114.8"/>
+  <rect class="white card" stroke="#d8dee9" x="1120.8" y="816" width="219.2" height="80" rx="12"/>
+  <text class="bold ink" x="1136.8" y="842">LAN hosts</text>
+  <text class="small muted" x="1136.8" y="864">ACL policy (as code: P7)</text>
+</svg>

@@ -63,4 +63,6 @@ infrastructure in `homelab-ops`), never in this vault.
 ## Conventions
 
 - [OKF_SPEC.md](./OKF_SPEC.md) — frontmatter conventions used in this vault.
-- Diagrams: [`assets/diagrams/`](./assets/diagrams/).
+- Diagrams (`assets/diagrams/`):
+  - Current: [system overview](./assets/diagrams/system-overview.svg), [what runs where](./assets/diagrams/hosts-workloads.svg), [ingress and domains](./assets/diagrams/ingress-domains.svg), [data and backup](./assets/diagrams/data-and-backup.svg), [VPS gateway](./assets/diagrams/vps-gateway.svg), [NetBird relay](./assets/diagrams/netbird-relay.svg), [upgrade and restore](./assets/diagrams/upgrade-and-restore-flow.svg), [project reference flow](./assets/diagrams/project-reference-flow.svg)
+  - Plan: [IaC ownership](./assets/diagrams/iac-target-architecture.svg), [execution](./assets/diagrams/iac-execution.svg), [app CI/CD](./assets/diagrams/app-cicd-flow.svg), [golden path](./assets/diagrams/app-golden-path.svg), [access model](./assets/diagrams/access-model.svg), [roadmap](./assets/diagrams/iac-roadmap.svg)

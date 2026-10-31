@@ -36,7 +36,7 @@ Open work list: [BACKLOG.md](./BACKLOG.md).
 | B3 | No VM image backup (no separate failure-domain target) | Off-host target plus verified `vzdump` restore |
 | U0 | GitLab 18.11.11 not upgraded; native backup too large to complete | Feasible GitLab backup/restore, then staged upgrade (needs PostgreSQL 17) |
 | C1 | Pi5 cloudflared flaps: `Unauthorized: Tunnel not found` (deferred) | Token repaired or connector retired |
-| P1/P4 | Swarm leftovers, down Orange Pi node, legacy RelayHub Go rollback | Owner-confirmed removal |
+| P1/P5 | Swarm leftovers, down Orange Pi node, legacy RelayHub Go rollback | Owner-confirmed removal |
 | R13 | `db-management_mezon_webhook` secret does not match the intended webhook | Replaced via release path, delivery verified |
 
 ## Forward plan

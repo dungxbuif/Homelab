@@ -53,6 +53,9 @@ Leftovers at 0/0 (cleanup candidates, do not scale up): `edge_traefik`,
 
 ## Non-Swarm workloads
 
+![What runs where](./assets/diagrams/hosts-workloads.svg)
+
+
 **Pi5**
 
 | Project | Contents |
@@ -86,6 +89,9 @@ VM100 timers: only `homelab-monitoring-drift` and `homelab-docker-maintenance`.
 UFW inactive; provider firewall policy unconfirmed.
 
 ## Network and ingress
+
+![Ingress and domain paths](./assets/diagrams/ingress-domains.svg)
+
 
 ```text
 Public HTTPS -> VPS gateway-traefik (HostSNI allow-list) -> Rathole :7000
@@ -127,6 +133,9 @@ PostgreSQL holds 17 databases (2026-10-31 dump set). Redis DB indexes are
 namespaces, not security boundaries.
 
 ## Backups (current reality)
+
+![Data and backup](./assets/diagrams/data-and-backup.svg)
+
 
 - Active: `db-management` / Databasus on VM110 -> Google Drive. Six service
   DBs (`n8n`, `homelab`, `relayhub`, `netbird`, `netbird_activity`,

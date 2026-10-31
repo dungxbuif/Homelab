@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="860" viewBox="0 0 1400 860" role="img" aria-labelledby="title desc">
+  <title id="title">What runs where</title>
+  <desc id="desc">Four columns list the workloads on Pi5, VM100, VM110 and the VPS, grouped by how they run: Swarm task, Compose project, standalone container, systemd timer. Warning marks show drift and floating tags.</desc>
+  <defs><marker id="a-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#2f6fed"/></marker><marker id="a-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#1f9d8b"/></marker><marker id="a-ok" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#16a34a"/></marker><marker id="a-red" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#c2413b"/></marker><marker id="a-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7c5cfc"/></marker><marker id="a-pink" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#db2777"/></marker><marker id="a-muted" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7b8798"/></marker><style>
+.bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.white{fill:#fff}
+.small{font:14px sans-serif}.tiny{font:12.5px sans-serif}.body{font:16px sans-serif}.bold{font:700 16px sans-serif}
+.head{font:700 21px sans-serif}.title{font:700 30px sans-serif}.pill{font:700 13px sans-serif;letter-spacing:.5px}
+.card{stroke-width:2}.edge{fill:#eaf2ff;stroke:#2f6fed}.data{fill:#eafaf6;stroke:#1f9d8b}
+.compute{fill:#f1edff;stroke:#7c5cfc}.host{fill:#fff;stroke:#b8c2d1}.note{fill:#fff7e8;stroke:#d97706}
+.retired{fill:#fff1f1;stroke:#c2413b}.ops{fill:#ecfdf3;stroke:#16a34a}.ctrl{fill:#fdf2f8;stroke:#db2777}
+.flow{fill:none;stroke:#2f6fed;stroke-width:3.5;marker-end:url(#a-blue)}
+.dflow{fill:none;stroke:#1f9d8b;stroke-width:3.5;marker-end:url(#a-green)}
+.gflow{fill:none;stroke:#16a34a;stroke-width:3.5;marker-end:url(#a-ok)}
+.rflow{fill:none;stroke:#c2413b;stroke-width:3;stroke-dasharray:8 7;marker-end:url(#a-red)}
+.pflow{fill:none;stroke:#7c5cfc;stroke-width:3.5;marker-end:url(#a-purple)}
+.kflow{fill:none;stroke:#db2777;stroke-width:3.5;marker-end:url(#a-pink)}
+.dashed{fill:none;stroke:#7b8798;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#a-muted)}
+</style></defs>
+  <rect class="bg" width="1400" height="860"/>
+  <text class="title ink" x="50" y="58">What runs where</text>
+  <text class="body muted" x="52" y="88">Live audit 2026-10-31 • Swarm vs Compose vs standalone per host</text>
+  <rect class="data card" x="50" y="120" width="310" height="640" rx="18"/>
+  <text class="head ink" x="72" y="152">Pi5 · rpivn</text>
+  <text class="small muted" x="72" y="178">10.10.0.5 · arm64 · Docker 28.4.0</text>
+  <rect class="white card" stroke="#d8dee9" x="66" y="200" width="278" height="80" rx="12"/>
+  <text class="bold ink" x="82" y="226">Swarm tasks</text>
+  <text class="small muted" x="82" y="248">semaphore_semaphore</text>
+  <text class="small muted" x="82" y="268">homelab-provisioner</text>
+  <rect class="white card" stroke="#d8dee9" x="66" y="294" width="278" height="180" rx="12"/>
+  <text class="bold ink" x="82" y="320">Compose /ssd-data/infra</text>
+  <text class="small muted" x="82" y="342">postgres (pgvector pg16)</text>
+  <text class="small muted" x="82" y="362">pgbouncer :latest ⚠</text>
+  <text class="small muted" x="82" y="382">couchdb 3.5.3</text>
+  <text class="small muted" x="82" y="402">rustfs 1.0.4</text>
+  <text class="small muted" x="82" y="422">victoriametrics · alertmanager</text>
+  <text class="small muted" x="82" y="442">pg/blackbox/snmp exporters</text>
+  <text class="small muted" x="82" y="462">cadvisor · couchdb-backup-proxy</text>
+  <rect class="white card" stroke="#d8dee9" x="66" y="488" width="278" height="60" rx="12"/>
+  <text class="bold ink" x="82" y="514">Compose redis-prod</text>
+  <text class="small muted" x="82" y="536">redis 7.2 (AOF, LAN :16379)</text>
+  <rect class="white card" stroke="#d8dee9" x="66" y="562" width="278" height="120" rx="12"/>
+  <text class="bold ink" x="82" y="588">Standalone docker run ⚠</text>
+  <text class="small muted" x="82" y="610">edge-traefik-pi5</text>
+  <text class="small muted" x="82" y="630">edge-rathole-pi5 (rathole:local)</text>
+  <text class="small muted" x="82" y="650">edge-adguardhome-pi5 :latest</text>
+  <text class="small muted" x="82" y="670">docker-registry (registry:2)</text>
+  <rect class="white card" stroke="#d8dee9" x="66" y="696" width="278" height="60" rx="12"/>
+  <text class="bold ink" x="82" y="722">systemd timers</text>
+  <text class="small muted" x="82" y="744">none</text>
+  <rect class="compute card" x="380" y="120" width="310" height="640" rx="18"/>
+  <text class="head ink" x="402" y="152">VM100 · vm100-prod</text>
+  <text class="small muted" x="402" y="178">10.10.0.31 · amd64 · Docker 29.8.2</text>
+  <rect class="white card" stroke="#d8dee9" x="396" y="200" width="278" height="240" rx="12"/>
+  <text class="bold ink" x="412" y="226">Swarm tasks</text>
+  <text class="small muted" x="412" y="248">gitlab_gitlab 18.11.11</text>
+  <text class="small muted" x="412" y="268">gitlab tunnel clients ×3</text>
+  <text class="small muted" x="412" y="288">homepage · family-tree</text>
+  <text class="small muted" x="412" y="308">mezonhook · openclaw · k8s-syntax</text>
+  <text class="small muted" x="412" y="328">n8n + n8n-runners</text>
+  <text class="small muted" x="412" y="348">mypocket-api · mypocket-worker</text>
+  <text class="small muted" x="412" y="368">macocr-proxy · stirling-pdf</text>
+  <text class="small muted" x="412" y="388">netbird server · dashboard</text>
+  <text class="small muted" x="412" y="408">relayhub-v1 ×4</text>
+  <text class="small muted" x="412" y="428">semaphore-executor · anchors ×2</text>
+  <rect class="white card" stroke="#d8dee9" x="396" y="454" width="278" height="160" rx="12"/>
+  <text class="bold ink" x="412" y="480">Compose (outside Swarm) ⚠</text>
+  <text class="small muted" x="412" y="502">couchloom (app, pg, ollama)</text>
+  <text class="small muted" x="412" y="522">whiteboard ×5</text>
+  <text class="small muted" x="412" y="542">kubekosh</text>
+  <text class="small muted" x="412" y="562">prod = RelayHub Go legacy ×4</text>
+  <text class="small muted" x="412" y="582">diun · knowledge-hub-search</text>
+  <text class="small muted" x="412" y="602">backup db-ops relays ×3</text>
+  <rect class="white card" stroke="#d8dee9" x="396" y="628" width="278" height="100" rx="12"/>
+  <text class="bold ink" x="412" y="654">systemd timers</text>
+  <text class="small muted" x="412" y="676">monitoring-drift</text>
+  <text class="small muted" x="412" y="696">docker-maintenance</text>
+  <text class="small muted" x="412" y="716">no backup timers ⚠</text>
+  <rect class="compute card" x="710" y="120" width="310" height="640" rx="18"/>
+  <text class="head ink" x="732" y="152">VM110 · db-ops</text>
+  <text class="small muted" x="732" y="178">10.10.0.32 · amd64 · Docker 29.1.3</text>
+  <rect class="white card" stroke="#d8dee9" x="726" y="200" width="278" height="140" rx="12"/>
+  <text class="bold ink" x="742" y="226">Swarm tasks</text>
+  <text class="small muted" x="742" y="248">db-management-api</text>
+  <text class="small muted" x="742" y="268">db-management-web</text>
+  <text class="small muted" x="742" y="288">db-management-worker</text>
+  <text class="small muted" x="742" y="308">cloudbeaver 26.2.3</text>
+  <text class="small muted" x="742" y="328">databasus v3.64.0</text>
+  <rect class="white card" stroke="#d8dee9" x="726" y="354" width="278" height="60" rx="12"/>
+  <text class="bold ink" x="742" y="380">Compose</text>
+  <text class="small muted" x="742" y="402">none</text>
+  <rect class="white card" stroke="#d8dee9" x="726" y="428" width="278" height="60" rx="12"/>
+  <text class="bold ink" x="742" y="454">systemd timers</text>
+  <text class="small muted" x="742" y="476">none</text>
+  <rect class="white card" stroke="#d8dee9" x="726" y="502" width="278" height="100" rx="12"/>
+  <text class="bold ink" x="742" y="528">Resources</text>
+  <text class="small muted" x="742" y="550">7.8 GiB RAM · 78G disk (65%)</text>
+  <text class="small muted" x="742" y="570">same Proxmox failure domain</text>
+  <text class="small muted" x="742" y="590">as VM100</text>
+  <rect class="edge card" x="1040" y="120" width="310" height="640" rx="18"/>
+  <text class="head ink" x="1062" y="152">VPS · gateway</text>
+  <text class="small muted" x="1062" y="178">103.82.21.202 · Docker 29.3.0</text>
+  <rect class="white card" stroke="#d8dee9" x="1056" y="200" width="278" height="180" rx="12"/>
+  <text class="bold ink" x="1072" y="226">Compose / containers</text>
+  <text class="small muted" x="1072" y="248">gateway-traefik v3.6</text>
+  <text class="small muted" x="1072" y="268">rathole-server :latest ⚠</text>
+  <text class="small muted" x="1072" y="288">gitlab-ssh / https / registry</text>
+  <text class="small muted" x="1072" y="308">  rathole servers</text>
+  <text class="small muted" x="1072" y="328">netbird-relay :latest ⚠</text>
+  <text class="small muted" x="1072" y="348">coturn 4.6.3</text>
+  <text class="small muted" x="1072" y="368">hbbs · hbbr (RustDesk) :latest</text>
+  <rect class="white card" stroke="#d8dee9" x="1056" y="394" width="278" height="100" rx="12"/>
+  <text class="bold ink" x="1072" y="420">Host</text>
+  <text class="small muted" x="1072" y="442">UFW inactive ⚠</text>
+  <text class="small muted" x="1072" y="462">no container healthchecks</text>
+  <text class="small muted" x="1072" y="482">38G disk (20%)</text>
+  <rect class="retired card" x="50" y="780" width="1300" height="50" rx="12"/>
+  <text class="bold ink" x="66" y="806">Swarm 0/0 leftovers ⚠  edge_traefik · edge_rathole · edge_adguardhome · relayhub (bootstrap) · mypocket-web          ⚠ = drift / not-as-code / floating tag</text>
+</svg>
