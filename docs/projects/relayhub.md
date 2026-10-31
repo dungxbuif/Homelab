@@ -11,9 +11,10 @@ project: relayhub
 class: public
 owner: dungxbuif
 repo: dungxbuif/relayhub
-deployed_revision: c61e998 (public Rust v1 API); Go production runtime 731047e (not public)
+deployed_revision: 731047e (public release tag; Rust runtime content c61e998); Go production runtime 731047e (not public)
 canary_image: registry-gitlab.dungxbuif.com/dungxbuif/relayhub@sha256:4331063e39eb42caa722ae80aa656348d384e425c082cf451c50f46730261234
 go_production_image: registry-gitlab.dungxbuif.com/dungxbuif/relayhub@sha256:4331063e39eb42caa722ae80aa656348d384e425c082cf451c50f46730261234
+public_release_image: relayhub-v1:731047e (VM100 local Swarm image; previous tag c61e998 retained)
 ---
 
 # RelayHub
@@ -36,10 +37,10 @@ Related internal references (keep them, do not merge into public docs):
 
 | Field | Value |
 |---|---|
-| Local checkout | `/home/dungxbuif/workspace/projects/RelayHub/` (checked out on `codex/centrifugo-upstream-baseline`, HEAD `9c6baa0`, 2026-10-31) |
+| Local checkout | `/home/dungxbuif/workspace/projects/RelayHub/` (operator worktree remains on `codex/centrifugo-upstream-baseline`, HEAD `9c6baa0`; release source is `main` `731047e`, 2026-10-31) |
 | GitLab | `dungxbuif/relayhub` (default branch `main`); GitHub mirror `dungxbuif/RelayHub` |
 | Repo docs | `README.md`, `CHANGELOG.md`, `docs/` (architecture, decisions, developer, operations, user), public site `web/docs/` |
-| Deployed revision | Public v1 API `c61e998` ("expose live agent presence to dashboard", contained in `main`); stack file from `f933e49` (2026-10-31). Go production runtime `731047e`; rollback image alias preserves legacy Go `eee9e7c` |
+| Deployed revision | Public Swarm release tag `731047e` (Rust binary content unchanged from `c61e998`; stack file from `f933e49`); Go production runtime `731047e`; rollback image alias preserves legacy Go `eee9e7c` |
 
 ## Internal architecture
 
@@ -61,7 +62,7 @@ Related internal references (keep them, do not merge into public docs):
 |---|---|
 | Host / placement | VM100 (`node.hostname == vm100-prod`) for all four services |
 | Stack / services | Swarm stack `relayhub-v1` deployed from `RelayHub/deploy/production/stack-staging.yaml` (not in `homelab-ops`) → `relayhub-v1_relayhub`, `_admin`, `_nats`, `_redis` |
-| Image | `relayhub-v1:c61e998`, `relayhub-admin:v1-public-20261031` (local VM100 images, no registry, no digest); `nats:2.14.5-alpine@sha256:d4ac3588…`, `redis:7.4-alpine@sha256:8da19c73…` |
+| Image | `relayhub-v1:731047e` (previous `relayhub-v1:c61e998` retained; same image ID `sha256:a7281797…`), `relayhub-admin:v1-public-20261031` (local VM100 images, no registry, no digest); `nats:2.14.5-alpine@sha256:d4ac3588…`, `redis:7.4-alpine@sha256:8da19c73…` |
 | Domain / exposure | `relayhub.dungxbuif.com`: Pi5 file-provider routes `relayhub` (`/api/v1`, `/hooks/`) → `tasks.relayhub-v1_relayhub:8080`, `relayhub-ui` → `tasks.relayhub-v1_admin:8080`. Public via VPS HostSNI (unverified) |
 | Host port | `relayhub` publishes `18080 → 8080` in host mode on VM100 (violates the no-host-ports rule) |
 | Networks | `relayhub`: `edge-http-net`, `pg-net`, `relayhub-v1_relayhub-v1`; `admin`: `edge-http-net`; NATS/Redis: `relayhub-v1_relayhub-v1` only |
@@ -109,6 +110,28 @@ points at it; the public hostname remains on Rust v1. A 0/0 Swarm service
 - Public smoke checks after cleanup: `/healthz`, `/readyz`,
   `/api/v1/openapi.json`, and `/admin/` all returned HTTP 200. No public route
   was changed during this acceptance run.
+
+## Release integration and deployment (2026-10-31)
+
+- `codex/relayhub-rust-v1` was already an ancestor of `main`; the release
+  code was therefore integrated without a duplicate merge commit. The release
+  worktree was clean after acceptance and is eligible for cleanup; the remote
+  branch is retained for provenance.
+- Fresh `bash scripts/remake-acceptance.sh` passed every gate: Rust format,
+  locked check/unit/contracts/services/identity/durability/delivery/webhooks/
+  realtime/connector/recovery/docs, Node typecheck/build/acceptance, Go race
+  acceptance/vet, dashboard typecheck/build/browser acceptance, artifact
+  build/contracts, disposable live-host migration/readiness, authenticated
+  durable publish/status, and graceful drain.
+- The public Swarm service `relayhub-v1_relayhub` was updated on the manager
+  `rpivn` from `relayhub-v1:c61e998` to `relayhub-v1:731047e`, constrained to
+  `vm100-prod`. Swarm reported `update completed`, one running task, and the
+  task healthcheck is healthy. The image ID is unchanged because the Rust
+  runtime had no source changes after `c61e998`; the new tag records the
+  integrated `main` release state.
+- Rollback is `docker service update --image relayhub-v1:c61e998
+  relayhub-v1_relayhub` from the Pi manager. The Go rollback image remains
+  `homelab/relayhub:rollback-eee9e7c-20261031`.
 
 ## Data
 
@@ -169,7 +192,7 @@ NATS and Redis in the v1 stack run without credentials (private overlay only).
 | G3 Runtime | fail | Stack lives in app repo, deployed by hand; `failure_action: pause`; no limits/healthchecks on admin/NATS/Redis |
 | G4 Data | fail | Active DB `relayhub_v1_staging_20261030` not enrolled, no restore record (legacy `relayhub` verified 2026-10-31) |
 | G5 Observability | not assessed | No blackbox probe documented |
-| G6 Release | partial | Go canary `731047e` passed live Admin E2E and Go/TypeScript client smoke; v1 has no semver tag or public promotion |
+| G6 Release | pass | Rust release acceptance passed all listed gates; public Swarm update to `relayhub-v1:731047e` completed with one healthy task and public smoke returned 200 |
 | G7 Docs | partial | Repo README/docs exist; vault doc now exists; revision recorded |
 | G8 Operate | not assessed | Legacy `prod` + 0/0 `relayhub` service pending retirement (BACKLOG P1/P5) |
 
@@ -188,3 +211,6 @@ NATS and Redis in the v1 stack run without credentials (private overlay only).
   passed event idempotency, queue pull/ack, and realtime WebSocket checks;
   public routing stayed on Rust v1 and the previous Go image was retained for
   rollback.
+- 2026-10-31: Rust release worktree was verified, found already contained in
+  `main`, and deployed as `relayhub-v1:731047e`; Swarm update completed and
+  public health/docs/admin smoke checks returned HTTP 200.
