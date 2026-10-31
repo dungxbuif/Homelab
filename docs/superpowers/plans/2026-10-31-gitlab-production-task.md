@@ -92,7 +92,7 @@ Encryption: archives hold source code and secrets and sit on a third-party servi
 | Mechanism | Behaviour |
 |---|---|
 | `trap … EXIT INT TERM` | On **any** exit path before step 7: remove the local working directory, remove partial files that `gitlab-backup` created inside the container (`/var/opt/gitlab/backups/<run-id>*`), delete the remote `.partial/<run-id>` directory |
-| Hard timeout | `RuntimeMaxSec` kills a hung run, and the trap still runs (`TimeoutStopSec`, then the sweeper) |
+| Hard timeout | `TimeoutStartSec` kills a hung run (`RuntimeMaxSec` is ignored for oneshot units), and the trap still runs. The in-container `timeout 2700` also bounds `gitlab-backup` itself |
 | Sweeper (separate daily unit) | Deletes anything older than 24 h in `.partial/`, stale `.incomplete` directories and orphaned `*_gitlab_backup.tar` locally and in the container. It only touches **allow-listed paths that match the run-id pattern** and refuses to run if the path does not match |
 | Delete guard | The sweeper and retention are dry-run by default, delete at most 3 sets per run, and never delete the newest verified set |
 | `OnFailure=` | A failing unit sends Mezon the run-id, the failed step and a log tail (no secrets) and opens a GitLab issue |
@@ -115,7 +115,7 @@ Legend: 🟢 no runtime impact · 🟡 touches runtime, no restart · 🔴 resta
 | **T1** | Bring VM100 and VM110 under tofu: import, `plan` = 0, set `protection` and tags, move state to the encrypted backend, add the plan-JSON policy | 🟡 | T0 | `plan` shows 0 changes in CI. Nightly drift runs. **Partly written 2026-10-31**: the plan-JSON policy and the VM120 module exist (§10); importing VM100 and VM110 still needs Proxmox access |
 | **T2** | Rewrite the backup tooling in `homelab-ops` (role `gitlab_backup`): lock, preflight, trap, age, upload to `.partial`, verify, promote, retention, sweeper, freshness job, systemd units, `selftest` | 🟢 | — | **Code written 2026-10-31** (see §10). Still to do: run against a real GitLab, with real `age` and rclone, in T4/T5 |
 | **T3** | Remove the existing junk: the 14 GiB `registry.tar.gz` and partial files in `/opt/apps/gitlab/data/backups/` | 🔴 | Approval | **Partly done 2026-10-31**: archive deleted (approved), 14 GB reclaimed. Small partials are left for the sweeper |
-| **T4** | Deploy T2 on VM100 and run the first full backup to Drive | 🟡 | T2, T3 | A verified set on Drive and the first scheduled run succeeded |
+| **T4** | Deploy T2 on VM100 and run the first full backup to Drive | 🟡 | T2, T3 | **Done 2026-10-31**: tooling deployed with Ansible (check mode first), set `20261031T062156Z` on Drive, checksums verified, decrypted with the 1Password key. The timer is installed but **disabled**; scheduling waits for the owner |
 | **T5** | Restore drill #1 from **Drive** in an isolated instance (no outbound network, mirrors, webhooks, email or runners). Run the checklist | 🟢 | T4 | Drill passes. RTO and RPO recorded |
 | **T6** | Create VM120 with tofu (6 vCPU, 12 GiB, 150 GiB) and configure it with Ansible: Docker, GitLab Omnibus (same version, bundled PostgreSQL and Redis, local registry), runner, tunnel clients (not started), monitoring | 🟢 | T1, T0 | VM120 healthy and empty, `plan` = 0 |
 | **T7** | Rehearsal: restore the latest Drive set into VM120, verify everything, time it. Traffic is not switched | 🟢 | T5, T6 | Rehearsal passes. Cutover duration known |
@@ -167,17 +167,43 @@ Rough duration: T0 1 day (waiting on access), T1 1–2 days, T2 3–4 days, T4 a
 | Monitoring | Probes for readiness, SSH `:2222`, registry `/v2/`, runner heartbeat, disk and backup freshness, all alerting to Mezon |
 | Docs | `services/gitlab.md` shows G3 to G5 as pass with evidence |
 
-## 9. What blocks production, and the exact next step
+## 9. Result of T4 (2026-10-31) and what is still open
+
+The first real backup ran on VM100 under the owner's approval.
+
+| Check | Result |
+|---|---|
+| Duration and size | About 3 minutes; set of 455 MB, 38 repositories; GitLab stayed ready (readiness 200 throughout) |
+| Upload verification | `rclone check --download`: 0 differences. SHA256 of the files re-downloaded from Drive matches `checksums.sha256` |
+| Residue | `.partial` is empty, the container backup directory is empty (the old staging was cleaned), only one encrypted copy is kept locally |
+| Decryption | The 1Password key decrypts both archives. The native archive holds 38 bundles and a 35.9 MB database dump with the `projects` table; the config archive holds `gitlab-secrets.json` and `gitlab.rb` |
+| Sweeper and freshness | Run read-only against the real Drive: nothing to delete, freshness OK |
+| Real-run bug found | `RuntimeMaxSec` is ignored for `Type=oneshot`; replaced by `TimeoutStartSec` and redeployed (`d92b74d`) |
+
+This proves the backup is **recoverable in content**. It is not yet a restore: T5 must load it into an isolated GitLab and run the checklist.
+
+Still open before this task can be called production-grade:
+
+| Open item | Why |
+|---|---|
+| Enable the timer | Daily 02:00 runs; a decision for the owner because it changes the schedule on a production host |
+| T5 full restore drill | Only a restore into an isolated instance proves RTO and RPO |
+| Freshness job on a second host | Needs the Drive config on VM110; today the check runs on VM100 only |
+| Registry backup class | Not covered by this set; restic weekly, to be built |
+| T1, T6 to T8 | VM100 and VM110 import into tofu and VM120 need Proxmox access |
+| Recovery secrets | Confirm `restic-password` and `rclone.conf` are also in 1Password (see [secrets standard](/docs/standards/secrets-1password.md)) |
+
+## 9b. What blocked production earlier
 
 The code, tests and read-only checks are done. A production-grade GitLab still needs actions that change the live system, which are not taken without the owner:
 
 | Step | What it changes | Needs |
 |---|---|---|
-| T4 deploy and first backup | Install `age` on VM100 (`apt install age`), add files under `/opt/apps/homelab-gitlab-backup` and `/etc/homelab-gitlab-backup`, run one backup that puts I/O load on GitLab | Approval, the `age` recipients file, the Mezon webhook file |
+| T4 deploy and first backup | Install `age` on VM100, add files under `/opt/apps/homelab-gitlab-backup` and `/etc/homelab-gitlab-backup`, run one backup that puts I/O load on GitLab | **Done** (approved by the owner) |
 | T5 restore drill | Needs the backup from T4 and an isolated target (workstation or VM110) | T4 |
 | T1, T6 to T8 | Importing VM100 and VM110 into tofu, creating VM120, migrating | Proxmox access, then approval for each 🔴 step |
 
-**Decision for the owner: the `age` private key.** Backups are unreadable without it. Recommended: generate the key pair on the workstation, store the private key in 1Password (and the break-glass kit), and put **only the public recipient** on VM100. The key must never live on VM100 or on Drive.
+**Decision taken: the `age` private key.** The owner chose to have the key generated on the workstation and stored through the 1Password CLI in a dedicated vault (`Homelab-Recovery`, human access only). Only the public recipient is on VM100. The key never lives on VM100 or on Drive. Layout and rules: [secrets standard](/docs/standards/secrets-1password.md).
 
 ## 9a. Needed from the owner
 

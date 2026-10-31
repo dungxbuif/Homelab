@@ -1,5 +1,9 @@
 ## 2026-10-31
 
+### First verified GitLab backup on Drive
+
+**Creation** — Created the human-only 1Password vault `Homelab-Recovery` and the item `backup - gitlab - age private key`, written through the CLI without printing the key. Installed `age` on VM100 and deployed the backup tooling with Ansible (check mode first); the timer stays disabled. The first real run produced the set `20261031T062156Z` (455 MB, 38 repositories): uploaded, checksum-verified, and decrypted with the 1Password key. The run exposed one bug (`RuntimeMaxSec` ignored for oneshot units), fixed and redeployed. See the [GitLab production task](/docs/superpowers/plans/2026-10-31-gitlab-production-task.md) section 9.
+
 ### GitLab backup tooling and VM120 module written
 
 **Creation** — In `homelab-ops` (branch `feat/gitlab-production`, commit `0c94b8b`): a hardened GitLab backup runner with encryption, verified Drive upload and cleanup on every failed exit, a retention and freshness tool, a plan policy that rejects VM delete or replace and disk shrink, an OpenTofu module for VM120, systemd units and a deploy playbook. See [implementation status](/docs/superpowers/plans/2026-10-31-gitlab-production-task.md). Nothing was applied or deployed.

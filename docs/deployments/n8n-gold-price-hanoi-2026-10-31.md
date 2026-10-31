@@ -33,6 +33,11 @@ The schedule contract is:
 The watcher establishes a baseline on its first run, then sends only gold price
 or source-status changes. The daily report always sends the full gold table and
 retains the existing Petrolimex RON 95/E5/Diesel V1/V2 section.
+Rendered timestamps are normalized to `DD/MM/YYYY HH:mm` (daily title:
+`DD/MM/YYYY`). The n8n parser persists each brand's last valid two-row result
+for up to six hours across transient source failures, keeping the source's
+older update time visible; after expiry it emits `N/A` and the missing-source
+warning.
 
 ## Root cause addressed
 
@@ -48,12 +53,12 @@ files.
 
 ## Evidence
 
-- `npm test`: 12 tests passed.
+- `npm test`: 16 tests passed.
 - `npm run typecheck`: passed after `npm ci`.
 - `npm run build`: passed.
-- Dev/test delivery was corrected to the current production-compatible Mezon format (`message.mk` contains one `pre` range covering all of `message.t`) and accepted with HTTP 200. This is awaiting human inspection; production delivery was not called.
-- Local live run was performed without sending to Mezon:
-  - BTMC: primary OK, two products.
+- Final DEV preview after the BTMC fallback, source-cache, and timestamp fixes used the current production-compatible Mezon format (`message.mk` contains one `pre` range covering all of `message.t`) and was accepted with HTTP 200. The payload had 5/6 gold brands with two rows, Petrolimex OK, and only SJC's expected blocked-source warning. Production delivery was not called.
+- Latest local live run was performed without sending to Mezon and checked each brand independently:
+  - BTMC: primary HTTP 404 without an API key; official `btmc.vn` HTML fallback OK, two products.
   - DOJI: primary OK, two products; encrypted API payload decrypted locally.
   - PNJ: primary OK, Hanoi data plus generic ring table, two products.
   - Phú Quý: primary OK, two products.
@@ -61,6 +66,13 @@ files.
   - SJC: both official candidates HTTP 403; reported blocked.
   - Petrolimex: daily fuel section returned three V1/V2 rows.
   - first watcher: baseline only, `send=false`.
+- The official SJC page loads in a browser session and exposes the exact bar and
+  round-ring rows, but the n8n HTTP path is still challenged with HTTP 403. No
+  unverified third-party source was added to hide that condition.
+- Free headless Chrome was tested as the planned `Execute Command` integration;
+  it also received the Cloudflare challenge. A browser-session-only DEV preview
+  was sent with SJC values `13.600/13.900` and `13.180/13.580`, source update
+  `31/10/2026 08:16`, and HTTP 200. It is not production automation.
 - Current live workflow export backup: `/tmp/n8n-gold-before-hanoi-local-test.1yfONB.json` on the local machine, 25,412 bytes, workflow ID `daily-gold-fuel-mezon`, active with 8 nodes.
 
 ## Release gate

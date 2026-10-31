@@ -118,9 +118,9 @@ reconciled, and a native backup plus isolated restore is feasible.
 
 ## Backup boundary
 
-**No scheduled GitLab backup exists.** The restic `gitlab` class has no timer,
-and the native backup (~14 GB including ~2 GB `registry.tar.gz`) was stopped
-before completion on 2026-10-31. Databasus backs up `gitlabhq_production`
+**Status 2026-10-31:** a verified backup tool is installed on VM100 and its first set is on Google Drive, but **no schedule is active yet** (the timer is installed and disabled, waiting for the owner). The set `20261031T062156Z` (455 MB, 38 repositories, GitLab 18.11.11, registry excluded) was uploaded, checksum-verified and decrypted with the key in 1Password; the database dump and `gitlab-secrets.json` were present. It is **not** a full restore yet (drill T5). The registry is a separate class that is not backed up yet. See the [GitLab production task](/docs/superpowers/plans/2026-10-31-gitlab-production-task.md).
+
+Earlier state: the restic `gitlab` class has no timer, and the native backup (~14 GB including a 14 GB `registry.tar.gz`) was stopped before completion on 2026-10-30; that archive was deleted on 2026-10-31. Databasus backs up `gitlabhq_production`
 without restore verification. A recoverable backup needs: native
 `gitlab-backup create` archive (repos, uploads, artifacts, registry), the
 config/secrets (`gitlab-secrets.json`, `gitlab.rb`), the Pi5 database plus
@@ -147,7 +147,7 @@ signup_enabled: false
 registry_trial_domain: registry-gitlab.dungxbuif.com
 registry_trial_production_cutover: false
 pi5_registry_current_status: active
-scheduled_backup: none
+scheduled_backup: installed on VM100, timer disabled; one verified set on Drive (20261031T062156Z)
 upgrade_status: on_hold
 ```
 
@@ -159,7 +159,7 @@ upgrade_status: on_hold
 | G1 Build | partial | upstream image pinned by digest; no scan |
 | G2 Security | partial | Swarm secrets used, sign-up disabled; temporary VPS tunnels bypass the Pi5 edge |
 | G3 Runtime | partial | in stack `gitlab`; routes are temporary tunnels |
-| G4 Data | fail | no scheduled backup; Databasus DB job without restore verification; repos/registry on VM100 not backed up |
+| G4 Data | partial | one verified, decryptable backup set on Drive (2026-10-31); no schedule yet; no full restore drill; registry not backed up; Databasus DB job without restore verification |
 | G5 Observability | not assessed | |
 | G6 Release | not assessed | upgrade on hold |
 | G7 Docs | partial | this doc |

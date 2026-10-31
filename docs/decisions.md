@@ -69,7 +69,7 @@ These decisions define the **target state** in the [IaC plan](/docs/superpowers/
 - **GitLab exception:** GitLab moves to bundled PostgreSQL and Redis on VM120. This is the one deliberate exception to "Pi5 holds the data". Its backups still leave the host.
 - **One registry:** GitLab Container Registry, with storage on the GitLab VM disk (RustFS only as a fallback if Proxmox storage is short). Third-party images are copied into it. `registry.dungxbuif.com` is deleted ([decision](/docs/standards/registry.md)).
 - **Control plane:** GitLab CI only. Semaphore and the provisioner are retired in P1. `hl` is written in Python.
-- **Secrets:** 1Password is the single source, with two service accounts (plan, apply).
+- **Secrets:** 1Password is the single source, with two service accounts (plan, apply). Recovery-only secrets (backup encryption keys) live in the human-only vault `Homelab-Recovery`, never readable by CI ([standard](/docs/standards/secrets-1password.md)).
 - **Backup owners:** PostgreSQL → Databasus. CouchDB → db-management. GitLab, RustFS, Redis, configs and tofu state → role `backup`. VM images of VM120 and VM110 → `vzdump` to Drive until a NAS exists.
 - **Delivery policy:** staging only for `internal`/`public` apps that have a database. Prod deploys are manual for the first 3 months. A pipeline is green only after smoke tests and a 10-minute bake ([reliability](/docs/standards/reliability.md)).
 - **Domains:** `app.yml` is the single source. Generated Pi5 routes and the VPS HostSNI list are published with automatic rollback ([domain routing](/docs/standards/domain-routing.md)).
