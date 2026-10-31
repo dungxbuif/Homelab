@@ -75,4 +75,5 @@ These decisions define the **target state** in the [IaC plan](/docs/superpowers/
 - **Domains:** `app.yml` is the single source. Generated Pi5 routes and the VPS HostSNI list are published with automatic rollback ([domain routing](/docs/standards/domain-routing.md)).
 - **Retire:** RelayHub Go legacy, `bds_prod`, Semaphore, the provisioner, `homelab-legacy` (archived to Drive first). KubeKosh stays LAN-only.
 - **Out of scope for IaC:** the Mac (runbook only).
+- **Scripts first in `homelab-ops` (rule, 2026-10-31):** a script is created, reviewed and committed in `homelab-ops` before it runs on a server; no ad-hoc scripts on servers or in scratch directories. Earlier today a few operator helpers (tofu runner, Proxmox audit, restore staging) were used from a scratch directory; they were moved into the repository (`automation/tools/`, `gitlab-restore.py`) the same day.
 

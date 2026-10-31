@@ -1,5 +1,9 @@
 ## 2026-10-31
 
+### Rule: scripts live in homelab-ops first; GitLab restore runbook
+
+**Update** — New rule recorded in [overview](/docs/overview.md): every script is created in `homelab-ops` before it runs on a server. The operator helpers used earlier from a scratch directory were moved into the repository. Added the [GitLab backup and restore runbook](/docs/runbooks/gitlab-backup-restore.md), the restore script `gitlab-restore.py`, and rclone retries in the backup script. The cutover to VM120 has not happened yet.
+
 ### GitLab restore rehearsal on VM120 passed
 
 **Update** — The encrypted set from Drive was restored into the new GitLab on VM120. The secrets check reports 0 failures, `gitlab:check` and the git integrity check pass, and the web and registry endpoints answer. Traffic is still served from VM100; the cutover has not happened. See the [task](/docs/superpowers/plans/2026-10-31-gitlab-production-task.md) section 9a.

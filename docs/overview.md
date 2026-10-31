@@ -62,3 +62,4 @@ LLM: VPS :18123 -> Mac Rathole client -> LM Studio :1234
 9. GitLab stateful updates must not overlap tasks sharing a bind mount: back
    up, scale to zero, confirm exit, then start the replacement
    ([GitLab runbook](/docs/services/gitlab.md)).
+10. **Scripts come from `homelab-ops`.** Every script is written, reviewed, tested and committed in `homelab-ops` first, then deployed to the server (an Ansible release) and run from there. Nothing that changes state is typed on a server, pasted into a shell or run from a scratch directory. Read-only inspection commands are fine. Operator tools live in `homelab-ops/automation/tools/`.
