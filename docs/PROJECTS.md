@@ -140,7 +140,7 @@ initialized. Four repositories use GitLab as `origin` (`NoteVault`,
 | `mezonhook` | `/home/dungxbuif/workspace/projects/mezonhook/` | `git@github.com:dungxbuif/mezonhook.git` | Git checkout |
 | `my-cv` | `/home/dungxbuif/workspace/projects/my-cv/` | `git@github.com:dungxbuif/my-cv.git` | Git checkout |
 | `my_family_tree` | `/home/dungxbuif/workspace/projects/my_family_tree/` | `git@github.com:dungxbuif/my_family_tree.git` | Git checkout |
-| `n8n-nodes-mezon` | `/home/dungxbuif/workspace/projects/n8n-nodes-mezon/` | none | Local package directory; no Git metadata |
+| `n8n-nodes-mezon` | `/home/dungxbuif/workspace/projects/n8n-nodes-mezon/` | local Git; no remotes configured | Git checkout; installed as a live n8n dependency |
 | `project-learn` | `/home/dungxbuif/workspace/projects/project-learn/` | none recorded | Local directory |
 | `random-template-code` | `/home/dungxbuif/workspace/projects/random-template-code/` | `git@github.com:dungxbuif/random-template-code.git` | Git checkout |
 | `selfhost` | `/home/dungxbuif/workspace/projects/selfhost/` | `git@github-dungxbuif:dungxbuif/selfhost.git` | Git checkout |

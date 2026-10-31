@@ -10,8 +10,8 @@ lifecycle: local source / live dependency
 project: n8n-nodes-mezon
 class: none
 owner: dungxbuif
-repo: local Git only; GitLab not configured
-deployed_revision: "d4a78dd (BTMC external-runner fix; workflow active; live package 0.1.1 unchanged)"
+repo: local Git checkout; no remotes configured
+deployed_revision: "faaf3cc (SJC removed from active report); follow-up docs a4bed9a and cleanup 423fe77"
 ---
 
 # n8n-nodes-mezon
@@ -27,8 +27,8 @@ Class `none` · owner dungxbuif · status `local source / live dependency`.
 | Field | Value |
 |---|---|
 | Local checkout | `/home/dungxbuif/workspace/projects/n8n-nodes-mezon/` |
-| Git | local branch `codex/gold-price-hanoi-fallback` |
-| GitLab | not configured |
+| Git | local branch `codex/gold-price-hanoi-fallback`, clean at `423fe77` |
+| Git remotes | none configured; do not invent a remote until the GitLab project is created |
 | Repo docs | `README.md` |
 | Deployed revision | workflow `daily-gold-fuel-mezon` from `faaf3cc` plus earlier hotfixes; package `0.1.1` unchanged |
 
@@ -71,7 +71,7 @@ secret is stored in this repository or its generated JSON.
 
 ## Verification and backup evidence (2026-10-31)
 
-- Local unit/integration tests: `18/18` passed; `npm run typecheck`, `npm run build`, and `git diff --check` passed.
+- Local unit/integration tests: `20/20` passed; `npm run typecheck`, `npm run build`, and `git diff --check` passed.
 - Latest independent official-source run: BTMC primary returned HTTP 404 without a configured API key, then the official `btmc.vn` HTML fallback returned both target products; BTMH, DOJI, PNJ, and Phú Quý returned both target products; SJC was blocked with HTTP 403 on both direct candidates; Petrolimex returned the retained three-row fuel section.
 - A browser session can load the official SJC page and show the exact two target rows, but the current n8n HTTP code path receives Cloudflare 403; no unverified third-party source was substituted.
 - A free headless Chrome trial (the route intended for an n8n `Execute Command` node) also received the Cloudflare challenge, so it is not treated as an automated source yet. A browser-session snapshot was used only for the DEV preview: SJC bar `13.600 / 13.900`, round ring `13.180 / 13.580`, source update `31/10/2026 08:16`.
@@ -112,6 +112,20 @@ secret is stored in this repository or its generated JSON.
   merge input count 6, no `Fetch SJC` node, runtime delivery env unchanged,
   public health `{"status":"ok"}`.
 - No manual production webhook was sent during this change.
+
+### Workflow identity collision audit — 2026-10-31
+
+- The deleted legacy generator `examples/generate-price-workflow.cjs` used the
+  same n8n ID `daily-gold-fuel-mezon` as production but generated the old
+  `Daily Gold & Fuel Report to Mezon` 7-node workflow.
+- The VM100 historical snapshot with that ID remains protected for rollback;
+  it is not a deployment input.
+- The canonical generator does not emit the production ID, and the active
+  production export was verified as `Hanoi Gold Price Fallback - PROD`, active,
+  20 nodes, five brands, with both existing schedules.
+- No live homelab import job or n8n workflow mutation event was found. The
+  proven failure mode is last-import-wins identity collision; the earlier
+  trigger is not proven to be an automatic job.
 
 Read-only comparison on 2026-10-31: DOJI and PNJ both returned SJC bar
 `136.000.000 / 139.000.000` (VND/lượng); Phú Quý returned
