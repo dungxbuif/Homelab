@@ -231,7 +231,9 @@ Verified locally: 14 fault-injection scenarios (failure at each step, SIGTERM, l
 
 **Verified against the real GitLab on VM100, read-only** (the assumptions the stubs could not check): the container name pattern matches; `curl`, `pgrep`, `timeout`, `tar`, `gitlab-backup` and `gitlab-ctl backup-etc` exist in the container; the readiness endpoint returns 200 from inside; the version is 18.11.11; the `df` output parses; no backup process is running. The Drive remote answers with 2 TiB total and 1.23 TiB free. The backup directory still holds the old staging (`db/`, `repositories/`, five small `*.tar.gz`), which the first run will clean.
 
-**Not verified:** `tofu fmt` and `tofu validate`. The workstation has no OpenTofu and the safety classifier blocked downloading a release binary, so CI must run them (its image carries OpenTofu 1.13.1). Also unverified: `age` and the full run against a real GitLab (`age` is **not installed on VM100**; `apt install age` is part of T4), template VM `9000`, and whether `10.10.0.33` is free.
+**Verified with the lab's own runner image** (the workstation has no OpenTofu, and downloading a release binary was blocked): inside the pinned `semaphore-runner` image (OpenTofu 1.9.0; CI uses 1.13.1) `tofu fmt -check -recursive` passes for the whole `automation/tofu` tree, and `tofu init -backend=false -lockfile=readonly` and `tofu validate` pass for `proxmox-gitlab`. No plan was run, because that needs Proxmox access.
+
+**Not verified:** a `tofu plan` against Proxmox, and the repo's CI pipeline itself. Also unverified: `age` and the full run against a real GitLab (`age` is **not installed on VM100**; `apt install age` is part of T4), template VM `9000`, and whether `10.10.0.33` is free.
 
 The fault-injection test found a real gap before any deployment: `gitlab-backup` leaves `db/`, `repositories/` and `*.tar.gz` staging in the backup directory when interrupted, and those names carry no run id. This is exactly the junk that filled 14 GB. The runner now removes those fixed names while it owns the directory, and refuses to start while another GitLab backup process is running.
 
