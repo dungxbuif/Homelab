@@ -204,7 +204,10 @@ Still open before this task can be called production-grade:
 
 State handling for these runs: the encrypted state of each module is in `/opt/apps/homelab-tofu/state/<module>` on VM100, with a copy on the workstation in `~/.local/share/homelab/tofu-state/<module>`. The passphrases are 1Password items `infra - tofu - <module> state passphrase` in `Homelab-Automation`. This is an interim layout until the RustFS backend of plan P1; the VM100 copy is a single point of failure for GitLab's own infrastructure state, so the workstation copy must be kept.
 
-Still to do: configure VM120 (Docker, the same GitLab version with bundled PostgreSQL and Redis), restore the Drive set into it as the T7 rehearsal without switching traffic, then ask for the cutover window and the VM100 resize. The VM100 module still differs from the live VM (cloud-init keys) and is not imported yet.
+| VM120 configured | Playbook `gitlab-host-deploy.yml` (ok=14, changed=9, failed=0): Docker 29.1.5 pinned and held, 4 GiB swap, GitLab 18.11.11-ce.0 in Docker with bundled PostgreSQL and Redis, no published ports |
+| **T7 restore rehearsal** | The set `20261031T062156Z` was downloaded from Drive, checksum-verified, decrypted with the 1Password key and restored into VM120 (`Restore task is done`). Checks: `gitlab:doctor:secrets` 0 failures (the DB decrypts with the restored secrets); `gitlab:check` passes shell, Gitaly, DB, migrations, config and uploads; `gitlab:git:fsck` ran over every repository; the registry answers 401 on `/v2/`; the sign-in page returns 200 and `/-/readiness?all=1` is ok. VM120 holds 39 projects, 3 users and 42 namespaces. **Sidekiq was kept stopped on purpose** so that no mirror, webhook or e-mail runs from the copy |
+
+Not yet checked in the rehearsal: a login with real credentials, a pipeline on a runner, a registry pull, a `git clone` over HTTP, and the project and user counts against the live instance (the direct query on Pi5 was refused, so it was not compared). Still to do: re-check those, then ask for the cutover window and the VM100 resize. The VM100 module still differs from the live VM (cloud-init keys) and is not imported yet.
 
 ## 9b. What blocked production earlier
 

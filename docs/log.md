@@ -1,5 +1,9 @@
 ## 2026-10-31
 
+### GitLab restore rehearsal on VM120 passed
+
+**Update** — The encrypted set from Drive was restored into the new GitLab on VM120. The secrets check reports 0 failures, `gitlab:check` and the git integrity check pass, and the web and registry endpoints answer. Traffic is still served from VM100; the cutover has not happened. See the [task](/docs/superpowers/plans/2026-10-31-gitlab-production-task.md) section 9a.
+
 ### VM120 created, VM110 imported and resized
 
 **Update** — With the owner's approval of the migration chain: removed an unused 9.2 GB image on VM100, imported VM110 into OpenTofu with a zero-diff plan, resized VM110 from 8 to 4 GiB (db-management came back 5 of 5), and created VM120 for GitLab (8 GiB, 100 GiB, `10.10.0.33`). Details and the state layout are in the [GitLab production task](/docs/superpowers/plans/2026-10-31-gitlab-production-task.md) section 9a. GitLab itself has not been moved.

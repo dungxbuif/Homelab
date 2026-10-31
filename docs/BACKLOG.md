@@ -120,7 +120,7 @@ canaries, keep a bounded rollback. Ledger:
 | R3 | Three Swarm managers (Pi5, VM100, VM110) | `docker node ls` shows 3 reachable managers | P2 | open |
 | GP | **GitLab production task**: VMs under OpenTofu, safe migration to VM120, native scheduled backups to Drive that verify themselves and leave no junk ([task](./superpowers/plans/2026-10-31-gitlab-production-task.md)) | T0–T12 done, definition of done met | P0–P2 | open: T4 done (first verified set on Drive, timer still disabled); T3 done; T5 restore drill, timer enable and registry class pending; T0/T1/T6+ blocked on Proxmox access |
 | GP1 | Enable `homelab-gitlab-backup.timer` on VM100 (daily 02:00) after the owner agrees | `systemctl is-enabled` = enabled and the next night's set appears and verifies | P0 | decision |
-| GP2 | T5: restore the Drive set into an isolated GitLab and run the checklist | Drill passes; RTO and RPO recorded | P0 | open |
+| GP2 | T5: restore the Drive set into an isolated GitLab and run the checklist | Drill passes; RTO and RPO recorded | P0 | partial: restored into VM120 and the data-level checks pass (2026-10-31); login, runner, registry pull and live-count comparison still open |
 | GP3 | Run the freshness check on a second host (needs the Drive config on VM110) | Alert fires when the newest set is older than 26 h | P0 | open |
 | GP4 | Back up the GitLab registry directory (restic, weekly), separate from the native set | A registry restore is tested | P0 | open |
 | S5 | Confirm `restic-password` and `rclone.conf` from VM100 exist in `Homelab-Recovery`; add a second offline `age` recipient; rename and tag older 1Password items | [Secrets standard](./standards/secrets-1password.md) section 8 closed | P0 | open |
