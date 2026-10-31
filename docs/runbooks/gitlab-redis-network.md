@@ -1,8 +1,11 @@
 ---
 type: Runbook
-title: "GitLab ↔ Pi5 Redis network operations"
-description: "Installation, update, verification and rollback procedure for the standalone Pi5 Redis container used by GitLab"
-timestamp: 2026-10-31T00:00:00+07:00
+title: GitLab ↔ Pi5 Redis network operations
+description: Installation, update, verification and rollback procedure for the standalone Pi5 Redis container used by GitLab
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T00:00:00+07:00"
+stale_after: "2027-01-29T00:00:00+07:00"
 ---
 
 # GitLab ↔ Pi5 Redis network operations

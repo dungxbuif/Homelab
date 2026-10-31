@@ -1,8 +1,11 @@
 ---
 type: Runbook
-title: "Homelab automation operations"
-description: "Safe operator workflow for audit, plan, approval, apply, verification, and rollback"
-timestamp: 2026-10-31T00:00:00+07:00
+title: Homelab automation operations
+description: Safe operator workflow for audit, plan, approval, apply, verification, and rollback
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T00:00:00+07:00"
+stale_after: "2027-01-29T00:00:00+07:00"
 ---
 
 # Homelab automation operations

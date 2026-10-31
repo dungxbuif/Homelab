@@ -1,8 +1,11 @@
 ---
 type: Playbook
-title: "Proxmox IaC Prerequisites"
+title: Proxmox IaC Prerequisites
 description: "What OpenTofu/Ansible in homelab-ops need from Proxmox: API token, SSH access, tooling"
-timestamp: 2026-10-31T12:00:00+07:00
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T12:00:00+07:00"
+stale_after: "2027-01-29T12:00:00+07:00"
 ---
 
 # Proxmox IaC Prerequisites

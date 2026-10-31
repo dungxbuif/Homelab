@@ -2,7 +2,9 @@
 type: Deployment audit
 title: Databasus PostgreSQL backup and restore audit
 description: Evidence-led audit of the Databasus backup path and PostgreSQL restore coverage
-timestamp: 2026-10-31T11:40:39+07:00
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T11:40:39+07:00"
 ---
 
 # Databasus PostgreSQL backup and restore audit — 2026-10-31

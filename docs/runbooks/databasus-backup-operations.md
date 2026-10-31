@@ -2,7 +2,10 @@
 type: Runbook
 title: Databasus backup operations
 description: Verify, clean up and onboard PostgreSQL backups safely
-timestamp: 2026-10-31T02:54:00+07:00
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T02:54:00+07:00"
+stale_after: "2027-01-29T02:54:00+07:00"
 ---
 
 # Databasus backup operations

@@ -1,11 +1,23 @@
 ---
 type: Service
-title: "GitLab on VM100"
-description: "GitLab CE runtime, temporary VPS routes, registry trial, backup boundary and rollback"
-timestamp: 2026-10-31T00:00:00+07:00
+title: GitLab on VM100
+description: GitLab CE runtime, temporary VPS routes, registry trial, backup boundary and rollback
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T00:00:00+07:00"
+stale_after: "2027-01-29T00:00:00+07:00"
 ---
 
 # GitLab on VM100
+
+## Source
+
+| Field | Value |
+|---|---|
+| Upstream | https://gitlab.com/gitlab-org/gitlab (Omnibus image `gitlab/gitlab-ce`) |
+| Pinned version | `gitlab/gitlab-ce:18.11.11-ce.0` (`sha256:10528ba5…`) |
+| Deploy source | Swarm stack `gitlab`; stack file location in `homelab-ops` (unverified) |
+| Repo docs | none (third-party) |
 
 ## Current status (2026-10-31)
 
@@ -138,3 +150,17 @@ pi5_registry_current_status: active
 scheduled_backup: none
 upgrade_status: on_hold
 ```
+
+## Gate status
+
+| Gate | State | Evidence / exception (expiry) |
+|---|---|---|
+| G0 Intake | fail | no `app.yml` |
+| G1 Build | partial | upstream image pinned by digest; no scan |
+| G2 Security | partial | Swarm secrets used, sign-up disabled; temporary VPS tunnels bypass the Pi5 edge |
+| G3 Runtime | partial | in stack `gitlab`; routes are temporary tunnels |
+| G4 Data | fail | no scheduled backup; Databasus DB job without restore verification; repos/registry on VM100 not backed up |
+| G5 Observability | not assessed | |
+| G6 Release | not assessed | upgrade on hold |
+| G7 Docs | partial | this doc |
+| G8 Operate | not assessed | |

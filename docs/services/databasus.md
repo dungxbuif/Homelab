@@ -2,10 +2,22 @@
 type: Service
 title: Databasus
 description: Databasus runtime, verification agent, Drive storage, admin access and credential mapping
-timestamp: 2026-10-31T00:00:00+07:00
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T00:00:00+07:00"
+stale_after: "2027-01-29T00:00:00+07:00"
 ---
 
 # Databasus
+
+## Source
+
+| Field | Value |
+|---|---|
+| Upstream | https://github.com/databasus/databasus (unverified repo URL; image `databasus/databasus`) |
+| Pinned version | `databasus/databasus:v3.64.0@sha256:dca80ac1…` |
+| Deploy source | `homelab-ops/automation/stacks/db-management/stack.yml` (stack `db-management`) |
+| Repo docs | none (third-party) |
 
 ## Runtime
 
@@ -123,3 +135,17 @@ Store any rotated value in 1Password before closing the change.
    infer Databasus health from them, or vice versa.
 4. A backup is successful only with a `Successful` row plus a new payload and
    `.metadata` pair in Drive.
+
+## Gate status
+
+| Gate | State | Evidence / exception (expiry) |
+|---|---|---|
+| G0 Intake | not assessed | part of db-management stack |
+| G1 Build | partial | upstream image pinned by digest |
+| G2 Security | not assessed | |
+| G3 Runtime | partial | in stack, healthcheck present; limits (unverified) |
+| G4 Data | partial | own state volume has only the 2026-10-31 pre-upgrade archive; no scheduled backup or restore record |
+| G5 Observability | not assessed | |
+| G6 Release | not assessed | |
+| G7 Docs | partial | this doc |
+| G8 Operate | not assessed | |

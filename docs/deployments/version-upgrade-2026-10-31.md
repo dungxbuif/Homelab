@@ -1,8 +1,10 @@
 ---
 type: Deployment Evidence
-title: "Controlled Docker image upgrades"
-description: "Per-service backup, upgrade, smoke-test and rollback ledger"
-timestamp: 2026-10-31T00:00:00+07:00
+title: Controlled Docker image upgrades
+description: Per-service backup, upgrade, smoke-test and rollback ledger
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T00:00:00+07:00"
 ---
 
 # Controlled Docker image upgrades — 2026-10-31

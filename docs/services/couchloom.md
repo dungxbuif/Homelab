@@ -1,8 +1,11 @@
 ---
 type: Service
-title: "CouchLoom on VM100"
-description: "Private MCP and local semantic index over the Obsidian CouchDB vault"
-timestamp: 2026-10-31T00:00:00+07:00
+title: CouchLoom on VM100
+description: Private MCP and local semantic index over the Obsidian CouchDB vault
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T00:00:00+07:00"
+stale_after: "2027-01-29T00:00:00+07:00"
 ---
 
 # CouchLoom on VM100

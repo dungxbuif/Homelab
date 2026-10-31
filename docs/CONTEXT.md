@@ -1,8 +1,11 @@
 ---
 type: Reference
-title: "Network Diagnostics Context"
-description: "Retired diagnostic trace; points to current network references"
-timestamp: 2026-10-31T12:00:00+07:00
+title: Network Diagnostics Context
+description: Retired diagnostic trace; points to current network references
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T12:00:00+07:00"
+stale_after: "2027-01-29T12:00:00+07:00"
 ---
 
 # Network Diagnostics Context

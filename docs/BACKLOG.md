@@ -1,13 +1,16 @@
 ---
 type: Reference
-title: "Homelab Backlog"
-description: "Open Homelab work only, verified against the 2026-10-31 live audit and mapped to the IaC rebuild plan phases"
-timestamp: 2026-10-31T11:05:44+07:00
+title: Homelab Backlog
+description: Open Homelab work only, verified against the 2026-10-31 live audit and mapped to the IaC rebuild plan phases
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T11:05:44+07:00"
+stale_after: "2026-11-30T11:05:44+07:00"
 ---
 
 # Homelab Backlog
 
-Open work only; completed items live in git history and [LOG.md](./LOG.md).
+Open work only; completed items live in git history and [log.md](./log.md).
 The forward roadmap is the
 [Lab IaC and automation rebuild plan](./superpowers/plans/2026-10-31-lab-iac-automation-rebuild.md)
 (status: proposed). The **Plan** column maps each item to its phase (P0–P8).
@@ -94,3 +97,17 @@ canaries, keep a bounded rollback. Ledger:
 - Pi5 stays the DB/data host; VM100 is production compute (L1). No PITR /
   pgBackRest (L2).
 - `homelab` CouchDB stays private/admin-only; no public `sync-db` route (E1).
+
+## Control, standards and docs (added 2026-10-31)
+
+| ID | Item | Acceptance gate | Plan | Status |
+|---|---|---|---|---|
+| C1 | Adopt hand-made services: 15 Swarm services without a stack, 7 VM100 compose projects | Every running service has a file in `homelab-ops/stacks/`; nightly drift report clean | P0.5 | open |
+| C2 | Push local-only images (macocr-proxy, mezonhook, openclaw, k8s-syntax, relayhub-v1, relayhub-admin, couchloom, whiteboard-*, rathole) to GitLab Registry | Services pinned by registry digest | P0.5 | open |
+| C3 | Promote GitLab Registry from trial per the [registry decision](./standards/registry.md); move MyPocket off the Pi5 registry | Metadata DB, GC, cleanup policy, backup + restore test | P4 | open |
+| C4 | Read-only inventory of all databases, users and buckets; adopt with `adopt: true` | Plan shows 0 changes per app ([process](./standards/database-provisioning.md)) | P0.5 / P5 | open |
+| C5 | Replace Semaphore `db-provision` and the provisioner with `db_provision` | First new DB created by the CI job, with backup and secret | P1 | open |
+| D1 | Repo-side docs per the [project doc standard](./standards/project-documentation.md): fix READMEs that describe other projects (MyPocket, devtool, pocketnode), add `docs/configuration.md` + CHANGELOG to deployed projects, remove lab internals from mac-ocr/mezonhook/k8s-syntax deploy docs | G7 pass for every deployed project | P4 / P5 | open |
+| D2 | Whiteboard: reconcile uncommitted changes in `/opt/apps/whiteboard` on VM100 with the `devtool` checkout | Deploy dir clean, deployed revision recorded | P5 | open |
+| D3 | k8s-syntax is class `lab` but publicly routed | Route made LAN-only or class changed with gates | P5 | open |
+| D4 | Third-party docs: move `n8n-nodes-mezon` into Git; decide BDS leftovers (`bds-app_bds_network`, `bds_prod`) | Repo exists / leftovers retired | P5 | open |

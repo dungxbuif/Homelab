@@ -1,8 +1,10 @@
 ---
 type: Deployment Evidence
-title: "GitLab Redis network repair"
-description: "Root-cause analysis and reversible network repair after the 2026-10-31 Redis update"
-timestamp: 2026-10-31T00:00:00+07:00
+title: GitLab Redis network repair
+description: Root-cause analysis and reversible network repair after the 2026-10-31 Redis update
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T00:00:00+07:00"
 ---
 
 # GitLab Redis network repair — 2026-10-31

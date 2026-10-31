@@ -1,8 +1,11 @@
 ---
 type: Reference
-title: "MikroTik hEX S Configuration Guide"
-description: "Operational guidelines for PPPoE dialing, local network DHCP, WireGuard routing tables, and security hardening on MikroTik"
-timestamp: 2026-10-31T00:00:00+07:00
+title: MikroTik hEX S Configuration Guide
+description: Operational guidelines for PPPoE dialing, local network DHCP, WireGuard routing tables, and security hardening on MikroTik
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T00:00:00+07:00"
+stale_after: "2026-11-30T00:00:00+07:00"
 ---
 
 # 🛜 MikroTik Router Configuration & Network Guide

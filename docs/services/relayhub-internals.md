@@ -1,3 +1,12 @@
+---
+type: Service
+title: RelayHub internals — internal operator reference
+generated:
+  by: "process:vault-import"
+  at: "2026-10-31T16:00:00+07:00"
+stale_after: "2027-01-29T16:00:00+07:00"
+---
+
 # RelayHub internals — internal operator reference
 
 This document is intentionally outside the public Docusaurus input tree. Public product documentation describes RelayHub's behavior and integration contracts without naming the service components behind it.

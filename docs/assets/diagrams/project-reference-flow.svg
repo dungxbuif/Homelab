@@ -59,7 +59,7 @@
   <text class="head ink" x="78" y="575">Start broad, then move toward dated proof and executable procedure</text>
 
   <rect class="white card" x="78" y="625" width="190" height="150" rx="14"/>
-  <text class="head ink" x="100" y="662">INDEX.md</text>
+  <text class="head ink" x="100" y="662">index.md</text>
   <text class="small muted" x="100" y="692">entry point</text>
   <text class="small muted" x="100" y="718">links to current docs</text>
   <text class="small muted" x="100" y="744">and standards</text>

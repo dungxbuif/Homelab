@@ -1,3 +1,12 @@
+---
+type: Design Spec
+title: RelayHub full webhook restoration
+generated:
+  by: "process:vault-import"
+  at: "2026-10-31T16:00:00+07:00"
+stale_after: "2026-12-30T16:00:00+07:00"
+---
+
 # RelayHub full webhook restoration
 
 Date: 2026-10-31. Status: proposed scope and contracts for review; source audit only, no feature tests or deployment run.

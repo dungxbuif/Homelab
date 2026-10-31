@@ -1,8 +1,11 @@
 ---
 type: Runbook
-title: "Vault Git protection"
-description: "Local Git history and GitLab remotes for the Obsidian and Note vaults"
-timestamp: 2026-10-31T00:00:00+07:00
+title: Vault Git protection
+description: Local Git history and GitLab remotes for the Obsidian and Note vaults
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T00:00:00+07:00"
+stale_after: "2027-01-29T00:00:00+07:00"
 ---
 
 # Vault Git protection

@@ -1,8 +1,11 @@
 ---
 type: Reference
-title: "Mac Mini Runtime Dependencies"
-description: "Mac mini native OCR and LLM dependencies that remain after the VM100 migration"
-timestamp: 2026-10-31T00:00:00+07:00
+title: Mac Mini Runtime Dependencies
+description: Mac mini native OCR and LLM dependencies that remain after the VM100 migration
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T00:00:00+07:00"
+stale_after: "2026-11-30T00:00:00+07:00"
 ---
 
 # Mac mini — native dependencies

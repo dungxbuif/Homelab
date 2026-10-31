@@ -1,8 +1,11 @@
 ---
 type: Playbook
-title: "System Ingress & Service Export"
-description: "Current ingress topology, address plan, VPS layout, service export procedure and known pitfalls"
-timestamp: 2026-10-31T12:00:00+07:00
+title: System Ingress & Service Export
+description: Current ingress topology, address plan, VPS layout, service export procedure and known pitfalls
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T12:00:00+07:00"
+stale_after: "2026-11-30T12:00:00+07:00"
 ---
 
 # Ingress, Addresses and Service Export

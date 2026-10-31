@@ -1,3 +1,12 @@
+---
+type: Reference
+title: Current Homelab Stack
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T16:00:00+07:00"
+stale_after: "2026-11-30T16:00:00+07:00"
+---
+
 # Current Homelab Stack
 
 Current as of 2026-10-31 (read-only live audit of Pi5, VM100 and VM110; VPS

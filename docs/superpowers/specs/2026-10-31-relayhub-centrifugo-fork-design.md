@@ -1,3 +1,12 @@
+---
+type: Design Spec
+title: "RelayHub realtime: Centrifugo and SDK forks"
+generated:
+  by: "process:vault-import"
+  at: "2026-10-31T16:00:00+07:00"
+stale_after: "2026-12-30T16:00:00+07:00"
+---
+
 # RelayHub realtime: Centrifugo and SDK forks
 
 Date: 2026-10-31

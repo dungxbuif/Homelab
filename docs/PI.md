@@ -1,8 +1,11 @@
 ---
 type: Reference
-title: "Raspberry Pi 5 Datastore and Edge Host"
+title: Raspberry Pi 5 Datastore and Edge Host
 description: "Current state of the Pi5 Swarm manager: datastores, edge, ports, storage paths, operations and rollback"
-timestamp: 2026-10-31T00:00:00+07:00
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T00:00:00+07:00"
+stale_after: "2026-11-30T00:00:00+07:00"
 ---
 
 # Raspberry Pi 5 — Swarm manager, datastore and edge

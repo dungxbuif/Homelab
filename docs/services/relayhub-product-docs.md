@@ -1,3 +1,12 @@
+---
+type: Service
+title: RelayHub product docs — release evidence
+generated:
+  by: "process:vault-import"
+  at: "2026-10-31T16:00:00+07:00"
+stale_after: "2027-01-29T16:00:00+07:00"
+---
+
 # RelayHub product docs — release evidence
 
 This is the internal operator/release record for the public RelayHub product documentation. It is intentionally outside `RelayHub/web/docs`'s public input allowlist and must not be linked from the public site, skill or Developer Kit.

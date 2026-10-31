@@ -1,8 +1,11 @@
 ---
 type: Runbook
-title: "Database Provisioning Runbook"
-description: "Provision a database and owner through Semaphore, then enroll it in Databasus"
-timestamp: 2026-10-31T00:00:00+07:00
+title: Database Provisioning Runbook
+description: Provision a database and owner through Semaphore, then enroll it in Databasus
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T00:00:00+07:00"
+stale_after: "2027-01-29T00:00:00+07:00"
 ---
 
 # Database Provisioning Runbook

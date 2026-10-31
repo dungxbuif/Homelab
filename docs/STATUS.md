@@ -1,8 +1,11 @@
 ---
 type: Dashboard
-title: "Homelab Current Status"
-description: "One-page current status and genuinely open gates"
-timestamp: 2026-10-31T12:00:00+07:00
+title: Homelab Current Status
+description: One-page current status and genuinely open gates
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T12:00:00+07:00"
+stale_after: "2026-11-30T12:00:00+07:00"
 ---
 
 # Homelab Current Status — 2026-10-31

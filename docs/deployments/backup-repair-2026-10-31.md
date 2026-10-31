@@ -1,8 +1,10 @@
 ---
 type: Deployment Evidence
-title: "Backup remote repair and database restore acceptance"
-description: "Evidence for the backup/restore gate used before stateful image upgrades"
-timestamp: 2026-10-31T02:03:00+07:00
+title: Backup remote repair and database restore acceptance
+description: Evidence for the backup/restore gate used before stateful image upgrades
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T02:03:00+07:00"
 ---
 
 # Backup remote repair and database restore acceptance — 2026-10-31

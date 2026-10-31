@@ -1,3 +1,12 @@
+---
+type: Plan
+title: RelayHub Product Docs and Developer Kit Implementation Plan
+generated:
+  by: "process:vault-import"
+  at: "2026-10-31T16:00:00+07:00"
+stale_after: "2026-12-30T16:00:00+07:00"
+---
+
 # RelayHub Product Docs and Developer Kit Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

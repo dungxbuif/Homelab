@@ -1,9 +1,12 @@
 ---
 type: Plan
-title: "Lab-wide IaC Automation Rebuild"
-description: "Fresh audit of the current lab and a from-scratch plan to manage every layer (network, hypervisor, hosts, edge, data, apps, secrets, CI/CD, DR) as code in homelab-ops"
-timestamp: 2026-10-31T11:30:00+07:00
-status: proposed
+title: Lab-wide IaC Automation Rebuild
+description: Fresh audit of the current lab and a from-scratch plan to manage every layer (network, hypervisor, hosts, edge, data, apps, secrets, CI/CD, DR) as code in homelab-ops
+status: draft
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T11:30:00+07:00"
+stale_after: "2026-12-30T11:30:00+07:00"
 ---
 
 # Kế hoạch tự động hoá toàn lab bằng IaC — 2026-10-31
@@ -266,7 +269,7 @@ Một khai báo trong `stacks/<app>/app.yml` sinh ra toàn bộ các mục dư�
 - Proxmox UI và quản trị MikroTik chỉ mở cho LAN + NetBird (firewall quản bằng tofu `network`).
 - Break-glass: console Proxmox, console/safe-mode MikroTik, key khẩn cấp offline trong 1Password.
 
-**Tạo DB và datastore** (role `db_provision`, job CI `provision:<app>`)
+**Tạo DB và datastore** (role `db_provision`, job CI `provision:<app>`; chi tiết: [quy trình DB](../../standards/database-provisioning.md))
 
 ```yaml
 needs: { postgres: true, redis: true, s3: [uploads], couchdb: false }
@@ -342,6 +345,18 @@ Mỗi phase kết thúc bằng **evidence trong vault** (`docs/deployments/…`)
 - [ ] Bật mirror repo ra ngoài lab.
 - **Exit:** CI xanh, mirror chạy, SSH automation đồng nhất trên 5 host, backup được xác nhận có scheduler.
 
+### P0.5: Lấy lại kiểm soát service đang chạy (2–3 ngày, không đụng runtime)
+
+Audit 2026-10-31: 15 Swarm service tạo tay bằng `docker service create` (không stack, không file), 9 image chỉ có local, 7 compose project rải rác `/opt/apps`.
+
+- [ ] Đóng băng: cấm `docker service update`/`docker run` tay trên prod; mọi thay đổi phải có file trong repo trước.
+- [ ] Chụp spec live → `homelab-ops/stacks/<app>/` (script từ `docker service inspect`) + copy compose `/opt/apps/*`; secret chỉ ghi tên.
+- [ ] Push image local-only lên GitLab Registry, ghi digest (theo [quyết định registry](../../standards/registry.md)).
+- [ ] Inventory read-only toàn bộ DB/user/bucket hiện có ([quy trình DB](../../standards/database-provisioning.md) §6).
+- [ ] Drift check đêm: spec live vs repo.
+- [ ] Mỗi project có doc nội bộ trong vault theo [chuẩn tài liệu](../../standards/project-documentation.md); gate snapshot theo [App Delivery Gates](../../standards/app-delivery-gates.md).
+- **Exit:** 100% service đang chạy có file trong repo, 0 image chỉ có local, drift report chạy hằng đêm.
+
 ### P1: Nền tảng IaC (2 tuần)
 
 - [ ] Tạo layout §3.1 bằng `git mv`, giữ lịch sử, cập nhật test path.
@@ -375,7 +390,7 @@ Mỗi phase kết thúc bằng **evidence trong vault** (`docs/deployments/…`)
 - [ ] Bot bump digest mở MR vào `homelab-ops` (`env/stg.yml`, `env/prod.yml`).
 - [ ] Staging namespace `stg-<app>`, domain `<app>.stg.dungxbuif.com` (lan).
 - [ ] Generator golden path từ `app.yml` (§3.5) và policy gate cho stack.
-- [ ] Registry: GitLab Registry là chính. Pi5 registry thành pull-through mirror.
+- [ ] Registry: GitLab Registry là registry duy nhất cho app, Pi5 thành pull-through mirror T1 ([quyết định](../../standards/registry.md)).
 - **Exit:** homepage chạy trọn stg → prod → rollback thử.
 
 ### P5: Onboard app và data (3–4 tuần)

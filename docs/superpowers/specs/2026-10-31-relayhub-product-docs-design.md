@@ -1,3 +1,12 @@
+---
+type: Design Spec
+title: RelayHub product documentation and Developer Kit
+generated:
+  by: "process:vault-import"
+  at: "2026-10-31T16:00:00+07:00"
+stale_after: "2026-12-30T16:00:00+07:00"
+---
+
 # RelayHub product documentation and Developer Kit
 
 Date: 2026-10-31. Status: proposed design for review; no site, skill or package has been changed or published.

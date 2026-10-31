@@ -1,3 +1,12 @@
+---
+type: Runbook
+title: Secret Rotation and History Purge Runbook
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T16:00:00+07:00"
+stale_after: "2027-01-29T16:00:00+07:00"
+---
+
 # Secret Rotation and History Purge Runbook
 
 Scope: credentials that were committed to this repository (also mirrored to a public GitHub remote, `origin`). Rotation comes first: purging history does not un-leak anything that was already cloned, forked, or cached. Treat every value below as compromised until rotated.

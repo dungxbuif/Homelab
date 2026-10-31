@@ -1,8 +1,10 @@
 ---
 type: Deployment
-title: "VPS Gateway Live Audit — 2026-10-31"
-description: "Read-only SSH audit of the public gateway VPS, Docker workloads, resources, listeners and bounded route smoke"
-timestamp: 2026-10-31T10:20:41+07:00
+title: VPS Gateway Live Audit — 2026-10-31
+description: Read-only SSH audit of the public gateway VPS, Docker workloads, resources, listeners and bounded route smoke
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T10:20:41+07:00"
 ---
 
 # VPS Gateway Live Audit — 2026-10-31

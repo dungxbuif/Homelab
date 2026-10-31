@@ -1,8 +1,11 @@
 ---
 type: Runbook
-title: "CouchDB Obsidian Sync"
-description: "Current deployment, client settings, verification and recovery for the Pi5 CouchDB LiveSync backend"
-timestamp: 2026-10-31T00:00:00+07:00
+title: CouchDB Obsidian Sync
+description: Current deployment, client settings, verification and recovery for the Pi5 CouchDB LiveSync backend
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T00:00:00+07:00"
+stale_after: "2027-01-29T00:00:00+07:00"
 ---
 
 # CouchDB Obsidian Sync

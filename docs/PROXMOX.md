@@ -1,8 +1,11 @@
 ---
 type: Reference
-title: "Proxmox Production Hypervisor"
-description: "Current Proxmox host role, VMs, storage, IaC boundary and safe operations"
-timestamp: 2026-10-31T00:00:00+07:00
+title: Proxmox Production Hypervisor
+description: Current Proxmox host role, VMs, storage, IaC boundary and safe operations
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T00:00:00+07:00"
+stale_after: "2026-11-30T00:00:00+07:00"
 ---
 
 # Proxmox production hypervisor

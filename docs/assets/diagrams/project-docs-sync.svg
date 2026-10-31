@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="770" viewBox="0 0 1400 770" role="img" aria-labelledby="title desc">
+  <title id="title">Two docs per project</title>
+  <desc id="desc">Each project keeps public-safe docs in its repository and an internal operator document in the vault. The vault doc links to the repo docs, and release rules keep them in sync.</desc>
+  <defs><marker id="a-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#2f6fed"/></marker><marker id="a-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#1f9d8b"/></marker><marker id="a-ok" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#16a34a"/></marker><marker id="a-red" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#c2413b"/></marker><marker id="a-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7c5cfc"/></marker><marker id="a-pink" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#db2777"/></marker><marker id="a-muted" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L12,6 L0,12 Z" fill="#7b8798"/></marker><style>
+.bg{fill:#f7f8fb}.ink{fill:#172033}.muted{fill:#64748b}.white{fill:#fff}
+.small{font:14px sans-serif}.tiny{font:12.5px sans-serif}.body{font:16px sans-serif}.bold{font:700 16px sans-serif}
+.head{font:700 21px sans-serif}.title{font:700 30px sans-serif}.pill{font:700 13px sans-serif;letter-spacing:.5px}
+.card{stroke-width:2}.edge{fill:#eaf2ff;stroke:#2f6fed}.data{fill:#eafaf6;stroke:#1f9d8b}
+.compute{fill:#f1edff;stroke:#7c5cfc}.host{fill:#fff;stroke:#b8c2d1}.note{fill:#fff7e8;stroke:#d97706}
+.retired{fill:#fff1f1;stroke:#c2413b}.ops{fill:#ecfdf3;stroke:#16a34a}.ctrl{fill:#fdf2f8;stroke:#db2777}
+.flow{fill:none;stroke:#2f6fed;stroke-width:3.5;marker-end:url(#a-blue)}
+.dflow{fill:none;stroke:#1f9d8b;stroke-width:3.5;marker-end:url(#a-green)}
+.gflow{fill:none;stroke:#16a34a;stroke-width:3.5;marker-end:url(#a-ok)}
+.rflow{fill:none;stroke:#c2413b;stroke-width:3;stroke-dasharray:8 7;marker-end:url(#a-red)}
+.pflow{fill:none;stroke:#7c5cfc;stroke-width:3.5;marker-end:url(#a-purple)}
+.kflow{fill:none;stroke:#db2777;stroke-width:3.5;marker-end:url(#a-pink)}
+.dashed{fill:none;stroke:#7b8798;stroke-width:3;stroke-dasharray:9 8;marker-end:url(#a-muted)}
+</style></defs>
+  <rect class="bg" width="1400" height="770"/>
+  <text class="title ink" x="50" y="58">Two docs per project</text>
+  <text class="body muted" x="52" y="88">Standard 2026-10-31 • repo docs for users, vault doc for operations</text>
+  <rect class="compute card" x="50" y="120" width="600" height="470" rx="18"/>
+  <text class="pill" x="72" y="152" fill="#7c5cfc">PROJECT REPO (public-safe)</text>
+  <text class="head ink" x="72" y="184">Repo docs</text>
+  <text class="small muted" x="72" y="210">readers: developers, users, API consumers</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="230" width="556" height="58" rx="12"/>
+  <text class="bold ink" x="88" y="256">README.md</text>
+  <text class="small muted" x="88" y="278">purpose · quickstart · local dev · tests</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="298" width="556" height="58" rx="12"/>
+  <text class="bold ink" x="88" y="324">docs/usage.md / API</text>
+  <text class="small muted" x="88" y="346">OpenAPI · SDK · examples</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="366" width="556" height="58" rx="12"/>
+  <text class="bold ink" x="88" y="392">docs/configuration.md</text>
+  <text class="small muted" x="88" y="414">env vars + secret NAMES</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="434" width="556" height="58" rx="12"/>
+  <text class="bold ink" x="88" y="460">docs/architecture.md</text>
+  <text class="small muted" x="88" y="482">components, no lab topology</text>
+  <rect class="white card" stroke="#d8dee9" x="72" y="502" width="556" height="58" rx="12"/>
+  <text class="bold ink" x="88" y="528">CHANGELOG.md</text>
+  <text class="small muted" x="88" y="550">release notes</text>
+  <rect class="note card" x="750" y="120" width="600" height="470" rx="18"/>
+  <text class="pill" x="772" y="152" fill="#b45309">HOMELAB VAULT (internal)</text>
+  <text class="head ink" x="772" y="184">docs/projects/&lt;project&gt;.md</text>
+  <text class="small muted" x="772" y="210">readers: operator + agents</text>
+  <rect class="white card" stroke="#d8dee9" x="772" y="230" width="556" height="58" rx="12"/>
+  <text class="bold ink" x="788" y="256">Source + deployed revision</text>
+  <text class="small muted" x="788" y="278">links to repo docs</text>
+  <rect class="white card" stroke="#d8dee9" x="772" y="298" width="556" height="58" rx="12"/>
+  <text class="bold ink" x="788" y="324">Internal architecture · Runtime</text>
+  <text class="small muted" x="788" y="346">host · stack · digest · domain · limits</text>
+  <rect class="white card" stroke="#d8dee9" x="772" y="366" width="556" height="58" rx="12"/>
+  <text class="bold ink" x="788" y="392">Data · Secrets</text>
+  <text class="small muted" x="788" y="414">DBs · backup · restore · 1Password paths</text>
+  <rect class="white card" stroke="#d8dee9" x="772" y="434" width="556" height="58" rx="12"/>
+  <text class="bold ink" x="788" y="460">Delivery · Operations</text>
+  <text class="small muted" x="788" y="482">pipeline · rollback · health · known issues</text>
+  <rect class="white card" stroke="#d8dee9" x="772" y="502" width="556" height="58" rx="12"/>
+  <text class="bold ink" x="788" y="528">Gate status · Recent changes</text>
+  <text class="small muted" x="788" y="550">G0–G8 + exceptions · ≤ 5 entries</text>
+  <path class="dashed" d="M750 300 H650"/>
+  <rect fill="#f7f8fb" x="663.4" y="275" width="73.2" height="21" rx="6"/>
+  <text class="small muted" x="700" y="290" text-anchor="middle">links to</text>
+  <rect class="white card" stroke="#d8dee9" x="50" y="620" width="1300" height="120" rx="12"/>
+  <text class="bold ink" x="66" y="646">Sync rules</text>
+  <text class="small muted" x="66" y="668">release that changes runtime → update vault Runtime/Data/Delivery + deployed revision (gate G7)</text>
+  <text class="small muted" x="66" y="690">app CI fails if README/docs missing · homelab-ops policy fails if app.yml vault_doc file is missing</text>
+  <text class="small muted" x="66" y="712">repo docs never mention IPs, internal hosts, secret values or operator procedures · quarterly review of stale docs</text>
+</svg>

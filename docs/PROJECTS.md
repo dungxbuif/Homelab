@@ -1,8 +1,11 @@
 ---
 type: Reference
-title: "Local Project Workspace Inventory"
-description: "Summary-only project inventory for source checkouts kept outside the Homelab repo"
-timestamp: 2026-10-31T11:05:44+07:00
+title: Local Project Workspace Inventory
+description: Summary-only project inventory for source checkouts kept outside the Homelab repo
+generated:
+  by: claude-code/opus-5.5
+  at: "2026-10-31T11:05:44+07:00"
+stale_after: "2027-01-29T11:05:44+07:00"
 ---
 
 # Local Project Workspace Inventory

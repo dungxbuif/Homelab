@@ -1,13 +1,24 @@
----
-type: Reference
-title: 'Directory Update Log'
-description: 'Current-day change log plus the standing decisions still in force for the Homelab'
-timestamp: 2026-10-31T00:00:00+07:00
----
+## 2026-10-31
 
-# Directory Update Log
+### IaC plan, vault cleanup, standards and OKF v0.2
 
-## 2026-10-31 - Databasus backup/restore audit: gate not passed
+**Update** — Live read-only audit of Pi5, VM100 and VM110. The new
+[IaC automation rebuild plan](/docs/superpowers/plans/2026-10-31-lab-iac-automation-rebuild.md)
+replaces every earlier automation plan: GitLab CI is the only control plane and Semaphore
+is retired in P1. Records dated before 2026-10-31 were removed from the working tree (they
+remain in git), and the current-state docs were rewritten from the audit with SVG diagrams.
+
+**Creation** — Standards: [app delivery gates](/docs/standards/app-delivery-gates.md),
+[project documentation](/docs/standards/project-documentation.md),
+[database provisioning](/docs/standards/database-provisioning.md) and
+[registry decision](/docs/standards/registry.md). Per-project internal docs now live in
+[docs/projects](/docs/projects/index.md).
+
+**Update** — The vault now follows OKF v0.2: `generated`/`stale_after`/`status` frontmatter,
+lowercase `index.md`/`log.md` reserved files, and the standing decisions moved to
+[decisions.md](/docs/decisions.md).
+
+### Databasus backup/restore audit: gate not passed
 
 - The live audit confirmed the Databasus Swarm service is healthy at `v3.64.0`
   (`1/1`), the Pi5 verification agent is active, and the service/health
@@ -25,7 +36,7 @@ timestamp: 2026-10-31T00:00:00+07:00
   Full evidence and the close-out sequence are in
   [`databasus-audit-2026-10-31.md`](./deployments/databasus-audit-2026-10-31.md).
 
-## 2026-10-31 - GitLab Redis/API root-cause repair
+### GitLab Redis/API root-cause repair
 
 - The GitLab API 500 was traced to Rails `Redis::CannotConnectError` while
   updating Personal Access Token last-used state. The exact failure was DNS
@@ -42,7 +53,7 @@ timestamp: 2026-10-31T00:00:00+07:00
 - The PAT used in the failed preflight was exposed in a shell error. Its value
   is not recorded; revoke/rotate it before any GitLab project creation or push.
 
-## 2026-10-31 - GitLab project mirror wave
+### GitLab project mirror wave
 
 - Created 31 private GitLab projects under `dungxbuif` for the Git repositories
   that did not already have a GitLab origin. The four existing GitLab origins
@@ -62,7 +73,7 @@ timestamp: 2026-10-31T00:00:00+07:00
   remote, branch, dirty-state and verification mapping is in
   [`PROJECTS.md`](./PROJECTS.md).
 
-## 2026-10-31 - Controlled Docker image upgrade ledger
+### Controlled Docker image upgrade ledger
 
 - Started the per-service upgrade runbook with explicit old-image/digest,
   backup, smoke-test, and rollback fields. No image update is considered
@@ -214,53 +225,3 @@ timestamp: 2026-10-31T00:00:00+07:00
   The public `gitlab.dungxbuif.com/api/v4/*` requests still return `500`, so
   R7 is blocked at the public API/tunnel boundary rather than by a stopped
   GitLab container. No runtime or source state was changed.
-
-## Decisions still in force
-
-Standing architectural decisions and constraints carried forward from earlier
-entries. Current architecture marker: **v3.4** — Pi5 Swarm manager and active
-edge, VM100 production worker, VM110 db-ops worker, Semaphore provisioning
-control plane. The Proxmox K8s cluster (v2) is retired.
-
-- **Topology:** one Swarm cluster managed from Pi5 `rpivn`. VM100 and VM110
-  join it as workers; do not create a separate Swarm. Swarm service specs can
-  only be changed from the Pi5 manager. `orangepizero3` is down but still a
-  member and must not be treated as the edge.
-- **Public boundary:** the VPS is the public boundary only (Traefik HostSNI
-  allow-list, Rathole server, NetBird relay). Public traffic reaches the lab
-  over Rathole to the Pi5 edge (`edge-traefik-pi5`, `edge-rathole-pi5`). GitLab
-  HTTP uses its own isolated Rathole tunnel with TLS terminated on the VPS.
-- **Data exposure:** pgAdmin/CouchDB host access is LAN-only on Pi5;
-  `sync-db` is the only public CouchDB name and is path-restricted to the
-  vault database. Semaphore is LAN/NetBird-only.
-- **Provisioning:** Semaphore has no Docker socket; `homelab-provisioner` is
-  the only Docker API holder, has no published port, and accepts only the
-  Swarm token secret. Production deploys go through protected/manual jobs.
-- **Network isolation:** BDS `cloudflared` stays only on `bds-tunnel-net` and
-  must not join `homelab-net`. Datastore access uses Docker DNS names, not IP
-  literals; GitLab reaches Redis via the `gitlab-net` overlay alias
-  `redis-prod`.
-- **Pi5 memory policy:** 4 GiB NVMe swap with swappiness 10; Redis 1 GiB
-  logical memory with `noeviction` and AOF kept.
-- **Secrets:** never in docs or commits. Runtime secrets live in ignored
-  `local_vars.json`, service `.env` files on the host, or the password manager;
-  webhook URLs (Mezon) are runtime secrets. Never embed a credential in a Git
-  remote URL.
-- **Backups:** every backup class must verify manifest, completion marker,
-  checksums and remote snapshot before reporting; a backup counts only after a
-  real restore check. Databasus is the database backup path with
-  after-backup restore verification for approved service DBs.
-- **Resource limits:** measured canaries are required before applying new
-  Docker/Swarm CPU/memory caps; logging policy for Swarm services is audited
-  from the manager.
-- **Image updates:** Diun runs notify-only; upgrades follow the per-service
-  ledger (backup, smoke test, rollback) in
-  [version-upgrade-2026-10-31](./deployments/version-upgrade-2026-10-31.md).
-- **Source code:** project checkouts live under `/workspace/projects`, never
-  in the vault; LiveSync covers `docs/**` only.
-- **Forward plan:** the only roadmap is
-  [Lab IaC and automation rebuild](./superpowers/plans/2026-10-31-lab-iac-automation-rebuild.md)
-  (proposed).
-
-Older history (entries before 2026-10-31) is available in git history of this
-file.
