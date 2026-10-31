@@ -1,5 +1,9 @@
 ## 2026-10-31
 
+### Direct cutover mode; seven attempts, the last stopped at the VPS smoke test
+
+**Update** — Added `gitlab-cutover.py --direct`, which moves the data from the old to the new instance over SSH and needs no 1Password prompt. Attempt 7 passed the freeze, backup, transfer, restore, counts (39 projects, 3 users, 0 groups) and the tunnel switch, then failed the smoke test through the VPS address and rolled back. The old instance is serving. The cause is not yet known (see the [runbook](/docs/runbooks/gitlab-backup-restore.md) section 8).
+
 ### GitLab cutover attempts: five safe stops, cutover not completed
 
 **Update** — `gitlab-cutover.py` ran five times; each stopped safely and rolled back, leaving the old instance serving. The fourth attempt passed the final backup, the restore into VM120, readiness and the counts check. It exposed two design flaws, both fixed in `homelab-ops`: the image healthcheck undoes a freeze by making Swarm replace the container, and the smoke test must force the VPS path. The last attempt needs the owner to approve a 1Password prompt. Details in the [runbook](/docs/runbooks/gitlab-backup-restore.md) section 8.
