@@ -32,8 +32,9 @@ và source-only dùng [Component Delivery Scope](./component-delivery-scope.md).
 - Runner: VM100, rootless Docker, tag `homelab-rootless`.
 - Runner project scope phải bị khóa vào đúng danh sách app đang chạy; không mở
   runner cho toàn GitLab và không đưa `mypocket` vào nhầm.
-- `concurrent = 1`, `limit = 1`: ưu tiên ổn định tài nguyên VM100. Chỉ tăng sau
-  khi có số liệu queue time và memory thực tế.
+- `concurrent = 2`, `limit = 2`, `request_concurrency = 2`: tăng throughput vừa
+  phải sau khi xác nhận VM100 còn khoảng 11GiB available. Không tăng tiếp nếu
+  chưa có số liệu queue time và memory thực tế.
 - Giới hạn mỗi job hiện tại: `memory = 2g`, `cpus = 1`; service sidecar tối đa
   `3g`. Nếu job vẫn OOM, đo memory trước khi tăng giới hạn.
 - Không ghi runner token, password hay secret vào vault docs. Credential chỉ ở
@@ -79,7 +80,7 @@ Mỗi `lab-runtime` repository phải có `.gitlab-ci.yml` với các nguyên t�
 | Rollup native package lỗi trên Node Alpine | Binary glibc không chạy trên musl | Dùng `node:20-bookworm-slim` cho job đó |
 | `git: not found` trong RelayHub | Script CI gọi `git diff` nhưng image thiếu git | Cài công cụ thật sự được script dùng trong image job |
 | Next build bị `SIGKILL`, container `OOMKilled` | Job chỉ có 512MB | Chuẩn runner hiện tại là 2GB/job; vẫn phải đo trước khi tăng |
-| Queue dài sau khi retry | Runner cố ý concurrency 1 và job build lâu | Giữ concurrency 1 để bảo vệ VM100; chỉ tăng khi có số liệu chứng minh an toàn |
+| Queue dài sau khi retry | Runner chỉ có một slot và job build lâu | Dùng tối đa 2 slot với giới hạn 2GB/job; chỉ tăng tiếp khi có số liệu chứng minh an toàn |
 
 ## Receipt bắt buộc sau mỗi bài/pipeline
 
