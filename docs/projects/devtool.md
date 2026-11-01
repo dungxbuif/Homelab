@@ -87,7 +87,7 @@ before committing that file. Repo docs: `docs/operations/auth-secrets-rotation.m
 
 ## Delivery
 
-- CI: none found (no pipeline file observed; GitHub-only remote).
+- CI: `.gitlab-ci.yml` on `codex/ci-cd-20261101` runs Node workspace and Go validation. Job #2142 exposed an existing `@collab/runtime` → `@collab/diagram-kit` workspace build-order failure; Go job #2143 passed. No deploy/image job is enabled while the current Compose runtime contract remains unmigrated.
 - Deploy: manual on VM100 in `/opt/apps/whiteboard`: pull/edit, back up into
   `backups/`, `docker compose -f docker-compose.prod.yml config --quiet`, `up -d --build`.
   Repo procedure: `docs/operations/DEPLOYMENT.md`, `RELEASE_CHECKLIST.md`.
@@ -107,7 +107,7 @@ before committing that file. Repo docs: `docs/operations/auth-secrets-rotation.m
 | Gate | State | Evidence / exception (expiry) |
 |---|---|---|
 | G0 Intake | fail | No GitLab repo, no `app.yml` |
-| G1 Build | fail | No CI; images built on host; no registry |
+| G1 Build | partial | CI is present; Go validation passed, Node validation remains red on the existing workspace build-order issue, and no registry release job is enabled |
 | G2 Security | partial | No host ports, most containers hardened; secrets in env file; backend unhardened |
 | G3 Runtime | fail | Manual Compose, not a Swarm stack |
 | G4 Data | partial | Databasus job for `whiteboard` DB; no restore record; object storage unbacked |

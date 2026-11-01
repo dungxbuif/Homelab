@@ -95,6 +95,7 @@ Backups it produces for other apps are recorded in
   `ops-contract` (validates `OPS_REF` of homelab-ops) → `build-images` (push to
   GitLab Registry) → `container-scan` (Trivy, blocks HIGH/CRITICAL) →
   `release-manifest` → `deploy-vm110` (manual, protected, Ansible). See repo `docs/ci-cd.md`.
+- Pipeline #661 for commit `b5fea517` passed; release/deploy jobs were not triggered.
 - Staging: none. Prod: manual `deploy-vm110` job with `DB_MANAGEMENT_DEPLOY_APPROVED=true`.
 - Rollback: redeploy the previous image tag via the same job; controlled
   rollback drill not executed (lock `verification_blocked_by`).

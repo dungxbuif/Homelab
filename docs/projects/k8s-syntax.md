@@ -64,7 +64,7 @@ None.
 
 ## Delivery
 
-- CI: none. Image built by hand on VM100 tagged with the commit sha.
+- CI: `.gitlab-ci.yml` on `codex/ci-cd-20261101`; pipeline #653 (commit `6c06443f`) passed validation. Registry release and production deploy remain protected/manual and were not triggered.
 - Staging: none. Prod: `docker service update --image homelab/k8s-syntax:<sha> k8s-syntax` from Pi5.
 - Rollback: update back to the previous sha tag if still in the VM100 image cache (previous documented tag `1921819`, presence unverified).
 
@@ -79,7 +79,7 @@ None.
 | Gate | State | Evidence / exception (expiry) |
 |---|---|---|
 | G0 Intake | fail | No `app.yml`; class `lab` allows only `lan`/`private`, but the route is public |
-| G1 Build | fail | No CI; local-only image; runs as root |
+| G1 Build | partial | Pipeline #653 validation passed; registry digest, scan, and production release evidence are not recorded, and the runtime still runs as root |
 | G2 Security | partial | No secrets, no host ports; public exposure not intended for `lab` |
 | G3 Runtime | fail | Hand-created service, no stack, `failure_action: pause` |
 | G4 Data | pass | Declared stateless; data may be lost |

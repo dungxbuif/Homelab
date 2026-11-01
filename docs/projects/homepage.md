@@ -69,7 +69,7 @@ release playbook needs the Semaphore Variable Group `HOMELAB_MEZON_WEBHOOK_URL`
 
 ## Delivery
 
-- CI: `.gitlab-ci.yml` job `build:homepage` (docker 27.5.1 + rootless dind): build `linux/amd64`, `scripts/smoke-image.sh` (byte compare + `nginx -t`), push `$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA`, emit `HOMEPAGE_IMAGE=<digest>` in `release.env`. Does not include `platform/ci-templates`; no Trivy.
+- CI: branch `codex/ci-cd-20261101` runs Python validation on branches/MRs, enforces protected-`main` ancestry for release tags, builds/pushes an immutable GitLab Registry digest, and provides a manual protected Swarm deploy plus public smoke check. Pipeline #657 (commit `97aaf190`) was retried after the runner image-policy fix and remains pending. The old Semaphore path remains the live fallback until approval.
 - Staging: none. Prod: Semaphore "homepage release" template (digest fixed in the playbook vars), manual.
 - Rollback: Swarm auto-rollback on failed update; manual rollback via Semaphore rollback spec or previous image `homelab/homepage:vm100-20261007-stirling` (local-only, from catalog).
 
@@ -85,7 +85,7 @@ release playbook needs the Semaphore Variable Group `HOMELAB_MEZON_WEBHOOK_URL`
 | Gate | State | Evidence / exception (expiry) |
 |---|---|---|
 | G0 Intake | partial | Repo on GitLab, catalog entry; no `stacks/homepage/app.yml` |
-| G1 Build | partial | Green pipeline 39/job 83, amd64, digest pinned. Missing: ci-templates, Trivy, SBOM, cosign; nginx master runs as root |
+| G1 Build | partial | Existing pipeline 39/job 83 plus the protected GitLab delivery branch; retry #657 remains pending, so current green, scan/SBOM, and cosign evidence are not yet recorded |
 | G2 Security | partial | No secrets, no host ports. Renovate not configured (unverified) |
 | G3 Runtime | fail | Hand-created service, no stack, no reservations |
 | G4 Data | pass | Stateless; nothing to restore |
@@ -98,3 +98,4 @@ release playbook needs the Semaphore Variable Group `HOMELAB_MEZON_WEBHOOK_URL`
 
 - 2026-10-21: service spec updated (network/edge migration window; detail unverified).
 - 2026-10-15: first AMD64 publication from GitLab pipeline 39/job 83 (`01299fe`), digest `c128afca…`.
+- 2026-11-01: added protected tag/branch guard and manual GitLab Swarm delivery on `codex/ci-cd-20261101`; no production deployment triggered.

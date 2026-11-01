@@ -84,7 +84,7 @@ No Swarm secrets; env-file based.
 
 ## Delivery
 
-- CI: none found in the repo (no `.gitlab-ci.yml` or workflows).
+- CI: rollout branch `codex/ci-cd-20261101` contains `.gitlab-ci.yml` with validation, protected release ancestry, shared-lab registry build/push, and manual VM100 Compose deploy/health gates. Pipeline #655 (commit `f1b1864f`) passed; release/deploy jobs were not triggered.
 - Deploy: manual on VM100. Create `/opt/apps/couchloom/releases/<sha>`, dump
   PostgreSQL, `docker compose … config --quiet`, build `couchloom:<sha>`,
   recreate only `couchloom`. Steps in the [service runbook](../services/couchloom.md#deployment-and-upgrade).
@@ -107,7 +107,7 @@ No Swarm secrets; env-file based.
 | Gate | State | Evidence / exception (expiry) |
 |---|---|---|
 | G0 Intake | fail | No `homelab-ops/stacks/couchloom/app.yml` |
-| G1 Build | fail | No CI; local image, no registry digest, no scan |
+| G1 Build | partial | Pipeline #655 passed validation; release image, registry digest, and scan evidence were not produced because protected release jobs were not triggered |
 | G2 Security | partial | Non-root, read-only rootfs, caps dropped, no host ports; secrets in env files, not Swarm secrets |
 | G3 Runtime | fail | Manual Compose, not a CI-deployed Swarm stack |
 | G4 Data | partial | Drive backup receipts via db-management; no restore recorded |

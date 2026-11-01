@@ -95,6 +95,7 @@ in each app doc (for example [db-management](./db-management.md#secrets)).
   - `validate:semaphore-bootstrap`, `validate:automation-ee`, `validate:experimental-ee`: YAML, shell syntax, runtime policy, ansible-lint, tofu fmt, secret patterns, route/app contracts.
   - `build:automation-ee`, `build:semaphore-runner-candidate`, `build:provisioner` (arm64): push by commit SHA, print digest.
   - `deploy:homepage-production`: manual, only when `OPS_DEPLOY_ENABLED == "true"` on the default branch or a tag; otherwise never.
+- Main commit `871cfd5` previously had stuck/timeout validation jobs #1412/#1413; the retry of pipeline #469 is pending on the repaired runner. Build jobs remain manual.
 - App repos (db-management) fetch a reviewed `OPS_REF` of this repo to validate their deploy contract.
 - Rollback: revert the MR and rerun the deploy job, or redeploy the previous digest recorded in the stack lock.
 

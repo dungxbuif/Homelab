@@ -154,8 +154,14 @@ NATS and Redis in the v1 stack run without credentials (private overlay only).
 
 ## Delivery
 
-- CI: GitHub Actions in the repo (`.github/workflows/ci.yml`, `admin-ci.yml`,
-  `publish-typescript-sdk.yml`); no `.gitlab-ci.yml`, no `platform/ci-templates`.
+- CI: GitHub Actions remain in the repo (`.github/workflows/ci.yml`,
+  `admin-ci.yml`, `publish-typescript-sdk.yml`); GitLab `.gitlab-ci.yml` on
+  `codex/ci-cd-20261101` now runs Rust/Go/SDK/admin/docs/contracts validation
+  plus protected ancestry, shared-registry, and manual deploy gates. Fixed
+  backend job #2133 passed. Pipeline #671 (commit `c93f052f`) failed in Rust
+  connector tests because the job image lacked Docker Compose and was canceled
+  after replacement; pipeline #672 (commit `784e53f7`) is pending with the fix.
+  No main merge or production deploy was triggered.
 - Build: main release `731047e` is pushed to both GitHub and GitLab; the Go
   canary image is pushed to the shared GitLab Registry and deployed by digest.
   The Docker build runs the host release gates before packaging the image.
@@ -187,7 +193,7 @@ NATS and Redis in the v1 stack run without credentials (private overlay only).
 | Gate | State | Evidence / exception (expiry) |
 |---|---|---|
 | G0 Intake | fail | No `homelab-ops/stacks/relayhub/app.yml` |
-| G1 Build | partial | Go canary uses the shared GitLab Registry digest; Trivy/SBOM/cosign are still not attached |
+| G1 Build | partial | GitLab validation is running; the Go canary path has shared-registry support, but this rollout has no completed registry digest, scan/SBOM, or production-release receipt |
 | G2 Security | fail | Host port `18080`; secret name not versioned; legacy secrets in env file |
 | G3 Runtime | fail | Stack lives in app repo, deployed by hand; `failure_action: pause`; no limits/healthchecks on admin/NATS/Redis |
 | G4 Data | fail | Active DB `relayhub_v1_staging_20261030` not enrolled, no restore record (legacy `relayhub` verified 2026-10-31) |

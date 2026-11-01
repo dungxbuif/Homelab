@@ -10,8 +10,8 @@ lifecycle: active
 project: mac-ocr
 class: public
 owner: dungxbuif
-repo: dungxbuif/mac-ocr
-deployed_revision: "image scan-api-20261008 (built 2026-10-08 13:29 +07 from a working tree before 4810527; exact sha unverified)"
+repo: homelab-apps/mac-ocr
+deployed_revision: "image scan-api-20261008 (runtime unchanged; CI/CD migration prepared on 2026-11-01)"
 ---
 
 # Mac OCR (OCR Platform)
@@ -29,8 +29,8 @@ status `active`. The repo is read-only for this doc.
 
 | Field | Value |
 |---|---|
-| Local checkout | `/home/dungxbuif/workspace/projects/mac-ocr/` (branch `codex/workspace-sync-20261023`, HEAD `4f02f42`) |
-| GitLab | `dungxbuif/mac-ocr` (remote name `gitlab`; default branch unverified) |
+| Local checkout | `/Users/dungxbuif/workspace/projects/mac-ocr/` (branch `codex/macocr-ci-cd`, HEAD `9530dd2`) |
+| GitLab | `homelab-apps/mac-ocr` (remote name `gitlab`; default branch unverified) |
 | Repo docs | `README.md`, `docs/` (api, architecture, configuration, deployment/production.md, guides/mac-workers.md, `RELEASE_NOTES.md`) |
 | Deployed revision | proxy image `homelab/macocr-proxy:scan-api-20261008` (`sha256:e6907a82…`), between `8d1f951` and `4810527`; native app 2.0.0 build 7 |
 
@@ -48,7 +48,7 @@ status `active`. The repo is read-only for this doc.
 |---|---|
 | Host / placement | VM100 (`node.hostname==vm100-prod`) for the proxy; Mac mini `10.10.0.6` for the worker app (`/Applications/Mac OCR Native.app`, no local listener) |
 | Stack / services | No stack. Standalone Swarm service `macocr-proxy` 1/1 (created 2026-09-15, spec updated 2026-10-21) |
-| Image | `homelab/macocr-proxy:scan-api-20261008` — **local-only image on VM100**, no registry |
+| Image | Current runtime remains `homelab/macocr-proxy:scan-api-20261008`; the new release path targets `registry-gitlab.dungxbuif.com/homelab-apps/mac-ocr/proxy@sha256:…` |
 | Domain / exposure | `ocr.dungxbuif.com` · public → Pi5 Traefik router `ocr` → `tasks.macocr-proxy:8080`. Mac workers use the same host over WSS/443 |
 | Networks | `edge-http-net`, `macocr-redis-net`, `pg-net` |
 | Limits | 1 CPU / 1 GiB, no reservation |
@@ -74,11 +74,27 @@ Plain service env vars, not Swarm secrets. Sensitive names: `DATABASE_URL`,
 paths: (unverified). Rotating `NATIVE_AUTH_SECRET` requires rebuilding or
 reconfiguring every Mac app.
 
+## Delivery scope
+
+This repository contains two delivery components. The lab CI/CD scope covers
+only `proxy/`, the embedded admin/docs assets and the root `Dockerfile`, which
+run as `macocr-proxy` on VM100. The `native/` Swift application runs on the
+owner's Mac and is an `external-client`; it is deliberately excluded from the
+lab CI/CD deploy pipeline. It keeps the repository Git flow and documentation
+requirements and is released through the local Mac build/install procedure.
+
+The proxy pipeline must not be triggered by a native-only change. A proxy
+release must record the API/transport compatibility contract used by existing
+native workers, but it does not build, sign, package or deploy the native app.
+
 ## Delivery
 
-- CI: none (no `.gitlab-ci.yml`). The image is built by hand on VM100 and tagged by date.
-- Staging: none. Prod: manual `docker service update` from Pi5. Semaphore `app-deploy` spec lists `macocr-proxy`, but catalog marks it `deployable: false`.
-- Native app: built on the Mac (`swift build -c release`), shared manually as DMG/ZIP.
+- Lab CI/CD target: `macocr-proxy` only. The repo now contains `.gitlab-ci.yml` and `docs/deployment/ci-cd.md` on the `codex/macocr-ci-cd` branch: validate/test → authenticated registry push/pull smoke → build once → run `macocr-admin migrate` from the immutable image on Pi5 via `pg-net` → deploy the immutable digest → `/healthz` and `/readyz` smoke. Production is triggered only by a protected `prod-<semver>` tag and remains one Swarm replica; migration failure blocks deploy.
+- Runner placement: current evidence uses VM100 rootless runner #1 with tag `homelab-rootless`, locked to the active lab app scope. Pipeline #659 is green: jobs #2139 (Go), #2140 (admin UI), and #2141 (docs) passed. The VM110 `homelab-apps` runner IaC branch remains a future isolated option and is not used by this rollout.
+- GitLab CI/CD common variables should use the private `homelab-apps` group scope. Instance-global variables are unavailable to the current GitLab account because it has no instance-admin scope; do not claim instance-global secret setup until the admin-scoped control plane is available.
+- A private GitLab group `homelab-apps` (group ID `43`) was created on 2026-11-01 and `mac-ocr` was transferred into it. The local `gitlab` remote now points to `homelab-apps/mac-ocr`; the project remains private.
+- Staging: none. Prod: the pipeline will perform the existing `docker service update` from the Pi5 Swarm manager after the global registry and deploy variables are provisioned. Semaphore `app-deploy` remains outside this pilot.
+- Native app: external-client; built on the Mac (`swift build -c release`), shared manually as DMG/ZIP. It is not a lab CI/CD deployment target.
 - Rollback: Swarm auto-rollback; catalog rollback image is the same tag, so there is **no older image recorded**. Keep the prior proxy and native binaries before any change.
 
 ## Operations
@@ -93,12 +109,12 @@ reconfiguring every Mac app.
 | Gate | State | Evidence / exception (expiry) |
 |---|---|---|
 | G0 Intake | partial | GitLab repo, catalog entry; no `app.yml` |
-| G1 Build | fail | No CI; local-only image, no registry, no scan |
+| G1 Build | partial | `.gitlab-ci.yml` is implemented and pipeline #659 is green on VM100; protected registry/deploy secrets, registry smoke, and tag deployment remain pending. The project belongs to the shared `homelab-apps` group |
 | G2 Security | fail | Credentials in plain env vars; one shared worker key |
 | G3 Runtime | fail | Hand-created service, no stack, no reservations |
 | G4 Data | fail | No recorded restore of `macocr` or bucket `mac-ocr` |
 | G5 Observability | not assessed | |
-| G6 Release | partial | Release notes v2.0.0; no staging, no rehearsed rollback |
+| G6 Release | partial | Proxy is the lab release target and now has a tag/digest pipeline definition; no GitLab execution, production registry image, or rollback rehearsal has been recorded yet |
 | G7 Docs | partial | Good repo docs; `docs/deployment/production.md` names the lab domain (public-safe rule) |
 | G8 Operate | not assessed | |
 
@@ -107,3 +123,5 @@ reconfiguring every Mac app.
 - 2026-10-23: repo docs scrubbed of credential values (`4f02f42`, not a runtime change).
 - 2026-10-08: proxy image `scan-api-20261008` (PDF text extraction, worker controls).
 - 2026-10-06: v2.0.0 outbound WSS Mac workers, native app build 7.
+- 2026-11-01: production migration gate and advisory-locked `macocr-admin migrate` command added to the GitLab release flow (`9530dd2`).
+- 2026-11-01: private GitLab group `homelab-apps` created and `mac-ocr` transferred into it for the shared CI runner standard.

@@ -82,6 +82,7 @@ Mỗi `lab-runtime` repository phải có `.gitlab-ci.yml` với các nguyên t�
 | Next build bị `SIGKILL`, container `OOMKilled` | Job chỉ có 512MB | Chuẩn runner hiện tại là 2GB/job; vẫn phải đo trước khi tăng |
 | Queue dài sau khi retry | Runner chỉ có một slot và job build lâu | Dùng tối đa 2 slot với giới hạn 2GB/job; chỉ tăng tiếp khi có số liệu chứng minh an toàn |
 | `devtool` không build được `@collab/runtime` | Workspace `collab` build trước `packages/diagram-kit`, nhưng script của nó không build dependency này trước khi chạy `tsc` | Giữ pipeline đỏ; sửa dependency/build order ở app trước khi release, không nới gate để che lỗi |
+| RelayHub Rust connector test báo `Docker Compose is required` | Job dùng `rust:1.99.1-bookworm`, có Rust nhưng không có Docker CLI/Compose để dựng test stack | Dùng image có Docker Compose, rootless DinD service được allow-list, cài đúng Rust toolchain và chạy `docker info` trước test |
 
 ## Receipt bắt buộc sau mỗi bài/pipeline
 
@@ -118,5 +119,9 @@ Không ghi “đã xong” khi chỉ pipeline cũ xanh; phải chỉ rõ pipelin
   bổ sung; đã retry trên cùng commit `97aaf190`, kết quả mới còn pending.
 - `homelab-ops` main pipeline #469 cũ có validation job stuck/timeout; đã retry
   trên commit `871cfd5`, còn chờ runner xác nhận, các build job vẫn manual.
+- RelayHub pipeline #671 của commit `c93f052f` fail ở `rust_v1` vì thiếu Docker
+  Compose; không bỏ connector tests. Commit `784e53f7` chuyển job sang
+  `docker:28.5.1` + `docker:27.5.1-dind-rootless`, cài Rust `1.99.1`, và tạo
+  pipeline #672 đang pending để xác nhận. Pipeline #671 đã bị hủy vì bị thay thế.
 
 Các mục pending không được coi là release evidence cho đến khi job mới xanh.

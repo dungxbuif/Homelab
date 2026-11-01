@@ -73,7 +73,7 @@ Plain service env vars: `DATABASE_URL`, `S3_ACCESS_KEY_ID`,
 
 ## Delivery
 
-- CI: none (`.github/` exists but has no workflows).
+- CI: `.gitlab-ci.yml` on `codex/ci-cd-20261101`; the original validation job #2128 hit the former 512 MB runner limit, and retry #2165 is pending on the repaired 2 GB runner. No production deployment was triggered.
 - Staging: none. Prod: manual copy of source to VM100 + in-container `bun install` / `next build`, then `docker service update --force family-tree` (procedure reconstructed, unverified).
 - Rollback: none recorded. There is no previous image; back up `src/` before replacing it.
 - Catalog: `homelab-ops/automation/stacks/catalog.yml` id `family-tree`, `deployable: false`. Network repair script: `automation/scripts/repair-family-network.py`.
@@ -91,7 +91,7 @@ Plain service env vars: `DATABASE_URL`, `S3_ACCESS_KEY_ID`,
 | Gate | State | Evidence / exception (expiry) |
 |---|---|---|
 | G0 Intake | partial | GitLab repo, catalog entry; no `app.yml`; class/exposure mismatch |
-| G1 Build | fail | No CI, no app image; code shipped as bind-mounted source |
+| G1 Build | partial | CI is configured; the memory-limit retry is still pending, and the runtime remains bind-mounted source with no recorded release image |
 | G2 Security | fail | Credentials in plain env vars; likely runs as root |
 | G3 Runtime | fail | Hand-created service, mutable tag, host bind mounts, no stack |
 | G4 Data | fail | No recorded restore of `family_tree` or its objects |

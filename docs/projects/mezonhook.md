@@ -66,7 +66,7 @@ None. Users' Mezon webhook URLs never reach the server.
 
 ## Delivery
 
-- CI: GitHub Actions `.github/workflows/ci.yml` (npm ci, test, build) — not GitLab CI, and it does not build or push an image.
+- CI: GitHub Actions `.github/workflows/ci.yml` remains the existing validation path. GitLab CI was added on branch `codex/ci-cd-20261101`; job #2157 passed on `node:20-bookworm-slim` after the Alpine/Rollup lesson. Merge and production deployment are still pending.
 - Staging: none. Prod: `docker build` on VM100 with a date tag, then `docker service update --image` from Pi5 (procedure inferred from the tag, unverified).
 - Rollback: Swarm auto-rollback on failed update only. No previous image recorded.
 
@@ -82,7 +82,7 @@ None. Users' Mezon webhook URLs never reach the server.
 | Gate | State | Evidence / exception (expiry) |
 |---|---|---|
 | G0 Intake | partial | GitLab repo, runtime policy entry; no `app.yml` |
-| G1 Build | fail | No GitLab CI image build; local-only image; no scan/SBOM |
+| G1 Build | partial | GitLab validation job #2157 passed; merge, registry digest, scan/SBOM, and production-release evidence remain pending |
 | G2 Security | partial | No secrets, no host ports, non-root runtime, CSP set; Renovate unverified |
 | G3 Runtime | fail | Hand-created service, no stack, no reservations |
 | G4 Data | pass | Stateless; nothing to restore |
@@ -95,3 +95,4 @@ None. Users' Mezon webhook URLs never reach the server.
 
 - 2026-10-21: service spec updated (edge/network migration window; detail unverified).
 - 2026-09-15: Swarm service `mezonhook` created on VM100 with image `vm100-20260911`.
+- 2026-11-01: Added GitLab CI/CD branch `codex/ci-cd-20261101`; no production deployment was triggered.
