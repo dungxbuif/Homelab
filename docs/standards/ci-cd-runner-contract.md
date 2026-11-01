@@ -103,10 +103,14 @@ Không ghi “đã xong” khi chỉ pipeline cũ xanh; phải chỉ rõ pipelin
 - `k8s-syntax` pipeline #653: validate xanh.
 - `couchloom` pipeline #655: validate xanh.
 - `relayhub` job #2133: xanh sau khi bổ sung `git` cho image job.
+- `mac-ocr` pipeline #659: `go_test` #2139, `admin_ui_build` #2140 và
+  `docs_site_build` #2141 đều xanh.
+- `mezonhook` job #2157: xanh sau khi chuyển validate sang
+  `node:20-bookworm-slim`.
 - `my-family-tree` job cũ #2128 đã OOM; retry #2165 chạy sau khi nâng giới hạn
   runner lên 2GB và phải được kiểm tra riêng.
 - `mezonhook` job cũ #2130 lỗi do Alpine/musl; commit sửa dùng Bookworm đã push
-  và pipeline mới phải được xác nhận riêng.
+  và được xác nhận bằng job #2157.
 - `devtool` job #2142 phát hiện lỗi workspace/build order: `@collab/runtime`
   không resolve được `@collab/diagram-kit`; đây là lỗi app đang chờ owner sửa,
   không phải lỗi runner.
