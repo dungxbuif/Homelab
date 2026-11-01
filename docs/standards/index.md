@@ -5,6 +5,8 @@ Rules every app, project and change must follow.
 ## Standards
 
 - [App Delivery Gates](/docs/standards/app-delivery-gates.md) — One gate guideline for every app that runs in the lab: what must be true, what evidence proves it, and who approves, from intake to retirement
+- [Component Delivery Scope](/docs/standards/component-delivery-scope.md) — CI/CD applies to components that run in the lab; external clients and source-only components keep their own release path
+- [CI/CD Runner Contract](/docs/standards/ci-cd-runner-contract.md) — Shared runner scope, image policy, resource limits, release gates and the lessons learned after every pipeline
 - [Automation Flows](/docs/standards/automation-flows.md) — Catalog of every automated flow in the lab — app lifecycle, infrastructure, maintenance, data, security, observability, docs and DR — with trigger, automation and the only human step
 - [Database Provisioning Process](/docs/standards/database-provisioning.md) — Target process for creating, rotating, adopting and retiring per-app databases, Redis users and buckets from app.yml through CI, replacing the manual and Semaphore paths
 - [Domain Routing](/docs/standards/domain-routing.md) — Add, rename and remove domains for apps from one declaration, published to the Pi5 edge and the VPS gateway with verification and automatic rollback
