@@ -114,5 +114,9 @@ Không ghi “đã xong” khi chỉ pipeline cũ xanh; phải chỉ rõ pipelin
 - `devtool` job #2142 phát hiện lỗi workspace/build order: `@collab/runtime`
   không resolve được `@collab/diagram-kit`; đây là lỗi app đang chờ owner sửa,
   không phải lỗi runner.
+- `homepage` pipeline #657 cũ fail ở runner system trước khi allow-list được
+  bổ sung; đã retry trên cùng commit `97aaf190`, kết quả mới còn pending.
+- `homelab-ops` main pipeline #469 cũ có validation job stuck/timeout; đã retry
+  trên commit `871cfd5`, còn chờ runner xác nhận, các build job vẫn manual.
 
 Các mục pending không được coi là release evidence cho đến khi job mới xanh.
