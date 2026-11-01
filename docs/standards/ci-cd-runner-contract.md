@@ -81,6 +81,7 @@ Mỗi `lab-runtime` repository phải có `.gitlab-ci.yml` với các nguyên t�
 | `git: not found` trong RelayHub | Script CI gọi `git diff` nhưng image thiếu git | Cài công cụ thật sự được script dùng trong image job |
 | Next build bị `SIGKILL`, container `OOMKilled` | Job chỉ có 512MB | Chuẩn runner hiện tại là 2GB/job; vẫn phải đo trước khi tăng |
 | Queue dài sau khi retry | Runner chỉ có một slot và job build lâu | Dùng tối đa 2 slot với giới hạn 2GB/job; chỉ tăng tiếp khi có số liệu chứng minh an toàn |
+| `devtool` không build được `@collab/runtime` | Workspace `collab` build trước `packages/diagram-kit`, nhưng script của nó không build dependency này trước khi chạy `tsc` | Giữ pipeline đỏ; sửa dependency/build order ở app trước khi release, không nới gate để che lỗi |
 
 ## Receipt bắt buộc sau mỗi bài/pipeline
 
@@ -106,5 +107,8 @@ Không ghi “đã xong” khi chỉ pipeline cũ xanh; phải chỉ rõ pipelin
   runner lên 2GB và phải được kiểm tra riêng.
 - `mezonhook` job cũ #2130 lỗi do Alpine/musl; commit sửa dùng Bookworm đã push
   và pipeline mới phải được xác nhận riêng.
+- `devtool` job #2142 phát hiện lỗi workspace/build order: `@collab/runtime`
+  không resolve được `@collab/diagram-kit`; đây là lỗi app đang chờ owner sửa,
+  không phải lỗi runner.
 
 Các mục pending không được coi là release evidence cho đến khi job mới xanh.
