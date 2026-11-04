@@ -283,3 +283,48 @@ not create another duplicate.
 - VM100 n8n restarted through the Swarm manager and returned healthy; public
   `/healthz` returned `{"status":"ok"}`. No manual production webhook was sent.
 
+## Watcher changed-brand delta fix — 2026-11-04
+
+### Root cause
+
+Execution trace showed that `decideDispatch()` correctly found changed snapshot
+keys, but the parser discarded `changedKeys` before calling `formatReport()`.
+The watcher consequently sent every brand on a real change and had no `↑`/`↓`
+comparison suffix. This was a formatting/filtering defect; source collection,
+the ten-minute schedule, and the fail-closed delivery gate were still healthy.
+
+### Fix
+
+Revision `3863ad0` passes the previous snapshot and `changedKeys` into the
+formatter. Watcher output now contains only brands whose status or price key
+changed and appends the delta in the source table unit, for example:
+
+```text
+Bảo Tín Minh Châu | cập nhật 23/10/2026 11:03
+Vàng miếng VRTL BTMC          mua 13.760 ↓ -20 | bán 14.140
+Nhẫn tròn trơn BTMC           mua 13.760 ↓ -20 | bán 14.140
+```
+
+Daily behavior remains unchanged: full gold report plus Petrolimex. Watcher
+messages remain gold-only and never include fuel rows or fuel warnings.
+
+### Verification and deployment evidence
+
+- `npm test`: 23/23 passed, including the changed-brand and BTMC `↓ -20`
+  regression; `npm run typecheck`, `npm run build`, and `git diff --check`
+  passed.
+- Local live collection returned 5/5 gold brands and Petrolimex successfully;
+  no webhook was called.
+- Production backup before import:
+  `/opt/apps/n8n/data/backups/n8n-gold-before-watcher-delta-20261104T120447+0000.json`, mode `600`, 218,338 bytes.
+- Published post-import export:
+  `/opt/apps/n8n/data/backups/n8n-gold-after-watcher-delta-20261104T120447+0000.json`, mode `600`.
+- Workflow `daily-gold-fuel-mezon` is active with 20 nodes and schedules
+  `0 8 * * *` and `*/10 8-21 * * *`; parser/gate checks passed.
+- Public `/healthz` returned `{"status":"ok"}`; container was healthy with
+  restart count `0`.
+- Post-restart scheduled execution `2937` succeeded at `2026-11-04 12:10 UTC`
+  with `runMode=watch`, `reason=unchanged`, `changedKeys=[]`, `send=false`;
+  the Mezon delivery node was not executed. Production webhook was not sent
+  manually.
+

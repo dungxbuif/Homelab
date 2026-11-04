@@ -4,14 +4,14 @@ title: n8n-nodes-mezon
 description: n8n community nodes for Mezon; installed in the running n8n
 generated:
   by: claude-code/opus-5.5
-  at: "2026-10-31T14:10:19+07:00"
+  at: "2026-11-04T19:15:00+07:00"
 stale_after: "2027-01-29T15:00:00+07:00"
 lifecycle: local source / live dependency
 project: n8n-nodes-mezon
 class: none
 owner: dungxbuif
 repo: local Git checkout; no remotes configured
-deployed_revision: "3e655d6 (watcher fail-closed guard); SJC removal faaf3cc; cleanup 423fe77"
+deployed_revision: "3863ad0 (watcher changed-brand delta fix); 3e655d6 (fail-closed guard); cleanup 423fe77"
 ---
 
 # n8n-nodes-mezon
@@ -27,10 +27,10 @@ Class `none` · owner dungxbuif · status `local source / live dependency`.
 | Field | Value |
 |---|---|
 | Local checkout | `/home/dungxbuif/workspace/projects/n8n-nodes-mezon/` |
-| Git | local branch `codex/gold-price-hanoi-fallback`, clean at `423fe77` |
+| Git | local branch `codex/gold-price-hanoi-fallback`, clean at `3863ad0` |
 | Git remotes | none configured; do not invent a remote until the GitLab project is created |
 | Repo docs | `README.md` |
-| Deployed revision | workflow `daily-gold-fuel-mezon` from `3e655d6`; package `0.1.1` unchanged |
+| Deployed revision | workflow `daily-gold-fuel-mezon` from `3863ad0`; package `0.1.1` unchanged |
 
 ## Why it does not run
 
@@ -91,6 +91,10 @@ Change watcher (`*/10 8-21 * * *`):
 
 - Checks the same five gold branches and their fallback sources.
 - Sends only when a normalized gold buy/sell value or source status changes.
+- When it sends, includes only brands present in `changedKeys`; it does not
+  resend unchanged brands.
+- Appends source-unit `↑ +delta`/`↓ -delta` suffixes to changed buy/sell values
+  (for example BTMC `mua 13.760 ↓ -20`).
 - The first run initializes the baseline and must not send.
 - An unchanged run must not send.
 - Must never include Petrolimex, a fuel warning, or the daily title.
@@ -175,3 +179,27 @@ Read-only comparison on 2026-10-31: DOJI and PNJ both returned SJC bar
 returned `136.000.000 / 139.000.000`, but is non-primary. The only separately
 found SJC-ring value (`131.800.000 / 135.800.000`) came from a third-party
 aggregator and is not approved. No production source was changed.
+
+## Watcher delta fix — 2026-11-04
+
+The live trace found that the compare decision already detected changed keys,
+but the parser did not pass them to the formatter. The formatter therefore sent
+all five brands and had no `↑`/`↓` comparison suffix. Revision `3863ad0` passes
+the previous snapshot and `changedKeys`, filters watcher output to changed
+brands, and formats deltas in the source table's unit. Daily output is
+unchanged.
+
+Verification:
+
+- `npm test`: 23/23 passed; `npm run typecheck`, `npm run build`, and
+  `git diff --check` passed.
+- Local live run: 5/5 gold brands and Petrolimex returned valid data; the
+  empty-baseline watcher decision was `baseline-initialized`, `send=false`.
+- Production workflow `daily-gold-fuel-mezon`: active, 20 nodes, schedules
+  `0 8 * * *` and `*/10 8-21 * * *`, parser contains `changedKeys`, and the
+  delivery gate remains fail-closed.
+- Post-restart execution `2937` at `2026-11-04 12:10 UTC` succeeded with
+  `runMode=watch`, `reason=unchanged`, `changedKeys=[]`, `send=false`; no Mezon
+  delivery node ran. No production webhook was sent manually.
+- Pre-import backup: `/opt/apps/n8n/data/backups/n8n-gold-before-watcher-delta-20261104T120447+0000.json`, mode `600`.
+- Post-import export: `/opt/apps/n8n/data/backups/n8n-gold-after-watcher-delta-20261104T120447+0000.json`, mode `600`.
