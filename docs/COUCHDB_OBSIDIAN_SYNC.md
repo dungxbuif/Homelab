@@ -46,7 +46,7 @@ Internet -> VPS gateway-traefik (HostSNI allow-list, 103.82.21.202)
 | Database | Purpose / access |
 | -------- | ---------------- |
 | `obsidian_vault` | Main Obsidian vault sync (~49k docs). `_security`: admin = CouchDB admin; member = `obsidian_sync` user/role. Anonymous `401`. |
-| `homelab` | LiveSync copy of this Homelab vault (doc ids are repo paths), member `homelab_sync`. Decision: private/admin-only, no public `sync-db` route. Whether a `/homelab` path is currently present on the `sync-db` router is (unverified). |
+| `homelab` | LiveSync copy of this Homelab vault (doc ids are repo paths), member `homelab_sync`. Private/admin-only; the public `sync-db` route does not expose `/homelab` (current check: `404`). |
 | `_users`, `_replicator`, `_global_changes` | System |
 
 ## Client settings
@@ -71,7 +71,8 @@ Never store passwords in vault notes.
 ## CORS
 
 Allowed origins: `app://obsidian.md`, `capacitor://localhost`,
-`http://localhost`, `http://127.0.0.1`, `https://couchdb.dungxbuif.com`.
+`http://localhost`, `http://127.0.0.1`, `https://sync-db.dungxbuif.com`,
+`https://couchdb.dungxbuif.com`.
 
 ## Verification
 
@@ -151,6 +152,21 @@ Evidence after reload:
 - Public `couchdb.dungxbuif.com` → `403` remains expected because it is LAN-only.
 - NetBird `wt0` is up with `100.69.32.183`, route `10.10.0.0/24`, and Pi5 is
   reachable over VPN.
+
+Client-side correction on the ThinkPad:
+
+- The active `secondbrain` LiveSync profile was still encrypted with the old
+  `couchdb.dungxbuif.com` URI, which explains why this machine continued to see
+  `403` after the public route was repaired.
+- Re-encrypted only the URI and legacy connection record to
+  `https://sync-db.dungxbuif.com`, preserving the existing credentials,
+  database, and encryption passphrase. The active profile count remains one.
+- Verified the decrypted active profile is `sync-db.dungxbuif.com` with database
+  `obsidian_vault`; authenticated request from this workstation returns `200`.
+- Local rollback copies were created beside each LiveSync `data.json` with
+  suffix `.bak-20261105T062922Z`. The `homelab` vault was intentionally left on
+  its private LAN endpoint because publishing `/homelab` would be an unrelated
+  data-exposure change; its public `sync-db` path returned `404`.
 
 RustDesk was traced separately: the local client log reports failure to
 `rustdesk.dungxbuif.com:21116`, and the public VPS refused TCP `21115–21119`.
