@@ -123,3 +123,38 @@ schedule is open in [BACKLOG](./BACKLOG.md).
 
 - [Raspberry Pi 5 Datastore Spec](./PI.md)
 - [Stack](./STACK.md)
+
+## Incident and route repair — 2026-11-05
+
+Symptom: Obsidian LiveSync received HTTP `403` from the public
+`sync-db.dungxbuif.com` endpoint while the NetBird client was already connected.
+
+Root cause: the live Pi5 Traefik file had the `lan-only` middleware attached to
+the `sync-db` router even though the declarative route catalog marks
+`sync-db` as `exposure: public`. The request arrived through the VPS/Rathole
+path, so the Pi5 allow-list rejected it before CouchDB. The catalog and checked-in
+generated artifact were already correct; the live file had drifted.
+
+Repair: removed only `lan-only` from the live `sync-db` router. The
+`couchdb.dungxbuif.com` router remains LAN-only. A protected rollback copy is
+kept on Pi5 at:
+
+```text
+/home/dungxbuif/edge/traefik/dynamic.yml.bak-20261105T060120+0000
+```
+
+Evidence after reload:
+
+- Public anonymous `https://sync-db.dungxbuif.com/` → `401` CouchDB JSON.
+- Public anonymous `/obsidian_vault` → `401` CouchDB JSON.
+- Authenticated `obsidian_vault` request using the existing sync env → `200`.
+- Public `couchdb.dungxbuif.com` → `403` remains expected because it is LAN-only.
+- NetBird `wt0` is up with `100.69.32.183`, route `10.10.0.0/24`, and Pi5 is
+  reachable over VPN.
+
+RustDesk was traced separately: the local client log reports failure to
+`rustdesk.dungxbuif.com:21116`, and the public VPS refused TCP `21115–21119`.
+That is a VPS `hbbs`/`hbbr` listener or provider-firewall issue, not the
+NetBird client or CouchDB route. The gateway SSH key is unavailable in this
+environment, so no unsafe server-side RustDesk mutation was made; keep the
+RustDesk client configuration unchanged until VPS access is restored.

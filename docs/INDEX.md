@@ -26,6 +26,7 @@ Read in this order: overview → STATUS → STACK → host, project or service d
 - [Services](/docs/services/index.md) — platform and third-party services (GitLab, n8n, NetBird, Databasus …).
 - [Project workspace inventory](/docs/PROJECTS.md) — checkout paths and GitLab mirrors.
 - [CouchDB Obsidian sync](/docs/COUCHDB_OBSIDIAN_SYNC.md) — LiveSync database runbook.
+- [Network edge repair 2026-11-05](/docs/deployments/network-edge-repair-2026-11-05.md) — CouchDB 403 repair and RustDesk listener trace.
 
 ## Standards
 
